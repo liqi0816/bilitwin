@@ -1104,8 +1104,11 @@ class BiliMonkey {
             fetchDanmaku(cid, danmaku => {
                 if (this.blocker) {
                     if (this.playerWin.localStorage.bilibili_player_settings) {
-                        let regexps = new RegExp(JSON.parse(this.playerWin.localStorage.bilibili_player_settings).block.list.map(e => e.v).join('|'));
-                        danmaku = danmaku.filter(d => !regexps.test(d.text));
+                        let regexps = JSON.parse(this.playerWin.localStorage.bilibili_player_settings).block.list.map(e => e.v).join('|');
+                        if (regexps) {
+                            regexps = new RegExp(regexps);
+                            danmaku = danmaku.filter(d => !regexps.test(d.text));
+                        }
                     }
                 }
                 let ass = generateASS(setPosition(danmaku), {
