@@ -1476,6 +1476,7 @@ class BiliPolyfill {
         option = {
             setStorage: (n, i) => playerWin.localStorage.setItem(n, i),
             getStorage: n => playerWin.localStorage.getItem(n),
+            badgeWatchLater: true,
             dblclick: true,
             scroll: true,
             recommend: true,
@@ -1524,6 +1525,7 @@ class BiliPolyfill {
         this.retriveUserdata();
         this.video = await this.getPlayerVideo();
         if (!this.option.betabeta) return this.autoNextDestination = '到设置开启';
+        if (this.option.badgeWatchLater) this.badgeWatchLater();
         if (this.option.dblclick) this.dblclickFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
@@ -1579,6 +1581,28 @@ class BiliPolyfill {
         if (!this.series[1]) this.series[1] = vlist[4].reverse().find(e => e.created > vlist[0][0].created) || null;
 
         return this.series;
+    }
+
+    badgeWatchLater() {
+        let li = top.document.getElementById('i_menu_watchLater_btn');
+        li.children[1].style.visibility = 'hidden';
+        li.dispatchEvent(new Event('mouseover'));
+        let observer = new MutationObserver(() => {
+            if (li.children[1].children[0].children[0].className == 'm-w-loading') return;
+            observer.disconnect();
+            li.dispatchEvent(new Event('mouseout'));
+            setTimeout(() => li.children[1].style.visibility = '', 700);
+            if (li.children[1].children[0].children[0].className == 'no-data') return;
+            let div = top.document.createElement('div');
+            div.className = 'num';
+            div.style.display = 'block';
+            div.style.left = 'initial';
+            div.style.right = '-6px';
+            div.textContent = li.children[1].children[0].children.length;
+            li.appendChild(div);
+
+        });
+        observer.observe(li.children[1].children[0], { childList: true });
     }
 
     dblclickFullScreen() {
@@ -2436,6 +2460,7 @@ class UI extends BiliUserJS {
     static genPolyfillOptionTable(option = {}) {
         const description = [
             ['betabeta', '增强组件总开关 <---------更加懒得测试了，反正以后B站也会自己提供这些功能。也许吧。'], //betabeta
+            ['badgeWatchLater', '稍后再看添加数字角标'],
             ['dblclick', '双击全屏'],
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
@@ -2623,6 +2648,7 @@ class UI extends BiliUserJS {
                 partial: true,
                 proxy: true,
                 blocker: true,
+                badgeWatchLater: true,
                 dblclick: true,
                 scroll: true,
                 recommend: true,
