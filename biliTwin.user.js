@@ -2012,9 +2012,12 @@ class UI extends BiliUserJS {
             }
         }
         let tr = table.insertRow(-1);
-        tr.insertCell(0).innerHTML = `<span>复制链接地址无效</span>`;
+        tr.insertCell(0).innerHTML = `<a>全部复制到剪贴板</a>`;
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
+        tr.children[0].children[0].onclick = () => {
+            UI.copyToClipboard(flvs.join('\n'));
+        }
         tr.children[1].children[0].onclick = () => {
             UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
         }
