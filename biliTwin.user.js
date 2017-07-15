@@ -24,7 +24,7 @@ let debugOption = {
     //betabeta: 1,
 
     // UP主不容易，B站也不容易，充电是有益的尝试，我不鼓励跳。
-    //autoNextTimeout: 0,
+    //electricSkippable: 0,
 };
 
 /**
@@ -1483,6 +1483,8 @@ class BiliPolyfill {
             autoNext: true,
             autoNextTimeout: 2000,
             autoNextRecommend: false,
+            electric: true,
+            electricSkippable: false,
             lift: true,
             autoResume: true,
             autoPlay: false,
@@ -1531,6 +1533,7 @@ class BiliPolyfill {
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
         if (this.option.autoNext) this.autoNext();
+        if (this.option.electric) this.reallocateElectricPanel();
         if (this.option.lift) this.liftBottomDanmuku();
         if (this.option.autoResume) this.autoResume();
         if (this.option.autoPlay) this.autoPlay();
@@ -1664,6 +1667,31 @@ class BiliPolyfill {
         // No longer need to alter default behaviour
         //this.video.addEventListener('ended', h);
         return this.autoNextDestination = destination;
+    }
+
+    reallocateElectricPanel() {
+        if (this.playerWin.localStorage.bilibili_player_settings.indexOf('"autopart":1') == -1 && !this.option.electricSkippable) return;
+        this.video.addEventListener('ended', () => {
+            setTimeout(() => {
+                let i = this.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
+                if (!i) return;
+                i.children[2].click();
+                i.style.display = 'block';
+                i.style.zIndex = 233;
+                let j = 5;
+                let h = setInterval(() => {
+                    if (this.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
+                    if (j > 0) {
+                        i.children[2].children[0].textContent = `0${j}`;
+                        j--;
+                    }
+                    else {
+                        clearInterval(h);
+                        i.remove();
+                    }
+                }, 1000);
+            }, 0);
+        });
     }
 
     liftBottomDanmuku() {
@@ -2483,6 +2511,8 @@ class UI extends BiliUserJS {
             ['autoNext', '右键菜单换P'],
             //['autoNextTimeout', '快速换P等待时间(毫秒)'],
             //['autoNextRecommend', '右键菜单跳转相关视频'],
+            ['electric', '整合充电榜与换P倒计时'],
+            //['electricSkippable', '跳过充电榜'],
             ['lift', '自动防挡字幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
@@ -2672,6 +2702,8 @@ class UI extends BiliUserJS {
                 autoNext: true,
                 autoNextTimeout: 2000,
                 autoNextRecommend: false,
+                electric: true,
+                electricSkippable: false,
                 lift: true,
                 autoResume: true,
                 autoPlay: false,
