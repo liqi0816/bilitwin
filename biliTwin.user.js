@@ -1484,6 +1484,7 @@ class BiliPolyfill {
             lift: true,
             autoResume: true,
             autoPlay: false,
+            autoWideScreen: false,
             autoFullScreen: false,
             oped: true,
             speech: false,
@@ -1530,6 +1531,7 @@ class BiliPolyfill {
         if (this.option.lift) this.liftBottomDanmuku();
         if (this.option.autoResume) this.autoResume();
         if (this.option.autoPlay) this.autoPlay();
+        if (this.option.autoWideScreen) this.autoWideScreen();
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
         let h = () => this.saveUserdata();
@@ -1676,6 +1678,11 @@ class BiliPolyfill {
         this.video.autoplay = true;
         if (this.video.paused)
             setTimeout(() => this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click(), 0);
+    }
+
+    autoWideScreen() {
+        if (this.playerWin.document.querySelector('#bilibiliPlayer i.icon-24wideoff'))
+            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-widescreen').click();
     }
 
     autoFullScreen() {
@@ -2437,6 +2444,7 @@ class UI extends BiliUserJS {
             ['lift', '自动防挡字幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
+            ['autoWideScreen', '自动宽屏'],
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
@@ -2623,6 +2631,7 @@ class UI extends BiliUserJS {
                 lift: true,
                 autoResume: true,
                 autoPlay: false,
+                autoWideScreen: false,
                 autoFullScreen: false,
                 oped: true,
                 speech: false,
