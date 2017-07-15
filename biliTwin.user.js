@@ -1482,6 +1482,7 @@ class BiliPolyfill {
             recommend: true,
             autoNext: true,
             autoNextTimeout: 2000,
+            autoNextRecommend: false,
             lift: true,
             autoResume: true,
             autoPlay: false,
@@ -1636,18 +1637,15 @@ class BiliPolyfill {
         let destination, nextLocation;
         if (!nextLocation && top.location.host == 'bangumi.bilibili.com') {
             destination = '下一P'; //番剧:
-            nextLocation = (nextLocation = top.document.querySelector('ul.slider-list .cur + li')) ? () => nextLocation.click() : undefined;
+            nextLocation = (nextLocation = top.document.querySelector('ul.slider-list .cur + li')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
             destination = '下一P'; //视频:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a')) ?
-                this.playerWin.player.next instanceof Function ? this.playerWin.player.next : nextLocation.href : undefined;
+            nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a[data-index]')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
             destination = '稍后观看'; //列表:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ?
-                this.playerWin.player.next instanceof Function ?
-                    this.playerWin.player.next : `https://www.bilibili.com/watchlater/#/av${nextLocation.getAttribute('data-aid')}` : undefined;
+            nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
             destination = 'B站推荐'; //列表:
@@ -1663,7 +1661,8 @@ class BiliPolyfill {
             setTimeout(() => this.playerWin.addEventListener('click', ht), 0);
             this.video.removeEventListener('ended', h);
         };
-        this.video.addEventListener('ended', h);
+        // No longer need to alter default behaviour
+        //this.video.addEventListener('ended', h);
         return this.autoNextDestination = destination;
     }
 
@@ -1817,6 +1816,20 @@ class BiliPolyfill {
             console.log(e.results);
             console.log(`transcript:${transcript} confidence:${e.results[0][0].confidence}`);
         };
+    }
+
+    substitudeFullscreenPlayer(option) {
+        if (!option) throw 'usage: substitudeFullscreenPlayer({cid, aid[, p][, ...otherOptions])';
+        if (!option.cid) throw 'player init: cid missing';
+        if (!option.aid) throw 'player init: aid missing';
+        let _webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen;
+        let _mozExitFullscreen = this.playerWin.document.webkitExitFullscreen;
+        this.playerWin.document.webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen = () => { };
+        this.playerWin.player.destroy();
+        this.playerWin.player = new bilibiliPlayer(option);
+        if (option.p) this.playerWin.callAppointPart(option.p);
+        this.playerWin.document.webkitExitFullscreen = _webkitExitFullscreen;
+        this.playerWin.document.webkitExitFullscreen = _mozExitFullscreen;
     }
 
     async getPlayerVideo() {
@@ -2467,8 +2480,9 @@ class UI extends BiliUserJS {
             ['dblclick', '双击全屏'],
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
-            ['autoNext', '2秒换P'],
+            ['autoNext', '右键菜单换P'],
             //['autoNextTimeout', '快速换P等待时间(毫秒)'],
+            //['autoNextRecommend', '右键菜单跳转相关视频'],
             ['lift', '自动防挡字幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
@@ -2657,6 +2671,7 @@ class UI extends BiliUserJS {
                 recommend: true,
                 autoNext: true,
                 autoNextTimeout: 2000,
+                autoNextRecommend: false,
                 lift: true,
                 autoResume: true,
                 autoPlay: false,
