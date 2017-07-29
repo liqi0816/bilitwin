@@ -1500,10 +1500,24 @@ class BiliPolyfill {
         }
     }
 
-    async setFunctions() {
-        this.retriveUserdata();
+    async setFunctions({ videoRefresh = false } = {}) {
+        if (!this.option.betabeta) {
+            this.autoNextDestination = '到设置开启';
+            await this.getPlayerVideo();
+            return;
+        }
+        if (videoRefresh) {
+            this.video = this.playerWin.document.getElementsByTagName('video')[0];
+            if (!this.video) return;
+            if (this.option.dblclick) this.dblclickFullScreen();
+            if (this.option.autoNext) this.autoNext();
+            if (this.option.electric) this.reallocateElectricPanel();
+            if (this.option.oped) this.skipOPED();
+            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
+            return;
+        }
         this.video = await this.getPlayerVideo();
-        if (!this.option.betabeta) return this.autoNextDestination = '到设置开启';
+        this.retriveUserdata();
         if (this.option.badgeWatchLater) this.badgeWatchLater();
         if (this.option.dblclick) this.dblclickFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
@@ -1516,9 +1530,8 @@ class BiliPolyfill {
         if (this.option.autoWideScreen) this.autoWideScreen();
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
-        let h = () => this.saveUserdata();
-        this.playerWin.addEventListener('beforeunload', h);
-        this.video.addEventListener('emptied', () => { this.playerWin.removeEventListener('beforeunload', h); this.option.scroll = undefined; this.setFunctions(); });
+        this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
+        this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
         if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 ? this.speechRecognition() : undefined);
         if (this.option.series) this.inferNextInSeries();
