@@ -1575,7 +1575,12 @@ class BiliPolyfill {
             div.style.display = 'block';
             div.style.left = 'initial';
             div.style.right = '-6px';
-            div.textContent = li.children[1].children[0].children.length;
+            if (li.children[1].children[0].children.length > 5) {
+                div.textContent = '5+';
+            }
+            else {
+                div.textContent = li.children[1].children[0].children.length;
+            }
             li.appendChild(div);
 
         });
@@ -1680,22 +1685,23 @@ class BiliPolyfill {
 
     autoResume() {
         let h = () => {
-            if (this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item')) {
-                let [min, sec] = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text').children[1].textContent.split(':');
-                let time = parseInt(min) * 60 + parseInt(sec);
-                if (time < this.video.duration - 10) {
-                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
-                    setTimeout(() => {
-                        if (!this.video.autoplay && !this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                    }, 0);
-                }
-                else {
-                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
-                }
+            let span = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+            if (!span) return;
+            let [min, sec] = span.textContent.split(':');
+            if (!min || !sec) return;
+            let time = parseInt(min) * 60 + parseInt(sec);
+            if (time < this.video.duration - 10) {
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                setTimeout(() => {
+                    if (!this.video.autoplay && !this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                }, 0);
+            }
+            else {
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
             }
         };
         this.video.addEventListener('canplay', h);
-        setTimeout(() => this.video.removeEventListener('canplay', h), 5000);
+        setTimeout(() => this.video && this.video.removeEventListener && this.video.removeEventListener('canplay', h), 3000);
     }
 
     autoPlay() {
