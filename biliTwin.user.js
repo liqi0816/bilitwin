@@ -2220,7 +2220,7 @@ class UI extends BiliUserJS {
                 </li>
             </ul>
             `;
-        li.onclick = () => playerWin.document.getElementsByClassName('bilibili-player-watching-number')[0].click();
+        li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
         let ul = li.children[1];
         ul.children[0].onclick = async () => { if (monkeyTitle.flvA.onmouseover) await monkeyTitle.flvA.onmouseover(); monkeyTitle.flvA.click(); };
         ul.children[1].onclick = async () => { if (monkeyTitle.mp4A.onmouseover) await monkeyTitle.mp4A.onmouseover(); monkeyTitle.mp4A.click(); };
@@ -2347,7 +2347,7 @@ class UI extends BiliUserJS {
                 </li>
             </ul>
             `;
-        li.onclick = () => playerWin.document.getElementsByClassName('bilibili-player-watching-number')[0].click();
+        li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
         let ul = li.children[1];
         ul.children[0].onclick = () => { polyfill.video.dispatchEvent(new Event('ended')); };
         ul.children[1].onclick = () => { top.window.open(polyfill.getCoverImage(), '_blank'); };
@@ -2463,7 +2463,7 @@ class UI extends BiliUserJS {
             ['dblclick', '双击全屏'],
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
-            ['autoNext', '右键菜单换P'],
+            ['autoNext', '右键菜单换P(B站原生按钮BUG:刷新后总会跳到2P)'],
             //['autoNextTimeout', '快速换P等待时间(毫秒)'],
             //['autoNextRecommend', '右键菜单跳转相关视频'],
             ['electric', '整合充电榜与换P倒计时'],
@@ -2669,7 +2669,7 @@ class UI extends BiliUserJS {
                 series: true,
                 betabeta: false
             };
-            return Object.assign({}, defaultOption, rawOption, debugOption);
+            return Object.assign({}, defaultOption, rawOption, top.debugOption);
         }
     }
 
@@ -2678,9 +2678,9 @@ class UI extends BiliUserJS {
     }
 
     static outdatedEngineClearance() {
-        if (!Promise) {
+        if (!Promise || !MutationObserver) {
             alert('这个浏览器实在太老了，脚本决定罢工。');
-            throw 'BiliTwin: browser outdated: Promise unsupported';
+            throw 'BiliTwin: browser outdated: Promise or MutationObserver unsupported';
         }
     }
 
@@ -2705,9 +2705,8 @@ class UI extends BiliUserJS {
                 div.style.display = '';
                 unsafeWindow.document.body.appendChild(div);
             }
-            debugOption.proxy = false;
+            top.debugOption.proxy = false;
             if (!window.navigator.temporaryStorage && !window.navigator.mozTemporaryStorage) window.navigator.temporaryStorage = { queryUsageAndQuota: func => func(-1048576, 10484711424) };
-            if (top.unsafeWindow) Object.defineProperty(top.unsafeWindow, 'biliTwinInstanceCount', { value: new Number(1) });
         }
     }
 
@@ -2717,13 +2716,9 @@ class UI extends BiliUserJS {
                 configurable: true,
                 get: () => String(unsafeWindow.cid)
             });
-            Object.defineProperty(window, 'pageno', {
-                configurable: true,
-                get: () => String(unsafeWindow.pageno)
-            });
             Object.defineProperty(window, 'player', {
                 configurable: true,
-                get: () => { return { next: unsafeWindow.player.next, destroy: unsafeWindow.player.destroy, reloadAccess: unsafeWindow.player.reloadAccess } }
+                get: () => ({ destroy: unsafeWindow.player.destroy/*, reloadAccess: unsafeWindow.player.reloadAccess*/ })
             });
             Object.defineProperty(window, 'fetch', {
                 configurable: true,
