@@ -1525,13 +1525,7 @@ class BiliPolyfill {
     }
 
     async inferNextInSeries() {
-        let title = top.document.getElementsByClassName('v-title')[0].textContent;
-        if (this.playerWin.pageno && this.playerWin.pageno != 1) {
-            let h = title.lastIndexOf(`(${this.playerWin.pageno})`);
-            if (h != -1) {
-                title = title.slice(0, h);
-            }
-        }
+        let title = top.document.getElementsByClassName('v-title')[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -1545,7 +1539,9 @@ class BiliPolyfill {
         else ep = [`${ep - 1}`, `${ep + 1}`];
         ep = [...ep.map(e => seriesTitle + e), ...ep];
 
-        let mid = top.document.getElementById('r-info-rank').children[0].href.match(/\d+/)[0];
+        let mid = top.document.getElementById('r-info-rank');
+        if (!mid) return this.series = [];
+        mid = mid.children[0].href.match(/\d+/)[0];
         let vlist = await Promise.all([title, ...ep].map(keyword => new Promise((resolve, reject) => {
             let req = new XMLHttpRequest();
             req.onload = () => resolve((req.response.status && req.response.data.vlist) || []);
@@ -1556,6 +1552,7 @@ class BiliPolyfill {
         })));
 
         vlist[0] = [vlist[0].find(e => e.title == title)];
+        if (!vlist[0][0]) { console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return this.series = []; }
         this.series = [vlist[1].find(e => e.created < vlist[0][0].created), vlist[2].reverse().find(e => e.created > vlist[0][0].created)];
         if (!this.series[0]) this.series[0] = vlist[3].find(e => e.created < vlist[0][0].created) || null;
         if (!this.series[1]) this.series[1] = vlist[4].reverse().find(e => e.created > vlist[0][0].created) || null;
