@@ -1208,7 +1208,7 @@ class BiliMonkey {
             this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
             return this.playerWin;
         }
-        else if (MutationObserver) {
+        else {
             return new Promise(resolve => {
                 let observer = new MutationObserver(() => {
                     if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
@@ -1218,17 +1218,6 @@ class BiliMonkey {
                     }
                 });
                 observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
-            });
-        }
-        else {
-            return new Promise(resolve => {
-                let t = setInterval(() => {
-                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
-                        clearInterval(t);
-                        this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
-                        resolve(this.playerWin);
-                    }
-                }, 600);
             });
         }
     }
@@ -1851,7 +1840,7 @@ class BiliPolyfill {
         if (this.playerWin.document.getElementsByTagName('video').length) {
             return this.video = this.playerWin.document.getElementsByTagName('video')[0];
         }
-        else if (MutationObserver) {
+        else {
             return new Promise(resolve => {
                 let observer = new MutationObserver(() => {
                     if (this.playerWin.document.getElementsByTagName('video').length) {
@@ -1860,16 +1849,6 @@ class BiliPolyfill {
                     }
                 });
                 observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
-            });
-        }
-        else {
-            return new Promise(resolve => {
-                let t = setInterval(() => {
-                    if (this.playerWin.document.getElementsByTagName('video').length) {
-                        clearInterval(t);
-                        resolve(this.video = this.playerWin.document.getElementsByTagName('video')[0]);
-                    }
-                }, 600);
             });
         }
     }
@@ -1929,7 +1908,7 @@ class BiliUserJS {
             if (document.querySelector('#bofqi > iframe')) {
                 return BiliUserJS.getIframeWin();
             }
-            else if (MutationObserver) {
+            else {
                 return new Promise(resolve => {
                     let observer = new MutationObserver(() => {
                         if (document.querySelector('#bofqi > iframe')) {
@@ -1942,20 +1921,6 @@ class BiliUserJS {
                         }
                     });
                     observer.observe(window.document.getElementById('bofqi'), { childList: true });
-                });
-            }
-            else {
-                return new Promise(resolve => {
-                    let t = setInterval(() => {
-                        if (document.querySelector('#bofqi > iframe')) {
-                            clearInterval(t);
-                            resolve(BiliUserJS.getIframeWin());
-                        }
-                        else if (document.querySelector('#bofqi > object')) {
-                            clearInterval(t);
-                            throw 'Need H5 Player';
-                        }
-                    }, 600);
                 });
             }
         }
