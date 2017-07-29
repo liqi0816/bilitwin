@@ -2249,7 +2249,7 @@ class UI extends BiliUserJS {
             return monkey.queryInfo('flv');
         };
         ul.children[5].onclick = () => { top.location.reload(true); };
-        ul.children[6].onclick = () => { setTimeout(UI.reInit, 0); };
+        ul.children[6].onclick = () => { playerWin.document.getElementsByTagName('video')[0].remove(); };
         ul.children[7].onclick = () => { playerWin.player ? playerWin.player.destroy() : undefined; };
         return li;
     }
@@ -2741,7 +2741,7 @@ class UI extends BiliUserJS {
         }
     }
 
-    static cleanUI() {
+    static cleanUp() {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
             .forEach(e => Array.from(e.getElementsByTagName('a')).forEach(
@@ -2750,30 +2750,22 @@ class UI extends BiliUserJS {
         Array.from(document.getElementsByClassName('bilitwin')).forEach(e => e.remove());
     }
 
-    static reInit() {
-        document.querySelector('#bofqi > iframe') ? document.querySelector('#bofqi > iframe').remove() : undefined;
-        UI.cleanUI();
-        UI.init();
-    }
+    static async start() {
+        let cidRefresh = new AsyncContainer();
 
-    static async init() {
-        UI.outdatedEngineClearance();
-        UI.xpcWrapperClearance();
-        UI.firefoxClearance();
-
+        // 1. playerWin and option
         let playerWin;
         try {
             playerWin = await UI.getPlayerWin();
-            if (top.location.hostname == 'bangumi.bilibili.com') playerWin.addEventListener('unload', () => UI.reInit());
-            else playerWin.addEventListener('hashchange', () => UI.reInit());
         } catch (e) {
             if (e == 'Need H5 Player') UI.requestH5Player();
             throw e;
         }
         let option = UI.getOption(playerWin);
-        let optionDiv = UI.genOptionDiv(option);//sideAppend(option);
+        let optionDiv = UI.genOptionDiv(option);
         document.body.appendChild(optionDiv);
 
+        // 2. monkey and polyfill
         let monkeyTitle;
         let displayPolyfillDataDiv = polyfill => UI.displayPolyfillDataDiv(polyfill);
         let [monkey, polyfill] = await Promise.all([
@@ -2790,11 +2782,35 @@ class UI extends BiliUserJS {
             })()
         ]);
 
+        // 3. menu
         UI.menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv });
 
-        if (debugOption.debug && top.console) top.console.clear();
-        if (debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
-        return [monkey, polyfill];
+        // 4. refresh
+        let h = () => {
+            let video = playerWin.document.getElementsByTagName('video')[0];
+            if (video) video.addEventListener('emptied', h);
+            else setTimeout(() => cidRefresh.resolve(), 0);
+        }
+        playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
+        playerWin.addEventListener('unload', () => setTimeout(() => cidRefresh.resolve(), 0));
+
+        // 5. debug
+        if (top.debugOption && top.debugOption.debug && top.console) top.console.clear();
+        if (top.debugOption && top.debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
+
+        await cidRefresh;
+        UI.cleanUp();
+    }
+
+    static async init() {
+        if (!top.document.body) return;
+        UI.outdatedEngineClearance();
+        UI.xpcWrapperClearance();
+        UI.firefoxClearance();
+
+        while (1) {
+            await UI.start();
+        }
     }
 }
 
