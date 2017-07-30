@@ -3,20 +3,18 @@
 // @namespace   http://qli5.tk/
 // @homepageURL https://github.com/liqi0816/bilitwin/
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
-// @include     http://www.bilibili.com/video/av*
-// @include     https://www.bilibili.com/video/av*
-// @include     http://bangumi.bilibili.com/anime/*/play*
-// @include     https://bangumi.bilibili.com/anime/*/play*
-// @version     1.3
+// @match       *://www.bilibili.com/video/av*
+// @match       *://bangumi.bilibili.com/anime/*/play
+// @match       *://www.bilibili.com/watchlater/
+// @version     1.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @run-at      document-begin
 // @grant       GM_getValue
 // @grant       GM_setValue
 // ==/UserScript==
 
-let debugOption = {
+top.debugOption = {
     // console会清空，生成 window.m 和 window.p
     //debug: 1,
 
@@ -24,7 +22,7 @@ let debugOption = {
     //betabeta: 1,
 
     // UP主不容易，B站也不容易，充电是有益的尝试，我不鼓励跳。
-    //autoNextTimeout: 0,
+    //electricSkippable: 0,
 };
 
 /**
@@ -615,7 +613,7 @@ class DetailedFetchBlob {
     }
 
     firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
-        if (top.navigator.userAgent.indexOf('Firefox') == -1) return false;
+        if (!top.navigator.userAgent.includes('Firefox')) return false;
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
@@ -648,41 +646,6 @@ class DetailedFetchBlob {
         this.then = this.promise.then.bind(this.promise);
         this.catch = this.promise.catch.bind(this.promise);
         return true;
-
-        /* ****obsolete****
-        // Obsolete: moz-blob will drain your RAM
-        this.onprogress = onprogress;
-        this.onabort = onabort;
-        this.onerror = onerror;
-        this.abort = null;
-        this.loaded = init.cacheLoaded || 0;
-        this.total = init.cacheLoaded || 0;
-        this.lengthComputable = false;
-        this.buffer = null;
-        this.blob = null;
-        this.reader = undefined;
-        this.blobPromise = new Promise((resolve, reject) => {
-            let xhr = new XMLHttpRequest();
-            xhr.responseType = 'moz-blob';
-            xhr.onload = () => resolve(this.blob = xhr.response);
-            xhr.onloadstart = e => alert(`${e.loaded} ${e.total} ${e.lengthComputable}`);
-            let cacheLoaded = this.loaded;
-            xhr.onprogress = e => {
-                this.loaded = e.loaded + cacheLoaded;
-                this.total = e.total + cacheLoaded;
-                this.lengthComputable = e.lengthComputable;
-                this.onprogress(this.loaded, this.total, this.lengthComputable);
-            };
-            xhr.onabort = e => this.onabort({ target: this, type: 'abort' });
-            xhr.onerror = e => { this.onerror({ target: this, type: e.type }); reject(e); };
-            this.abort = () => { this.buffer = [xhr.response]; xhr.abort(); };
-            xhr.open('get', input);
-            xhr.send();
-        });
-        this.promise = this.blobPromise;
-        this.then = this.promise.then.bind(this.promise);
-        this.catch = this.promise.catch.bind(this.promise);
-        return true;*/
     }
 }
 
@@ -802,7 +765,7 @@ class AsyncContainer {
             return buf;
         }
         let foos = [foo(), foo(), foo()];
-        containers.map(e => e.destroy());
+        containers.forEach(e => e.destroy());
         console.warn('Check your RAM usage. I allocated 1.8GB in three dead-end promises.')
         return [foos, containers];
     }
@@ -840,6 +803,9 @@ class BiliMonkey {
         this.assAsyncScript = BiliMonkey.loadASSScript();
         this.queryInfoMutex = new Mutex();
         this.queryInfoMutex.lockAndAwait(() => this.getPlayer());
+        this.queryInfoMutex.lockAndAwait(() => {
+            if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 4) this.queryInfo = this.queryInfoSixteen;
+        });
     }
 
     lockFormat(format) {
@@ -859,7 +825,8 @@ class BiliMonkey {
                 //if (this.mp4) return this.mp4;
                 return this.mp4 = new AsyncContainer();
             case 'mp4':
-                return;
+                //if (this.mp4) return this.mp4;
+                return this.mp4 = new AsyncContainer();
             default:
                 throw `lockFormat error: ${format} is a unrecognizable format`;
         }
@@ -870,9 +837,9 @@ class BiliMonkey {
         if (h) {
             h.style.visibility = '';
             if (h.children.length) h.children[0].style.visibility = 'hidden';
-            let i = () => {
+            let i = e => {
                 if (h.children.length) h.children[0].style.visibility = 'hidden';
-                this.playerWin.document.getElementsByTagName('video')[0].removeEventListener('emptied', i);
+                e.target.removeEventListener(e.type, i);
             };
             let j = this.playerWin.document.getElementsByTagName('video')[0];
             if (j) j.addEventListener('emptied', i);
@@ -884,7 +851,7 @@ class BiliMonkey {
             case 'hdmp4':
                 return this.mp4 = this.mp4.resolve(res.durl[0].url.replace('http:', this.protocol));
             case 'mp4':
-                return;
+                return this.mp4 = this.mp4.resolve(res.durl[0].url.replace('http:', this.protocol));
             default:
                 throw `resolveFormat error: ${res.format} is a unrecognizable format`;
         }
@@ -909,12 +876,12 @@ class BiliMonkey {
             let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 5000);
             let self = this;
             jq.ajax = function (a, c) {
-                if (c) { if (a) c.url = a; a = c };
-                if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(timeout);
                     let format = a.url.match(/quality=\d*/)[0].slice(8);
-                    format = format == 80 || format == 4 || format == 3 ? 'flv' : format == 2 || format == 48 ? 'hdmp4' : format == 1 || format == 16 ? 'mp4' : undefined;
-                    if (!format) { console.error(`lockFormat error: ${a.url.match(/quality=\d*/)[0].slice(8)} is a unrecognizable format`); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c); }
+                    format = format == 112 || format == 80 || format == 4 || format == 3 ? 'flv' : format == 2 || format == 48 ? 'hdmp4' : format == 1 || format == 16 ? 'mp4' : undefined;
+                    if (!format) { console && console.error(`lockFormat error: ${a.url.match(/quality=\d*/)[0].slice(8)} is a unrecognizable format`); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c); }
                     self.lockFormat(format);
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     let _success = a.success;
@@ -937,33 +904,10 @@ class BiliMonkey {
         return this.defaultFormatPromise;
     }
 
-    async getSixteenMP4() {
-        let src = this.playerWin.document.getElementsByTagName('video')[0].src;
-        if (src.indexOf('.mp4') != -1) return Promise.resolve(src);
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
-        const _ajax = jq.ajax;
-
-        let pendingFormat = new AsyncContainer();
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (c) { if (a) c.url = a; a = c };
-            if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                _success({});
-                a.success = res => pendingFormat.resolve(self.mp4 = res.durl[0].url.replace('http:', self.protocol));
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(4)`).click();
-        return pendingFormat;
-    }
-
     async getBackgroundFormat(format) {
-        if (format == 'hdmp4') {
+        if (format == 'hdmp4' || format == 'mp4') {
             let src = this.playerWin.document.getElementsByTagName('video')[0].src;
-            if (src.indexOf('hd') != -1 && src.indexOf('.mp4') != -1) {
+            if ((src.includes('hd') || format == 'mp4') && src.includes('.mp4')) {
                 let pendingFormat = this.lockFormat(format);
                 this.resolveFormat({ durl: [{ url: src }] }, format);
                 return pendingFormat;
@@ -976,13 +920,13 @@ class BiliMonkey {
         let pendingFormat = this.lockFormat(format);
         let self = this;
         jq.ajax = function (a, c) {
-            if (c) { if (a) c.url = a; a = c };
-            if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                 let _success = a.success;
                 a.success = res => {
-                    if (format == 'hdmp4') res.durl = [res.durl[0].backup_url.find(e => e.indexOf('hd') != -1 && e.indexOf('.mp4') != -1)];
-                    if (format == 'mp4') res.durl = [res.durl[0].backup_url.find(e => e.indexOf('hd') == -1 && e.indexOf('.mp4') != -1)];
+                    if (format == 'hdmp4') res.durl = [res.durl[0].backup_url.find(e => e.includes('hd') && e.includes('.mp4'))];
+                    if (format == 'mp4') res.durl = [res.durl[0].backup_url.find(e => !e.includes('hd') && e.includes('.mp4'))];
                     self.resolveFormat(res, format);
                 };
                 jq.ajax = _ajax;
@@ -999,40 +943,37 @@ class BiliMonkey {
         const _ajax = jq.ajax;
         const buttonNumber = format == 'flv' ? 1 : 2;
         const siblingFormat = format == 'flv' ? 'hdmp4' : 'flv';
-        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': siblingFormat, 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '', 'backup_url': ['', ''] }] };
-
-        let pendingSiblingFormat = this.lockFormat(siblingFormat);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (c) { if (a) c.url = a; a = c };
-            if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                a.success = res => {
-                    _success(res);
-                    self.resolveFormat(res, siblingFormat);
-                }
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${3 - buttonNumber})`).click();
-        await pendingSiblingFormat;
-
-        await new Promise(resolve => {
-            let video = this.playerWin.document.getElementsByTagName('video')[0];
-            let h = () => {
-                resolve();
-                video.removeEventListener('emptied', h);
-            };
-            video.addEventListener('emptied', h);
-        });
+        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
 
         let pendingFormat = this.lockFormat(format);
+        let self = this;
+        let blockedRequest = await new Promise(resolve => {
+            jq.ajax = function (a, c) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                    // Send back a fake response to enable the change-format button.
+                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
+                    a.success(trivialRes);
+                    let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
+                    self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
+                }
+                else {
+                    return _ajax.call(jq, a, c);
+                }
+            };
+            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${3 - buttonNumber})`).click();
+        });
+
+        let siblingOK = siblingFormat == 'hdmp4' ? this.mp4 : this.flvs;
+        if (!siblingOK) {
+            this.lockFormat(siblingFormat);
+            blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
+            _ajax.call(jq, ...blockedRequest);
+        }
+
         jq.ajax = function (a, c) {
-            if (c) { if (a) c.url = a; a = c };
-            if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                 let _success = a.success;
                 a.success = res => {
                     if (self.proxy && res.format == 'flv') {
@@ -1061,8 +1002,86 @@ class BiliMonkey {
         let pendingFormat = this.lockFormat(format);
         let self = this;
         jq.ajax = function (a, c) {
-            if (c) { if (a) c.url = a; a = c };
-            if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
+                let _success = a.success;
+                _success({});
+                a.success = res => self.resolveFormat(res, format);
+                jq.ajax = _ajax;
+            }
+            return _ajax.call(jq, a, c);
+        };
+        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
+        return pendingFormat;
+    }
+
+    async getCurrentFormatSixteen(format) {
+        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const _ajax = jq.ajax;
+        const buttonNumber = format == 'flv' ? 1 : 4;
+        const siblingFormat = format == 'flv' ? 'mp4' : 'flv';
+        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'mp4', 'timelength': 10, 'accept_format': 'flv,flv720,flv480,mp4', 'accept_quality': [80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
+
+        let pendingFormat = this.lockFormat(format);
+        let self = this;
+        let blockedRequest = await new Promise(resolve => {
+            jq.ajax = function (a, c) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                    // Send back a fake response to enable the change-format button.
+                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
+                    a.success(trivialRes);
+                    let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
+                    self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
+                }
+                else {
+                    return _ajax.call(jq, a, c);
+                }
+            };
+            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${5 - buttonNumber})`).click();
+        });
+
+        let siblingOK = siblingFormat == 'mp4' ? this.mp4 : this.flvs;
+        if (!siblingOK) {
+            this.lockFormat(siblingFormat);
+            blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
+            _ajax.call(jq, ...blockedRequest);
+        }
+
+        jq.ajax = function (a, c) {
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                let _success = a.success;
+                a.success = res => {
+                    if (self.proxy && res.format == 'flv') {
+                        self.resolveFormat(res, format);
+                        self.setupProxy(res, _success);
+                    }
+                    else {
+                        _success(res);
+                        self.resolveFormat(res, format);
+                    }
+                };
+                jq.ajax = _ajax;
+            }
+            return _ajax.call(jq, a, c);
+        };
+        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
+
+        return pendingFormat;
+    }
+
+    async getNonCurrentFormatSixteen(format) {
+        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const _ajax = jq.ajax;
+        const buttonNumber = format == 'flv' ? 1 : 4;
+
+        let pendingFormat = this.lockFormat(format);
+        let self = this;
+        jq.ajax = function (a, c) {
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                 let _success = a.success;
                 _success({});
@@ -1087,8 +1106,8 @@ class BiliMonkey {
                 this.lockFormat(clickableFormat);
                 let self = this;
                 jq.ajax = function (a, c) {
-                    if (c) { if (a) c.url = a; a = c };
-                    if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
+                    if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                         resolve(self.cid = a.url.match(/cid=\d+/)[0].slice(4));
                         let _success = a.success;
                         _success({});
@@ -1104,8 +1123,11 @@ class BiliMonkey {
             fetchDanmaku(cid, danmaku => {
                 if (this.blocker) {
                     if (this.playerWin.localStorage.bilibili_player_settings) {
-                        let regexps = new RegExp(JSON.parse(this.playerWin.localStorage.bilibili_player_settings).block.list.map(e => e.v).join('|'));
-                        danmaku = danmaku.filter(d => !regexps.test(d.text));
+                        let regexps = JSON.parse(this.playerWin.localStorage.bilibili_player_settings).block.list.map(e => e.v).join('|');
+                        if (regexps) {
+                            regexps = new RegExp(regexps);
+                            danmaku = danmaku.filter(d => !regexps.test(d.text));
+                        }
                     }
                 }
                 let ass = generateASS(setPosition(danmaku), {
@@ -1114,7 +1136,7 @@ class BiliMonkey {
                 });
                 // I would assume most users are using Windows
                 let blob = new Blob(['\ufeff' + ass], { type: 'application/octet-stream' });
-                resolve(this.ass = window.URL.createObjectURL(blob));
+                resolve(this.ass = top.URL.createObjectURL(blob));
             });
         });
         return this.ass;
@@ -1133,8 +1155,6 @@ class BiliMonkey {
                 case 'mp4':
                     if (this.mp4)
                         return this.mp4;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 4)
-                        return this.getSixteenMP4();
                     else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)').getAttribute('data-selected'))
                         return this.getCurrentFormat('hdmp4');
                     else
@@ -1152,12 +1172,42 @@ class BiliMonkey {
         });
     }
 
+    async queryInfoSixteen(format) {
+        return this.queryInfoMutex.lockAndAwait(async () => {
+            switch (format) {
+                case 'flv':
+                    if (this.flvs)
+                        return this.flvs;
+                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
+                        return this.getCurrentFormatSixteen('flv');
+                    else
+                        return this.getNonCurrentFormatSixteen('flv');
+                case 'mp4':
+                    if (this.mp4)
+                        return this.mp4;
+                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(4)').getAttribute('data-selected'))
+                        return this.getCurrentFormatSixteen('mp4');
+                    else
+                        return this.getNonCurrentFormatSixteen('mp4');
+                case 'ass':
+                    if (this.ass)
+                        return this.ass;
+                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
+                        return this.getASS('mp4');
+                    else
+                        return this.getASS('flv');
+                default:
+                    throw `Bilimonkey: What is format ${format}?`;
+            }
+        });
+    }
+
     async getPlayer() {
         if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
             this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
             return this.playerWin;
         }
-        else if (MutationObserver) {
+        else {
             return new Promise(resolve => {
                 let observer = new MutationObserver(() => {
                     if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
@@ -1169,34 +1219,21 @@ class BiliMonkey {
                 observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
             });
         }
-        else {
-            return new Promise(resolve => {
-                let t = setInterval(() => {
-                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
-                        clearInterval(t);
-                        this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
-                        resolve(this.playerWin);
-                    }
-                }, 600);
-            });
-        }
     }
 
     async hangPlayer() {
         await this.getPlayer();
 
-        let trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '', 'backup_url': ['', ''] }] };
-        const qualityToFormat = ['mp4', 'hdmp4', 'flv'];
+        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
         const jq = this.playerWin == window ? $ : this.playerWin.$;
         const _ajax = jq.ajax;
 
         return new Promise(async resolve => {
             let blockerTimeout;
             jq.ajax = function (a, c) {
-                if (c) { if (a) c.url = a; a = c };
-                if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(blockerTimeout);
-                    trivialRes.format = qualityToFormat[a.url.match(/quality=(\d)/)[1]];
                     a.success(trivialRes);
                     blockerTimeout = setTimeout(() => {
                         jq.ajax = _ajax;
@@ -1212,38 +1249,6 @@ class BiliMonkey {
                 .find(e => !e.getAttribute('data-selected'));
             button.click();
         });
-
-        /* ****obsolete****
-        // Obsolete: I found a less destructive way
-        return new Promise(async resolve => {
-            // Magic number. Do not know why.
-            for (let i = 0; i < 5; i++) {
-                let trivialResSent = new Promise(r => {
-                    jq.ajax = function (a, c) {
-                        if (c) { if (a) c.url = a; a = c };
-                        if (a.url.indexOf('interface.bilibili.com/playurl?') != -1 || a.url.indexOf('bangumi.bilibili.com/player/web_api/playurl?') != -1) {
-                            // Send back a fake response to abort current loading.
-                            trivialRes.format = qualityToFormat[a.url.match(/quality=(\d)/)[1]];
-                            a.success(trivialRes);
-                            // Requeue. Again, magic number.
-                            setTimeout(r, 400);
-                        }
-                        else {
-                            return _ajax.call(jq, a, c);
-                        }
-                    };
-
-                })
-                // Find a random available button
-                let button = Array
-                    .from(this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul').children)
-                    .find(e => !e.getAttribute('data-selected'));
-                button.click();
-                await trivialResSent;
-            }
-            resolve(this.playerWin.document.querySelector('#bilibiliPlayer video'));
-            jq.ajax = _ajax;
-        });*/
     }
 
     async loadFLVFromCache(index) {
@@ -1315,7 +1320,7 @@ class BiliMonkey {
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
                 cacheLoaded: partialCache ? partialCache.size : 0,
-                headers: partialCache && (burl.indexOf('wsTime') == -1) ? { Range: `bytes=${partialCache.size}-` } : undefined
+                headers: partialCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialCache.size}-` } : undefined
             };
             opt.onprogress = progressHandler;
             opt.onerror = opt.onabort = ({ target, type }) => {
@@ -1334,33 +1339,6 @@ class BiliMonkey {
             }
             this.saveFLVToCache(index, fullResponse);
             return (this.flvsBlob[index] = fullResponse);
-
-            /* ****obsolete****
-            // Obsolete: cannot save partial blob
-            let xhr = new XMLHttpRequest();
-            this.flvsXHR[index] = xhr;
-            xhr.onload = () => {
-                let fullResponse = xhr.response;
-                if (partialCache) fullResponse = new Blob([partialCache, xhr.response]);
-                this.saveFLVToCache(index, fullResponse);
-                resolve(this.flvsBlob[index] = fullResponse);
-            }
-            xhr.onerror = reject;
-            xhr.onabort = () => {
-                this.savePartialFLVToCache(index, xhr);
-            }
-            xhr.onprogress = event => progressHandler(event.loaded, event.total, index);
-            xhr.onreadystatechange = () => {
-                if (this.readyState == this.HEADERS_RECEIVED) {
-                    console.log(`Size of ${index}: ${xhr.getResponseHeader('Content-Length')}`);
-                }
-            }
-            xhr.responseType = 'blob';
-            xhr.open('GET', this.flvs[index], true);
-            if (partialCache) {
-                xhr.setRequestHeader('Range', `bytes=${partialCache.size}-`);
-            }
-            xhr.send();*/
         })();
         return this.flvsBlob[index];
     }
@@ -1473,16 +1451,22 @@ class BiliPolyfill {
         option = {
             setStorage: (n, i) => playerWin.localStorage.setItem(n, i),
             getStorage: n => playerWin.localStorage.getItem(n),
+            badgeWatchLater: true,
             dblclick: true,
             scroll: true,
             recommend: true,
             autoNext: true,
             autoNextTimeout: 2000,
+            autoNextRecommend: false,
+            electric: true,
+            electricSkippable: false,
             lift: true,
             autoResume: true,
             autoPlay: false,
+            autoWideScreen: false,
             autoFullScreen: false,
             oped: true,
+            focus: true,
             speech: false,
             series: true,
         }, hintInfo = () => { }) {
@@ -1516,35 +1500,48 @@ class BiliPolyfill {
         }
     }
 
-    async setFunctions() {
-        this.retriveUserdata();
+    async setFunctions({ videoRefresh = false } = {}) {
+        if (!this.option.betabeta) {
+            this.autoNextDestination = '到设置开启';
+            await this.getPlayerVideo();
+            this.userdata = { oped: {} };
+            return;
+        }
+        if (videoRefresh) {
+            this.video = this.playerWin.document.getElementsByTagName('video')[0];
+            if (!this.video) return;
+            if (this.option.dblclick) this.dblclickFullScreen();
+            if (this.option.autoNext) this.autoNext();
+            if (this.option.electric) this.reallocateElectricPanel();
+            if (this.option.oped) this.skipOPED();
+            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
+            return;
+        }
         this.video = await this.getPlayerVideo();
-        if (!this.option.betabeta) return this.autoNextDestination = '到设置开启';
+        this.retriveUserdata();
+        if (this.option.badgeWatchLater) this.badgeWatchLater();
         if (this.option.dblclick) this.dblclickFullScreen();
+        if (this.option.limitedKeydown) this.limitedKeydownFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
         if (this.option.autoNext) this.autoNext();
+        if (this.option.electric) this.reallocateElectricPanel();
         if (this.option.lift) this.liftBottomDanmuku();
         if (this.option.autoResume) this.autoResume();
         if (this.option.autoPlay) this.autoPlay();
+        if (this.option.autoWideScreen) this.autoWideScreen();
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
-        let h = () => this.saveUserdata();
-        this.playerWin.addEventListener('beforeunload', h);
-        this.video.addEventListener('emptied', () => { this.playerWin.removeEventListener('beforeunload', h); this.option.scroll = undefined; this.setFunctions(); });
+        if (this.option.focus) this.focusOnPlayer();
+        this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
+        this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
         if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 ? this.speechRecognition() : undefined);
         if (this.option.series) this.inferNextInSeries();
     }
 
     async inferNextInSeries() {
-        let title = top.document.getElementsByClassName('v-title')[0].textContent;
-        if (this.playerWin.pageno && this.playerWin.pageno != 1) {
-            let h = title.lastIndexOf(`(${this.playerWin.pageno})`);
-            if (h != -1) {
-                title = title.slice(0, h);
-            }
-        }
+        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -1558,7 +1555,9 @@ class BiliPolyfill {
         else ep = [`${ep - 1}`, `${ep + 1}`];
         ep = [...ep.map(e => seriesTitle + e), ...ep];
 
-        let mid = top.document.getElementById('r-info-rank').children[0].href.match(/\d+/)[0];
+        let mid = top.document.getElementById('r-info-rank');
+        if (!mid) return this.series = [];
+        mid = mid.children[0].href.match(/\d+/)[0];
         let vlist = await Promise.all([title, ...ep].map(keyword => new Promise((resolve, reject) => {
             let req = new XMLHttpRequest();
             req.onload = () => resolve((req.response.status && req.response.data.vlist) || []);
@@ -1569,11 +1568,39 @@ class BiliPolyfill {
         })));
 
         vlist[0] = [vlist[0].find(e => e.title == title)];
+        if (!vlist[0][0]) { console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return this.series = []; }
         this.series = [vlist[1].find(e => e.created < vlist[0][0].created), vlist[2].reverse().find(e => e.created > vlist[0][0].created)];
         if (!this.series[0]) this.series[0] = vlist[3].find(e => e.created < vlist[0][0].created) || null;
         if (!this.series[1]) this.series[1] = vlist[4].reverse().find(e => e.created > vlist[0][0].created) || null;
 
         return this.series;
+    }
+
+    badgeWatchLater() {
+        let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn');
+        li.children[1].style.visibility = 'hidden';
+        li.dispatchEvent(new Event('mouseover'));
+        let observer = new MutationObserver(() => {
+            if (li.children[1].children[0].children[0].className == 'm-w-loading') return;
+            observer.disconnect();
+            li.dispatchEvent(new Event('mouseout'));
+            setTimeout(() => li.children[1].style.visibility = '', 700);
+            if (li.children[1].children[0].children[0].className == 'no-data') return;
+            let div = top.document.createElement('div');
+            div.className = 'num';
+            div.style.display = 'block';
+            div.style.left = 'initial';
+            div.style.right = '-6px';
+            if (li.children[1].children[0].children.length > 5) {
+                div.textContent = '5+';
+            }
+            else {
+                div.textContent = li.children[1].children[0].children.length;
+            }
+            li.appendChild(div);
+
+        });
+        observer.observe(li.children[1].children[0], { childList: true });
     }
 
     dblclickFullScreen() {
@@ -1582,12 +1609,28 @@ class BiliPolyfill {
         );
     }
 
+    limitedKeydownFullScreen() {
+        let h = e => {
+            if (e.key == 'Space') return;
+            if (e.key == 'Enter') {
+                if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
+                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                }
+            }
+            top.document.removeEventListener('keydown', h);
+            top.document.removeEventListener('click', h);
+        };
+        top.document.addEventListener('keydown', h);
+        top.document.addEventListener('click', h);
+    }
+
     scrollToPlayer() {
         if (top.scrollY < 200) top.document.getElementById('bofqi').scrollIntoView();
     }
 
     showRecommendTab() {
-        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-filter-btn-recommend').click();
+        let h = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-filter-btn-recommend');
+        if (h) h.click();
     }
 
     getCoverImage() {
@@ -1595,6 +1638,8 @@ class BiliPolyfill {
             return top.document.querySelector('.cover_image').src;
         else if (top.document.querySelector('div.v1-bangumi-info-img > a > img'))
             return top.document.querySelector('div.v1-bangumi-info-img > a > img').src.slice(0, top.document.querySelector('div.v1-bangumi-info-img > a > img').src.indexOf('.jpg') + 4);
+        else if (top.document.querySelector('[data-state-play="true"]  img'))
+            return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4);
         else
             return null;
     }
@@ -1606,19 +1651,16 @@ class BiliPolyfill {
         if (this.autoNextDestination && this.autoNextDestination != '没有了') return;
         let destination, nextLocation;
         if (!nextLocation && top.location.host == 'bangumi.bilibili.com') {
-            destination = '下一P'; //番剧:
-            nextLocation = (nextLocation = top.document.querySelector('ul.slider-list .cur + li')) ? () => nextLocation.click() : undefined;
+            destination = '请用左下角'; //番剧:
+            nextLocation = () => this.playerWin.getElementsByClassName('bilibili-player-video-btn-next')[0].click();
         }
         if (!nextLocation) {
             destination = '下一P'; //视频:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a')) ?
-                this.playerWin.player.next instanceof Function ? this.playerWin.player.next : nextLocation.href : undefined;
+            nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a[data-index]')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
-            destination = '稍后观看'; //列表:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ?
-                this.playerWin.player.next instanceof Function ?
-                    this.playerWin.player.next : `https://www.bilibili.com/watchlater/#/av${nextLocation.getAttribute('data-aid')}` : undefined;
+            destination = '请用左下角'; //列表:
+            nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
             destination = 'B站推荐'; //列表:
@@ -1634,8 +1676,34 @@ class BiliPolyfill {
             setTimeout(() => this.playerWin.addEventListener('click', ht), 0);
             this.video.removeEventListener('ended', h);
         };
-        this.video.addEventListener('ended', h);
+        // No longer need to alter default behaviour
+        //this.video.addEventListener('ended', h);
         return this.autoNextDestination = destination;
+    }
+
+    reallocateElectricPanel() {
+        if (!this.playerWin.localStorage.bilibili_player_settings.includes('"autopart":1') && !this.option.electricSkippable) return;
+        this.video.addEventListener('ended', () => {
+            setTimeout(() => {
+                let i = this.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
+                if (!i) return;
+                i.children[2].click();
+                i.style.display = 'block';
+                i.style.zIndex = 233;
+                let j = 5;
+                let h = setInterval(() => {
+                    if (this.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
+                    if (j > 0) {
+                        i.children[2].children[0].textContent = `0${j}`;
+                        j--;
+                    }
+                    else {
+                        clearInterval(h);
+                        i.remove();
+                    }
+                }, 1000);
+            }, 0);
+        });
     }
 
     liftBottomDanmuku() {
@@ -1651,28 +1719,43 @@ class BiliPolyfill {
 
     autoResume() {
         let h = () => {
-            if (this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item')) {
-                let [min, sec] = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text').children[1].textContent.split(':');
-                let time = parseInt(min) * 60 + parseInt(sec);
-                if (time < this.video.duration - 10) {
-                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
-                    setTimeout(() => {
-                        if (!this.video.autoplay && !this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                    }, 0);
+            let span = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+            if (!span) return;
+            let [min, sec] = span.textContent.split(':');
+            if (!min || !sec) return;
+            let time = parseInt(min) * 60 + parseInt(sec);
+            if (time < this.video.duration - 10) {
+                let h = this.video.muted;
+                let i = () => {
+                    if (!this.video.autoplay && !this.video.paused) {
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    }
+                    this.video.muted = h;
+                    this.video.removeEventListener('play', i);
                 }
-                else {
-                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
-                }
+                this.video.muted = true;
+                this.video.addEventListener('play', i);
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+            }
+            else {
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
             }
         };
         this.video.addEventListener('canplay', h);
-        setTimeout(() => this.video.removeEventListener('canplay', h), 5000);
+        setTimeout(() => this.video && this.video.removeEventListener && this.video.removeEventListener('canplay', h), 3000);
     }
 
     autoPlay() {
         this.video.autoplay = true;
-        if (this.video.paused)
-            setTimeout(() => this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click(), 0);
+        setTimeout(() => {
+            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click()
+        }, 0);
+    }
+
+    autoWideScreen() {
+        if (this.playerWin.document.querySelector('#bilibiliPlayer i.icon-24wideoff'))
+            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-widescreen').click();
     }
 
     autoFullScreen() {
@@ -1681,7 +1764,7 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/))[0];
+        return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/) || top.location.hash.match(/av\d+/))[0];
     }
 
     markOPPosition() {
@@ -1724,6 +1807,11 @@ class BiliPolyfill {
     setVideoSpeed(speed) {
         if (speed < 0 || speed > 10) return;
         this.video.playbackRate = speed;
+    }
+
+    focusOnPlayer() {
+        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
+        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
     }
 
     speechRecognition() {
@@ -1780,16 +1868,30 @@ class BiliPolyfill {
                     this.hintInfo(`BiliPolyfill: 语音:"${transcript}"？`);
                     break;
             }
-            console.log(e.results);
-            console.log(`transcript:${transcript} confidence:${e.results[0][0].confidence}`);
+            console && console.log(e.results);
+            console && console.log(`transcript:${transcript} confidence:${e.results[0][0].confidence}`);
         };
+    }
+
+    substitudeFullscreenPlayer(option) {
+        if (!option) throw 'usage: substitudeFullscreenPlayer({cid, aid[, p][, ...otherOptions]})';
+        if (!option.cid) throw 'player init: cid missing';
+        if (!option.aid) throw 'player init: aid missing';
+        let _webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen;
+        let _mozExitFullscreen = this.playerWin.document.webkitExitFullscreen;
+        this.playerWin.document.webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen = () => { };
+        this.playerWin.player.destroy();
+        this.playerWin.player = new bilibiliPlayer(option);
+        if (option.p) this.playerWin.callAppointPart(option.p);
+        this.playerWin.document.webkitExitFullscreen = _webkitExitFullscreen;
+        this.playerWin.document.webkitExitFullscreen = _mozExitFullscreen;
     }
 
     async getPlayerVideo() {
         if (this.playerWin.document.getElementsByTagName('video').length) {
             return this.video = this.playerWin.document.getElementsByTagName('video')[0];
         }
-        else if (MutationObserver) {
+        else {
             return new Promise(resolve => {
                 let observer = new MutationObserver(() => {
                     if (this.playerWin.document.getElementsByTagName('video').length) {
@@ -1800,20 +1902,10 @@ class BiliPolyfill {
                 observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
             });
         }
-        else {
-            return new Promise(resolve => {
-                let t = setInterval(() => {
-                    if (this.playerWin.document.getElementsByTagName('video').length) {
-                        clearInterval(t);
-                        resolve(this.video = this.playerWin.document.getElementsByTagName('video')[0]);
-                    }
-                }, 600);
-            });
-        }
     }
 
     static parseHref(href = top.location.href) {
-        if (href.indexOf('bangumi') != -1) {
+        if (href.includes('bangumi')) {
             let anime, play;
             anime = (anime = /anime\/\d+/.exec(href)) ? anime[0].slice(6) : null;
             play = (play = /play#\d+/.exec(href)) ? play[0].slice(5) : null;
@@ -1863,11 +1955,36 @@ class BiliUserJS {
     }
 
     static async getPlayerWin() {
+        if (location.href.includes('/watchlater/#/list')) {
+            await new Promise(resolve => {
+                let h = () => {
+                    resolve();
+                    window.removeEventListener('hashchange', h);
+                };
+                window.addEventListener('hashchange', h)
+            });
+        }
+        if (location.href.includes('/watchlater/#/')) {
+            if (!document.getElementById('bofqi')) {
+                await new Promise(resolve => {
+                    let observer = new MutationObserver(() => {
+                        if (document.getElementById('bofqi')) {
+                            resolve();
+                            observer.disconnect();
+                        }
+                    });
+                    observer.observe(document, { childList: true, subtree: true });
+                });
+            }
+        }
         if (location.host == 'bangumi.bilibili.com') {
             if (document.querySelector('#bofqi > iframe')) {
                 return BiliUserJS.getIframeWin();
             }
-            else if (MutationObserver) {
+            else if (document.querySelector('#bofqi > object')) {
+                throw 'Need H5 Player';
+            }
+            else {
                 return new Promise(resolve => {
                     let observer = new MutationObserver(() => {
                         if (document.querySelector('#bofqi > iframe')) {
@@ -1879,30 +1996,31 @@ class BiliUserJS {
                             throw 'Need H5 Player';
                         }
                     });
-                    observer.observe(window.document.getElementById('bofqi'), { childList: true });
-                });
-            }
-            else {
-                return new Promise(resolve => {
-                    let t = setInterval(() => {
-                        if (document.querySelector('#bofqi > iframe')) {
-                            clearInterval(t);
-                            resolve(BiliUserJS.getIframeWin());
-                        }
-                        else if (document.querySelector('#bofqi > object')) {
-                            clearInterval(t);
-                            throw 'Need H5 Player';
-                        }
-                    }, 600);
+                    observer.observe(document.getElementById('bofqi'), { childList: true });
                 });
             }
         }
         else {
-            if (document.querySelector('#bofqi > object')) {
+            if (document.getElementById('bilibiliPlayer')) {
+                return window;
+            }
+            else if (document.querySelector('#bofqi > object')) {
                 throw 'Need H5 Player';
             }
             else {
-                return window;
+                return new Promise(resolve => {
+                    let observer = new MutationObserver(() => {
+                        if (document.getElementById('bilibiliPlayer')) {
+                            observer.disconnect();
+                            resolve(window);
+                        }
+                        else if (document.querySelector('#bofqi > object')) {
+                            observer.disconnect();
+                            throw 'Need H5 Player';
+                        }
+                    });
+                    observer.observe(document.getElementById('bofqi'), { childList: true });
+                })
             }
         }
     }
@@ -1911,7 +2029,7 @@ class BiliUserJS {
 class UI extends BiliUserJS {
     // Title Append
     static titleAppend(monkey) {
-        let h = document.querySelector('div.viewbox div.info');
+        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.video-top-info div.video-info-module');
         let tminfo = document.querySelector('div.tminfo');
         let div = document.createElement('div');
         let flvA = document.createElement('a');
@@ -1978,9 +2096,12 @@ class UI extends BiliUserJS {
             }
         }
         let tr = table.insertRow(-1);
-        tr.insertCell(0).innerHTML = `<span>复制链接地址无效</span>`;
+        tr.insertCell(0).innerHTML = `<a>全部复制到剪贴板</a>`;
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
+        tr.children[0].children[0].onclick = () => {
+            UI.copyToClipboard(flvs.join('\n'));
+        }
         tr.children[1].children[0].onclick = () => {
             UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
         }
@@ -2187,7 +2308,7 @@ class UI extends BiliUserJS {
                 </li>
             </ul>
             `;
-        li.onclick = () => playerWin.document.getElementsByClassName('bilibili-player-watching-number')[0].click();
+        li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
         let ul = li.children[1];
         ul.children[0].onclick = async () => { if (monkeyTitle.flvA.onmouseover) await monkeyTitle.flvA.onmouseover(); monkeyTitle.flvA.click(); };
         ul.children[1].onclick = async () => { if (monkeyTitle.mp4A.onmouseover) await monkeyTitle.mp4A.onmouseover(); monkeyTitle.mp4A.click(); };
@@ -2203,7 +2324,7 @@ class UI extends BiliUserJS {
             return monkey.queryInfo('flv');
         };
         ul.children[5].onclick = () => { top.location.reload(true); };
-        ul.children[6].onclick = () => { setTimeout(UI.reInit, 0); };
+        ul.children[6].onclick = () => { playerWin.document.getElementsByTagName('video')[0].remove(); };
         ul.children[7].onclick = () => { playerWin.player ? playerWin.player.destroy() : undefined; };
         return li;
     }
@@ -2314,7 +2435,7 @@ class UI extends BiliUserJS {
                 </li>
             </ul>
             `;
-        li.onclick = () => playerWin.document.getElementsByClassName('bilibili-player-watching-number')[0].click();
+        li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
         let ul = li.children[1];
         ul.children[0].onclick = () => { polyfill.video.dispatchEvent(new Event('ended')); };
         ul.children[1].onclick = () => { top.window.open(polyfill.getCoverImage(), '_blank'); };
@@ -2373,8 +2494,8 @@ class UI extends BiliUserJS {
 
         let buttons = [];
         for (let i = 0; i < 3; i++) buttons.push(document.createElement('button'));
-        buttons.map(btn => btn.style.padding = '0.5em');
-        buttons.map(btn => btn.style.margin = '0.2em');
+        buttons.forEach(btn => btn.style.padding = '0.5em');
+        buttons.forEach(btn => btn.style.margin = '0.2em');
         buttons[0].textContent = '保存并关闭';
         buttons[0].onclick = () => {
             div.style.display = 'none';;
@@ -2388,7 +2509,7 @@ class UI extends BiliUserJS {
             UI.saveOption({ setStorage: option.setStorage });
             top.location.reload();
         }
-        buttons.map(btn => div.appendChild(btn));
+        buttons.forEach(btn => div.appendChild(btn));
 
         return div;
     }
@@ -2426,16 +2547,22 @@ class UI extends BiliUserJS {
     static genPolyfillOptionTable(option = {}) {
         const description = [
             ['betabeta', '增强组件总开关 <---------更加懒得测试了，反正以后B站也会自己提供这些功能。也许吧。'], //betabeta
+            ['badgeWatchLater', '稍后再看添加数字角标'],
             ['dblclick', '双击全屏'],
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
-            ['autoNext', '2秒换P'],
+            ['autoNext', '右键菜单换P(B站原生按钮BUG:刷新后总会跳到2P)'],
             //['autoNextTimeout', '快速换P等待时间(毫秒)'],
+            //['autoNextRecommend', '右键菜单跳转相关视频'],
+            ['electric', '整合充电榜与换P倒计时'],
+            //['electricSkippable', '跳过充电榜'],
             ['lift', '自动防挡字幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
+            ['autoWideScreen', '自动宽屏'],
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
+            ['focus', '自动聚焦到播放器'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
             ['series', '(测)尝试自动找上下集'],
         ];
@@ -2612,21 +2739,27 @@ class UI extends BiliUserJS {
                 partial: true,
                 proxy: true,
                 blocker: true,
+                badgeWatchLater: true,
                 dblclick: true,
                 scroll: true,
                 recommend: true,
                 autoNext: true,
                 autoNextTimeout: 2000,
+                autoNextRecommend: false,
+                electric: true,
+                electricSkippable: false,
                 lift: true,
                 autoResume: true,
                 autoPlay: false,
+                autoWideScreen: false,
                 autoFullScreen: false,
                 oped: true,
+                focus: true,
                 speech: false,
                 series: true,
                 betabeta: false
             };
-            return Object.assign({}, defaultOption, rawOption, debugOption);
+            return Object.assign({}, defaultOption, rawOption, top.debugOption);
         }
     }
 
@@ -2635,15 +2768,14 @@ class UI extends BiliUserJS {
     }
 
     static outdatedEngineClearance() {
-        if (!Promise) {
+        if (!Promise || !MutationObserver) {
             alert('这个浏览器实在太老了，脚本决定罢工。');
-            throw 'BiliTwin: browser outdated: Promise unsupported';
+            throw 'BiliTwin: browser outdated: Promise or MutationObserver unsupported';
         }
     }
 
     static firefoxClearance() {
-        if (navigator.userAgent.indexOf('Firefox') != -1) {
-            if (!document.getElementsByTagName('div').length) throw 'BiliTwin: Fire In the Fox ERROR: Script received an empty document';
+        if (navigator.userAgent.includes('Firefox')) {
             if (GM_info && GM_info.scriptHandler != 'Tampermonkey') {
                 let div = UI.genDiv();
                 div.innerHTML = `
@@ -2663,9 +2795,8 @@ class UI extends BiliUserJS {
                 div.style.display = '';
                 unsafeWindow.document.body.appendChild(div);
             }
-            debugOption.proxy = false;
+            top.debugOption.proxy = false;
             if (!window.navigator.temporaryStorage && !window.navigator.mozTemporaryStorage) window.navigator.temporaryStorage = { queryUsageAndQuota: func => func(-1048576, 10484711424) };
-            if (top.unsafeWindow) Object.defineProperty(top.unsafeWindow, 'biliTwinInstanceCount', { value: new Number(1) });
         }
     }
 
@@ -2675,60 +2806,63 @@ class UI extends BiliUserJS {
                 configurable: true,
                 get: () => String(unsafeWindow.cid)
             });
-            Object.defineProperty(window, 'pageno', {
-                configurable: true,
-                get: () => String(unsafeWindow.pageno)
-            });
             Object.defineProperty(window, 'player', {
                 configurable: true,
-                get: () => { return { next: unsafeWindow.player.next, destroy: unsafeWindow.player.destroy, reloadAccess: unsafeWindow.player.reloadAccess } }
+                get: () => ({ destroy: unsafeWindow.player.destroy/*, reloadAccess: unsafeWindow.player.reloadAccess*/ })
             });
             Object.defineProperty(window, 'fetch', {
                 configurable: true,
                 get: () => unsafeWindow.fetch.bind(unsafeWindow),
                 set: _fetch => unsafeWindow.fetch = _fetch.bind(unsafeWindow)
             });
-            /*
-            Object.defineProperty(window, '$', {
-                configurable: true,
-                get: () => unsafeWindow['$']
-            });*/
         }
     }
 
-    static cleanUI() {
+    static watchLaterClearnce() {
+        if (location.pathname == '/watchlater/') {
+            let style = document.createElement('style');
+            style.type = 'text/css';
+            style.rel = 'stylesheet';
+            style.textContent = `
+                .bilitwin a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+
+                div.video-top-info > div.video-info-module > div.info.bilitwin {
+                    padding-top: 5px;
+                    float: left;
+                }
+                `;
+            document.head.appendChild(style);
+        }
+    }
+
+    static cleanUp() {
         Array.from(document.getElementsByClassName('bilitwin'))
-            .filter(e => e.textContent.indexOf('FLV分段') != -1)
+            .filter(e => e.textContent.includes('FLV分段'))
             .forEach(e => Array.from(e.getElementsByTagName('a')).forEach(
                 e => e.textContent == '取消' ? e.click() : undefined
             ));
         Array.from(document.getElementsByClassName('bilitwin')).forEach(e => e.remove());
     }
 
-    static reInit() {
-        document.querySelector('#bofqi > iframe') ? document.querySelector('#bofqi > iframe').remove() : undefined;
-        UI.cleanUI();
-        UI.init();
-    }
+    static async start() {
+        let cidRefresh = new AsyncContainer();
 
-    static async init() {
-        UI.outdatedEngineClearance();
-        UI.xpcWrapperClearance();
-        UI.firefoxClearance();
-
+        // 1. playerWin and option
         let playerWin;
         try {
             playerWin = await UI.getPlayerWin();
-            if (top.location.hostname == 'bangumi.bilibili.com') playerWin.addEventListener('unload', () => UI.reInit());
-            else playerWin.addEventListener('hashchange', () => UI.reInit());
         } catch (e) {
             if (e == 'Need H5 Player') UI.requestH5Player();
             throw e;
         }
         let option = UI.getOption(playerWin);
-        let optionDiv = UI.genOptionDiv(option);//sideAppend(option);
+        let optionDiv = UI.genOptionDiv(option);
         document.body.appendChild(optionDiv);
 
+        // 2. monkey and polyfill
         let monkeyTitle;
         let displayPolyfillDataDiv = polyfill => UI.displayPolyfillDataDiv(polyfill);
         let [monkey, polyfill] = await Promise.all([
@@ -2741,16 +2875,40 @@ class UI extends BiliUserJS {
             (async () => {
                 let polyfill = new BiliPolyfill(playerWin, option, t => UI.hintInfo(t, playerWin));
                 await polyfill.setFunctions();
-                //UI.sidePolyfillAppend(polyfill);
                 return polyfill;
             })()
         ]);
 
+        // 3. menu
         UI.menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv });
 
-        if (debugOption.debug && top.console) top.console.clear();
-        if (debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
-        return [monkey, polyfill];
+        // 4. refresh
+        let h = () => {
+            let video = playerWin.document.getElementsByTagName('video')[0];
+            if (video) video.addEventListener('emptied', h);
+            else setTimeout(() => cidRefresh.resolve(), 0);
+        }
+        playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
+        playerWin.addEventListener('unload', () => setTimeout(() => cidRefresh.resolve(), 0));
+
+        // 5. debug
+        if (top.debugOption && top.debugOption.debug && top.console) top.console.clear();
+        if (top.debugOption && top.debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
+
+        await cidRefresh;
+        UI.cleanUp();
+    }
+
+    static async init() {
+        if (!document.body) return;
+        UI.outdatedEngineClearance();
+        UI.firefoxClearance();
+        UI.xpcWrapperClearance();
+        UI.watchLaterClearnce();
+
+        while (1) {
+            await UI.start();
+        }
     }
 }
 
