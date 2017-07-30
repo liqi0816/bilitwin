@@ -3,10 +3,9 @@
 // @namespace   http://qli5.tk/
 // @homepageURL https://github.com/liqi0816/bilitwin/
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
-// @include     http://www.bilibili.com/video/av*
-// @include     https://www.bilibili.com/video/av*
-// @include     http://bangumi.bilibili.com/anime/*/play*
-// @include     https://bangumi.bilibili.com/anime/*/play*
+// @match       *://www.bilibili.com/video/av*
+// @match       *://bangumi.bilibili.com/anime/*/play
+// @match       *://www.bilibili.com/watchlater/
 // @version     1.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
@@ -1505,6 +1504,7 @@ class BiliPolyfill {
         if (!this.option.betabeta) {
             this.autoNextDestination = '到设置开启';
             await this.getPlayerVideo();
+            this.userdata = { oped: {} };
             return;
         }
         if (videoRefresh) {
@@ -1541,7 +1541,7 @@ class BiliPolyfill {
     }
 
     async inferNextInSeries() {
-        let title = top.document.getElementsByClassName('v-title')[0].textContent.replace(/\(\d+\)$/, '').trim();
+        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -1577,7 +1577,7 @@ class BiliPolyfill {
     }
 
     badgeWatchLater() {
-        let li = top.document.getElementById('i_menu_watchLater_btn');
+        let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn');
         li.children[1].style.visibility = 'hidden';
         li.dispatchEvent(new Event('mouseover'));
         let observer = new MutationObserver(() => {
@@ -1629,7 +1629,8 @@ class BiliPolyfill {
     }
 
     showRecommendTab() {
-        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-filter-btn-recommend').click();
+        let h = this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-filter-btn-recommend');
+        if (h) h.click();
     }
 
     getCoverImage() {
@@ -1637,6 +1638,8 @@ class BiliPolyfill {
             return top.document.querySelector('.cover_image').src;
         else if (top.document.querySelector('div.v1-bangumi-info-img > a > img'))
             return top.document.querySelector('div.v1-bangumi-info-img > a > img').src.slice(0, top.document.querySelector('div.v1-bangumi-info-img > a > img').src.indexOf('.jpg') + 4);
+        else if (top.document.querySelector('[data-state-play="true"]  img'))
+            return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4);
         else
             return null;
     }
@@ -1648,15 +1651,15 @@ class BiliPolyfill {
         if (this.autoNextDestination && this.autoNextDestination != '没有了') return;
         let destination, nextLocation;
         if (!nextLocation && top.location.host == 'bangumi.bilibili.com') {
-            destination = '下一P'; //番剧:
-            nextLocation = (nextLocation = top.document.querySelector('ul.slider-list .cur + li')) ? nextLocation.click.bind(nextLocation) : undefined;
+            destination = '请用左下角'; //番剧:
+            nextLocation = () => this.playerWin.getElementsByClassName('bilibili-player-video-btn-next')[0].click();
         }
         if (!nextLocation) {
             destination = '下一P'; //视频:
             nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a[data-index]')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
-            destination = '稍后观看'; //列表:
+            destination = '请用左下角'; //列表:
             nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ? nextLocation.click.bind(nextLocation) : undefined;
         }
         if (!nextLocation) {
@@ -1761,7 +1764,7 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/))[0];
+        return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/) || top.location.hash.match(/av\d+/))[0];
     }
 
     markOPPosition() {
@@ -1952,9 +1955,34 @@ class BiliUserJS {
     }
 
     static async getPlayerWin() {
+        if (location.href.includes('/watchlater/#/list')) {
+            await new Promise(resolve => {
+                let h = () => {
+                    resolve();
+                    window.removeEventListener('hashchange', h);
+                };
+                window.addEventListener('hashchange', h)
+            });
+        }
+        if (location.href.includes('/watchlater/#/')) {
+            if (!document.getElementById('bofqi')) {
+                await new Promise(resolve => {
+                    let observer = new MutationObserver(() => {
+                        if (document.getElementById('bofqi')) {
+                            resolve();
+                            observer.disconnect();
+                        }
+                    });
+                    observer.observe(document, { childList: true, subtree: true });
+                });
+            }
+        }
         if (location.host == 'bangumi.bilibili.com') {
             if (document.querySelector('#bofqi > iframe')) {
                 return BiliUserJS.getIframeWin();
+            }
+            else if (document.querySelector('#bofqi > object')) {
+                throw 'Need H5 Player';
             }
             else {
                 return new Promise(resolve => {
@@ -1968,16 +1996,31 @@ class BiliUserJS {
                             throw 'Need H5 Player';
                         }
                     });
-                    observer.observe(window.document.getElementById('bofqi'), { childList: true });
+                    observer.observe(document.getElementById('bofqi'), { childList: true });
                 });
             }
         }
         else {
-            if (document.querySelector('#bofqi > object')) {
+            if (document.getElementById('bilibiliPlayer')) {
+                return window;
+            }
+            else if (document.querySelector('#bofqi > object')) {
                 throw 'Need H5 Player';
             }
             else {
-                return window;
+                return new Promise(resolve => {
+                    let observer = new MutationObserver(() => {
+                        if (document.getElementById('bilibiliPlayer')) {
+                            observer.disconnect();
+                            resolve(window);
+                        }
+                        else if (document.querySelector('#bofqi > object')) {
+                            observer.disconnect();
+                            throw 'Need H5 Player';
+                        }
+                    });
+                    observer.observe(document.getElementById('bofqi'), { childList: true });
+                })
             }
         }
     }
@@ -1986,7 +2029,7 @@ class BiliUserJS {
 class UI extends BiliUserJS {
     // Title Append
     static titleAppend(monkey) {
-        let h = document.querySelector('div.viewbox div.info');
+        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.video-top-info div.video-info-module');
         let tminfo = document.querySelector('div.tminfo');
         let div = document.createElement('div');
         let flvA = document.createElement('a');
@@ -2775,6 +2818,26 @@ class UI extends BiliUserJS {
         }
     }
 
+    static watchLaterClearnce() {
+        if (location.pathname == '/watchlater/') {
+            let style = document.createElement('style');
+            style.type = 'text/css';
+            style.rel = 'stylesheet';
+            style.textContent = `
+                .bilitwin a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+
+                div.video-top-info > div.video-info-module > div.info.bilitwin {
+                    padding-top: 5px;
+                    float: left;
+                }
+                `;
+            document.head.appendChild(style);
+        }
+    }
+
     static cleanUp() {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
@@ -2839,8 +2902,9 @@ class UI extends BiliUserJS {
     static async init() {
         if (!document.body) return;
         UI.outdatedEngineClearance();
-        UI.xpcWrapperClearance();
         UI.firefoxClearance();
+        UI.xpcWrapperClearance();
+        UI.watchLaterClearnce();
 
         while (1) {
             await UI.start();
