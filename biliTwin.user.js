@@ -1467,6 +1467,7 @@ class BiliPolyfill {
             autoWideScreen: false,
             autoFullScreen: false,
             oped: true,
+            focus: true,
             speech: false,
             series: true,
         }, hintInfo = () => { }) {
@@ -1530,6 +1531,7 @@ class BiliPolyfill {
         if (this.option.autoWideScreen) this.autoWideScreen();
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
+        if (this.option.focus) this.focusOnPlayer();
         this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
@@ -1777,6 +1779,11 @@ class BiliPolyfill {
     setVideoSpeed(speed) {
         if (speed < 0 || speed > 10) return;
         this.video.playbackRate = speed;
+    }
+
+    focusOnPlayer() {
+        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
+        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
     }
 
     speechRecognition() {
@@ -2487,6 +2494,7 @@ class UI extends BiliUserJS {
             ['autoWideScreen', '自动宽屏'],
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
+            ['focus', '自动聚焦到播放器'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
             ['series', '(测)尝试自动找上下集'],
         ];
@@ -2678,6 +2686,7 @@ class UI extends BiliUserJS {
                 autoWideScreen: false,
                 autoFullScreen: false,
                 oped: true,
+                focus: true,
                 speech: false,
                 series: true,
                 betabeta: false
