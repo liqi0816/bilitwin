@@ -1137,7 +1137,7 @@ class BiliMonkey {
                 });
                 // I would assume most users are using Windows
                 let blob = new Blob(['\ufeff' + ass], { type: 'application/octet-stream' });
-                resolve(this.ass = window.URL.createObjectURL(blob));
+                resolve(this.ass = top.URL.createObjectURL(blob));
             });
         });
         return this.ass;
@@ -1521,6 +1521,7 @@ class BiliPolyfill {
         this.retriveUserdata();
         if (this.option.badgeWatchLater) this.badgeWatchLater();
         if (this.option.dblclick) this.dblclickFullScreen();
+        if (this.option.limitedKeydown) this.limitedKeydownFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
         if (this.option.autoNext) this.autoNext();
@@ -1606,6 +1607,21 @@ class BiliPolyfill {
         this.video.addEventListener('dblclick', () =>
             this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click()
         );
+    }
+
+    limitedKeydownFullScreen() {
+        let h = e => {
+            if (e.key == 'Space') return;
+            if (e.key == 'Enter') {
+                if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
+                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                }
+            }
+            top.document.removeEventListener('keydown', h);
+            top.document.removeEventListener('click', h);
+        };
+        top.document.addEventListener('keydown', h);
+        top.document.addEventListener('click', h);
     }
 
     scrollToPlayer() {
@@ -1706,13 +1722,21 @@ class BiliPolyfill {
             if (!min || !sec) return;
             let time = parseInt(min) * 60 + parseInt(sec);
             if (time < this.video.duration - 10) {
+                let h = this.video.muted;
+                let i = () => {
+                    if (!this.video.autoplay && !this.video.paused) {
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    }
+                    this.video.muted = h;
+                    this.video.removeEventListener('play', i);
+                }
+                this.video.muted = true;
+                this.video.addEventListener('play', i);
                 this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
-                setTimeout(() => {
-                    if (!this.video.autoplay && !this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                }, 0);
             }
             else {
                 this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
             }
         };
         this.video.addEventListener('canplay', h);
@@ -1721,8 +1745,9 @@ class BiliPolyfill {
 
     autoPlay() {
         this.video.autoplay = true;
-        if (this.video.paused)
-            setTimeout(() => this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click(), 0);
+        setTimeout(() => {
+            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click()
+        }, 0);
     }
 
     autoWideScreen() {
@@ -2812,7 +2837,7 @@ class UI extends BiliUserJS {
     }
 
     static async init() {
-        if (!top.document.body) return;
+        if (!document.body) return;
         UI.outdatedEngineClearance();
         UI.xpcWrapperClearance();
         UI.firefoxClearance();
