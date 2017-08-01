@@ -10,8 +10,7 @@
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       GM_getValue
-// @grant       GM_setValue
+// @grant       none
 // ==/UserScript==
 
 top.debugOption = {
@@ -868,7 +867,7 @@ class BiliMonkey {
         if (this.defaultFormatPromise) return this.defaultFormatPromise;
         if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) return this.defaultFormatPromise = Promise.resolve();
 
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const defquality = this.playerWin.localStorage && this.playerWin.localStorage.bilibili_player_settings ? JSON.parse(this.playerWin.localStorage.bilibili_player_settings).setting_config.defquality : undefined;
 
@@ -914,7 +913,7 @@ class BiliMonkey {
             }
         }
 
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
 
         let pendingFormat = this.lockFormat(format);
@@ -939,7 +938,7 @@ class BiliMonkey {
     }
 
     async getCurrentFormat(format) {
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const buttonNumber = format == 'flv' ? 1 : 2;
         const siblingFormat = format == 'flv' ? 'hdmp4' : 'flv';
@@ -995,7 +994,7 @@ class BiliMonkey {
     }
 
     async getNonCurrentFormat(format) {
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const buttonNumber = format == 'flv' ? 1 : 2;
 
@@ -1017,7 +1016,7 @@ class BiliMonkey {
     }
 
     async getCurrentFormatSixteen(format) {
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const buttonNumber = format == 'flv' ? 1 : 4;
         const siblingFormat = format == 'flv' ? 'mp4' : 'flv';
@@ -1073,7 +1072,7 @@ class BiliMonkey {
     }
 
     async getNonCurrentFormatSixteen(format) {
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const buttonNumber = format == 'flv' ? 1 : 4;
 
@@ -1099,7 +1098,7 @@ class BiliMonkey {
         this.ass = new Promise(async resolve => {
             if (!this.cid) this.cid = new Promise(resolve => {
                 if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
-                const jq = this.playerWin == window ? $ : this.playerWin.$;
+                const jq = this.playerWin.jQuery;
                 const _ajax = jq.ajax;
                 const buttonNumber = clickableFormat == 'flv' ? 1 : 2;
 
@@ -1225,7 +1224,7 @@ class BiliMonkey {
         await this.getPlayer();
 
         const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
-        const jq = this.playerWin == window ? $ : this.playerWin.$;
+        const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
 
         return new Promise(async resolve => {
@@ -2324,7 +2323,7 @@ class UI extends BiliUserJS {
             return monkey.queryInfo('flv');
         };
         ul.children[5].onclick = () => { top.location.reload(true); };
-        ul.children[6].onclick = () => { playerWin.document.getElementsByTagName('video')[0].remove(); };
+        ul.children[6].onclick = () => { playerWin.dispatchEvent(new Event('unload')); };
         ul.children[7].onclick = () => { playerWin.player ? playerWin.player.destroy() : undefined; };
         return li;
     }
@@ -2713,24 +2712,13 @@ class UI extends BiliUserJS {
     static getOption(playerWin) {
         let rawOption = null;
         try {
-            if (window.GM_getValue) {
-                rawOption = JSON.parse(GM_getValue('BiliTwin'));
-            }
-            else {
-                rawOption = JSON.parse(playerWin.localStorage.getItem('BiliTwin'));
-            }
+            rawOption = JSON.parse(playerWin.localStorage.getItem('BiliTwin'));
         }
         catch (e) { }
         finally {
             if (!rawOption) rawOption = {};
-            if (window.GM_setValue) {
-                rawOption.setStorage = (n, i) => GM_setValue(n, i);
-                rawOption.getStorage = n => GM_getValue(n);
-            }
-            else {
-                rawOption.setStorage = (n, i) => playerWin.localStorage.setItem(n, i);
-                rawOption.getStorage = n => playerWin.localStorage.getItem(n);
-            }
+            rawOption.setStorage = (n, i) => playerWin.localStorage.setItem(n, i);
+            rawOption.getStorage = n => playerWin.localStorage.getItem(n);
             const defaultOption = {
                 autoDefault: true,
                 autoFLV: false,
@@ -2776,25 +2764,6 @@ class UI extends BiliUserJS {
 
     static firefoxClearance() {
         if (navigator.userAgent.includes('Firefox')) {
-            if (GM_info && GM_info.scriptHandler != 'Tampermonkey') {
-                let div = UI.genDiv();
-                div.innerHTML = `
-                <p>您在使用GreasyMonkey吗？</p>
-                <p>不知道为什么——GreasyMonkey不支持BiliTwin脚本。</p>
-                <p>您可以
-                    <ol>
-                        <li>1. 用<a href="https://addons.mozilla.org/firefox/addon/tampermonkey">TamperMonkey</a>安装脚本。别担心，它和GreasyMonkey可以共存。</li>
-                        <li>2. 把这个书签小程序<a href="javascript:(function(){f=document.createElement('script');f.setAttribute('src','https://liqi0816.github.io/bilitwin/biliTwin.user.js');document.body.appendChild(f)})()">Twin</a>拖动到书签栏。连安装都不需要，点一下就能运行脚本。</li>
-                        <li>3. 到<a href="https://greasyfork.org/zh-CN/scripts/27819">GreasyFork</a>上讨论这个问题。</li>
-                        <li>4. <a href="https://github.com/liqi0816/bilitwin/">Fork You!</a></li>
-                        <li>5. <a onclick="this.parentElement.parentElement.parentElement.remove()">先试试看。</a></li>
-                    <ol>
-                </p>
-                `;
-                div.style.lineHeight = '2em';
-                div.style.display = '';
-                unsafeWindow.document.body.appendChild(div);
-            }
             top.debugOption.proxy = false;
             if (!window.navigator.temporaryStorage && !window.navigator.mozTemporaryStorage) window.navigator.temporaryStorage = { queryUsageAndQuota: func => func(-1048576, 10484711424) };
         }
@@ -2808,7 +2777,11 @@ class UI extends BiliUserJS {
             });
             Object.defineProperty(window, 'player', {
                 configurable: true,
-                get: () => ({ destroy: unsafeWindow.player.destroy/*, reloadAccess: unsafeWindow.player.reloadAccess*/ })
+                get: () => ({ destroy: unsafeWindow.player.destroy, reloadAccess: unsafeWindow.player.reloadAccess })
+            });
+            Object.defineProperty(window, 'jQuery', {
+                configurable: true,
+                get: () => unsafeWindow.jQuery,
             });
             Object.defineProperty(window, 'fetch', {
                 configurable: true,
@@ -2903,7 +2876,6 @@ class UI extends BiliUserJS {
         if (!document.body) return;
         UI.outdatedEngineClearance();
         UI.firefoxClearance();
-        UI.xpcWrapperClearance();
         UI.watchLaterClearnce();
 
         while (1) {
