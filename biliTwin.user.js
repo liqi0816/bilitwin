@@ -1466,6 +1466,7 @@ class BiliPolyfill {
             autoFullScreen: false,
             oped: true,
             focus: true,
+            limitedKeydown: true,
             speech: false,
             series: true,
         }, hintInfo = () => { }) {
@@ -1520,7 +1521,6 @@ class BiliPolyfill {
         this.retriveUserdata();
         if (this.option.badgeWatchLater) this.badgeWatchLater();
         if (this.option.dblclick) this.dblclickFullScreen();
-        if (this.option.limitedKeydown) this.limitedKeydownFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
         if (this.option.autoNext) this.autoNext();
@@ -1532,6 +1532,7 @@ class BiliPolyfill {
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
         if (this.option.focus) this.focusOnPlayer();
+        if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
         this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
@@ -1606,21 +1607,6 @@ class BiliPolyfill {
         this.video.addEventListener('dblclick', () =>
             this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click()
         );
-    }
-
-    limitedKeydownFullScreen() {
-        let h = e => {
-            if (e.key == 'Space') return;
-            if (e.key == 'Enter') {
-                if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
-                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
-                }
-            }
-            top.document.removeEventListener('keydown', h);
-            top.document.removeEventListener('click', h);
-        };
-        top.document.addEventListener('keydown', h);
-        top.document.addEventListener('click', h);
     }
 
     scrollToPlayer() {
@@ -1811,6 +1797,33 @@ class BiliPolyfill {
     focusOnPlayer() {
         this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
         this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
+    }
+
+    limitedKeydownFullScreenPlay() {
+        let h = e => {
+            if (!e.isTrusted) return;
+            if (e.key == 'Enter') {
+                if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
+                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                }
+                if (this.video.paused) {
+                    if (this.video.readyState) {
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    }
+                    else {
+                        let i = () => {
+                            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                            this.video.removeEventListener('canplay', i);
+                        }
+                        this.video.addEventListener('canplay', i);
+                    }
+                }
+            }
+            top.document.removeEventListener('keydown', h);
+            top.document.removeEventListener('click', h);
+        };
+        top.document.addEventListener('keydown', h);
+        top.document.addEventListener('click', h);
     }
 
     speechRecognition() {
@@ -2562,6 +2575,7 @@ class UI extends BiliUserJS {
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
             ['focus', '自动聚焦到播放器'],
+            ['limitedKeydown', '首次回车键可全屏自动播放'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
             ['series', '(测)尝试自动找上下集'],
         ];
@@ -2743,6 +2757,7 @@ class UI extends BiliUserJS {
                 autoFullScreen: false,
                 oped: true,
                 focus: true,
+                limitedKeydown: true,
                 speech: false,
                 series: true,
                 betabeta: false
