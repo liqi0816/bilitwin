@@ -1889,14 +1889,13 @@ class BiliPolyfill {
         if (!option) throw 'usage: substitudeFullscreenPlayer({cid, aid[, p][, ...otherOptions]})';
         if (!option.cid) throw 'player init: cid missing';
         if (!option.aid) throw 'player init: aid missing';
-        let _webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen;
-        let _mozExitFullscreen = this.playerWin.document.webkitExitFullscreen;
-        this.playerWin.document.webkitExitFullscreen = this.playerWin.document.webkitExitFullscreen = () => { };
+        let h = this.playerWin.document;
+        let i = [h.webkitExitFullscreen, h.mozExitFullScreen, h.msExitFullscreen, h.exitFullscreen];
+        h.webkitExitFullscreen = h.mozExitFullScreen = h.msExitFullscreen = h.exitFullscreen = () => { };
         this.playerWin.player.destroy();
         this.playerWin.player = new bilibiliPlayer(option);
         if (option.p) this.playerWin.callAppointPart(option.p);
-        this.playerWin.document.webkitExitFullscreen = _webkitExitFullscreen;
-        this.playerWin.document.webkitExitFullscreen = _mozExitFullscreen;
+        [h.webkitExitFullscreen, h.mozExitFullScreen, h.msExitFullscreen, h.exitFullscreen] = i;
     }
 
     async getPlayerVideo() {
@@ -1914,6 +1913,42 @@ class BiliPolyfill {
                 observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
             });
         }
+    }
+
+    static openMinimizedPlayer(option = { cid: top.cid, aid: '' }) {
+        if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
+        if (!option.cid) throw 'player init: cid missing';
+        if (!option.aid) option.aid = '';
+        let h = top.open(`//www.bilibili.com/blackboard/html5player.html?cid=${option.cid}&aid=${option.aid}&crossDomain=${top.document.domain != 'www.bilibili.com' ? 'true' : ''}`, undefined, ' ');
+
+        (async () => {
+            await new Promise(resolve => {
+                h.addEventListener('load', resolve);
+                setTimeout(() => {
+                    h.removeEventListener('load', resolve);
+                    resolve();
+                }, 6000);
+            });
+            let div = h.document.getElementById('bilibiliPlayer');
+            if (!div) { console.warn('openMinimizedPlayer: fullscreen timeout'); return; }
+            await new Promise(resolve => {
+                if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve();
+                else {
+                    let observer = new MutationObserver(() => {
+                        if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) {
+                            observer.disconnect();
+                            resolve();
+                        }
+                    });
+                    observer.observe(h.document.getElementById('bilibiliPlayer'), { childList: true });
+                }
+            });
+            let i = [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen];
+            div.webkitRequestFullscreen = div.mozRequestFullScreen = div.msRequestFullscreen = div.requestFullscreen = () => { };
+            if (h.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off'))
+                h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+            [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen] = i;
+        })();
     }
 
     static parseHref(href = top.location.href) {
@@ -2432,6 +2467,11 @@ class UI extends BiliUserJS {
                 </li>
                 <li class="context-menu-function">
                     <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> 小窗播放
+                    </a>
+                </li>
+                <li class="context-menu-function">
+                    <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
                     </a>
                 </li>
@@ -2465,9 +2505,10 @@ class UI extends BiliUserJS {
         ul.children[4].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
         ul.children[4].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
 
-        ul.children[5].onclick = () => { optionDiv.style.display = 'block'; };
-        ul.children[6].onclick = () => { polyfill.saveUserdata() };
-        ul.children[7].onclick = () => {
+        ul.children[5].onclick = () => { BiliPolyfill.openMinimizedPlayer(); };
+        ul.children[6].onclick = () => { optionDiv.style.display = 'block'; };
+        ul.children[7].onclick = () => { polyfill.saveUserdata() };
+        ul.children[8].onclick = () => {
             BiliPolyfill.clearAllUserdata(playerWin);
             polyfill.retriveUserdata();
         };
