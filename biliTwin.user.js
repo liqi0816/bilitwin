@@ -4,7 +4,7 @@
 // @homepageURL https://github.com/liqi0816/bilitwin/
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
-// @match       *://bangumi.bilibili.com/anime/*/play
+// @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
 // @version     1.4
 // @author      qli5
@@ -1253,7 +1253,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -1262,7 +1262,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -1282,14 +1282,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -1297,7 +1297,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -1358,7 +1358,7 @@ class BiliMonkey {
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
         let promises = [];
         for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+.flv/)[0];
+            let name = flv.match(/\d+-\d+(?:-\d+)?\.flv/)[0];
             promises.push(this.cache.deleteData(name));
             promises.push(this.cache.deleteData('PC_' + name));
         }
@@ -2099,16 +2099,16 @@ class UI extends BiliUserJS {
             mp4A.textContent = '正在MP4';
             mp4A.onmouseover = null;
             mp4A.href = await monkey.queryInfo('mp4');
-            //mp4A.target = '_blank'; // You know pop up blocker? :)
             mp4A.textContent = '原生MP4';
             mp4A.download = '';
+            mp4A.referrerPolicy = 'origin';
         };
         assA.onmouseover = async () => {
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
             assA.href = await monkey.queryInfo('ass');
             assA.textContent = '弹幕ASS';
-            if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
+            if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
             else assA.download = monkey.cid + '.ass';
         };
 
@@ -2143,7 +2143,7 @@ class UI extends BiliUserJS {
             }
         }
         let tr = table.insertRow(-1);
-        tr.insertCell(0).innerHTML = `<a>全部复制到剪贴板</a>`;
+        tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
         tr.children[0].children[0].onclick = () => {
@@ -2151,6 +2151,10 @@ class UI extends BiliUserJS {
         }
         tr.children[1].children[0].onclick = () => {
             UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
+        }
+        if (flvs[0].includes('-80.flv')) {
+            tr.children[0].innerHTML = '<a download="biliTwin.ef2">IDM导出</a>';
+            tr.children[0].children[0].href = URL.createObjectURL(new Blob([UI.exportIDM(flvs, top.location.origin)]));
         }
         table.insertRow(-1).innerHTML = '<td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td>';
         table.insertRow(-1).innerHTML = cache ? '<td colspan="3">下载的缓存分段会暂时停留在电脑里，过一段时间会自动消失。建议只开一个标签页。</td>' : '<td colspan="3">建议只开一个标签页。关掉标签页后，缓存就会被清理。别忘了另存为！</td>';
@@ -2161,13 +2165,13 @@ class UI extends BiliUserJS {
         div.ondrop = async e => {
             UI.allowDrag(e);
             let files = Array.from(e.dataTransfer.files);
-            if (files.every(e => e.name.search(/\d+-\d+.flv/) != -1)) {
-                files.sort((a, b) => a.name.match(/\d+-(\d+).flv/)[1] - b.name.match(/\d+-(\d+).flv/)[1]);
+            if (files.every(e => e.name.search(/\d+-\d+(?:-\d+)?\.flv/) != -1)) {
+                files.sort((a, b) => a.name.match(/\d+-(\d+)(?:-\d+)?\.flv/)[1] - b.name.match(/\d+-(\d+)(?:-\d+)?\.flv/)[1]);
             }
             for (let file of files) {
                 table.insertRow(-1).innerHTML = `<td colspan="3">${file.name}</td>`;
             }
-            let outputName = files[0].name.match(/\d+-\d.flv/);
+            let outputName = files[0].name.match(/\d+-\d+(?:-\d+)?\.flv/);
             if (outputName) outputName = outputName[0].replace(/-\d/, "");
             else outputName = 'merge_' + files[0].name;
             let url = await UI.mergeFLVFiles(files);
@@ -2257,7 +2261,7 @@ class UI extends BiliUserJS {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
         a.href = url;
         return url;
     }
@@ -2739,6 +2743,10 @@ class UI extends BiliUserJS {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
+    }
+
+    static exportIDM(url, referrer) {
+        return url.map(e => `<\r\n${e}\r\nreferer: ${referrer}\r\n>\r\n`).join('');
     }
 
     static allowDrag(e) {
