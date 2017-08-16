@@ -1454,9 +1454,6 @@ class BiliPolyfill {
             dblclick: true,
             scroll: true,
             recommend: true,
-            autoNext: true,
-            autoNextTimeout: 2000,
-            autoNextRecommend: false,
             electric: true,
             electricSkippable: false,
             lift: true,
@@ -1477,8 +1474,6 @@ class BiliPolyfill {
         this.setStorage = option.setStorage;
         this.getStorage = option.getStorage;
         this.hintInfo = hintInfo;
-        this.autoNextDestination = null;
-        this.autoNextTimeout = option.autoNextTimeout;
         this.series = [];
         this.userdata = null;
     }
@@ -1502,7 +1497,6 @@ class BiliPolyfill {
 
     async setFunctions({ videoRefresh = false } = {}) {
         if (!this.option.betabeta) {
-            this.autoNextDestination = '到设置开启';
             await this.getPlayerVideo();
             this.userdata = { oped: {} };
             return;
@@ -1511,7 +1505,6 @@ class BiliPolyfill {
             this.video = this.playerWin.document.getElementsByTagName('video')[0];
             if (!this.video) return;
             if (this.option.dblclick) this.dblclickFullScreen();
-            if (this.option.autoNext) this.autoNext();
             if (this.option.electric) this.reallocateElectricPanel();
             if (this.option.oped) this.skipOPED();
             this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
@@ -1523,7 +1516,6 @@ class BiliPolyfill {
         if (this.option.dblclick) this.dblclickFullScreen();
         if (this.option.scroll) this.scrollToPlayer();
         if (this.option.recommend) this.showRecommendTab();
-        if (this.option.autoNext) this.autoNext();
         if (this.option.electric) this.reallocateElectricPanel();
         if (this.option.lift) this.liftBottomDanmuku();
         if (this.option.autoResume) this.autoResume();
@@ -1627,43 +1619,6 @@ class BiliPolyfill {
             return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4);
         else
             return null;
-    }
-
-    autoNext() {
-        // 1 Next Part
-        // // 2 Watch Later: how to cooperate with bilibili's vanilla watchlater? it is more a playlist
-        // 3 Recommendations
-        if (this.autoNextDestination && this.autoNextDestination != '没有了') return;
-        let destination, nextLocation;
-        if (!nextLocation && top.location.host == 'bangumi.bilibili.com') {
-            destination = '请用左下角'; //番剧:
-            nextLocation = () => this.playerWin.getElementsByClassName('bilibili-player-video-btn-next')[0].click();
-        }
-        if (!nextLocation) {
-            destination = '下一P'; //视频:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a[data-index]')) ? nextLocation.click.bind(nextLocation) : undefined;
-        }
-        if (!nextLocation) {
-            destination = '请用左下角'; //列表:
-            nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ? nextLocation.click.bind(nextLocation) : undefined;
-        }
-        if (!nextLocation) {
-            destination = 'B站推荐'; //列表:
-            nextLocation = this.option.autoNextRecommend ? (nextLocation = this.playerWin.document.querySelector('div.bilibili-player-recommend a')) ?
-                nextLocation.href : undefined : undefined;
-        }
-        if (!nextLocation) return this.autoNextDestination = '没有了';
-
-        let h = () => {
-            this.hintInfo(`BiliPolyfill: ${BiliPolyfill.secondToReadable(this.autoNextTimeout / 1000)}后播放下一个(任意点击取消)`);
-            let t = setTimeout(() => nextLocation instanceof Function ? nextLocation() : top.window.location.assign(nextLocation), this.autoNextTimeout);
-            let ht = () => { clearTimeout(t); this.playerWin.removeEventListener('click', ht); }
-            setTimeout(() => this.playerWin.addEventListener('click', ht), 0);
-            this.video.removeEventListener('ended', h);
-        };
-        // No longer need to alter default behaviour
-        //this.video.addEventListener('ended', h);
-        return this.autoNextDestination = destination;
     }
 
     reallocateElectricPanel() {
@@ -2391,11 +2346,6 @@ class UI extends BiliUserJS {
             <ul>
                 <li class="context-menu-function">
                     <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 切片:<span></span>
-                    </a>
-                </li>
-                <li class="context-menu-function">
-                    <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 获取封面
                     </a>
                 </li>
@@ -2492,45 +2442,43 @@ class UI extends BiliUserJS {
             </ul>
             `;
         li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
+        if (!polyfill.option.betabeta) li.children[0].childNodes[0].textContent += '(到设置开启)';
         let ul = li.children[1];
-        ul.children[0].onclick = () => { polyfill.video.dispatchEvent(new Event('ended')); };
-        ul.children[1].onclick = () => { top.window.open(polyfill.getCoverImage(), '_blank'); };
+        ul.children[0].onclick = () => { top.window.open(polyfill.getCoverImage(), '_blank'); };
 
-        ul.children[2].children[1].children[0].onclick = () => { polyfill.setVideoSpeed(0.1); };
-        ul.children[2].children[1].children[1].onclick = () => { polyfill.setVideoSpeed(3); };
-        ul.children[2].children[1].children[2].onclick = () => { polyfill.setVideoSpeed(ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value); };
-        ul.children[2].children[1].children[2].getElementsByTagName('input')[0].onclick = e => e.stopPropagation();
+        ul.children[1].children[1].children[0].onclick = () => { polyfill.setVideoSpeed(0.1); };
+        ul.children[1].children[1].children[1].onclick = () => { polyfill.setVideoSpeed(3); };
+        ul.children[1].children[1].children[2].onclick = () => { polyfill.setVideoSpeed(ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value); };
+        ul.children[1].children[1].children[2].getElementsByTagName('input')[0].onclick = e => e.stopPropagation();
 
-        ul.children[3].children[1].children[0].onclick = () => { polyfill.markOPPosition(); };
-        ul.children[3].children[1].children[1].onclick = () => { polyfill.markEDPostion(3); };
-        ul.children[3].children[1].children[2].onclick = () => { polyfill.clearOPEDPosition(); };
-        ul.children[3].children[1].children[3].onclick = () => { displayPolyfillDataDiv(polyfill); };
+        ul.children[2].children[1].children[0].onclick = () => { polyfill.markOPPosition(); };
+        ul.children[2].children[1].children[1].onclick = () => { polyfill.markEDPostion(3); };
+        ul.children[2].children[1].children[2].onclick = () => { polyfill.clearOPEDPosition(); };
+        ul.children[2].children[1].children[3].onclick = () => { displayPolyfillDataDiv(polyfill); };
 
-        ul.children[4].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
-        ul.children[4].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
+        ul.children[3].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
+        ul.children[3].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
 
-        ul.children[5].onclick = () => { BiliPolyfill.openMinimizedPlayer(); };
-        ul.children[6].onclick = () => { optionDiv.style.display = 'block'; };
-        ul.children[7].onclick = () => { polyfill.saveUserdata() };
-        ul.children[8].onclick = () => {
+        ul.children[4].onclick = () => { BiliPolyfill.openMinimizedPlayer(); };
+        ul.children[5].onclick = () => { optionDiv.style.display = 'block'; };
+        ul.children[6].onclick = () => { polyfill.saveUserdata() };
+        ul.children[7].onclick = () => {
             BiliPolyfill.clearAllUserdata(playerWin);
             polyfill.retriveUserdata();
         };
 
         li.onmouseenter = () => {
             let ul = li.children[1];
-            ul.children[0].children[0].getElementsByTagName('span')[1].textContent = polyfill.autoNextDestination;
-
-            ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value = polyfill.video.playbackRate;
-
-            ul.children[4].children[1].children[0].onclick = () => { if (polyfill.series[0]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank'); };
-            ul.children[4].children[1].children[1].onclick = () => { if (polyfill.series[1]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[1].aid}`, '_blank'); };
-            ul.children[4].children[1].children[0].getElementsByTagName('span')[1].textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
-            ul.children[4].children[1].children[1].getElementsByTagName('span')[1].textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
+            ul.children[1].children[1].children[2].getElementsByTagName('input')[0].value = polyfill.video.playbackRate;
 
             let oped = polyfill.userdata.oped[polyfill.getCollectionId()] || [];
-            ul.children[3].children[1].children[0].getElementsByTagName('span')[1].textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
-            ul.children[3].children[1].children[1].getElementsByTagName('span')[1].textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
+            ul.children[2].children[1].children[0].getElementsByTagName('span')[1].textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
+            ul.children[2].children[1].children[1].getElementsByTagName('span')[1].textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
+
+            ul.children[3].children[1].children[0].onclick = () => { if (polyfill.series[0]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank'); };
+            ul.children[3].children[1].children[1].onclick = () => { if (polyfill.series[1]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[1].aid}`, '_blank'); };
+            ul.children[3].children[1].children[0].getElementsByTagName('span')[1].textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
+            ul.children[3].children[1].children[1].getElementsByTagName('span')[1].textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
         }
         return li;
     }
@@ -2608,9 +2556,6 @@ class UI extends BiliUserJS {
             ['dblclick', '双击全屏'],
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
-            ['autoNext', '右键菜单换P(B站原生按钮BUG:刷新后总会跳到2P)'],
-            //['autoNextTimeout', '快速换P等待时间(毫秒)'],
-            //['autoNextRecommend', '右键菜单跳转相关视频'],
             ['electric', '整合充电榜与换P倒计时'],
             //['electricSkippable', '跳过充电榜'],
             ['lift', '自动防挡字幕'],
@@ -2794,9 +2739,6 @@ class UI extends BiliUserJS {
                 dblclick: true,
                 scroll: true,
                 recommend: true,
-                autoNext: true,
-                autoNextTimeout: 2000,
-                autoNextRecommend: false,
                 electric: true,
                 electricSkippable: false,
                 lift: true,
