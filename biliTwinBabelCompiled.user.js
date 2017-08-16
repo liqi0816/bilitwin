@@ -19,7 +19,7 @@ new Promise(function (resolve) {
     req.open('get', 'https://cdn.bootcss.com/babel-polyfill/6.23.0/polyfill.min.js');
     req.send();
 }).then(function (script) {
-    ({ eval }).eval(script);
+    top.eval(script);
 }).then(function () {
     //'use strict';
 

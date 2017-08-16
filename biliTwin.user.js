@@ -953,6 +953,7 @@ class BiliMonkey {
                     // Send back a fake response to enable the change-format button.
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     a.success(trivialRes);
+                    self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                     let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
                     self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
                 }
@@ -1031,6 +1032,7 @@ class BiliMonkey {
                     // Send back a fake response to enable the change-format button.
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     a.success(trivialRes);
+                    self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                     let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
                     self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
                 }
@@ -1417,8 +1419,7 @@ class BiliMonkey {
         })()
         `;
         script = `${head}${script}${foot}`;
-        let indirectEvalWrapper = { 'eval': eval };
-        return indirectEvalWrapper.eval(script);
+        return top.eval(script);
     }
 
     static _UNIT_TEST() {
@@ -1819,7 +1820,7 @@ class BiliPolyfill {
                     this.hintInfo(`BiliPolyfill: 语音:全屏`);
                     break;
                 case '关闭':
-                    top.window.close();
+                    top.close();
                     break;
                 case '加速':
                     this.setVideoSpeed(2);
