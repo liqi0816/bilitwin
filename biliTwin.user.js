@@ -1571,6 +1571,7 @@ class BiliPolyfill {
 
     badgeWatchLater() {
         let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn');
+        if (!li || !li.children[1]) return;
         li.children[1].style.visibility = 'hidden';
         li.dispatchEvent(new Event('mouseover'));
         let observer = new MutationObserver(() => {
@@ -1623,6 +1624,7 @@ class BiliPolyfill {
     }
 
     reallocateElectricPanel() {
+        if (!this.playerWin.localStorage.bilibili_player_settings) return;
         if (!this.playerWin.localStorage.bilibili_player_settings.includes('"autopart":1') && !this.option.electricSkippable) return;
         this.video.addEventListener('ended', () => {
             setTimeout(() => {
