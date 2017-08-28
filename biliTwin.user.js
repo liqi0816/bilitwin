@@ -1648,7 +1648,10 @@ class BiliPolyfill {
     }
 
     liftBottomDanmuku() {
-        if (!this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].checked)
+        // MUST initialize setting panel before click
+        this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseover'));
+        this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseout'));
+        if (this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].nextSibling.getAttribute('data-pressed') !== 'true')
             this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].click();
     }
 
