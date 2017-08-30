@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.5
+// @version     1.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -19,7 +19,7 @@ new Promise(function (resolve) {
     req.open('get', 'https://cdn.bootcss.com/babel-polyfill/6.23.0/polyfill.min.js');
     req.send();
 }).then(function (script) {
-    ({ eval }).eval(script);
+    top.eval(script);
 }).then(function () {
     //'use strict';
 
@@ -47,7 +47,7 @@ new Promise(function (resolve) {
     // @match       *://www.bilibili.com/video/av*
     // @match       *://bangumi.bilibili.com/anime/*/play*
     // @match       *://www.bilibili.com/watchlater/
-    // @version     1.5
+    // @version     1.6
     // @author      qli5
     // @copyright   qli5, 2014+, 田生, grepmusic
     // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -479,12 +479,12 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeBlobs',
             value: function () {
-                var _ref3 = _asyncToGenerator(regeneratorRuntime.mark(function _callee(blobs) {
+                var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(blobs) {
                     var _this2 = this;
 
                     var resultParts, basetimestamp, lasttimestamp, duration, durationDataView, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _loop, _iterator3, _step3;
 
-                    return regeneratorRuntime.wrap(function _callee$(_context2) {
+                    return regeneratorRuntime.wrap(function _callee2$(_context2) {
                         while (1) {
                             switch (_context2.prev = _context2.next) {
                                 case 0:
@@ -505,10 +505,10 @@ new Promise(function (resolve) {
                                     _didIteratorError3 = false;
                                     _iteratorError3 = undefined;
                                     _context2.prev = 10;
-                                    _loop = regeneratorRuntime.mark(function _loop() {
+                                    _loop = /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
                                         var blob, bts, foundDuration, flv, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4, tag, _tag$getDurationAndVi2;
 
-                                        return regeneratorRuntime.wrap(function _loop$(_context) {
+                                        return regeneratorRuntime.wrap(function _callee$(_context) {
                                             while (1) {
                                                 switch (_context.prev = _context.next) {
                                                     case 0:
@@ -598,7 +598,7 @@ new Promise(function (resolve) {
                                                         return _context.stop();
                                                 }
                                             }
-                                        }, _loop, _this2, [[12, 16, 20, 28], [21, , 23, 27]]);
+                                        }, _callee, _this2, [[12, 16, 20, 28], [21, , 23, 27]]);
                                     });
                                     _iterator3 = blobs[Symbol.iterator]();
 
@@ -659,7 +659,7 @@ new Promise(function (resolve) {
                                     return _context2.stop();
                             }
                         }
-                    }, _callee, this, [[10, 20, 24, 32], [25, , 27, 31]]);
+                    }, _callee2, this, [[10, 20, 24, 32], [25, , 27, 31]]);
                 }));
 
                 function mergeBlobs(_x3) {
@@ -692,10 +692,10 @@ new Promise(function (resolve) {
         _createClass(CacheDB, [{
             key: 'getDB',
             value: function () {
-                var _ref4 = _asyncToGenerator(regeneratorRuntime.mark(function _callee2() {
+                var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
                     var _this3 = this;
 
-                    return regeneratorRuntime.wrap(function _callee2$(_context3) {
+                    return regeneratorRuntime.wrap(function _callee3$(_context3) {
                         while (1) {
                             switch (_context3.prev = _context3.next) {
                                 case 0:
@@ -727,7 +727,7 @@ new Promise(function (resolve) {
                                     return _context3.stop();
                             }
                         }
-                    }, _callee2, this);
+                    }, _callee3, this);
                 }));
 
                 function getDB() {
@@ -739,7 +739,7 @@ new Promise(function (resolve) {
         }, {
             key: 'addData',
             value: function () {
-                var _ref5 = _asyncToGenerator(regeneratorRuntime.mark(function _callee3(item) {
+                var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(item) {
                     var _this4 = this;
 
                     var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : item.name;
@@ -747,7 +747,7 @@ new Promise(function (resolve) {
 
                     var db, itemChunks, numChunks, i, reqArr, _iteratorNormalCompletion5, _didIteratorError5, _iteratorError5, _loop2, _iterator5, _step5;
 
-                    return regeneratorRuntime.wrap(function _callee3$(_context4) {
+                    return regeneratorRuntime.wrap(function _callee4$(_context4) {
                         while (1) {
                             switch (_context4.prev = _context4.next) {
                                 case 0:
@@ -835,7 +835,7 @@ new Promise(function (resolve) {
                                     return _context4.stop();
                             }
                         }
-                    }, _callee3, this, [[12, 17, 21, 29], [22, , 24, 28]]);
+                    }, _callee4, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
                 function addData(_x8) {
@@ -847,7 +847,7 @@ new Promise(function (resolve) {
         }, {
             key: 'putData',
             value: function () {
-                var _ref6 = _asyncToGenerator(regeneratorRuntime.mark(function _callee4(item) {
+                var _ref6 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(item) {
                     var _this5 = this;
 
                     var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : item.name;
@@ -855,7 +855,7 @@ new Promise(function (resolve) {
 
                     var db, itemChunks, numChunks, i, reqArr, _iteratorNormalCompletion6, _didIteratorError6, _iteratorError6, _loop3, _iterator6, _step6;
 
-                    return regeneratorRuntime.wrap(function _callee4$(_context5) {
+                    return regeneratorRuntime.wrap(function _callee5$(_context5) {
                         while (1) {
                             switch (_context5.prev = _context5.next) {
                                 case 0:
@@ -943,7 +943,7 @@ new Promise(function (resolve) {
                                     return _context5.stop();
                             }
                         }
-                    }, _callee4, this, [[12, 17, 21, 29], [22, , 24, 28]]);
+                    }, _callee5, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
                 function putData(_x11) {
@@ -955,12 +955,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getData',
             value: function () {
-                var _ref7 = _asyncToGenerator(regeneratorRuntime.mark(function _callee5(index) {
+                var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(index) {
                     var _this6 = this;
 
                     var db, item_0, numChunks, data_0, reqArr, _loop4, i, itemChunks;
 
-                    return regeneratorRuntime.wrap(function _callee5$(_context6) {
+                    return regeneratorRuntime.wrap(function _callee6$(_context6) {
                         while (1) {
                             switch (_context6.prev = _context6.next) {
                                 case 0:
@@ -1018,7 +1018,7 @@ new Promise(function (resolve) {
                                     return _context6.stop();
                             }
                         }
-                    }, _callee5, this);
+                    }, _callee6, this);
                 }));
 
                 function getData(_x14) {
@@ -1030,12 +1030,12 @@ new Promise(function (resolve) {
         }, {
             key: 'deleteData',
             value: function () {
-                var _ref8 = _asyncToGenerator(regeneratorRuntime.mark(function _callee6(index) {
+                var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(index) {
                     var _this7 = this;
 
                     var db, item_0, numChunks, reqArr, _loop5, i;
 
-                    return regeneratorRuntime.wrap(function _callee6$(_context7) {
+                    return regeneratorRuntime.wrap(function _callee7$(_context7) {
                         while (1) {
                             switch (_context7.prev = _context7.next) {
                                 case 0:
@@ -1085,7 +1085,7 @@ new Promise(function (resolve) {
                                     return _context7.stop();
                             }
                         }
-                    }, _callee6, this);
+                    }, _callee7, this);
                 }));
 
                 function deleteData(_x15) {
@@ -1097,11 +1097,11 @@ new Promise(function (resolve) {
         }, {
             key: 'deleteEntireDB',
             value: function () {
-                var _ref9 = _asyncToGenerator(regeneratorRuntime.mark(function _callee7() {
+                var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8() {
                     var _this8 = this;
 
                     var req;
-                    return regeneratorRuntime.wrap(function _callee7$(_context8) {
+                    return regeneratorRuntime.wrap(function _callee8$(_context8) {
                         while (1) {
                             switch (_context8.prev = _context8.next) {
                                 case 0:
@@ -1118,7 +1118,7 @@ new Promise(function (resolve) {
                                     return _context8.stop();
                             }
                         }
-                    }, _callee7, this);
+                    }, _callee8, this);
                 }));
 
                 function deleteEntireDB() {
@@ -1202,8 +1202,8 @@ new Promise(function (resolve) {
         }, {
             key: 'getBlob',
             value: function () {
-                var _ref10 = _asyncToGenerator(regeneratorRuntime.mark(function _callee8() {
-                    return regeneratorRuntime.wrap(function _callee8$(_context9) {
+                var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
+                    return regeneratorRuntime.wrap(function _callee9$(_context9) {
                         while (1) {
                             switch (_context9.prev = _context9.next) {
                                 case 0:
@@ -1214,7 +1214,7 @@ new Promise(function (resolve) {
                                     return _context9.stop();
                             }
                         }
-                    }, _callee8, this);
+                    }, _callee9, this);
                 }));
 
                 function getBlob() {
@@ -1226,10 +1226,10 @@ new Promise(function (resolve) {
         }, {
             key: 'pump',
             value: function () {
-                var _ref11 = _asyncToGenerator(regeneratorRuntime.mark(function _callee9() {
+                var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10() {
                     var _ref12, done, value;
 
-                    return regeneratorRuntime.wrap(function _callee9$(_context10) {
+                    return regeneratorRuntime.wrap(function _callee10$(_context10) {
                         while (1) {
                             switch (_context10.prev = _context10.next) {
                                 case 0:
@@ -1265,7 +1265,7 @@ new Promise(function (resolve) {
                                     return _context10.stop();
                             }
                         }
-                    }, _callee9, this);
+                    }, _callee10, this);
                 }));
 
                 function pump() {
@@ -1277,8 +1277,8 @@ new Promise(function (resolve) {
         }, {
             key: 'consume',
             value: function () {
-                var _ref13 = _asyncToGenerator(regeneratorRuntime.mark(function _callee10() {
-                    return regeneratorRuntime.wrap(function _callee10$(_context11) {
+                var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11() {
+                    return regeneratorRuntime.wrap(function _callee11$(_context11) {
                         while (1) {
                             switch (_context11.prev = _context11.next) {
                                 case 0:
@@ -1295,7 +1295,7 @@ new Promise(function (resolve) {
                                     return _context11.stop();
                             }
                         }
-                    }, _callee10, this);
+                    }, _callee11, this);
                 }));
 
                 function consume() {
@@ -1371,10 +1371,10 @@ new Promise(function (resolve) {
         _createClass(Mutex, [{
             key: 'lock',
             value: function () {
-                var _ref14 = _asyncToGenerator(regeneratorRuntime.mark(function _callee11() {
+                var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12() {
                     var myResolve, _queueTail;
 
-                    return regeneratorRuntime.wrap(function _callee11$(_context12) {
+                    return regeneratorRuntime.wrap(function _callee12$(_context12) {
                         while (1) {
                             switch (_context12.prev = _context12.next) {
                                 case 0:
@@ -1396,7 +1396,7 @@ new Promise(function (resolve) {
                                     return _context12.stop();
                             }
                         }
-                    }, _callee11, this);
+                    }, _callee12, this);
                 }));
 
                 function lock() {
@@ -1414,9 +1414,9 @@ new Promise(function (resolve) {
         }, {
             key: 'lockAndAwait',
             value: function () {
-                var _ref15 = _asyncToGenerator(regeneratorRuntime.mark(function _callee12(asyncFunc) {
+                var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(asyncFunc) {
                     var ret;
-                    return regeneratorRuntime.wrap(function _callee12$(_context13) {
+                    return regeneratorRuntime.wrap(function _callee13$(_context13) {
                         while (1) {
                             switch (_context13.prev = _context13.next) {
                                 case 0:
@@ -1446,7 +1446,7 @@ new Promise(function (resolve) {
                                     return _context13.stop();
                             }
                         }
-                    }, _callee12, this, [[3, , 7, 10]]);
+                    }, _callee13, this, [[3, , 7, 10]]);
                 }));
 
                 function lockAndAwait(_x24) {
@@ -1475,8 +1475,8 @@ new Promise(function (resolve) {
                     console.warn('1 1 1 1 1:5s');
                     console.warn('         1 1 1 1 1:10s');
                 });
-                m.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee13() {
-                    return regeneratorRuntime.wrap(function _callee13$(_context14) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14() {
+                    return regeneratorRuntime.wrap(function _callee14$(_context14) {
                         while (1) {
                             switch (_context14.prev = _context14.next) {
                                 case 0:
@@ -1504,10 +1504,10 @@ new Promise(function (resolve) {
                                     return _context14.stop();
                             }
                         }
-                    }, _callee13, _this11);
+                    }, _callee14, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee14() {
-                    return regeneratorRuntime.wrap(function _callee14$(_context15) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15() {
+                    return regeneratorRuntime.wrap(function _callee15$(_context15) {
                         while (1) {
                             switch (_context15.prev = _context15.next) {
                                 case 0:
@@ -1518,10 +1518,10 @@ new Promise(function (resolve) {
                                     return _context15.stop();
                             }
                         }
-                    }, _callee14, _this11);
+                    }, _callee15, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee15() {
-                    return regeneratorRuntime.wrap(function _callee15$(_context16) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16() {
+                    return regeneratorRuntime.wrap(function _callee16$(_context16) {
                         while (1) {
                             switch (_context16.prev = _context16.next) {
                                 case 0:
@@ -1549,10 +1549,10 @@ new Promise(function (resolve) {
                                     return _context16.stop();
                             }
                         }
-                    }, _callee15, _this11);
+                    }, _callee16, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee16() {
-                    return regeneratorRuntime.wrap(function _callee16$(_context17) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17() {
+                    return regeneratorRuntime.wrap(function _callee17$(_context17) {
                         while (1) {
                             switch (_context17.prev = _context17.next) {
                                 case 0:
@@ -1563,7 +1563,7 @@ new Promise(function (resolve) {
                                     return _context17.stop();
                             }
                         }
-                    }, _callee16, _this11);
+                    }, _callee17, _this11);
                 })));
             }
         }]);
@@ -1630,9 +1630,9 @@ new Promise(function (resolve) {
             key: '_UNIT_TEST',
             value: function _UNIT_TEST() {
                 var foo = function () {
-                    var _ref20 = _asyncToGenerator(regeneratorRuntime.mark(function _callee17() {
+                    var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
                         var buf, ac;
-                        return regeneratorRuntime.wrap(function _callee17$(_context18) {
+                        return regeneratorRuntime.wrap(function _callee18$(_context18) {
                             while (1) {
                                 switch (_context18.prev = _context18.next) {
                                     case 0:
@@ -1654,7 +1654,7 @@ new Promise(function (resolve) {
                                         return _context18.stop();
                                 }
                             }
-                        }, _callee17, this);
+                        }, _callee18, this);
                     }));
 
                     return function foo() {
@@ -1719,7 +1719,7 @@ new Promise(function (resolve) {
                 return _this13.getPlayer();
             });
             this.queryInfoMutex.lockAndAwait(function () {
-                if (_this13.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 4) _this13.queryInfo = _this13.queryInfoSixteen;
+                if (_this13.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 5) _this13.queryInfo = _this13.queryInfoSixteen;
             });
         }
 
@@ -1781,8 +1781,8 @@ new Promise(function (resolve) {
         }, {
             key: 'execOptions',
             value: function () {
-                var _ref21 = _asyncToGenerator(regeneratorRuntime.mark(function _callee18() {
-                    return regeneratorRuntime.wrap(function _callee18$(_context19) {
+                var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
+                    return regeneratorRuntime.wrap(function _callee19$(_context19) {
                         while (1) {
                             switch (_context19.prev = _context19.next) {
                                 case 0:
@@ -1812,7 +1812,7 @@ new Promise(function (resolve) {
                                     return _context19.stop();
                             }
                         }
-                    }, _callee18, this);
+                    }, _callee19, this);
                 }));
 
                 function execOptions() {
@@ -1824,12 +1824,12 @@ new Promise(function (resolve) {
         }, {
             key: 'sniffDefaultFormat',
             value: function () {
-                var _ref22 = _asyncToGenerator(regeneratorRuntime.mark(function _callee19() {
+                var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20() {
                     var _this15 = this;
 
                     var jq, _ajax, defquality;
 
-                    return regeneratorRuntime.wrap(function _callee19$(_context20) {
+                    return regeneratorRuntime.wrap(function _callee20$(_context20) {
                         while (1) {
                             switch (_context20.prev = _context20.next) {
                                 case 0:
@@ -1895,7 +1895,7 @@ new Promise(function (resolve) {
                                     return _context20.stop();
                             }
                         }
-                    }, _callee19, this);
+                    }, _callee20, this);
                 }));
 
                 function sniffDefaultFormat() {
@@ -1907,10 +1907,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getBackgroundFormat',
             value: function () {
-                var _ref23 = _asyncToGenerator(regeneratorRuntime.mark(function _callee20(format) {
+                var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(format) {
                     var src, _pendingFormat, jq, _ajax, pendingFormat, self;
 
-                    return regeneratorRuntime.wrap(function _callee20$(_context21) {
+                    return regeneratorRuntime.wrap(function _callee21$(_context21) {
                         while (1) {
                             switch (_context21.prev = _context21.next) {
                                 case 0:
@@ -1966,7 +1966,7 @@ new Promise(function (resolve) {
                                     return _context21.stop();
                             }
                         }
-                    }, _callee20, this);
+                    }, _callee21, this);
                 }));
 
                 function getBackgroundFormat(_x26) {
@@ -1978,12 +1978,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getCurrentFormat',
             value: function () {
-                var _ref24 = _asyncToGenerator(regeneratorRuntime.mark(function _callee21(format) {
+                var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
                     var _this16 = this;
 
                     var jq, _ajax, buttonNumber, siblingFormat, trivialRes, pendingFormat, self, blockedRequest, siblingOK;
 
-                    return regeneratorRuntime.wrap(function _callee21$(_context22) {
+                    return regeneratorRuntime.wrap(function _callee22$(_context22) {
                         while (1) {
                             switch (_context22.prev = _context22.next) {
                                 case 0:
@@ -2004,6 +2004,7 @@ new Promise(function (resolve) {
                                                 // Send back a fake response to enable the change-format button.
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 a.success(trivialRes);
+                                                self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                                                 var h = function h(e) {
                                                     resolve([a, c]); e.target.removeEventListener(e.type, h);
                                                 };
@@ -2055,7 +2056,7 @@ new Promise(function (resolve) {
                                     return _context22.stop();
                             }
                         }
-                    }, _callee21, this);
+                    }, _callee22, this);
                 }));
 
                 function getCurrentFormat(_x27) {
@@ -2067,10 +2068,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getNonCurrentFormat',
             value: function () {
-                var _ref25 = _asyncToGenerator(regeneratorRuntime.mark(function _callee22(format) {
+                var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(format) {
                     var jq, _ajax, buttonNumber, pendingFormat, self;
 
-                    return regeneratorRuntime.wrap(function _callee22$(_context23) {
+                    return regeneratorRuntime.wrap(function _callee23$(_context23) {
                         while (1) {
                             switch (_context23.prev = _context23.next) {
                                 case 0:
@@ -2103,7 +2104,7 @@ new Promise(function (resolve) {
                                     return _context23.stop();
                             }
                         }
-                    }, _callee22, this);
+                    }, _callee23, this);
                 }));
 
                 function getNonCurrentFormat(_x28) {
@@ -2115,12 +2116,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getCurrentFormatSixteen',
             value: function () {
-                var _ref26 = _asyncToGenerator(regeneratorRuntime.mark(function _callee23(format) {
+                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(format) {
                     var _this17 = this;
 
                     var jq, _ajax, buttonNumber, siblingFormat, trivialRes, pendingFormat, self, blockedRequest, siblingOK;
 
-                    return regeneratorRuntime.wrap(function _callee23$(_context24) {
+                    return regeneratorRuntime.wrap(function _callee24$(_context24) {
                         while (1) {
                             switch (_context24.prev = _context24.next) {
                                 case 0:
@@ -2141,6 +2142,7 @@ new Promise(function (resolve) {
                                                 // Send back a fake response to enable the change-format button.
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 a.success(trivialRes);
+                                                self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                                                 var h = function h(e) {
                                                     resolve([a, c]); e.target.removeEventListener(e.type, h);
                                                 };
@@ -2192,7 +2194,7 @@ new Promise(function (resolve) {
                                     return _context24.stop();
                             }
                         }
-                    }, _callee23, this);
+                    }, _callee24, this);
                 }));
 
                 function getCurrentFormatSixteen(_x29) {
@@ -2204,10 +2206,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getNonCurrentFormatSixteen',
             value: function () {
-                var _ref27 = _asyncToGenerator(regeneratorRuntime.mark(function _callee24(format) {
+                var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(format) {
                     var jq, _ajax, buttonNumber, pendingFormat, self;
 
-                    return regeneratorRuntime.wrap(function _callee24$(_context25) {
+                    return regeneratorRuntime.wrap(function _callee25$(_context25) {
                         while (1) {
                             switch (_context25.prev = _context25.next) {
                                 case 0:
@@ -2240,7 +2242,7 @@ new Promise(function (resolve) {
                                     return _context25.stop();
                             }
                         }
-                    }, _callee24, this);
+                    }, _callee25, this);
                 }));
 
                 function getNonCurrentFormatSixteen(_x30) {
@@ -2252,10 +2254,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getASS',
             value: function () {
-                var _ref28 = _asyncToGenerator(regeneratorRuntime.mark(function _callee26(clickableFormat) {
+                var _ref28 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(clickableFormat) {
                     var _this18 = this;
 
-                    return regeneratorRuntime.wrap(function _callee26$(_context27) {
+                    return regeneratorRuntime.wrap(function _callee27$(_context27) {
                         while (1) {
                             switch (_context27.prev = _context27.next) {
                                 case 0:
@@ -2268,10 +2270,10 @@ new Promise(function (resolve) {
 
                                 case 2:
                                     this.ass = new Promise(function () {
-                                        var _ref29 = _asyncToGenerator(regeneratorRuntime.mark(function _callee25(resolve) {
+                                        var _ref29 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(resolve) {
                                             var _ref30, _ref31, _ref31$, fetchDanmaku, generateASS, setPosition, cid;
 
-                                            return regeneratorRuntime.wrap(function _callee25$(_context26) {
+                                            return regeneratorRuntime.wrap(function _callee26$(_context26) {
                                                 while (1) {
                                                     switch (_context26.prev = _context26.next) {
                                                         case 0:
@@ -2341,7 +2343,7 @@ new Promise(function (resolve) {
                                                             return _context26.stop();
                                                     }
                                                 }
-                                            }, _callee25, _this18);
+                                            }, _callee26, _this18);
                                         }));
 
                                         return function (_x32) {
@@ -2355,7 +2357,7 @@ new Promise(function (resolve) {
                                     return _context27.stop();
                             }
                         }
-                    }, _callee26, this);
+                    }, _callee27, this);
                 }));
 
                 function getASS(_x31) {
@@ -2367,15 +2369,15 @@ new Promise(function (resolve) {
         }, {
             key: 'queryInfo',
             value: function () {
-                var _ref32 = _asyncToGenerator(regeneratorRuntime.mark(function _callee28(format) {
+                var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(format) {
                     var _this19 = this;
 
-                    return regeneratorRuntime.wrap(function _callee28$(_context29) {
+                    return regeneratorRuntime.wrap(function _callee29$(_context29) {
                         while (1) {
                             switch (_context29.prev = _context29.next) {
                                 case 0:
-                                    return _context29.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee27() {
-                                        return regeneratorRuntime.wrap(function _callee27$(_context28) {
+                                    return _context29.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
+                                        return regeneratorRuntime.wrap(function _callee28$(_context28) {
                                             while (1) {
                                                 switch (_context28.prev = _context28.next) {
                                                     case 0:
@@ -2448,7 +2450,7 @@ new Promise(function (resolve) {
                                                         return _context28.stop();
                                                 }
                                             }
-                                        }, _callee27, _this19);
+                                        }, _callee28, _this19);
                                     }))));
 
                                 case 1:
@@ -2456,7 +2458,7 @@ new Promise(function (resolve) {
                                     return _context29.stop();
                             }
                         }
-                    }, _callee28, this);
+                    }, _callee29, this);
                 }));
 
                 function queryInfo(_x33) {
@@ -2468,15 +2470,15 @@ new Promise(function (resolve) {
         }, {
             key: 'queryInfoSixteen',
             value: function () {
-                var _ref34 = _asyncToGenerator(regeneratorRuntime.mark(function _callee30(format) {
+                var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(format) {
                     var _this20 = this;
 
-                    return regeneratorRuntime.wrap(function _callee30$(_context31) {
+                    return regeneratorRuntime.wrap(function _callee31$(_context31) {
                         while (1) {
                             switch (_context31.prev = _context31.next) {
                                 case 0:
-                                    return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator(regeneratorRuntime.mark(function _callee29() {
-                                        return regeneratorRuntime.wrap(function _callee29$(_context30) {
+                                    return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
+                                        return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                             while (1) {
                                                 switch (_context30.prev = _context30.next) {
                                                     case 0:
@@ -2549,7 +2551,7 @@ new Promise(function (resolve) {
                                                         return _context30.stop();
                                                 }
                                             }
-                                        }, _callee29, _this20);
+                                        }, _callee30, _this20);
                                     }))));
 
                                 case 1:
@@ -2557,7 +2559,7 @@ new Promise(function (resolve) {
                                     return _context31.stop();
                             }
                         }
-                    }, _callee30, this);
+                    }, _callee31, this);
                 }));
 
                 function queryInfoSixteen(_x34) {
@@ -2569,10 +2571,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayer',
             value: function () {
-                var _ref36 = _asyncToGenerator(regeneratorRuntime.mark(function _callee31() {
+                var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
                     var _this21 = this;
 
-                    return regeneratorRuntime.wrap(function _callee31$(_context32) {
+                    return regeneratorRuntime.wrap(function _callee32$(_context32) {
                         while (1) {
                             switch (_context32.prev = _context32.next) {
                                 case 0:
@@ -2601,7 +2603,7 @@ new Promise(function (resolve) {
                                     return _context32.stop();
                             }
                         }
-                    }, _callee31, this);
+                    }, _callee32, this);
                 }));
 
                 function getPlayer() {
@@ -2613,12 +2615,12 @@ new Promise(function (resolve) {
         }, {
             key: 'hangPlayer',
             value: function () {
-                var _ref37 = _asyncToGenerator(regeneratorRuntime.mark(function _callee33() {
+                var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
                     var _this22 = this;
 
                     var trivialRes, jq, _ajax;
 
-                    return regeneratorRuntime.wrap(function _callee33$(_context34) {
+                    return regeneratorRuntime.wrap(function _callee34$(_context34) {
                         while (1) {
                             switch (_context34.prev = _context34.next) {
                                 case 0:
@@ -2630,9 +2632,9 @@ new Promise(function (resolve) {
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
                                     return _context34.abrupt('return', new Promise(function () {
-                                        var _ref38 = _asyncToGenerator(regeneratorRuntime.mark(function _callee32(resolve) {
+                                        var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33(resolve) {
                                             var blockerTimeout, button;
-                                            return regeneratorRuntime.wrap(function _callee32$(_context33) {
+                                            return regeneratorRuntime.wrap(function _callee33$(_context33) {
                                                 while (1) {
                                                     switch (_context33.prev = _context33.next) {
                                                         case 0:
@@ -2664,7 +2666,7 @@ new Promise(function (resolve) {
                                                             return _context33.stop();
                                                     }
                                                 }
-                                            }, _callee32, _this22);
+                                            }, _callee33, _this22);
                                         }));
 
                                         return function (_x35) {
@@ -2677,7 +2679,7 @@ new Promise(function (resolve) {
                                     return _context34.stop();
                             }
                         }
-                    }, _callee33, this);
+                    }, _callee34, this);
                 }));
 
                 function hangPlayer() {
@@ -2689,9 +2691,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadFLVFromCache',
             value: function () {
-                var _ref39 = _asyncToGenerator(regeneratorRuntime.mark(function _callee34(index) {
+                var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(index) {
                     var name, item;
-                    return regeneratorRuntime.wrap(function _callee34$(_context35) {
+                    return regeneratorRuntime.wrap(function _callee35$(_context35) {
                         while (1) {
                             switch (_context35.prev = _context35.next) {
                                 case 0:
@@ -2733,7 +2735,7 @@ new Promise(function (resolve) {
                                     return _context35.stop();
                             }
                         }
-                    }, _callee34, this);
+                    }, _callee35, this);
                 }));
 
                 function loadFLVFromCache(_x36) {
@@ -2745,9 +2747,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadPartialFLVFromCache',
             value: function () {
-                var _ref40 = _asyncToGenerator(regeneratorRuntime.mark(function _callee35(index) {
+                var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36(index) {
                     var name, item;
-                    return regeneratorRuntime.wrap(function _callee35$(_context36) {
+                    return regeneratorRuntime.wrap(function _callee36$(_context36) {
                         while (1) {
                             switch (_context36.prev = _context36.next) {
                                 case 0:
@@ -2791,7 +2793,7 @@ new Promise(function (resolve) {
                                     return _context36.stop();
                             }
                         }
-                    }, _callee35, this);
+                    }, _callee36, this);
                 }));
 
                 function loadPartialFLVFromCache(_x37) {
@@ -2803,9 +2805,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadAllFLVFromCache',
             value: function () {
-                var _ref41 = _asyncToGenerator(regeneratorRuntime.mark(function _callee36() {
+                var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37() {
                     var promises, i;
-                    return regeneratorRuntime.wrap(function _callee36$(_context37) {
+                    return regeneratorRuntime.wrap(function _callee37$(_context37) {
                         while (1) {
                             switch (_context37.prev = _context37.next) {
                                 case 0:
@@ -2836,7 +2838,7 @@ new Promise(function (resolve) {
                                     return _context37.stop();
                             }
                         }
-                    }, _callee36, this);
+                    }, _callee37, this);
                 }));
 
                 function loadAllFLVFromCache() {
@@ -2848,9 +2850,9 @@ new Promise(function (resolve) {
         }, {
             key: 'saveFLVToCache',
             value: function () {
-                var _ref42 = _asyncToGenerator(regeneratorRuntime.mark(function _callee37(index, blob) {
+                var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(index, blob) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee37$(_context38) {
+                    return regeneratorRuntime.wrap(function _callee38$(_context38) {
                         while (1) {
                             switch (_context38.prev = _context38.next) {
                                 case 0:
@@ -2878,7 +2880,7 @@ new Promise(function (resolve) {
                                     return _context38.stop();
                             }
                         }
-                    }, _callee37, this);
+                    }, _callee38, this);
                 }));
 
                 function saveFLVToCache(_x38, _x39) {
@@ -2890,9 +2892,9 @@ new Promise(function (resolve) {
         }, {
             key: 'savePartialFLVToCache',
             value: function () {
-                var _ref43 = _asyncToGenerator(regeneratorRuntime.mark(function _callee38(index, blob) {
+                var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(index, blob) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee38$(_context39) {
+                    return regeneratorRuntime.wrap(function _callee39$(_context39) {
                         while (1) {
                             switch (_context39.prev = _context39.next) {
                                 case 0:
@@ -2922,7 +2924,7 @@ new Promise(function (resolve) {
                                     return _context39.stop();
                             }
                         }
-                    }, _callee38, this);
+                    }, _callee39, this);
                 }));
 
                 function savePartialFLVToCache(_x40, _x41) {
@@ -2934,9 +2936,9 @@ new Promise(function (resolve) {
         }, {
             key: 'cleanPartialFLVInCache',
             value: function () {
-                var _ref44 = _asyncToGenerator(regeneratorRuntime.mark(function _callee39(index) {
+                var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(index) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee39$(_context40) {
+                    return regeneratorRuntime.wrap(function _callee40$(_context40) {
                         while (1) {
                             switch (_context40.prev = _context40.next) {
                                 case 0:
@@ -2966,7 +2968,7 @@ new Promise(function (resolve) {
                                     return _context40.stop();
                             }
                         }
-                    }, _callee39, this);
+                    }, _callee40, this);
                 }));
 
                 function cleanPartialFLVInCache(_x42) {
@@ -2978,10 +2980,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getFLV',
             value: function () {
-                var _ref45 = _asyncToGenerator(regeneratorRuntime.mark(function _callee41(index, progressHandler) {
+                var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(index, progressHandler) {
                     var _this23 = this;
 
-                    return regeneratorRuntime.wrap(function _callee41$(_context42) {
+                    return regeneratorRuntime.wrap(function _callee42$(_context42) {
                         while (1) {
                             switch (_context42.prev = _context42.next) {
                                 case 0:
@@ -3001,9 +3003,9 @@ new Promise(function (resolve) {
                                     throw 'BiliMonkey: info uninitialized';
 
                                 case 4:
-                                    this.flvsBlob[index] = _asyncToGenerator(regeneratorRuntime.mark(function _callee40() {
+                                    this.flvsBlob[index] = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
                                         var cache, partialCache, burl, opt, fch, fullResponse;
-                                        return regeneratorRuntime.wrap(function _callee40$(_context41) {
+                                        return regeneratorRuntime.wrap(function _callee41$(_context41) {
                                             while (1) {
                                                 switch (_context41.prev = _context41.next) {
                                                     case 0:
@@ -3070,7 +3072,7 @@ new Promise(function (resolve) {
                                                         return _context41.stop();
                                                 }
                                             }
-                                        }, _callee40, _this23);
+                                        }, _callee41, _this23);
                                     }))();
                                     return _context42.abrupt('return', this.flvsBlob[index]);
 
@@ -3079,7 +3081,7 @@ new Promise(function (resolve) {
                                     return _context42.stop();
                             }
                         }
-                    }, _callee41, this);
+                    }, _callee42, this);
                 }));
 
                 function getFLV(_x43, _x44) {
@@ -3091,8 +3093,8 @@ new Promise(function (resolve) {
         }, {
             key: 'abortFLV',
             value: function () {
-                var _ref48 = _asyncToGenerator(regeneratorRuntime.mark(function _callee42(index) {
-                    return regeneratorRuntime.wrap(function _callee42$(_context43) {
+                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43(index) {
+                    return regeneratorRuntime.wrap(function _callee43$(_context43) {
                         while (1) {
                             switch (_context43.prev = _context43.next) {
                                 case 0:
@@ -3108,7 +3110,7 @@ new Promise(function (resolve) {
                                     return _context43.stop();
                             }
                         }
-                    }, _callee42, this);
+                    }, _callee43, this);
                 }));
 
                 function abortFLV(_x45) {
@@ -3120,9 +3122,9 @@ new Promise(function (resolve) {
         }, {
             key: 'getAllFLVs',
             value: function () {
-                var _ref49 = _asyncToGenerator(regeneratorRuntime.mark(function _callee43(progressHandler) {
+                var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44(progressHandler) {
                     var promises, i;
-                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
+                    return regeneratorRuntime.wrap(function _callee44$(_context44) {
                         while (1) {
                             switch (_context44.prev = _context44.next) {
                                 case 0:
@@ -3145,7 +3147,7 @@ new Promise(function (resolve) {
                                     return _context44.stop();
                             }
                         }
-                    }, _callee43, this);
+                    }, _callee44, this);
                 }));
 
                 function getAllFLVs(_x46) {
@@ -3157,10 +3159,10 @@ new Promise(function (resolve) {
         }, {
             key: 'cleanAllFLVsInCache',
             value: function () {
-                var _ref50 = _asyncToGenerator(regeneratorRuntime.mark(function _callee44() {
+                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
                     var promises, _iteratorNormalCompletion7, _didIteratorError7, _iteratorError7, _iterator7, _step7, _flv, name;
 
-                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
+                    return regeneratorRuntime.wrap(function _callee45$(_context45) {
                         while (1) {
                             switch (_context45.prev = _context45.next) {
                                 case 0:
@@ -3234,7 +3236,7 @@ new Promise(function (resolve) {
                                     return _context45.stop();
                             }
                         }
-                    }, _callee44, this, [[8, 12, 16, 24], [17, , 19, 23]]);
+                    }, _callee45, this, [[8, 12, 16, 24], [17, , 19, 23]]);
                 }));
 
                 function cleanAllFLVsInCache() {
@@ -3246,11 +3248,11 @@ new Promise(function (resolve) {
         }, {
             key: 'setupProxy',
             value: function () {
-                var _ref51 = _asyncToGenerator(regeneratorRuntime.mark(function _callee45(res, onsuccess) {
+                var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46(res, onsuccess) {
                     var _this24 = this;
 
                     var resProxy, i;
-                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
+                    return regeneratorRuntime.wrap(function _callee46$(_context46) {
                         while (1) {
                             switch (_context46.prev = _context46.next) {
                                 case 0:
@@ -3286,7 +3288,7 @@ new Promise(function (resolve) {
                                     return _context46.stop();
                             }
                         }
-                    }, _callee45, this);
+                    }, _callee46, this);
                 }));
 
                 function setupProxy(_x47, _x48) {
@@ -3298,10 +3300,10 @@ new Promise(function (resolve) {
         }], [{
             key: 'loadASSScript',
             value: function () {
-                var _ref52 = _asyncToGenerator(regeneratorRuntime.mark(function _callee46() {
+                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
                     var src = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js';
-                    var script, head, foot, indirectEvalWrapper;
-                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
+                    var script, head, foot;
+                    return regeneratorRuntime.wrap(function _callee47$(_context47) {
                         while (1) {
                             switch (_context47.prev = _context47.next) {
                                 case 0:
@@ -3324,15 +3326,14 @@ new Promise(function (resolve) {
                                     foot = '\n            fetchXML = function (cid, callback) {\n                var oReq = new XMLHttpRequest();\n                oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n                oReq.onload = function () {\n                    var content = oReq.responseText.replace(/(?:[\0-\b\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, "");\n                    callback(content);\n                };\n                oReq.send();\n            };\n            initFont();\n            return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };\n        })()\n        ';
 
                                     script = '' + head + script + foot;
-                                    indirectEvalWrapper = { 'eval': eval };
-                                    return _context47.abrupt('return', indirectEvalWrapper.eval(script));
+                                    return _context47.abrupt('return', top.eval(script));
 
-                                case 9:
+                                case 8:
                                 case 'end':
                                     return _context47.stop();
                             }
                         }
-                    }, _callee46, this);
+                    }, _callee47, this);
                 }));
 
                 function loadASSScript() {
@@ -3346,9 +3347,9 @@ new Promise(function (resolve) {
             value: function _UNIT_TEST() {
                 var _this25 = this;
 
-                _asyncToGenerator(regeneratorRuntime.mark(function _callee47() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
                     var playerWin;
-                    return regeneratorRuntime.wrap(function _callee47$(_context48) {
+                    return regeneratorRuntime.wrap(function _callee48$(_context48) {
                         while (1) {
                             switch (_context48.prev = _context48.next) {
                                 case 0:
@@ -3396,7 +3397,7 @@ new Promise(function (resolve) {
                                     return _context48.stop();
                             }
                         }
-                    }, _callee47, _this25);
+                    }, _callee48, _this25);
                 }))();
             }
         }]);
@@ -3417,9 +3418,6 @@ new Promise(function (resolve) {
                 dblclick: true,
                 scroll: true,
                 recommend: true,
-                autoNext: true,
-                autoNextTimeout: 2000,
-                autoNextRecommend: false,
                 electric: true,
                 electricSkippable: false,
                 lift: true,
@@ -3429,6 +3427,7 @@ new Promise(function (resolve) {
                 autoFullScreen: false,
                 oped: true,
                 focus: true,
+                menuFocus: true,
                 limitedKeydown: true,
                 speech: false,
                 series: true
@@ -3444,8 +3443,6 @@ new Promise(function (resolve) {
             this.setStorage = option.setStorage;
             this.getStorage = option.getStorage;
             this.hintInfo = hintInfo;
-            this.autoNextDestination = null;
-            this.autoNextTimeout = option.autoNextTimeout;
             this.series = [];
             this.userdata = null;
         }
@@ -3470,48 +3467,46 @@ new Promise(function (resolve) {
         }, {
             key: 'setFunctions',
             value: function () {
-                var _ref54 = _asyncToGenerator(regeneratorRuntime.mark(function _callee48() {
+                var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
                     var _this26 = this;
 
                     var _ref55 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
                         _ref55$videoRefresh = _ref55.videoRefresh,
                         videoRefresh = _ref55$videoRefresh === undefined ? false : _ref55$videoRefresh;
 
-                    return regeneratorRuntime.wrap(function _callee48$(_context49) {
+                    return regeneratorRuntime.wrap(function _callee49$(_context49) {
                         while (1) {
                             switch (_context49.prev = _context49.next) {
                                 case 0:
                                     if (this.option.betabeta) {
-                                        _context49.next = 6;
+                                        _context49.next = 5;
                                         break;
                                     }
 
-                                    this.autoNextDestination = '到设置开启';
-                                    _context49.next = 4;
+                                    _context49.next = 3;
                                     return this.getPlayerVideo();
 
-                                case 4:
+                                case 3:
                                     this.userdata = { oped: {} };
                                     return _context49.abrupt('return');
 
-                                case 6:
+                                case 5:
                                     if (!videoRefresh) {
-                                        _context49.next = 16;
+                                        _context49.next = 14;
                                         break;
                                     }
 
                                     this.video = this.playerWin.document.getElementsByTagName('video')[0];
 
                                     if (this.video) {
-                                        _context49.next = 10;
+                                        _context49.next = 9;
                                         break;
                                     }
 
                                     return _context49.abrupt('return');
 
-                                case 10:
+                                case 9:
                                     if (this.option.dblclick) this.dblclickFullScreen();
-                                    if (this.option.autoNext) this.autoNext();
                                     if (this.option.electric) this.reallocateElectricPanel();
                                     if (this.option.oped) this.skipOPED();
                                     this.video.addEventListener('emptied', function () {
@@ -3519,11 +3514,11 @@ new Promise(function (resolve) {
                                     });
                                     return _context49.abrupt('return');
 
-                                case 16:
-                                    _context49.next = 18;
+                                case 14:
+                                    _context49.next = 16;
                                     return this.getPlayerVideo();
 
-                                case 18:
+                                case 16:
                                     this.video = _context49.sent;
 
                                     this.retriveUserdata();
@@ -3531,7 +3526,6 @@ new Promise(function (resolve) {
                                     if (this.option.dblclick) this.dblclickFullScreen();
                                     if (this.option.scroll) this.scrollToPlayer();
                                     if (this.option.recommend) this.showRecommendTab();
-                                    if (this.option.autoNext) this.autoNext();
                                     if (this.option.electric) this.reallocateElectricPanel();
                                     if (this.option.lift) this.liftBottomDanmuku();
                                     if (this.option.autoResume) this.autoResume();
@@ -3540,6 +3534,7 @@ new Promise(function (resolve) {
                                     if (this.option.autoFullScreen) this.autoFullScreen();
                                     if (this.option.oped) this.skipOPED();
                                     if (this.option.focus) this.focusOnPlayer();
+                                    if (this.option.menuFocus) this.menuFocusOnPlayer();
                                     if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
                                     this.playerWin.addEventListener('beforeunload', function () {
                                         return _this26.saveUserdata();
@@ -3553,12 +3548,12 @@ new Promise(function (resolve) {
                                     });
                                     if (this.option.series) this.inferNextInSeries();
 
-                                case 38:
+                                case 36:
                                 case 'end':
                                     return _context49.stop();
                             }
                         }
-                    }, _callee48, this);
+                    }, _callee49, this);
                 }));
 
                 function setFunctions() {
@@ -3570,9 +3565,9 @@ new Promise(function (resolve) {
         }, {
             key: 'inferNextInSeries',
             value: function () {
-                var _ref56 = _asyncToGenerator(regeneratorRuntime.mark(function _callee49() {
+                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
                     var title, epNumberText, seriesTitle, ep, mid, vlist;
-                    return regeneratorRuntime.wrap(function _callee49$(_context50) {
+                    return regeneratorRuntime.wrap(function _callee50$(_context50) {
                         while (1) {
                             switch (_context50.prev = _context50.next) {
                                 case 0:
@@ -3661,7 +3656,7 @@ new Promise(function (resolve) {
                                     return _context50.stop();
                             }
                         }
-                    }, _callee49, this);
+                    }, _callee50, this);
                 }));
 
                 function inferNextInSeries() {
@@ -3674,6 +3669,7 @@ new Promise(function (resolve) {
             key: 'badgeWatchLater',
             value: function badgeWatchLater() {
                 var li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn');
+                if (!li || !li.children[1]) return;
                 li.children[1].style.visibility = 'hidden';
                 li.dispatchEvent(new Event('mouseover'));
                 var observer = new MutationObserver(function () {
@@ -3724,69 +3720,22 @@ new Promise(function (resolve) {
                 if (top.document.querySelector('.cover_image')) return top.document.querySelector('.cover_image').src; else if (top.document.querySelector('div.v1-bangumi-info-img > a > img')) return top.document.querySelector('div.v1-bangumi-info-img > a > img').src.slice(0, top.document.querySelector('div.v1-bangumi-info-img > a > img').src.indexOf('.jpg') + 4); else if (top.document.querySelector('[data-state-play="true"]  img')) return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4); else return null;
             }
         }, {
-            key: 'autoNext',
-            value: function autoNext() {
-                var _this28 = this;
-
-                // 1 Next Part
-                // // 2 Watch Later: how to cooperate with bilibili's vanilla watchlater? it is more a playlist
-                // 3 Recommendations
-                if (this.autoNextDestination && this.autoNextDestination != '没有了') return;
-                var destination = void 0,
-                    nextLocation = void 0;
-                if (!nextLocation && top.location.host == 'bangumi.bilibili.com') {
-                    destination = '请用左下角'; //番剧:
-                    nextLocation = function nextLocation() {
-                        return _this28.playerWin.getElementsByClassName('bilibili-player-video-btn-next')[0].click();
-                    };
-                }
-                if (!nextLocation) {
-                    destination = '下一P'; //视频:
-                    nextLocation = (nextLocation = this.playerWin.document.querySelector('#plist .curPage + a[data-index]')) ? nextLocation.click.bind(nextLocation) : undefined;
-                }
-                if (!nextLocation) {
-                    destination = '请用左下角'; //列表:
-                    nextLocation = (nextLocation = this.playerWin.document.querySelector('li.bilibili-player-watchlater-item[data-state-play="true"] + li')) ? nextLocation.click.bind(nextLocation) : undefined;
-                }
-                if (!nextLocation) {
-                    destination = 'B站推荐'; //列表:
-                    nextLocation = this.option.autoNextRecommend ? (nextLocation = this.playerWin.document.querySelector('div.bilibili-player-recommend a')) ? nextLocation.href : undefined : undefined;
-                }
-                if (!nextLocation) return this.autoNextDestination = '没有了';
-
-                var h = function h() {
-                    _this28.hintInfo('BiliPolyfill: ' + BiliPolyfill.secondToReadable(_this28.autoNextTimeout / 1000) + '\u540E\u64AD\u653E\u4E0B\u4E00\u4E2A(\u4EFB\u610F\u70B9\u51FB\u53D6\u6D88)');
-                    var t = setTimeout(function () {
-                        return nextLocation instanceof Function ? nextLocation() : top.window.location.assign(nextLocation);
-                    }, _this28.autoNextTimeout);
-                    var ht = function ht() {
-                        clearTimeout(t); _this28.playerWin.removeEventListener('click', ht);
-                    };
-                    setTimeout(function () {
-                        return _this28.playerWin.addEventListener('click', ht);
-                    }, 0);
-                    _this28.video.removeEventListener('ended', h);
-                };
-                // No longer need to alter default behaviour
-                //this.video.addEventListener('ended', h);
-                return this.autoNextDestination = destination;
-            }
-        }, {
             key: 'reallocateElectricPanel',
             value: function reallocateElectricPanel() {
-                var _this29 = this;
+                var _this28 = this;
 
+                if (!this.playerWin.localStorage.bilibili_player_settings) return;
                 if (!this.playerWin.localStorage.bilibili_player_settings.includes('"autopart":1') && !this.option.electricSkippable) return;
                 this.video.addEventListener('ended', function () {
                     setTimeout(function () {
-                        var i = _this29.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
+                        var i = _this28.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
                         if (!i) return;
                         i.children[2].click();
                         i.style.display = 'block';
                         i.style.zIndex = 233;
                         var j = 5;
                         var h = setInterval(function () {
-                            if (_this29.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
+                            if (_this28.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
                             if (j > 0) {
                                 i.children[2].children[0].textContent = '0' + j;
                                 j--;
@@ -3801,7 +3750,10 @@ new Promise(function (resolve) {
         }, {
             key: 'liftBottomDanmuku',
             value: function liftBottomDanmuku() {
-                if (!this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].checked) this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].click();
+                // MUST initialize setting panel before click
+                this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseover'));
+                this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseout'));
+                if (this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].nextSibling.getAttribute('data-pressed') !== 'true') this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].click();
             }
         }, {
             key: 'loadOffineSubtitles',
@@ -3813,10 +3765,10 @@ new Promise(function (resolve) {
         }, {
             key: 'autoResume',
             value: function autoResume() {
-                var _this30 = this;
+                var _this29 = this;
 
                 var h = function h() {
-                    var span = _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+                    var span = _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
                     if (!span) return;
 
                     var _span$textContent$spl = span.textContent.split(':'),
@@ -3826,36 +3778,37 @@ new Promise(function (resolve) {
 
                     if (!min || !sec) return;
                     var time = parseInt(min) * 60 + parseInt(sec);
-                    if (time < _this30.video.duration - 10) {
-                        var _h = _this30.video.muted;
-                        var i = function i() {
-                            if (!_this30.video.autoplay && !_this30.video.paused) {
-                                _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                            }
-                            _this30.video.muted = _h;
-                            _this30.video.removeEventListener('play', i);
-                        };
-                        _this30.video.muted = true;
-                        _this30.video.addEventListener('play', i);
-                        _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                    if (time < _this29.video.duration - 10) {
+                        if (!_this29.video.paused || _this29.video.autoplay) {
+                            _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                        } else {
+                            var play = _this29.video.play;
+                            _this29.video.play = function () {
+                                return setTimeout(function () {
+                                    _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                                    _this29.video.play = play;
+                                }, 0);
+                            };
+                            _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                        }
                     } else {
-                        _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
-                        _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
+                        _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
+                        _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
                     }
                 };
                 this.video.addEventListener('canplay', h);
                 setTimeout(function () {
-                    return _this30.video && _this30.video.removeEventListener && _this30.video.removeEventListener('canplay', h);
+                    return _this29.video && _this29.video.removeEventListener && _this29.video.removeEventListener('canplay', h);
                 }, 3000);
             }
         }, {
             key: 'autoPlay',
             value: function autoPlay() {
-                var _this31 = this;
+                var _this30 = this;
 
                 this.video.autoplay = true;
                 setTimeout(function () {
-                    if (_this31.video.paused) _this31.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (_this30.video.paused) _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
                 }, 0);
             }
         }, {
@@ -3896,7 +3849,7 @@ new Promise(function (resolve) {
         }, {
             key: 'skipOPED',
             value: function skipOPED() {
-                var _this32 = this;
+                var _this31 = this;
 
                 var collectionId = this.getCollectionId();
                 if (!(this.userdata.oped[collectionId] instanceof Array)) return;
@@ -3908,7 +3861,7 @@ new Promise(function (resolve) {
                 }
                 if (this.userdata.oped[collectionId][1]) {
                     var edHandler = function edHandler(v) {
-                        if (v.target.currentTime > _this32.userdata.oped[collectionId][1]) {
+                        if (v.target.currentTime > _this31.userdata.oped[collectionId][1]) {
                             v.target.removeEventListener('timeupdate', edHandler);
                             v.target.dispatchEvent(new Event('ended'));
                         }
@@ -3925,8 +3878,18 @@ new Promise(function (resolve) {
         }, {
             key: 'focusOnPlayer',
             value: function focusOnPlayer() {
-                this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
-                this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
+                this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0].click();
+            }
+        }, {
+            key: 'menuFocusOnPlayer',
+            value: function menuFocusOnPlayer() {
+                var _this32 = this;
+
+                this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0].addEventListener('click', function () {
+                    return setTimeout(function () {
+                        return _this32.focusOnPlayer();
+                    }, 0);
+                });
             }
         }, {
             key: 'limitedKeydownFullScreenPlay',
@@ -4008,7 +3971,7 @@ new Promise(function (resolve) {
                             _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u5168\u5C4F');
                             break;
                         case '关闭':
-                            top.window.close();
+                            top.close();
                             break;
                         case '加速':
                             _this34.setVideoSpeed(2);
@@ -4048,10 +4011,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerVideo',
             value: function () {
-                var _ref57 = _asyncToGenerator(regeneratorRuntime.mark(function _callee50() {
+                var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
                     var _this35 = this;
 
-                    return regeneratorRuntime.wrap(function _callee50$(_context51) {
+                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
                         while (1) {
                             switch (_context51.prev = _context51.next) {
                                 case 0:
@@ -4078,7 +4041,7 @@ new Promise(function (resolve) {
                                     return _context51.stop();
                             }
                         }
-                    }, _callee50, this);
+                    }, _callee51, this);
                 }));
 
                 function getPlayerVideo() {
@@ -4099,9 +4062,9 @@ new Promise(function (resolve) {
                 if (!option.aid) option.aid = '';
                 var h = top.open('//www.bilibili.com/blackboard/html5player.html?cid=' + option.cid + '&aid=' + option.aid + '&crossDomain=' + (top.document.domain != 'www.bilibili.com' ? 'true' : ''), undefined, ' ');
 
-                _asyncToGenerator(regeneratorRuntime.mark(function _callee51() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
                     var div, i;
-                    return regeneratorRuntime.wrap(function _callee51$(_context52) {
+                    return regeneratorRuntime.wrap(function _callee52$(_context52) {
                         while (1) {
                             switch (_context52.prev = _context52.next) {
                                 case 0:
@@ -4153,7 +4116,7 @@ new Promise(function (resolve) {
                                     return _context52.stop();
                             }
                         }
-                    }, _callee51, _this36);
+                    }, _callee52, _this36);
                 }))();
             }
         }, {
@@ -4212,8 +4175,8 @@ new Promise(function (resolve) {
         _createClass(BiliUserJS, null, [{
             key: 'getIframeWin',
             value: function () {
-                var _ref59 = _asyncToGenerator(regeneratorRuntime.mark(function _callee52() {
-                    return regeneratorRuntime.wrap(function _callee52$(_context53) {
+                var _ref59 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
+                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
                         while (1) {
                             switch (_context53.prev = _context53.next) {
                                 case 0:
@@ -4236,7 +4199,7 @@ new Promise(function (resolve) {
                                     return _context53.stop();
                             }
                         }
-                    }, _callee52, this);
+                    }, _callee53, this);
                 }));
 
                 function getIframeWin() {
@@ -4248,8 +4211,8 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerWin',
             value: function () {
-                var _ref60 = _asyncToGenerator(regeneratorRuntime.mark(function _callee53() {
-                    return regeneratorRuntime.wrap(function _callee53$(_context54) {
+                var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54() {
+                    return regeneratorRuntime.wrap(function _callee54$(_context54) {
                         while (1) {
                             switch (_context54.prev = _context54.next) {
                                 case 0:
@@ -4363,7 +4326,7 @@ new Promise(function (resolve) {
                                     return _context54.stop();
                             }
                         }
-                    }, _callee53, this);
+                    }, _callee54, this);
                 }));
 
                 function getPlayerWin() {
@@ -4403,9 +4366,9 @@ new Promise(function (resolve) {
                 mp4A.textContent = '原生MP4';
                 assA.textContent = '弹幕ASS';
 
-                flvA.onmouseover = _asyncToGenerator(regeneratorRuntime.mark(function _callee54() {
+                flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55() {
                     var flvDiv;
-                    return regeneratorRuntime.wrap(function _callee54$(_context55) {
+                    return regeneratorRuntime.wrap(function _callee55$(_context55) {
                         while (1) {
                             switch (_context55.prev = _context55.next) {
                                 case 0:
@@ -4428,10 +4391,10 @@ new Promise(function (resolve) {
                                     return _context55.stop();
                             }
                         }
-                    }, _callee54, _this38);
+                    }, _callee55, _this38);
                 }));
-                mp4A.onmouseover = _asyncToGenerator(regeneratorRuntime.mark(function _callee55() {
-                    return regeneratorRuntime.wrap(function _callee55$(_context56) {
+                mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
+                    return regeneratorRuntime.wrap(function _callee56$(_context56) {
                         while (1) {
                             switch (_context56.prev = _context56.next) {
                                 case 0:
@@ -4452,10 +4415,10 @@ new Promise(function (resolve) {
                                     return _context56.stop();
                             }
                         }
-                    }, _callee55, _this38);
+                    }, _callee56, _this38);
                 }));
-                assA.onmouseover = _asyncToGenerator(regeneratorRuntime.mark(function _callee56() {
-                    return regeneratorRuntime.wrap(function _callee56$(_context57) {
+                assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57() {
+                    return regeneratorRuntime.wrap(function _callee57$(_context57) {
                         while (1) {
                             switch (_context57.prev = _context57.next) {
                                 case 0:
@@ -4475,7 +4438,7 @@ new Promise(function (resolve) {
                                     return _context57.stop();
                             }
                         }
-                    }, _callee56, _this38);
+                    }, _callee57, _this38);
                 }));
 
                 flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '16px';
@@ -4542,10 +4505,10 @@ new Promise(function (resolve) {
                     return UI.allowDrag(e);
                 };
                 div.ondrop = function () {
-                    var _ref64 = _asyncToGenerator(regeneratorRuntime.mark(function _callee57(e) {
+                    var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(e) {
                         var files, _iteratorNormalCompletion8, _didIteratorError8, _iteratorError8, _iterator8, _step8, file, outputName, url;
 
-                        return regeneratorRuntime.wrap(function _callee57$(_context58) {
+                        return regeneratorRuntime.wrap(function _callee58$(_context58) {
                             while (1) {
                                 switch (_context58.prev = _context58.next) {
                                     case 0:
@@ -4618,7 +4581,7 @@ new Promise(function (resolve) {
                                         return _context58.stop();
                                 }
                             }
-                        }, _callee57, _this39, [[6, 10, 14, 22], [15, , 17, 21]]);
+                        }, _callee58, _this39, [[6, 10, 14, 22], [15, , 17, 21]]);
                     }));
 
                     return function (_x58) {
@@ -4656,10 +4619,10 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadAllFLVs',
             value: function () {
-                var _ref65 = _asyncToGenerator(regeneratorRuntime.mark(function _callee58(a, monkey, table) {
+                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(a, monkey, table) {
                     var i, bar, _i2, blobs, mergedFLV, url, outputName;
 
-                    return regeneratorRuntime.wrap(function _callee58$(_context59) {
+                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
                         while (1) {
                             switch (_context59.prev = _context59.next) {
                                 case 0:
@@ -4720,7 +4683,7 @@ new Promise(function (resolve) {
                                     return _context59.stop();
                             }
                         }
-                    }, _callee58, this);
+                    }, _callee59, this);
                 }));
 
                 function downloadAllFLVs(_x59, _x60, _x61) {
@@ -4732,10 +4695,10 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadFLV',
             value: function () {
-                var _ref66 = _asyncToGenerator(regeneratorRuntime.mark(function _callee59(a, monkey, index) {
+                var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60(a, monkey, index) {
                     var bar = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
                     var handler, url;
-                    return regeneratorRuntime.wrap(function _callee59$(_context60) {
+                    return regeneratorRuntime.wrap(function _callee60$(_context60) {
                         while (1) {
                             switch (_context60.prev = _context60.next) {
                                 case 0:
@@ -4792,7 +4755,7 @@ new Promise(function (resolve) {
                                     return _context60.stop();
                             }
                         }
-                    }, _callee59, this, [[5, 13]]);
+                    }, _callee60, this, [[5, 13]]);
                 }));
 
                 function downloadFLV(_x62, _x63, _x64) {
@@ -4804,9 +4767,9 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeFLVFiles',
             value: function () {
-                var _ref67 = _asyncToGenerator(regeneratorRuntime.mark(function _callee60(files) {
+                var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(files) {
                     var merged;
-                    return regeneratorRuntime.wrap(function _callee60$(_context61) {
+                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
                         while (1) {
                             switch (_context61.prev = _context61.next) {
                                 case 0:
@@ -4822,7 +4785,7 @@ new Promise(function (resolve) {
                                     return _context61.stop();
                             }
                         }
-                    }, _callee60, this);
+                    }, _callee61, this);
                 }));
 
                 function mergeFLVFiles(_x66) {
@@ -4834,8 +4797,8 @@ new Promise(function (resolve) {
         }, {
             key: 'clearCacheDB',
             value: function () {
-                var _ref68 = _asyncToGenerator(regeneratorRuntime.mark(function _callee61(cache) {
-                    return regeneratorRuntime.wrap(function _callee61$(_context62) {
+                var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(cache) {
+                    return regeneratorRuntime.wrap(function _callee62$(_context62) {
                         while (1) {
                             switch (_context62.prev = _context62.next) {
                                 case 0:
@@ -4851,7 +4814,7 @@ new Promise(function (resolve) {
                                     return _context62.stop();
                             }
                         }
-                    }, _callee61, this);
+                    }, _callee62, this);
                 }));
 
                 function clearCacheDB(_x67) {
@@ -4863,8 +4826,8 @@ new Promise(function (resolve) {
         }, {
             key: 'displayQuota',
             value: function () {
-                var _ref69 = _asyncToGenerator(regeneratorRuntime.mark(function _callee62(tr) {
-                    return regeneratorRuntime.wrap(function _callee62$(_context63) {
+                var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(tr) {
+                    return regeneratorRuntime.wrap(function _callee63$(_context63) {
                         while (1) {
                             switch (_context63.prev = _context63.next) {
                                 case 0:
@@ -4881,7 +4844,7 @@ new Promise(function (resolve) {
                                     return _context63.stop();
                             }
                         }
-                    }, _callee62, this);
+                    }, _callee63, this);
                 }));
 
                 function displayQuota(_x68) {
@@ -4904,20 +4867,13 @@ new Promise(function (resolve) {
 
                 var monkeyMenu = UI.genMonkeyMenu(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, optionDiv: optionDiv });
                 var polyfillMenu = UI.genPolyfillMenu(playerWin, { polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
-                var ul = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0].children[0];
+                var div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+                var ul = playerWin.document.createElement('ul');
+                ul.className = 'bilitwin';
+                ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
+                div.insertBefore(ul, div.children[0]);
                 ul.appendChild(monkeyMenu);
                 ul.appendChild(polyfillMenu);
-
-                var observer = new MutationObserver(function (record) {
-                    if (ul.children.length > 2 && ul.children[ul.children.length - 2] == monkeyMenu && ul.children[ul.children.length - 1] == polyfillMenu) {
-                        ul.insertBefore(polyfillMenu, ul.firstChild);
-                        ul.insertBefore(monkeyMenu, ul.firstChild);
-                    }
-                    if (ul.children.length == 0) {
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0], { attributes: true });
             }
         }, {
             key: 'genMonkeyMenu',
@@ -4935,8 +4891,8 @@ new Promise(function (resolve) {
                     return playerWin.document.getElementById('bilibiliPlayer').click();
                 };
                 var ul = li.children[1];
-                ul.children[0].onclick = _asyncToGenerator(regeneratorRuntime.mark(function _callee63() {
-                    return regeneratorRuntime.wrap(function _callee63$(_context64) {
+                ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+                    return regeneratorRuntime.wrap(function _callee64$(_context64) {
                         while (1) {
                             switch (_context64.prev = _context64.next) {
                                 case 0:
@@ -4955,10 +4911,10 @@ new Promise(function (resolve) {
                                     return _context64.stop();
                             }
                         }
-                    }, _callee63, _this40);
+                    }, _callee64, _this40);
                 }));
-                ul.children[1].onclick = _asyncToGenerator(regeneratorRuntime.mark(function _callee64() {
-                    return regeneratorRuntime.wrap(function _callee64$(_context65) {
+                ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
+                    return regeneratorRuntime.wrap(function _callee65$(_context65) {
                         while (1) {
                             switch (_context65.prev = _context65.next) {
                                 case 0:
@@ -4977,10 +4933,10 @@ new Promise(function (resolve) {
                                     return _context65.stop();
                             }
                         }
-                    }, _callee64, _this40);
+                    }, _callee65, _this40);
                 }));
-                ul.children[2].onclick = _asyncToGenerator(regeneratorRuntime.mark(function _callee65() {
-                    return regeneratorRuntime.wrap(function _callee65$(_context66) {
+                ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+                    return regeneratorRuntime.wrap(function _callee66$(_context66) {
                         while (1) {
                             switch (_context66.prev = _context66.next) {
                                 case 0:
@@ -4999,13 +4955,13 @@ new Promise(function (resolve) {
                                     return _context66.stop();
                             }
                         }
-                    }, _callee65, _this40);
+                    }, _callee66, _this40);
                 }));
                 ul.children[3].onclick = function () {
                     optionDiv.style.display = 'block';
                 };
-                ul.children[4].onclick = _asyncToGenerator(regeneratorRuntime.mark(function _callee66() {
-                    return regeneratorRuntime.wrap(function _callee66$(_context67) {
+                ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
+                    return regeneratorRuntime.wrap(function _callee67$(_context67) {
                         while (1) {
                             switch (_context67.prev = _context67.next) {
                                 case 0:
@@ -5027,7 +4983,7 @@ new Promise(function (resolve) {
                                     return _context67.stop();
                             }
                         }
-                    }, _callee66, _this40);
+                    }, _callee67, _this40);
                 }));
                 ul.children[5].onclick = function () {
                     top.location.reload(true);
@@ -5049,79 +5005,75 @@ new Promise(function (resolve) {
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
-                li.innerHTML = '\n            <a class="context-menu-a">\n                BiliPolyfill\n                <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n            </a>\n            <ul>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u5207\u7247:<span></span>\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u83B7\u53D6\u5C01\u9762\n                    </a>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u66F4\u591A\u64AD\u653E\u901F\u5EA6\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> 0.1\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> 3\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u70B9\u51FB\u786E\u8BA4\n                                <input type="text" style="width: 35px; height: 70%">\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u7247\u5934\u7247\u5C3E\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u6807\u8BB0\u7247\u5934:<span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u6807\u8BB0\u7247\u5C3E:<span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u53D6\u6D88\u6807\u8BB0\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u68C0\u89C6\u6570\u636E\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u627E\u4E0A\u4E0B\u96C6\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> <span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> <span></span>\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u5C0F\u7A97\u64AD\u653E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E\n                    </a>\n                </li>\n            </ul>\n            ';
+                li.innerHTML = '\n            <a class="context-menu-a">\n                BiliPolyfill\n                <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n            </a>\n            <ul>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u83B7\u53D6\u5C01\u9762\n                    </a>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u66F4\u591A\u64AD\u653E\u901F\u5EA6\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> 0.1\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> 3\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u70B9\u51FB\u786E\u8BA4\n                                <input type="text" style="width: 35px; height: 70%">\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u7247\u5934\u7247\u5C3E\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u6807\u8BB0\u7247\u5934:<span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u6807\u8BB0\u7247\u5C3E:<span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u53D6\u6D88\u6807\u8BB0\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> \u68C0\u89C6\u6570\u636E\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-menu">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u627E\u4E0A\u4E0B\u96C6\n                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>\n                    </a>\n                    <ul>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> <span></span>\n                            </a>\n                        </li>\n                        <li class="context-menu-function">\n                            <a class="context-menu-a">\n                                <span class="video-contextmenu-icon"></span> <span></span>\n                            </a>\n                        </li>\n                    </ul>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u5C0F\u7A97\u64AD\u653E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E\n                    </a>\n                </li>\n                <li class="context-menu-function">\n                    <a class="context-menu-a">\n                        <span class="video-contextmenu-icon"></span> (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E\n                    </a>\n                </li>\n            </ul>\n            ';
                 li.onclick = function () {
                     return playerWin.document.getElementById('bilibiliPlayer').click();
                 };
+                if (!polyfill.option.betabeta) li.children[0].childNodes[0].textContent += '(到设置开启)';
                 var ul = li.children[1];
                 ul.children[0].onclick = function () {
-                    polyfill.video.dispatchEvent(new Event('ended'));
-                };
-                ul.children[1].onclick = function () {
                     top.window.open(polyfill.getCoverImage(), '_blank');
                 };
 
-                ul.children[2].children[1].children[0].onclick = function () {
+                ul.children[1].children[1].children[0].onclick = function () {
                     polyfill.setVideoSpeed(0.1);
                 };
-                ul.children[2].children[1].children[1].onclick = function () {
+                ul.children[1].children[1].children[1].onclick = function () {
                     polyfill.setVideoSpeed(3);
                 };
-                ul.children[2].children[1].children[2].onclick = function () {
+                ul.children[1].children[1].children[2].onclick = function () {
                     polyfill.setVideoSpeed(ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value);
                 };
-                ul.children[2].children[1].children[2].getElementsByTagName('input')[0].onclick = function (e) {
+                ul.children[1].children[1].children[2].getElementsByTagName('input')[0].onclick = function (e) {
                     return e.stopPropagation();
                 };
 
-                ul.children[3].children[1].children[0].onclick = function () {
+                ul.children[2].children[1].children[0].onclick = function () {
                     polyfill.markOPPosition();
                 };
-                ul.children[3].children[1].children[1].onclick = function () {
+                ul.children[2].children[1].children[1].onclick = function () {
                     polyfill.markEDPostion(3);
                 };
-                ul.children[3].children[1].children[2].onclick = function () {
+                ul.children[2].children[1].children[2].onclick = function () {
                     polyfill.clearOPEDPosition();
                 };
-                ul.children[3].children[1].children[3].onclick = function () {
+                ul.children[2].children[1].children[3].onclick = function () {
                     displayPolyfillDataDiv(polyfill);
                 };
 
-                ul.children[4].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
-                ul.children[4].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
+                ul.children[3].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
+                ul.children[3].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
 
-                ul.children[5].onclick = function () {
+                ul.children[4].onclick = function () {
                     BiliPolyfill.openMinimizedPlayer();
                 };
-                ul.children[6].onclick = function () {
+                ul.children[5].onclick = function () {
                     optionDiv.style.display = 'block';
                 };
-                ul.children[7].onclick = function () {
+                ul.children[6].onclick = function () {
                     polyfill.saveUserdata();
                 };
-                ul.children[8].onclick = function () {
+                ul.children[7].onclick = function () {
                     BiliPolyfill.clearAllUserdata(playerWin);
                     polyfill.retriveUserdata();
                 };
 
                 li.onmouseenter = function () {
                     var ul = li.children[1];
-                    ul.children[0].children[0].getElementsByTagName('span')[1].textContent = polyfill.autoNextDestination;
-
-                    ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value = polyfill.video.playbackRate;
-
-                    ul.children[4].children[1].children[0].onclick = function () {
-                        if (polyfill.series[0]) top.window.open('https://www.bilibili.com/video/av' + polyfill.series[0].aid, '_blank');
-                    };
-                    ul.children[4].children[1].children[1].onclick = function () {
-                        if (polyfill.series[1]) top.window.open('https://www.bilibili.com/video/av' + polyfill.series[1].aid, '_blank');
-                    };
-                    ul.children[4].children[1].children[0].getElementsByTagName('span')[1].textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
-                    ul.children[4].children[1].children[1].getElementsByTagName('span')[1].textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
+                    ul.children[1].children[1].children[2].getElementsByTagName('input')[0].value = polyfill.video.playbackRate;
 
                     var oped = polyfill.userdata.oped[polyfill.getCollectionId()] || [];
-                    ul.children[3].children[1].children[0].getElementsByTagName('span')[1].textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
-                    ul.children[3].children[1].children[1].getElementsByTagName('span')[1].textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
+                    ul.children[2].children[1].children[0].getElementsByTagName('span')[1].textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
+                    ul.children[2].children[1].children[1].getElementsByTagName('span')[1].textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
+
+                    ul.children[3].children[1].children[0].onclick = function () {
+                        if (polyfill.series[0]) top.window.open('https://www.bilibili.com/video/av' + polyfill.series[0].aid, '_blank');
+                    };
+                    ul.children[3].children[1].children[1].onclick = function () {
+                        if (polyfill.series[1]) top.window.open('https://www.bilibili.com/video/av' + polyfill.series[1].aid, '_blank');
+                    };
+                    ul.children[3].children[1].children[0].getElementsByTagName('span')[1].textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
+                    ul.children[3].children[1].children[1].getElementsByTagName('span')[1].textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
                 };
                 return li;
             }
@@ -5227,12 +5179,9 @@ new Promise(function (resolve) {
                 var option = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
                 var description = [['betabeta', '增强组件总开关 <---------更加懒得测试了，反正以后B站也会自己提供这些功能。也许吧。'], //betabeta
-                ['badgeWatchLater', '稍后再看添加数字角标'], ['dblclick', '双击全屏'], ['scroll', '自动滚动到播放器'], ['recommend', '弹幕列表换成相关视频'], ['autoNext', '右键菜单换P(B站原生按钮BUG:刷新后总会跳到2P)'],
-                //['autoNextTimeout', '快速换P等待时间(毫秒)'],
-                //['autoNextRecommend', '右键菜单跳转相关视频'],
-                ['electric', '整合充电榜与换P倒计时'],
+                ['badgeWatchLater', '稍后再看添加数字角标'], ['dblclick', '双击全屏'], ['scroll', '自动滚动到播放器'], ['recommend', '弹幕列表换成相关视频'], ['electric', '整合充电榜与换P倒计时'],
                 //['electricSkippable', '跳过充电榜'],
-                ['lift', '自动防挡字幕'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放'], ['autoWideScreen', '自动宽屏'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['focus', '自动聚焦到播放器'], ['limitedKeydown', '首次回车键可全屏自动播放'], ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'], ['series', '(测)尝试自动找上下集']];
+                ['lift', '自动防挡字幕'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放'], ['autoWideScreen', '自动宽屏'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['focus', '自动聚焦到播放器'], ['menuFocus', '关闭菜单后聚焦到播放器'], ['limitedKeydown', '首次回车键可全屏自动播放'], ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'], ['series', '(测)尝试自动找上下集']];
 
                 var table = document.createElement('table');
                 table.style.width = '100%';
@@ -5455,9 +5404,6 @@ new Promise(function (resolve) {
                         dblclick: true,
                         scroll: true,
                         recommend: true,
-                        autoNext: true,
-                        autoNextTimeout: 2000,
-                        autoNextRecommend: false,
                         electric: true,
                         electricSkippable: false,
                         lift: true,
@@ -5467,6 +5413,7 @@ new Promise(function (resolve) {
                         autoFullScreen: false,
                         oped: true,
                         focus: true,
+                        menuFocus: true,
                         limitedKeydown: true,
                         speech: false,
                         series: true,
@@ -5561,12 +5508,12 @@ new Promise(function (resolve) {
         }, {
             key: 'start',
             value: function () {
-                var _ref77 = _asyncToGenerator(regeneratorRuntime.mark(function _callee69() {
+                var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
                     var _this41 = this;
 
                     var cidRefresh, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref78, _ref79, monkey, polyfill, h, _ref82;
 
-                    return regeneratorRuntime.wrap(function _callee69$(_context70) {
+                    return regeneratorRuntime.wrap(function _callee70$(_context70) {
                         while (1) {
                             switch (_context70.prev = _context70.next) {
                                 case 0:
@@ -5605,9 +5552,9 @@ new Promise(function (resolve) {
                                     };
 
                                     _context70.next = 19;
-                                    return Promise.all([_asyncToGenerator(regeneratorRuntime.mark(function _callee67() {
+                                    return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
                                         var monkey;
-                                        return regeneratorRuntime.wrap(function _callee67$(_context68) {
+                                        return regeneratorRuntime.wrap(function _callee68$(_context68) {
                                             while (1) {
                                                 switch (_context68.prev = _context68.next) {
                                                     case 0:
@@ -5624,10 +5571,10 @@ new Promise(function (resolve) {
                                                         return _context68.stop();
                                                 }
                                             }
-                                        }, _callee67, _this41);
-                                    }))(), _asyncToGenerator(regeneratorRuntime.mark(function _callee68() {
+                                        }, _callee68, _this41);
+                                    }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
                                         var polyfill;
-                                        return regeneratorRuntime.wrap(function _callee68$(_context69) {
+                                        return regeneratorRuntime.wrap(function _callee69$(_context69) {
                                             while (1) {
                                                 switch (_context69.prev = _context69.next) {
                                                     case 0:
@@ -5645,7 +5592,7 @@ new Promise(function (resolve) {
                                                         return _context69.stop();
                                                 }
                                             }
-                                        }, _callee68, _this41);
+                                        }, _callee69, _this41);
                                     }))()]);
 
                                 case 19:
@@ -5693,7 +5640,7 @@ new Promise(function (resolve) {
                                     return _context70.stop();
                             }
                         }
-                    }, _callee69, this, [[2, 8]]);
+                    }, _callee70, this, [[2, 8]]);
                 }));
 
                 function start() {
@@ -5705,8 +5652,8 @@ new Promise(function (resolve) {
         }, {
             key: 'init',
             value: function () {
-                var _ref83 = _asyncToGenerator(regeneratorRuntime.mark(function _callee70() {
-                    return regeneratorRuntime.wrap(function _callee70$(_context71) {
+                var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
+                    return regeneratorRuntime.wrap(function _callee71$(_context71) {
                         while (1) {
                             switch (_context71.prev = _context71.next) {
                                 case 0:
@@ -5740,7 +5687,7 @@ new Promise(function (resolve) {
                                     return _context71.stop();
                             }
                         }
-                    }, _callee70, this);
+                    }, _callee71, this);
                 }));
 
                 function init() {
