@@ -803,7 +803,7 @@ class BiliMonkey {
         this.queryInfoMutex = new Mutex();
         this.queryInfoMutex.lockAndAwait(() => this.getPlayer());
         this.queryInfoMutex.lockAndAwait(() => {
-            if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 4) this.queryInfo = this.queryInfoSixteen;
+            if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 5) this.queryInfo = this.queryInfoSixteen;
         });
     }
 
@@ -2253,20 +2253,13 @@ class UI extends BiliUserJS {
     static menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv }) {
         let monkeyMenu = UI.genMonkeyMenu(playerWin, { monkey, monkeyTitle, optionDiv });
         let polyfillMenu = UI.genPolyfillMenu(playerWin, { polyfill, displayPolyfillDataDiv, optionDiv });
-        let ul = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0].children[0];
+        let div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+        let ul = playerWin.document.createElement('ul');
+        ul.className = 'bilitwin';
+        ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
+        div.insertBefore(ul, div.children[0]);
         ul.appendChild(monkeyMenu);
         ul.appendChild(polyfillMenu);
-
-        let observer = new MutationObserver(record => {
-            if (ul.children.length > 2 && ul.children[ul.children.length - 2] == monkeyMenu && ul.children[ul.children.length - 1] == polyfillMenu) {
-                ul.insertBefore(polyfillMenu, ul.firstChild);
-                ul.insertBefore(monkeyMenu, ul.firstChild);
-            }
-            if (ul.children.length == 0) {
-                observer.disconnect();
-            }
-        });
-        observer.observe(playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0], { attributes: true });
     }
 
     static genMonkeyMenu(playerWin, { monkey, monkeyTitle, optionDiv }) {
