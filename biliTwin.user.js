@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.5
+// @version     1.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
