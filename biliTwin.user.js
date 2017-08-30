@@ -1464,6 +1464,7 @@ class BiliPolyfill {
             autoFullScreen: false,
             oped: true,
             focus: true,
+            menuFocus: true,
             limitedKeydown: true,
             speech: false,
             series: true,
@@ -1525,6 +1526,7 @@ class BiliPolyfill {
         if (this.option.autoFullScreen) this.autoFullScreen();
         if (this.option.oped) this.skipOPED();
         if (this.option.focus) this.focusOnPlayer();
+        if (this.option.menuFocus) this.menuFocusOnPlayer();
         if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
         this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
@@ -1756,8 +1758,11 @@ class BiliPolyfill {
     }
 
     focusOnPlayer() {
-        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
-        this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-volume-min')[0].click();
+        this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0].click();
+    }
+
+    menuFocusOnPlayer() {
+        this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0].addEventListener('click', () => setTimeout(() => this.focusOnPlayer(), 0));
     }
 
     limitedKeydownFullScreenPlay() {
@@ -2564,6 +2569,7 @@ class UI extends BiliUserJS {
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
             ['focus', '自动聚焦到播放器'],
+            ['menuFocus', '关闭菜单后聚焦到播放器'],
             ['limitedKeydown', '首次回车键可全屏自动播放'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
             ['series', '(测)尝试自动找上下集'],
@@ -2747,6 +2753,7 @@ class UI extends BiliUserJS {
                 autoFullScreen: false,
                 oped: true,
                 focus: true,
+                menuFocus: true,
                 limitedKeydown: true,
                 speech: false,
                 series: true,
