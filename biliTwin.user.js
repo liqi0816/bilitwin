@@ -1671,17 +1671,17 @@ class BiliPolyfill {
             if (!min || !sec) return;
             let time = parseInt(min) * 60 + parseInt(sec);
             if (time < this.video.duration - 10) {
-                let h = this.video.muted;
-                let i = () => {
-                    if (!this.video.autoplay && !this.video.paused) {
-                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                    }
-                    this.video.muted = h;
-                    this.video.removeEventListener('play', i);
+                if (!this.video.paused || this.video.autoplay) {
+                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
                 }
-                this.video.muted = true;
-                this.video.addEventListener('play', i);
-                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                else {
+                    let play = this.video.play;
+                    this.video.play = () => setTimeout(() => {
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        this.video.play = play;
+                    }, 0);
+                    this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                }
             }
             else {
                 this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
