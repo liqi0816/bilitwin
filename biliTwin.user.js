@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.6
+// @version     1.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -540,7 +540,7 @@ class CacheDB {
 }
 
 class DetailedFetchBlob {
-    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
+    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror, fetch = init.fetch || top.fetch) {
         // Fire in the Fox fix
         if (this.firefoxConstructor(input, init, onprogress, onabort, onerror)) return;
         // Now I know why standardizing cancelable Promise is that difficult
@@ -799,12 +799,11 @@ class BiliMonkey {
         this.flvsBlob = [];
 
         this.defaultFormatPromise = null;
+        this.hdmp4Available = null;
         this.assAsyncScript = BiliMonkey.loadASSScript();
         this.queryInfoMutex = new Mutex();
         this.queryInfoMutex.lockAndAwait(() => this.getPlayer());
-        this.queryInfoMutex.lockAndAwait(() => {
-            if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 5) this.queryInfo = this.queryInfoSixteen;
-        });
+        this.queryInfoMutex.lockAndAwait(() => this.hdmp4Available = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).every(e => e.getAttribute('data-value') != '32'));
     }
 
     lockFormat(format) {
@@ -817,7 +816,7 @@ class BiliMonkey {
         switch (format) {
             case 'flv':
                 // Single writer is not a must.
-                // Plus, if one writer failed, others should be able to overwrite its garbage.
+                // Plus, if one writer fail, others should be able to overwrite its garbage.
                 //if (this.flvs) return this.flvs; 
                 return this.flvs = new AsyncContainer();
             case 'hdmp4':
@@ -865,7 +864,7 @@ class BiliMonkey {
 
     async sniffDefaultFormat() {
         if (this.defaultFormatPromise) return this.defaultFormatPromise;
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) return this.defaultFormatPromise = Promise.resolve();
+        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) return this.defaultFormatPromise = Promise.resolve();
 
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
@@ -878,8 +877,8 @@ class BiliMonkey {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(timeout);
-                    let format = a.url.match(/quality=\d*/)[0].slice(8);
-                    format = format == 112 || format == 80 || format == 4 || format == 3 ? 'flv' : format == 2 || format == 48 ? 'hdmp4' : format == 1 || format == 16 ? 'mp4' : undefined;
+                    let format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
+                    if (self.hdmp4Available && format == 'hdmp4') format = null;
                     if (!format) { console && console.error(`lockFormat error: ${a.url.match(/quality=\d*/)[0].slice(8)} is a unrecognizable format`); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c); }
                     self.lockFormat(format);
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
@@ -940,9 +939,9 @@ class BiliMonkey {
     async getCurrentFormat(format) {
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
-        const buttonNumber = format == 'flv' ? 1 : 2;
-        const siblingFormat = format == 'flv' ? 'hdmp4' : 'flv';
-        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
+        const _setItem = this.playerWin.localStorage.setItem;
+        const siblingFormat = format == 'flv' ? (this.hdmp4Available ? 'hdmp4' : 'mp4') : 'flv';
+        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
 
         let pendingFormat = this.lockFormat(format);
         let self = this;
@@ -952,7 +951,7 @@ class BiliMonkey {
                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     // Send back a fake response to enable the change-format button.
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    a.success(trivialRes);
+                    a.success(fakedRes);
                     self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                     let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
                     self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
@@ -961,10 +960,11 @@ class BiliMonkey {
                     return _ajax.call(jq, a, c);
                 }
             };
-            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${3 - buttonNumber})`).click();
+            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
+            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(siblingFormat)}"]`).click();
         });
 
-        let siblingOK = siblingFormat == 'hdmp4' ? this.mp4 : this.flvs;
+        let siblingOK = siblingFormat == 'flv' ? this.flvs : this.mp4;
         if (!siblingOK) {
             this.lockFormat(siblingFormat);
             blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
@@ -989,7 +989,8 @@ class BiliMonkey {
             }
             return _ajax.call(jq, a, c);
         };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
+        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
+        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
 
         return pendingFormat;
     }
@@ -997,7 +998,7 @@ class BiliMonkey {
     async getNonCurrentFormat(format) {
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
-        const buttonNumber = format == 'flv' ? 1 : 2;
+        const _setItem = this.playerWin.localStorage.setItem;
 
         let pendingFormat = this.lockFormat(format);
         let self = this;
@@ -1012,86 +1013,8 @@ class BiliMonkey {
             }
             return _ajax.call(jq, a, c);
         };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
-        return pendingFormat;
-    }
-
-    async getCurrentFormatSixteen(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const buttonNumber = format == 'flv' ? 1 : 4;
-        const siblingFormat = format == 'flv' ? 'mp4' : 'flv';
-        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'mp4', 'timelength': 10, 'accept_format': 'flv,flv720,flv480,mp4', 'accept_quality': [80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        let blockedRequest = await new Promise(resolve => {
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                    // Send back a fake response to enable the change-format button.
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    a.success(trivialRes);
-                    self.playerWin.document.getElementsByTagName('video')[1].loop = true;
-                    let h = e => { resolve([a, c]); e.target.removeEventListener(e.type, h); };
-                    self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
-                }
-                else {
-                    return _ajax.call(jq, a, c);
-                }
-            };
-            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${5 - buttonNumber})`).click();
-        });
-
-        let siblingOK = siblingFormat == 'mp4' ? this.mp4 : this.flvs;
-        if (!siblingOK) {
-            this.lockFormat(siblingFormat);
-            blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
-            _ajax.call(jq, ...blockedRequest);
-        }
-
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                let _success = a.success;
-                a.success = res => {
-                    if (self.proxy && res.format == 'flv') {
-                        self.resolveFormat(res, format);
-                        self.setupProxy(res, _success);
-                    }
-                    else {
-                        _success(res);
-                        self.resolveFormat(res, format);
-                    }
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
-
-        return pendingFormat;
-    }
-
-    async getNonCurrentFormatSixteen(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const buttonNumber = format == 'flv' ? 1 : 4;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                _success({});
-                a.success = res => self.resolveFormat(res, format);
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
+        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
+        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
         return pendingFormat;
     }
 
@@ -1102,7 +1025,7 @@ class BiliMonkey {
                 if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
                 const jq = this.playerWin.jQuery;
                 const _ajax = jq.ajax;
-                const buttonNumber = clickableFormat == 'flv' ? 1 : 2;
+                const _setItem = this.playerWin.localStorage.setItem;
 
                 this.lockFormat(clickableFormat);
                 let self = this;
@@ -1117,7 +1040,8 @@ class BiliMonkey {
                     }
                     return _ajax.call(jq, a, c);
                 };
-                this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div > ul > li:nth-child(${buttonNumber})`).click();
+                this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
+                this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(clickableFormat)}"]`).click();
             });
             let [{ fetchDanmaku, generateASS, setPosition }, cid] = await Promise.all([this.assAsyncScript, this.cid]);
 
@@ -1145,75 +1069,72 @@ class BiliMonkey {
 
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
-            switch (format) {
-                case 'flv':
-                    if (this.flvs)
-                        return this.flvs;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
-                        return this.getCurrentFormat('flv');
-                    else
-                        return this.getNonCurrentFormat('flv');
-                case 'mp4':
-                    if (this.mp4)
-                        return this.mp4;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)').getAttribute('data-selected'))
-                        return this.getCurrentFormat('hdmp4');
-                    else
-                        return this.getNonCurrentFormat('hdmp4');
-                case 'ass':
-                    if (this.ass)
-                        return this.ass;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
-                        return this.getASS('hdmp4');
-                    else
-                        return this.getASS('flv');
-                default:
-                    throw `Bilimonkey: What is format ${format}?`;
+            if (!this.hdmp4Available) {
+                switch (format) {
+                    case 'flv':
+                        if (this.flvs)
+                            return this.flvs;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')
+                            return this.getCurrentFormat('flv');
+                        else
+                            return this.getNonCurrentFormat('flv');
+                    case 'mp4':
+                        if (this.mp4)
+                            return this.mp4;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '16')
+                            return this.getCurrentFormat('mp4');
+                        else
+                            return this.getNonCurrentFormat('mp4');
+                    case 'ass':
+                        if (this.ass)
+                            return this.ass;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')
+                            return this.getASS('mp4');
+                        else
+                            return this.getASS('flv');
+                    default:
+                        throw `Bilimonkey: What is format ${format}?`;
+                }
             }
-        });
-    }
-
-    async queryInfoSixteen(format) {
-        return this.queryInfoMutex.lockAndAwait(async () => {
-            switch (format) {
-                case 'flv':
-                    if (this.flvs)
-                        return this.flvs;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
-                        return this.getCurrentFormatSixteen('flv');
-                    else
-                        return this.getNonCurrentFormatSixteen('flv');
-                case 'mp4':
-                    if (this.mp4)
-                        return this.mp4;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(4)').getAttribute('data-selected'))
-                        return this.getCurrentFormatSixteen('mp4');
-                    else
-                        return this.getNonCurrentFormatSixteen('mp4');
-                case 'ass':
-                    if (this.ass)
-                        return this.ass;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected'))
-                        return this.getASS('mp4');
-                    else
-                        return this.getASS('flv');
-                default:
-                    throw `Bilimonkey: What is format ${format}?`;
+            else {
+                switch (format) {
+                    case 'flv':
+                        if (this.flvs)
+                            return this.flvs;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')
+                            return this.getCurrentFormat('flv');
+                        else
+                            return this.getNonCurrentFormat('flv');
+                    case 'mp4':
+                        if (this.mp4)
+                            return this.mp4;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '64')
+                            return this.getCurrentFormat('hdmp4');
+                        else
+                            return this.getNonCurrentFormat('hdmp4');
+                    case 'ass':
+                        if (this.ass)
+                            return this.ass;
+                        else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')
+                            return this.getASS('hdmp4');
+                        else
+                            return this.getASS('flv');
+                    default:
+                        throw `Bilimonkey: What is format ${format}?`;
+                }
             }
         });
     }
 
     async getPlayer() {
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
-            this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
+        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
             return this.playerWin;
         }
         else {
             return new Promise(resolve => {
                 let observer = new MutationObserver(() => {
-                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
+                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
                         observer.disconnect();
-                        this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
                         resolve(this.playerWin);
                     }
                 });
@@ -1225,9 +1146,10 @@ class BiliMonkey {
     async hangPlayer() {
         await this.getPlayer();
 
-        const trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
+        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
+        const _setItem = this.playerWin.localStorage.setItem;
 
         return new Promise(async resolve => {
             let blockerTimeout;
@@ -1235,7 +1157,7 @@ class BiliMonkey {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(blockerTimeout);
-                    a.success(trivialRes);
+                    a.success(fakedRes);
                     blockerTimeout = setTimeout(() => {
                         jq.ajax = _ajax;
                         resolve();
@@ -1245,9 +1167,9 @@ class BiliMonkey {
                     return _ajax.call(jq, a, c);
                 }
             };
-            let button = Array
-                .from(this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul').children)
-                .find(e => !e.getAttribute('data-selected'));
+            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
+            let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
+                .find(e => !e.getAttribute('data-selected') && !e.children.length);
             button.click();
         });
     }
@@ -1316,6 +1238,7 @@ class BiliMonkey {
             let burl = this.flvs[index];
             if (partialCache) burl += `&bstart=${partialCache.size}`;
             let opt = {
+                fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
@@ -1390,6 +1313,33 @@ class BiliMonkey {
             if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
         }
         return onsuccess(resProxy);
+    }
+
+    static formatToValue(format) {
+        switch (format) {
+            case 'flv': return '80';
+            case 'hdmp4': return '64';
+            case 'mp4': return '16';
+            default: return null;
+        }
+    }
+
+    static valueToFormat(value) {
+        switch (parseInt(value)) {
+            case 112:
+            case 80:
+            case 4:
+            case 3:
+                return 'flv';
+            case 48:
+            case 2:
+                return 'hdmp4';
+            case 16:
+            case 1:
+                return 'mp4';
+            default:
+                return null;
+        }
     }
 
     static async loadASSScript(src = 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js') {
@@ -1679,7 +1629,7 @@ class BiliPolyfill {
                 else {
                     let play = this.video.play;
                     this.video.play = () => setTimeout(() => {
-                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                         this.video.play = play;
                     }, 0);
                     this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
@@ -1697,7 +1647,7 @@ class BiliPolyfill {
     autoPlay() {
         this.video.autoplay = true;
         setTimeout(() => {
-            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click()
+            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click()
         }, 0);
     }
 
@@ -1774,11 +1724,11 @@ class BiliPolyfill {
                 }
                 if (this.video.paused) {
                     if (this.video.readyState) {
-                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     }
                     else {
                         let i = () => {
-                            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                             this.video.removeEventListener('canplay', i);
                         }
                         this.video.addEventListener('canplay', i);
@@ -1818,11 +1768,11 @@ class BiliPolyfill {
             let transcript = e.results[last][0].transcript;
             switch (transcript) {
                 case '播放':
-                    if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     this.hintInfo(`BiliPolyfill: 语音:播放`);
                     break;
                 case '暂停':
-                    if (!this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (!this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     this.hintInfo(`BiliPolyfill: 语音:暂停`);
                     break;
                 case '全屏':
@@ -2184,7 +2134,7 @@ class UI extends BiliUserJS {
         blobs = await monkey.getAllFLVs();
         let mergedFLV = await FLV.mergeBlobs(blobs);
         let url = URL.createObjectURL(mergedFLV);
-        let outputName = document.getElementsByClassName('v-title')[0].textContent;
+        let outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
 
         bar.value++;
         table.insertRow(0).innerHTML = `
@@ -2329,7 +2279,7 @@ class UI extends BiliUserJS {
             monkey.flvs = null;
             UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
             // Yes, I AM lazy.
-            playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').click();
+            playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
             await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
             return monkey.queryInfo('flv');
         };
@@ -2823,6 +2773,22 @@ class UI extends BiliUserJS {
         }
     }
 
+    static menuStyleFix(playerWin) {
+        if (playerWin.document.getElementById('bilitwinMenuStyleFix')) return;
+        let style = document.createElement('style');
+        style.type = 'text/css';
+        style.rel = 'stylesheet';
+        style.id = 'bilitwinMenuStyleFix';
+        style.textContent = `
+            .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {
+                background: rgba(255,255,255,.12);
+                transition: all .3s ease-in-out;
+                cursor: pointer;
+            }
+            `;
+        playerWin.document.head.appendChild(style);
+    }
+
     static cleanUp() {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
@@ -2834,6 +2800,7 @@ class UI extends BiliUserJS {
 
     static async start() {
         let cidRefresh = new AsyncContainer();
+        let href = location.href;
 
         // 1. playerWin and option
         let playerWin;
@@ -2863,9 +2830,11 @@ class UI extends BiliUserJS {
                 return polyfill;
             })()
         ]);
+        if (href != location.href) return UI.cleanUp();
 
         // 3. menu
         UI.menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv });
+        UI.menuStyleFix(playerWin);
 
         // 4. refresh
         let h = () => {

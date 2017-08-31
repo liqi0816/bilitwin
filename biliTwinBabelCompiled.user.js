@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.6
+// @version     1.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -47,7 +47,7 @@ new Promise(function (resolve) {
     // @match       *://www.bilibili.com/video/av*
     // @match       *://bangumi.bilibili.com/anime/*/play*
     // @match       *://www.bilibili.com/watchlater/
-    // @version     1.6
+    // @version     1.7
     // @author      qli5
     // @copyright   qli5, 2014+, 田生, grepmusic
     // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1136,11 +1136,12 @@ new Promise(function (resolve) {
         function DetailedFetchBlob(input) {
             var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
             var onprogress = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : init.onprogress;
+            var onabort = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : init.onabort;
 
             var _this9 = this;
 
-            var onabort = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : init.onabort;
             var onerror = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : init.onerror;
+            var fetch = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : init.fetch || top.fetch;
 
             _classCallCheck(this, DetailedFetchBlob);
 
@@ -1449,7 +1450,7 @@ new Promise(function (resolve) {
                     }, _callee13, this, [[3, , 7, 10]]);
                 }));
 
-                function lockAndAwait(_x24) {
+                function lockAndAwait(_x25) {
                     return _ref15.apply(this, arguments);
                 }
 
@@ -1713,13 +1714,16 @@ new Promise(function (resolve) {
             this.flvsBlob = [];
 
             this.defaultFormatPromise = null;
+            this.hdmp4Available = null;
             this.assAsyncScript = BiliMonkey.loadASSScript();
             this.queryInfoMutex = new Mutex();
             this.queryInfoMutex.lockAndAwait(function () {
                 return _this13.getPlayer();
             });
             this.queryInfoMutex.lockAndAwait(function () {
-                if (_this13.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul').children.length == 5) _this13.queryInfo = _this13.queryInfoSixteen;
+                return _this13.hdmp4Available = Array.from(_this13.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).every(function (e) {
+                    return e.getAttribute('data-value') != '32';
+                });
             });
         }
 
@@ -1735,7 +1739,7 @@ new Promise(function (resolve) {
                 switch (format) {
                     case 'flv':
                         // Single writer is not a must.
-                        // Plus, if one writer failed, others should be able to overwrite its garbage.
+                        // Plus, if one writer fail, others should be able to overwrite its garbage.
                         //if (this.flvs) return this.flvs; 
                         return this.flvs = new AsyncContainer();
                     case 'hdmp4':
@@ -1841,7 +1845,7 @@ new Promise(function (resolve) {
                                     return _context20.abrupt('return', this.defaultFormatPromise);
 
                                 case 2:
-                                    if (!this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
+                                    if (!this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
                                         _context20.next = 4;
                                         break;
                                     }
@@ -1865,8 +1869,8 @@ new Promise(function (resolve) {
                                             };
                                             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                                                 clearTimeout(timeout);
-                                                var format = a.url.match(/quality=\d*/)[0].slice(8);
-                                                format = format == 112 || format == 80 || format == 4 || format == 3 ? 'flv' : format == 2 || format == 48 ? 'hdmp4' : format == 1 || format == 16 ? 'mp4' : undefined;
+                                                var format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
+                                                if (self.hdmp4Available && format == 'hdmp4') format = null;
                                                 if (!format) {
                                                     console && console.error('lockFormat error: ' + a.url.match(/quality=\d*/)[0].slice(8) + ' is a unrecognizable format'); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c);
                                                 }
@@ -1969,7 +1973,7 @@ new Promise(function (resolve) {
                     }, _callee21, this);
                 }));
 
-                function getBackgroundFormat(_x26) {
+                function getBackgroundFormat(_x27) {
                     return _ref23.apply(this, arguments);
                 }
 
@@ -1981,7 +1985,7 @@ new Promise(function (resolve) {
                 var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
                     var _this16 = this;
 
-                    var jq, _ajax, buttonNumber, siblingFormat, trivialRes, pendingFormat, self, blockedRequest, siblingOK;
+                    var jq, _ajax, _setItem, siblingFormat, fakedRes, pendingFormat, self, blockedRequest, siblingOK;
 
                     return regeneratorRuntime.wrap(function _callee22$(_context22) {
                         while (1) {
@@ -1989,9 +1993,9 @@ new Promise(function (resolve) {
                                 case 0:
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
-                                    buttonNumber = format == 'flv' ? 1 : 2;
-                                    siblingFormat = format == 'flv' ? 'hdmp4' : 'flv';
-                                    trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
+                                    _setItem = this.playerWin.localStorage.setItem;
+                                    siblingFormat = format == 'flv' ? this.hdmp4Available ? 'hdmp4' : 'mp4' : 'flv';
+                                    fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
                                     pendingFormat = this.lockFormat(format);
                                     self = this;
                                     _context22.next = 9;
@@ -2003,7 +2007,7 @@ new Promise(function (resolve) {
                                             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                                                 // Send back a fake response to enable the change-format button.
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                                                a.success(trivialRes);
+                                                a.success(fakedRes);
                                                 self.playerWin.document.getElementsByTagName('video')[1].loop = true;
                                                 var h = function h(e) {
                                                     resolve([a, c]); e.target.removeEventListener(e.type, h);
@@ -2013,12 +2017,15 @@ new Promise(function (resolve) {
                                                 return _ajax.call(jq, a, c);
                                             }
                                         };
-                                        _this16.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + (3 - buttonNumber) + ')').click();
+                                        _this16.playerWin.localStorage.setItem = function () {
+                                            return _this16.playerWin.localStorage.setItem = _setItem;
+                                        };
+                                        _this16.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="' + BiliMonkey.formatToValue(siblingFormat) + '"]').click();
                                     });
 
                                 case 9:
                                     blockedRequest = _context22.sent;
-                                    siblingOK = siblingFormat == 'hdmp4' ? this.mp4 : this.flvs;
+                                    siblingOK = siblingFormat == 'flv' ? this.flvs : this.mp4;
 
                                     if (!siblingOK) {
                                         this.lockFormat(siblingFormat);
@@ -2047,11 +2054,14 @@ new Promise(function (resolve) {
                                         }
                                         return _ajax.call(jq, a, c);
                                     };
-                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + buttonNumber + ')').click();
+                                    this.playerWin.localStorage.setItem = function () {
+                                        return _this16.playerWin.localStorage.setItem = _setItem;
+                                    };
+                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="' + BiliMonkey.formatToValue(format) + '"]').click();
 
                                     return _context22.abrupt('return', pendingFormat);
 
-                                case 15:
+                                case 16:
                                 case 'end':
                                     return _context22.stop();
                             }
@@ -2059,7 +2069,7 @@ new Promise(function (resolve) {
                     }, _callee22, this);
                 }));
 
-                function getCurrentFormat(_x27) {
+                function getCurrentFormat(_x28) {
                     return _ref24.apply(this, arguments);
                 }
 
@@ -2069,7 +2079,9 @@ new Promise(function (resolve) {
             key: 'getNonCurrentFormat',
             value: function () {
                 var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(format) {
-                    var jq, _ajax, buttonNumber, pendingFormat, self;
+                    var _this17 = this;
+
+                    var jq, _ajax, _setItem, pendingFormat, self;
 
                     return regeneratorRuntime.wrap(function _callee23$(_context23) {
                         while (1) {
@@ -2077,7 +2089,7 @@ new Promise(function (resolve) {
                                 case 0:
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
-                                    buttonNumber = format == 'flv' ? 1 : 2;
+                                    _setItem = this.playerWin.localStorage.setItem;
                                     pendingFormat = this.lockFormat(format);
                                     self = this;
 
@@ -2096,10 +2108,13 @@ new Promise(function (resolve) {
                                         }
                                         return _ajax.call(jq, a, c);
                                     };
-                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + buttonNumber + ')').click();
+                                    this.playerWin.localStorage.setItem = function () {
+                                        return _this17.playerWin.localStorage.setItem = _setItem;
+                                    };
+                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="' + BiliMonkey.formatToValue(format) + '"]').click();
                                     return _context23.abrupt('return', pendingFormat);
 
-                                case 8:
+                                case 9:
                                 case 'end':
                                     return _context23.stop();
                             }
@@ -2107,181 +2122,43 @@ new Promise(function (resolve) {
                     }, _callee23, this);
                 }));
 
-                function getNonCurrentFormat(_x28) {
+                function getNonCurrentFormat(_x29) {
                     return _ref25.apply(this, arguments);
                 }
 
                 return getNonCurrentFormat;
             }()
         }, {
-            key: 'getCurrentFormatSixteen',
+            key: 'getASS',
             value: function () {
-                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(format) {
-                    var _this17 = this;
-
-                    var jq, _ajax, buttonNumber, siblingFormat, trivialRes, pendingFormat, self, blockedRequest, siblingOK;
-
-                    return regeneratorRuntime.wrap(function _callee24$(_context24) {
-                        while (1) {
-                            switch (_context24.prev = _context24.next) {
-                                case 0:
-                                    jq = this.playerWin.jQuery;
-                                    _ajax = jq.ajax;
-                                    buttonNumber = format == 'flv' ? 1 : 4;
-                                    siblingFormat = format == 'flv' ? 'mp4' : 'flv';
-                                    trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'mp4', 'timelength': 10, 'accept_format': 'flv,flv720,flv480,mp4', 'accept_quality': [80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
-                                    pendingFormat = this.lockFormat(format);
-                                    self = this;
-                                    _context24.next = 9;
-                                    return new Promise(function (resolve) {
-                                        jq.ajax = function (a, c) {
-                                            if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
-                                                if (typeof a === 'string') c.url = a; a = c; c = undefined;
-                                            };
-                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                                                // Send back a fake response to enable the change-format button.
-                                                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                                                a.success(trivialRes);
-                                                self.playerWin.document.getElementsByTagName('video')[1].loop = true;
-                                                var h = function h(e) {
-                                                    resolve([a, c]); e.target.removeEventListener(e.type, h);
-                                                };
-                                                self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', h);
-                                            } else {
-                                                return _ajax.call(jq, a, c);
-                                            }
-                                        };
-                                        _this17.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + (5 - buttonNumber) + ')').click();
-                                    });
-
-                                case 9:
-                                    blockedRequest = _context24.sent;
-                                    siblingOK = siblingFormat == 'mp4' ? this.mp4 : this.flvs;
-
-                                    if (!siblingOK) {
-                                        this.lockFormat(siblingFormat);
-                                        blockedRequest[0].success = function (res) {
-                                            return _this17.resolveFormat(res, siblingFormat);
-                                        };
-                                        _ajax.call.apply(_ajax, [jq].concat(_toConsumableArray(blockedRequest)));
-                                    }
-
-                                    jq.ajax = function (a, c) {
-                                        if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
-                                            if (typeof a === 'string') c.url = a; a = c; c = undefined;
-                                        };
-                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                                            var _success = a.success;
-                                            a.success = function (res) {
-                                                if (self.proxy && res.format == 'flv') {
-                                                    self.resolveFormat(res, format);
-                                                    self.setupProxy(res, _success);
-                                                } else {
-                                                    _success(res);
-                                                    self.resolveFormat(res, format);
-                                                }
-                                            };
-                                            jq.ajax = _ajax;
-                                        }
-                                        return _ajax.call(jq, a, c);
-                                    };
-                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + buttonNumber + ')').click();
-
-                                    return _context24.abrupt('return', pendingFormat);
-
-                                case 15:
-                                case 'end':
-                                    return _context24.stop();
-                            }
-                        }
-                    }, _callee24, this);
-                }));
-
-                function getCurrentFormatSixteen(_x29) {
-                    return _ref26.apply(this, arguments);
-                }
-
-                return getCurrentFormatSixteen;
-            }()
-        }, {
-            key: 'getNonCurrentFormatSixteen',
-            value: function () {
-                var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(format) {
-                    var jq, _ajax, buttonNumber, pendingFormat, self;
+                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(clickableFormat) {
+                    var _this18 = this;
 
                     return regeneratorRuntime.wrap(function _callee25$(_context25) {
                         while (1) {
                             switch (_context25.prev = _context25.next) {
                                 case 0:
-                                    jq = this.playerWin.jQuery;
-                                    _ajax = jq.ajax;
-                                    buttonNumber = format == 'flv' ? 1 : 4;
-                                    pendingFormat = this.lockFormat(format);
-                                    self = this;
-
-                                    jq.ajax = function (a, c) {
-                                        if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
-                                            if (typeof a === 'string') c.url = a; a = c; c = undefined;
-                                        };
-                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                                            self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                                            var _success = a.success;
-                                            _success({});
-                                            a.success = function (res) {
-                                                return self.resolveFormat(res, format);
-                                            };
-                                            jq.ajax = _ajax;
-                                        }
-                                        return _ajax.call(jq, a, c);
-                                    };
-                                    this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + buttonNumber + ')').click();
-                                    return _context25.abrupt('return', pendingFormat);
-
-                                case 8:
-                                case 'end':
-                                    return _context25.stop();
-                            }
-                        }
-                    }, _callee25, this);
-                }));
-
-                function getNonCurrentFormatSixteen(_x30) {
-                    return _ref27.apply(this, arguments);
-                }
-
-                return getNonCurrentFormatSixteen;
-            }()
-        }, {
-            key: 'getASS',
-            value: function () {
-                var _ref28 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(clickableFormat) {
-                    var _this18 = this;
-
-                    return regeneratorRuntime.wrap(function _callee27$(_context27) {
-                        while (1) {
-                            switch (_context27.prev = _context27.next) {
-                                case 0:
                                     if (!this.ass) {
-                                        _context27.next = 2;
+                                        _context25.next = 2;
                                         break;
                                     }
 
-                                    return _context27.abrupt('return', this.ass);
+                                    return _context25.abrupt('return', this.ass);
 
                                 case 2:
                                     this.ass = new Promise(function () {
-                                        var _ref29 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(resolve) {
-                                            var _ref30, _ref31, _ref31$, fetchDanmaku, generateASS, setPosition, cid;
+                                        var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(resolve) {
+                                            var _ref28, _ref29, _ref29$, fetchDanmaku, generateASS, setPosition, cid;
 
-                                            return regeneratorRuntime.wrap(function _callee26$(_context26) {
+                                            return regeneratorRuntime.wrap(function _callee24$(_context24) {
                                                 while (1) {
-                                                    switch (_context26.prev = _context26.next) {
+                                                    switch (_context24.prev = _context24.next) {
                                                         case 0:
                                                             if (!_this18.cid) _this18.cid = new Promise(function (resolve) {
                                                                 if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
                                                                 var jq = _this18.playerWin.jQuery;
                                                                 var _ajax = jq.ajax;
-                                                                var buttonNumber = clickableFormat == 'flv' ? 1 : 2;
+                                                                var _setItem = _this18.playerWin.localStorage.setItem;
 
                                                                 _this18.lockFormat(clickableFormat);
                                                                 var self = _this18;
@@ -2300,19 +2177,22 @@ new Promise(function (resolve) {
                                                                     }
                                                                     return _ajax.call(jq, a, c);
                                                                 };
-                                                                _this18.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(' + buttonNumber + ')').click();
+                                                                _this18.playerWin.localStorage.setItem = function () {
+                                                                    return _this18.playerWin.localStorage.setItem = _setItem;
+                                                                };
+                                                                _this18.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="' + BiliMonkey.formatToValue(clickableFormat) + '"]').click();
                                                             });
-                                                            _context26.next = 3;
+                                                            _context24.next = 3;
                                                             return Promise.all([_this18.assAsyncScript, _this18.cid]);
 
                                                         case 3:
-                                                            _ref30 = _context26.sent;
-                                                            _ref31 = _slicedToArray(_ref30, 2);
-                                                            _ref31$ = _ref31[0];
-                                                            fetchDanmaku = _ref31$.fetchDanmaku;
-                                                            generateASS = _ref31$.generateASS;
-                                                            setPosition = _ref31$.setPosition;
-                                                            cid = _ref31[1];
+                                                            _ref28 = _context24.sent;
+                                                            _ref29 = _slicedToArray(_ref28, 2);
+                                                            _ref29$ = _ref29[0];
+                                                            fetchDanmaku = _ref29$.fetchDanmaku;
+                                                            generateASS = _ref29$.generateASS;
+                                                            setPosition = _ref29$.setPosition;
+                                                            cid = _ref29[1];
 
 
                                                             fetchDanmaku(cid, function (danmaku) {
@@ -2340,28 +2220,28 @@ new Promise(function (resolve) {
 
                                                         case 11:
                                                         case 'end':
-                                                            return _context26.stop();
+                                                            return _context24.stop();
                                                     }
                                                 }
-                                            }, _callee26, _this18);
+                                            }, _callee24, _this18);
                                         }));
 
-                                        return function (_x32) {
-                                            return _ref29.apply(this, arguments);
+                                        return function (_x31) {
+                                            return _ref27.apply(this, arguments);
                                         };
                                     }());
-                                    return _context27.abrupt('return', this.ass);
+                                    return _context25.abrupt('return', this.ass);
 
                                 case 4:
                                 case 'end':
-                                    return _context27.stop();
+                                    return _context25.stop();
                             }
                         }
-                    }, _callee27, this);
+                    }, _callee25, this);
                 }));
 
-                function getASS(_x31) {
-                    return _ref28.apply(this, arguments);
+                function getASS(_x30) {
+                    return _ref26.apply(this, arguments);
                 }
 
                 return getASS;
@@ -2369,245 +2249,216 @@ new Promise(function (resolve) {
         }, {
             key: 'queryInfo',
             value: function () {
-                var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(format) {
+                var _ref30 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(format) {
                     var _this19 = this;
 
-                    return regeneratorRuntime.wrap(function _callee29$(_context29) {
+                    return regeneratorRuntime.wrap(function _callee27$(_context27) {
                         while (1) {
-                            switch (_context29.prev = _context29.next) {
+                            switch (_context27.prev = _context27.next) {
                                 case 0:
-                                    return _context29.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
-                                        return regeneratorRuntime.wrap(function _callee28$(_context28) {
+                                    return _context27.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26() {
+                                        return regeneratorRuntime.wrap(function _callee26$(_context26) {
                                             while (1) {
-                                                switch (_context28.prev = _context28.next) {
+                                                switch (_context26.prev = _context26.next) {
                                                     case 0:
-                                                        _context28.t0 = format;
-                                                        _context28.next = _context28.t0 === 'flv' ? 3 : _context28.t0 === 'mp4' ? 12 : _context28.t0 === 'ass' ? 21 : 30;
+                                                        if (_this19.hdmp4Available) {
+                                                            _context26.next = 34;
+                                                            break;
+                                                        }
+
+                                                        _context26.t0 = format;
+                                                        _context26.next = _context26.t0 === 'flv' ? 4 : _context26.t0 === 'mp4' ? 13 : _context26.t0 === 'ass' ? 22 : 31;
                                                         break;
 
-                                                    case 3:
+                                                    case 4:
                                                         if (!_this19.flvs) {
-                                                            _context28.next = 7;
+                                                            _context26.next = 8;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.flvs);
+                                                        return _context26.abrupt('return', _this19.flvs);
 
-                                                    case 7:
-                                                        if (!_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected')) {
-                                                            _context28.next = 11;
+                                                    case 8:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
+                                                            _context26.next = 12;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.getCurrentFormat('flv'));
-
-                                                    case 11:
-                                                        return _context28.abrupt('return', _this19.getNonCurrentFormat('flv'));
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat('flv'));
 
                                                     case 12:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('flv'));
+
+                                                    case 13:
                                                         if (!_this19.mp4) {
-                                                            _context28.next = 16;
+                                                            _context26.next = 17;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.mp4);
+                                                        return _context26.abrupt('return', _this19.mp4);
 
-                                                    case 16:
-                                                        if (!_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)').getAttribute('data-selected')) {
-                                                            _context28.next = 20;
+                                                    case 17:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '16')) {
+                                                            _context26.next = 21;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.getCurrentFormat('hdmp4'));
-
-                                                    case 20:
-                                                        return _context28.abrupt('return', _this19.getNonCurrentFormat('hdmp4'));
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat('mp4'));
 
                                                     case 21:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('mp4'));
+
+                                                    case 22:
                                                         if (!_this19.ass) {
-                                                            _context28.next = 25;
+                                                            _context26.next = 26;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.ass);
+                                                        return _context26.abrupt('return', _this19.ass);
 
-                                                    case 25:
-                                                        if (!_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected')) {
-                                                            _context28.next = 29;
+                                                    case 26:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
+                                                            _context26.next = 30;
                                                             break;
                                                         }
 
-                                                        return _context28.abrupt('return', _this19.getASS('hdmp4'));
-
-                                                    case 29:
-                                                        return _context28.abrupt('return', _this19.getASS('flv'));
+                                                        return _context26.abrupt('return', _this19.getASS('mp4'));
 
                                                     case 30:
-                                                        throw 'Bilimonkey: What is format ' + format + '?';
+                                                        return _context26.abrupt('return', _this19.getASS('flv'));
 
                                                     case 31:
+                                                        throw 'Bilimonkey: What is format ' + format + '?';
+
+                                                    case 32:
+                                                        _context26.next = 65;
+                                                        break;
+
+                                                    case 34:
+                                                        _context26.t1 = format;
+                                                        _context26.next = _context26.t1 === 'flv' ? 37 : _context26.t1 === 'mp4' ? 46 : _context26.t1 === 'ass' ? 55 : 64;
+                                                        break;
+
+                                                    case 37:
+                                                        if (!_this19.flvs) {
+                                                            _context26.next = 41;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.flvs);
+
+                                                    case 41:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
+                                                            _context26.next = 45;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat('flv'));
+
+                                                    case 45:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('flv'));
+
+                                                    case 46:
+                                                        if (!_this19.mp4) {
+                                                            _context26.next = 50;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.mp4);
+
+                                                    case 50:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '64')) {
+                                                            _context26.next = 54;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat('hdmp4'));
+
+                                                    case 54:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('hdmp4'));
+
+                                                    case 55:
+                                                        if (!_this19.ass) {
+                                                            _context26.next = 59;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.ass);
+
+                                                    case 59:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
+                                                            _context26.next = 63;
+                                                            break;
+                                                        }
+
+                                                        return _context26.abrupt('return', _this19.getASS('hdmp4'));
+
+                                                    case 63:
+                                                        return _context26.abrupt('return', _this19.getASS('flv'));
+
+                                                    case 64:
+                                                        throw 'Bilimonkey: What is format ' + format + '?';
+
+                                                    case 65:
                                                     case 'end':
-                                                        return _context28.stop();
+                                                        return _context26.stop();
                                                 }
                                             }
-                                        }, _callee28, _this19);
+                                        }, _callee26, _this19);
                                     }))));
 
                                 case 1:
                                 case 'end':
-                                    return _context29.stop();
+                                    return _context27.stop();
                             }
                         }
-                    }, _callee29, this);
+                    }, _callee27, this);
                 }));
 
-                function queryInfo(_x33) {
-                    return _ref32.apply(this, arguments);
+                function queryInfo(_x32) {
+                    return _ref30.apply(this, arguments);
                 }
 
                 return queryInfo;
             }()
         }, {
-            key: 'queryInfoSixteen',
-            value: function () {
-                var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(format) {
-                    var _this20 = this;
-
-                    return regeneratorRuntime.wrap(function _callee31$(_context31) {
-                        while (1) {
-                            switch (_context31.prev = _context31.next) {
-                                case 0:
-                                    return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                        return regeneratorRuntime.wrap(function _callee30$(_context30) {
-                                            while (1) {
-                                                switch (_context30.prev = _context30.next) {
-                                                    case 0:
-                                                        _context30.t0 = format;
-                                                        _context30.next = _context30.t0 === 'flv' ? 3 : _context30.t0 === 'mp4' ? 12 : _context30.t0 === 'ass' ? 21 : 30;
-                                                        break;
-
-                                                    case 3:
-                                                        if (!_this20.flvs) {
-                                                            _context30.next = 7;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.flvs);
-
-                                                    case 7:
-                                                        if (!_this20.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected')) {
-                                                            _context30.next = 11;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.getCurrentFormatSixteen('flv'));
-
-                                                    case 11:
-                                                        return _context30.abrupt('return', _this20.getNonCurrentFormatSixteen('flv'));
-
-                                                    case 12:
-                                                        if (!_this20.mp4) {
-                                                            _context30.next = 16;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.mp4);
-
-                                                    case 16:
-                                                        if (!_this20.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(4)').getAttribute('data-selected')) {
-                                                            _context30.next = 20;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.getCurrentFormatSixteen('mp4'));
-
-                                                    case 20:
-                                                        return _context30.abrupt('return', _this20.getNonCurrentFormatSixteen('mp4'));
-
-                                                    case 21:
-                                                        if (!_this20.ass) {
-                                                            _context30.next = 25;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.ass);
-
-                                                    case 25:
-                                                        if (!_this20.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').getAttribute('data-selected')) {
-                                                            _context30.next = 29;
-                                                            break;
-                                                        }
-
-                                                        return _context30.abrupt('return', _this20.getASS('mp4'));
-
-                                                    case 29:
-                                                        return _context30.abrupt('return', _this20.getASS('flv'));
-
-                                                    case 30:
-                                                        throw 'Bilimonkey: What is format ' + format + '?';
-
-                                                    case 31:
-                                                    case 'end':
-                                                        return _context30.stop();
-                                                }
-                                            }
-                                        }, _callee30, _this20);
-                                    }))));
-
-                                case 1:
-                                case 'end':
-                                    return _context31.stop();
-                            }
-                        }
-                    }, _callee31, this);
-                }));
-
-                function queryInfoSixteen(_x34) {
-                    return _ref34.apply(this, arguments);
-                }
-
-                return queryInfoSixteen;
-            }()
-        }, {
             key: 'getPlayer',
             value: function () {
-                var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
-                    var _this21 = this;
+                var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
+                    var _this20 = this;
 
-                    return regeneratorRuntime.wrap(function _callee32$(_context32) {
+                    return regeneratorRuntime.wrap(function _callee28$(_context28) {
                         while (1) {
-                            switch (_context32.prev = _context32.next) {
+                            switch (_context28.prev = _context28.next) {
                                 case 0:
-                                    if (!this.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
-                                        _context32.next = 5;
+                                    if (!this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
+                                        _context28.next = 4;
                                         break;
                                     }
 
-                                    this.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
-                                    return _context32.abrupt('return', this.playerWin);
+                                    return _context28.abrupt('return', this.playerWin);
 
-                                case 5:
-                                    return _context32.abrupt('return', new Promise(function (resolve) {
+                                case 4:
+                                    return _context28.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
-                                            if (_this21.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul > li:nth-child(2)')) {
+                                            if (_this20.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
                                                 observer.disconnect();
-                                                _this21.playerWin.document.getElementsByClassName('bilibili-player-video-panel')[0].style.display = 'none';
-                                                resolve(_this21.playerWin);
+                                                resolve(_this20.playerWin);
                                             }
                                         });
-                                        observer.observe(_this21.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+                                        observer.observe(_this20.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
                                     }));
 
-                                case 6:
+                                case 5:
                                 case 'end':
-                                    return _context32.stop();
+                                    return _context28.stop();
                             }
                         }
-                    }, _callee32, this);
+                    }, _callee28, this);
                 }));
 
                 function getPlayer() {
-                    return _ref36.apply(this, arguments);
+                    return _ref32.apply(this, arguments);
                 }
 
                 return getPlayer;
@@ -2615,28 +2466,29 @@ new Promise(function (resolve) {
         }, {
             key: 'hangPlayer',
             value: function () {
-                var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
-                    var _this22 = this;
+                var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
+                    var _this21 = this;
 
-                    var trivialRes, jq, _ajax;
+                    var fakedRes, jq, _ajax, _setItem;
 
-                    return regeneratorRuntime.wrap(function _callee34$(_context34) {
+                    return regeneratorRuntime.wrap(function _callee30$(_context30) {
                         while (1) {
-                            switch (_context34.prev = _context34.next) {
+                            switch (_context30.prev = _context30.next) {
                                 case 0:
-                                    _context34.next = 2;
+                                    _context30.next = 2;
                                     return this.getPlayer();
 
                                 case 2:
-                                    trivialRes = { 'from': 'local', 'result': 'suee', 'format': 'hdmp4', 'timelength': 10, 'accept_format': 'flv,hdmp4,mp4', 'accept_quality': [3, 2, 1], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
+                                    fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
-                                    return _context34.abrupt('return', new Promise(function () {
-                                        var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33(resolve) {
+                                    _setItem = this.playerWin.localStorage.setItem;
+                                    return _context30.abrupt('return', new Promise(function () {
+                                        var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(resolve) {
                                             var blockerTimeout, button;
-                                            return regeneratorRuntime.wrap(function _callee33$(_context33) {
+                                            return regeneratorRuntime.wrap(function _callee29$(_context29) {
                                                 while (1) {
-                                                    switch (_context33.prev = _context33.next) {
+                                                    switch (_context29.prev = _context29.next) {
                                                         case 0:
                                                             blockerTimeout = void 0;
 
@@ -2646,7 +2498,7 @@ new Promise(function (resolve) {
                                                                 };
                                                                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                                                                     clearTimeout(blockerTimeout);
-                                                                    a.success(trivialRes);
+                                                                    a.success(fakedRes);
                                                                     blockerTimeout = setTimeout(function () {
                                                                         jq.ajax = _ajax;
                                                                         resolve();
@@ -2655,24 +2507,228 @@ new Promise(function (resolve) {
                                                                     return _ajax.call(jq, a, c);
                                                                 }
                                                             };
-                                                            button = Array.from(_this22.playerWin.document.querySelector('div.bilibili-player-video-btn.bilibili-player-video-btn-quality > div > ul').children).find(function (e) {
-                                                                return !e.getAttribute('data-selected');
+                                                            _this21.playerWin.localStorage.setItem = function () {
+                                                                return _this21.playerWin.localStorage.setItem = _setItem;
+                                                            };
+                                                            button = Array.from(_this21.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).find(function (e) {
+                                                                return !e.getAttribute('data-selected') && !e.children.length;
                                                             });
 
                                                             button.click();
 
-                                                        case 4:
+                                                        case 5:
                                                         case 'end':
-                                                            return _context33.stop();
+                                                            return _context29.stop();
                                                     }
                                                 }
-                                            }, _callee33, _this22);
+                                            }, _callee29, _this21);
                                         }));
 
-                                        return function (_x35) {
-                                            return _ref38.apply(this, arguments);
+                                        return function (_x33) {
+                                            return _ref34.apply(this, arguments);
                                         };
                                     }()));
+
+                                case 7:
+                                case 'end':
+                                    return _context30.stop();
+                            }
+                        }
+                    }, _callee30, this);
+                }));
+
+                function hangPlayer() {
+                    return _ref33.apply(this, arguments);
+                }
+
+                return hangPlayer;
+            }()
+        }, {
+            key: 'loadFLVFromCache',
+            value: function () {
+                var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(index) {
+                    var name, item;
+                    return regeneratorRuntime.wrap(function _callee31$(_context31) {
+                        while (1) {
+                            switch (_context31.prev = _context31.next) {
+                                case 0:
+                                    if (this.cache) {
+                                        _context31.next = 2;
+                                        break;
+                                    }
+
+                                    return _context31.abrupt('return');
+
+                                case 2:
+                                    if (this.flvs) {
+                                        _context31.next = 4;
+                                        break;
+                                    }
+
+                                    throw 'BiliMonkey: info uninitialized';
+
+                                case 4:
+                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+                                    _context31.next = 7;
+                                    return this.cache.getData(name);
+
+                                case 7:
+                                    item = _context31.sent;
+
+                                    if (item) {
+                                        _context31.next = 10;
+                                        break;
+                                    }
+
+                                    return _context31.abrupt('return');
+
+                                case 10:
+                                    return _context31.abrupt('return', this.flvsBlob[index] = item.data);
+
+                                case 11:
+                                case 'end':
+                                    return _context31.stop();
+                            }
+                        }
+                    }, _callee31, this);
+                }));
+
+                function loadFLVFromCache(_x34) {
+                    return _ref35.apply(this, arguments);
+                }
+
+                return loadFLVFromCache;
+            }()
+        }, {
+            key: 'loadPartialFLVFromCache',
+            value: function () {
+                var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32(index) {
+                    var name, item;
+                    return regeneratorRuntime.wrap(function _callee32$(_context32) {
+                        while (1) {
+                            switch (_context32.prev = _context32.next) {
+                                case 0:
+                                    if (this.cache) {
+                                        _context32.next = 2;
+                                        break;
+                                    }
+
+                                    return _context32.abrupt('return');
+
+                                case 2:
+                                    if (this.flvs) {
+                                        _context32.next = 4;
+                                        break;
+                                    }
+
+                                    throw 'BiliMonkey: info uninitialized';
+
+                                case 4:
+                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+
+                                    name = 'PC_' + name;
+                                    _context32.next = 8;
+                                    return this.cache.getData(name);
+
+                                case 8:
+                                    item = _context32.sent;
+
+                                    if (item) {
+                                        _context32.next = 11;
+                                        break;
+                                    }
+
+                                    return _context32.abrupt('return');
+
+                                case 11:
+                                    return _context32.abrupt('return', item.data);
+
+                                case 12:
+                                case 'end':
+                                    return _context32.stop();
+                            }
+                        }
+                    }, _callee32, this);
+                }));
+
+                function loadPartialFLVFromCache(_x35) {
+                    return _ref36.apply(this, arguments);
+                }
+
+                return loadPartialFLVFromCache;
+            }()
+        }, {
+            key: 'loadAllFLVFromCache',
+            value: function () {
+                var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+                    var promises, i;
+                    return regeneratorRuntime.wrap(function _callee33$(_context33) {
+                        while (1) {
+                            switch (_context33.prev = _context33.next) {
+                                case 0:
+                                    if (this.cache) {
+                                        _context33.next = 2;
+                                        break;
+                                    }
+
+                                    return _context33.abrupt('return');
+
+                                case 2:
+                                    if (this.flvs) {
+                                        _context33.next = 4;
+                                        break;
+                                    }
+
+                                    throw 'BiliMonkey: info uninitialized';
+
+                                case 4:
+                                    promises = [];
+
+                                    for (i = 0; i < this.flvs.length; i++) {
+                                        promises.push(this.loadFLVFromCache(i));
+                                    } return _context33.abrupt('return', Promise.all(promises));
+
+                                case 7:
+                                case 'end':
+                                    return _context33.stop();
+                            }
+                        }
+                    }, _callee33, this);
+                }));
+
+                function loadAllFLVFromCache() {
+                    return _ref37.apply(this, arguments);
+                }
+
+                return loadAllFLVFromCache;
+            }()
+        }, {
+            key: 'saveFLVToCache',
+            value: function () {
+                var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34(index, blob) {
+                    var name;
+                    return regeneratorRuntime.wrap(function _callee34$(_context34) {
+                        while (1) {
+                            switch (_context34.prev = _context34.next) {
+                                case 0:
+                                    if (this.cache) {
+                                        _context34.next = 2;
+                                        break;
+                                    }
+
+                                    return _context34.abrupt('return');
+
+                                case 2:
+                                    if (this.flvs) {
+                                        _context34.next = 4;
+                                        break;
+                                    }
+
+                                    throw 'BiliMonkey: info uninitialized';
+
+                                case 4:
+                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+                                    return _context34.abrupt('return', this.cache.addData({ name: name, data: blob }));
 
                                 case 6:
                                 case 'end':
@@ -2682,17 +2738,17 @@ new Promise(function (resolve) {
                     }, _callee34, this);
                 }));
 
-                function hangPlayer() {
-                    return _ref37.apply(this, arguments);
+                function saveFLVToCache(_x36, _x37) {
+                    return _ref38.apply(this, arguments);
                 }
 
-                return hangPlayer;
+                return saveFLVToCache;
             }()
         }, {
-            key: 'loadFLVFromCache',
+            key: 'savePartialFLVToCache',
             value: function () {
-                var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(index) {
-                    var name, item;
+                var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(index, blob) {
+                    var name;
                     return regeneratorRuntime.wrap(function _callee35$(_context35) {
                         while (1) {
                             switch (_context35.prev = _context35.next) {
@@ -2714,23 +2770,11 @@ new Promise(function (resolve) {
 
                                 case 4:
                                     name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
-                                    _context35.next = 7;
-                                    return this.cache.getData(name);
+
+                                    name = 'PC_' + name;
+                                    return _context35.abrupt('return', this.cache.putData({ name: name, data: blob }));
 
                                 case 7:
-                                    item = _context35.sent;
-
-                                    if (item) {
-                                        _context35.next = 10;
-                                        break;
-                                    }
-
-                                    return _context35.abrupt('return');
-
-                                case 10:
-                                    return _context35.abrupt('return', this.flvsBlob[index] = item.data);
-
-                                case 11:
                                 case 'end':
                                     return _context35.stop();
                             }
@@ -2738,17 +2782,17 @@ new Promise(function (resolve) {
                     }, _callee35, this);
                 }));
 
-                function loadFLVFromCache(_x36) {
+                function savePartialFLVToCache(_x38, _x39) {
                     return _ref39.apply(this, arguments);
                 }
 
-                return loadFLVFromCache;
+                return savePartialFLVToCache;
             }()
         }, {
-            key: 'loadPartialFLVFromCache',
+            key: 'cleanPartialFLVInCache',
             value: function () {
                 var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36(index) {
-                    var name, item;
+                    var name;
                     return regeneratorRuntime.wrap(function _callee36$(_context36) {
                         while (1) {
                             switch (_context36.prev = _context36.next) {
@@ -2772,23 +2816,9 @@ new Promise(function (resolve) {
                                     name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
 
                                     name = 'PC_' + name;
-                                    _context36.next = 8;
-                                    return this.cache.getData(name);
+                                    return _context36.abrupt('return', this.cache.deleteData(name));
 
-                                case 8:
-                                    item = _context36.sent;
-
-                                    if (item) {
-                                        _context36.next = 11;
-                                        break;
-                                    }
-
-                                    return _context36.abrupt('return');
-
-                                case 11:
-                                    return _context36.abrupt('return', item.data);
-
-                                case 12:
+                                case 7:
                                 case 'end':
                                     return _context36.stop();
                             }
@@ -2796,72 +2826,28 @@ new Promise(function (resolve) {
                     }, _callee36, this);
                 }));
 
-                function loadPartialFLVFromCache(_x37) {
+                function cleanPartialFLVInCache(_x40) {
                     return _ref40.apply(this, arguments);
                 }
 
-                return loadPartialFLVFromCache;
+                return cleanPartialFLVInCache;
             }()
         }, {
-            key: 'loadAllFLVFromCache',
+            key: 'getFLV',
             value: function () {
-                var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37() {
-                    var promises, i;
-                    return regeneratorRuntime.wrap(function _callee37$(_context37) {
-                        while (1) {
-                            switch (_context37.prev = _context37.next) {
-                                case 0:
-                                    if (this.cache) {
-                                        _context37.next = 2;
-                                        break;
-                                    }
+                var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(index, progressHandler) {
+                    var _this22 = this;
 
-                                    return _context37.abrupt('return');
-
-                                case 2:
-                                    if (this.flvs) {
-                                        _context37.next = 4;
-                                        break;
-                                    }
-
-                                    throw 'BiliMonkey: info uninitialized';
-
-                                case 4:
-                                    promises = [];
-
-                                    for (i = 0; i < this.flvs.length; i++) {
-                                        promises.push(this.loadFLVFromCache(i));
-                                    } return _context37.abrupt('return', Promise.all(promises));
-
-                                case 7:
-                                case 'end':
-                                    return _context37.stop();
-                            }
-                        }
-                    }, _callee37, this);
-                }));
-
-                function loadAllFLVFromCache() {
-                    return _ref41.apply(this, arguments);
-                }
-
-                return loadAllFLVFromCache;
-            }()
-        }, {
-            key: 'saveFLVToCache',
-            value: function () {
-                var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(index, blob) {
-                    var name;
                     return regeneratorRuntime.wrap(function _callee38$(_context38) {
                         while (1) {
                             switch (_context38.prev = _context38.next) {
                                 case 0:
-                                    if (this.cache) {
+                                    if (!this.flvsBlob[index]) {
                                         _context38.next = 2;
                                         break;
                                     }
 
-                                    return _context38.abrupt('return');
+                                    return _context38.abrupt('return', this.flvsBlob[index]);
 
                                 case 2:
                                     if (this.flvs) {
@@ -2872,166 +2858,36 @@ new Promise(function (resolve) {
                                     throw 'BiliMonkey: info uninitialized';
 
                                 case 4:
-                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
-                                    return _context38.abrupt('return', this.cache.addData({ name: name, data: blob }));
-
-                                case 6:
-                                case 'end':
-                                    return _context38.stop();
-                            }
-                        }
-                    }, _callee38, this);
-                }));
-
-                function saveFLVToCache(_x38, _x39) {
-                    return _ref42.apply(this, arguments);
-                }
-
-                return saveFLVToCache;
-            }()
-        }, {
-            key: 'savePartialFLVToCache',
-            value: function () {
-                var _ref43 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(index, blob) {
-                    var name;
-                    return regeneratorRuntime.wrap(function _callee39$(_context39) {
-                        while (1) {
-                            switch (_context39.prev = _context39.next) {
-                                case 0:
-                                    if (this.cache) {
-                                        _context39.next = 2;
-                                        break;
-                                    }
-
-                                    return _context39.abrupt('return');
-
-                                case 2:
-                                    if (this.flvs) {
-                                        _context39.next = 4;
-                                        break;
-                                    }
-
-                                    throw 'BiliMonkey: info uninitialized';
-
-                                case 4:
-                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
-
-                                    name = 'PC_' + name;
-                                    return _context39.abrupt('return', this.cache.putData({ name: name, data: blob }));
-
-                                case 7:
-                                case 'end':
-                                    return _context39.stop();
-                            }
-                        }
-                    }, _callee39, this);
-                }));
-
-                function savePartialFLVToCache(_x40, _x41) {
-                    return _ref43.apply(this, arguments);
-                }
-
-                return savePartialFLVToCache;
-            }()
-        }, {
-            key: 'cleanPartialFLVInCache',
-            value: function () {
-                var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(index) {
-                    var name;
-                    return regeneratorRuntime.wrap(function _callee40$(_context40) {
-                        while (1) {
-                            switch (_context40.prev = _context40.next) {
-                                case 0:
-                                    if (this.cache) {
-                                        _context40.next = 2;
-                                        break;
-                                    }
-
-                                    return _context40.abrupt('return');
-
-                                case 2:
-                                    if (this.flvs) {
-                                        _context40.next = 4;
-                                        break;
-                                    }
-
-                                    throw 'BiliMonkey: info uninitialized';
-
-                                case 4:
-                                    name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
-
-                                    name = 'PC_' + name;
-                                    return _context40.abrupt('return', this.cache.deleteData(name));
-
-                                case 7:
-                                case 'end':
-                                    return _context40.stop();
-                            }
-                        }
-                    }, _callee40, this);
-                }));
-
-                function cleanPartialFLVInCache(_x42) {
-                    return _ref44.apply(this, arguments);
-                }
-
-                return cleanPartialFLVInCache;
-            }()
-        }, {
-            key: 'getFLV',
-            value: function () {
-                var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(index, progressHandler) {
-                    var _this23 = this;
-
-                    return regeneratorRuntime.wrap(function _callee42$(_context42) {
-                        while (1) {
-                            switch (_context42.prev = _context42.next) {
-                                case 0:
-                                    if (!this.flvsBlob[index]) {
-                                        _context42.next = 2;
-                                        break;
-                                    }
-
-                                    return _context42.abrupt('return', this.flvsBlob[index]);
-
-                                case 2:
-                                    if (this.flvs) {
-                                        _context42.next = 4;
-                                        break;
-                                    }
-
-                                    throw 'BiliMonkey: info uninitialized';
-
-                                case 4:
-                                    this.flvsBlob[index] = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
+                                    this.flvsBlob[index] = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37() {
                                         var cache, partialCache, burl, opt, fch, fullResponse;
-                                        return regeneratorRuntime.wrap(function _callee41$(_context41) {
+                                        return regeneratorRuntime.wrap(function _callee37$(_context37) {
                                             while (1) {
-                                                switch (_context41.prev = _context41.next) {
+                                                switch (_context37.prev = _context37.next) {
                                                     case 0:
-                                                        _context41.next = 2;
-                                                        return _this23.loadFLVFromCache(index);
+                                                        _context37.next = 2;
+                                                        return _this22.loadFLVFromCache(index);
 
                                                     case 2:
-                                                        cache = _context41.sent;
+                                                        cache = _context37.sent;
 
                                                         if (!cache) {
-                                                            _context41.next = 5;
+                                                            _context37.next = 5;
                                                             break;
                                                         }
 
-                                                        return _context41.abrupt('return', _this23.flvsBlob[index] = cache);
+                                                        return _context37.abrupt('return', _this22.flvsBlob[index] = cache);
 
                                                     case 5:
-                                                        _context41.next = 7;
-                                                        return _this23.loadPartialFLVFromCache(index);
+                                                        _context37.next = 7;
+                                                        return _this22.loadPartialFLVFromCache(index);
 
                                                     case 7:
-                                                        partialCache = _context41.sent;
-                                                        burl = _this23.flvs[index];
+                                                        partialCache = _context37.sent;
+                                                        burl = _this22.flvs[index];
 
                                                         if (partialCache) burl += '&bstart=' + partialCache.size;
                                                         opt = {
+                                                            fetch: _this22.playerWin.fetch,
                                                             method: 'GET',
                                                             mode: 'cors',
                                                             cache: 'default',
@@ -3041,51 +2897,51 @@ new Promise(function (resolve) {
                                                         };
 
                                                         opt.onprogress = progressHandler;
-                                                        opt.onerror = opt.onabort = function (_ref47) {
-                                                            var target = _ref47.target,
-                                                                type = _ref47.type;
+                                                        opt.onerror = opt.onabort = function (_ref43) {
+                                                            var target = _ref43.target,
+                                                                type = _ref43.type;
 
                                                             var pBlob = target.getPartialBlob();
                                                             if (partialCache) pBlob = new Blob([partialCache, pBlob]);
-                                                            _this23.savePartialFLVToCache(index, pBlob);
+                                                            _this22.savePartialFLVToCache(index, pBlob);
                                                         };
 
                                                         fch = new DetailedFetchBlob(burl, opt);
 
-                                                        _this23.flvsDetailedFetch[index] = fch;
-                                                        _context41.next = 17;
+                                                        _this22.flvsDetailedFetch[index] = fch;
+                                                        _context37.next = 17;
                                                         return fch.getBlob();
 
                                                     case 17:
-                                                        fullResponse = _context41.sent;
+                                                        fullResponse = _context37.sent;
 
-                                                        _this23.flvsDetailedFetch[index] = undefined;
+                                                        _this22.flvsDetailedFetch[index] = undefined;
                                                         if (partialCache) {
                                                             fullResponse = new Blob([partialCache, fullResponse]);
-                                                            _this23.cleanPartialFLVInCache(index);
+                                                            _this22.cleanPartialFLVInCache(index);
                                                         }
-                                                        _this23.saveFLVToCache(index, fullResponse);
-                                                        return _context41.abrupt('return', _this23.flvsBlob[index] = fullResponse);
+                                                        _this22.saveFLVToCache(index, fullResponse);
+                                                        return _context37.abrupt('return', _this22.flvsBlob[index] = fullResponse);
 
                                                     case 22:
                                                     case 'end':
-                                                        return _context41.stop();
+                                                        return _context37.stop();
                                                 }
                                             }
-                                        }, _callee41, _this23);
+                                        }, _callee37, _this22);
                                     }))();
-                                    return _context42.abrupt('return', this.flvsBlob[index]);
+                                    return _context38.abrupt('return', this.flvsBlob[index]);
 
                                 case 6:
                                 case 'end':
-                                    return _context42.stop();
+                                    return _context38.stop();
                             }
                         }
-                    }, _callee42, this);
+                    }, _callee38, this);
                 }));
 
-                function getFLV(_x43, _x44) {
-                    return _ref45.apply(this, arguments);
+                function getFLV(_x41, _x42) {
+                    return _ref41.apply(this, arguments);
                 }
 
                 return getFLV;
@@ -3093,28 +2949,28 @@ new Promise(function (resolve) {
         }, {
             key: 'abortFLV',
             value: function () {
-                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43(index) {
-                    return regeneratorRuntime.wrap(function _callee43$(_context43) {
+                var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(index) {
+                    return regeneratorRuntime.wrap(function _callee39$(_context39) {
                         while (1) {
-                            switch (_context43.prev = _context43.next) {
+                            switch (_context39.prev = _context39.next) {
                                 case 0:
                                     if (!this.flvsDetailedFetch[index]) {
-                                        _context43.next = 2;
+                                        _context39.next = 2;
                                         break;
                                     }
 
-                                    return _context43.abrupt('return', this.flvsDetailedFetch[index].abort());
+                                    return _context39.abrupt('return', this.flvsDetailedFetch[index].abort());
 
                                 case 2:
                                 case 'end':
-                                    return _context43.stop();
+                                    return _context39.stop();
                             }
                         }
-                    }, _callee43, this);
+                    }, _callee39, this);
                 }));
 
-                function abortFLV(_x45) {
-                    return _ref48.apply(this, arguments);
+                function abortFLV(_x43) {
+                    return _ref44.apply(this, arguments);
                 }
 
                 return abortFLV;
@@ -3122,14 +2978,14 @@ new Promise(function (resolve) {
         }, {
             key: 'getAllFLVs',
             value: function () {
-                var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44(progressHandler) {
+                var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(progressHandler) {
                     var promises, i;
-                    return regeneratorRuntime.wrap(function _callee44$(_context44) {
+                    return regeneratorRuntime.wrap(function _callee40$(_context40) {
                         while (1) {
-                            switch (_context44.prev = _context44.next) {
+                            switch (_context40.prev = _context40.next) {
                                 case 0:
                                     if (this.flvs) {
-                                        _context44.next = 2;
+                                        _context40.next = 2;
                                         break;
                                     }
 
@@ -3140,18 +2996,18 @@ new Promise(function (resolve) {
 
                                     for (i = 0; i < this.flvs.length; i++) {
                                         promises.push(this.getFLV(i, progressHandler));
-                                    } return _context44.abrupt('return', Promise.all(promises));
+                                    } return _context40.abrupt('return', Promise.all(promises));
 
                                 case 5:
                                 case 'end':
-                                    return _context44.stop();
+                                    return _context40.stop();
                             }
                         }
-                    }, _callee44, this);
+                    }, _callee40, this);
                 }));
 
-                function getAllFLVs(_x46) {
-                    return _ref49.apply(this, arguments);
+                function getAllFLVs(_x44) {
+                    return _ref45.apply(this, arguments);
                 }
 
                 return getAllFLVs;
@@ -3159,23 +3015,23 @@ new Promise(function (resolve) {
         }, {
             key: 'cleanAllFLVsInCache',
             value: function () {
-                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
                     var promises, _iteratorNormalCompletion7, _didIteratorError7, _iteratorError7, _iterator7, _step7, _flv, name;
 
-                    return regeneratorRuntime.wrap(function _callee45$(_context45) {
+                    return regeneratorRuntime.wrap(function _callee41$(_context41) {
                         while (1) {
-                            switch (_context45.prev = _context45.next) {
+                            switch (_context41.prev = _context41.next) {
                                 case 0:
                                     if (this.cache) {
-                                        _context45.next = 2;
+                                        _context41.next = 2;
                                         break;
                                     }
 
-                                    return _context45.abrupt('return');
+                                    return _context41.abrupt('return');
 
                                 case 2:
                                     if (this.flvs) {
-                                        _context45.next = 4;
+                                        _context41.next = 4;
                                         break;
                                     }
 
@@ -3186,7 +3042,7 @@ new Promise(function (resolve) {
                                     _iteratorNormalCompletion7 = true;
                                     _didIteratorError7 = false;
                                     _iteratorError7 = undefined;
-                                    _context45.prev = 8;
+                                    _context41.prev = 8;
 
                                     for (_iterator7 = this.flvs[Symbol.iterator](); !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
                                         _flv = _step7.value;
@@ -3195,52 +3051,52 @@ new Promise(function (resolve) {
                                         promises.push(this.cache.deleteData(name));
                                         promises.push(this.cache.deleteData('PC_' + name));
                                     }
-                                    _context45.next = 16;
+                                    _context41.next = 16;
                                     break;
 
                                 case 12:
-                                    _context45.prev = 12;
-                                    _context45.t0 = _context45['catch'](8);
+                                    _context41.prev = 12;
+                                    _context41.t0 = _context41['catch'](8);
                                     _didIteratorError7 = true;
-                                    _iteratorError7 = _context45.t0;
+                                    _iteratorError7 = _context41.t0;
 
                                 case 16:
-                                    _context45.prev = 16;
-                                    _context45.prev = 17;
+                                    _context41.prev = 16;
+                                    _context41.prev = 17;
 
                                     if (!_iteratorNormalCompletion7 && _iterator7.return) {
                                         _iterator7.return();
                                     }
 
                                 case 19:
-                                    _context45.prev = 19;
+                                    _context41.prev = 19;
 
                                     if (!_didIteratorError7) {
-                                        _context45.next = 22;
+                                        _context41.next = 22;
                                         break;
                                     }
 
                                     throw _iteratorError7;
 
                                 case 22:
-                                    return _context45.finish(19);
+                                    return _context41.finish(19);
 
                                 case 23:
-                                    return _context45.finish(16);
+                                    return _context41.finish(16);
 
                                 case 24:
-                                    return _context45.abrupt('return', Promise.all(promises));
+                                    return _context41.abrupt('return', Promise.all(promises));
 
                                 case 25:
                                 case 'end':
-                                    return _context45.stop();
+                                    return _context41.stop();
                             }
                         }
-                    }, _callee45, this, [[8, 12, 16, 24], [17, , 19, 23]]);
+                    }, _callee41, this, [[8, 12, 16, 24], [17, , 19, 23]]);
                 }));
 
                 function cleanAllFLVsInCache() {
-                    return _ref50.apply(this, arguments);
+                    return _ref46.apply(this, arguments);
                 }
 
                 return cleanAllFLVsInCache;
@@ -3248,17 +3104,17 @@ new Promise(function (resolve) {
         }, {
             key: 'setupProxy',
             value: function () {
-                var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46(res, onsuccess) {
-                    var _this24 = this;
+                var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(res, onsuccess) {
+                    var _this23 = this;
 
                     var resProxy, i;
-                    return regeneratorRuntime.wrap(function _callee46$(_context46) {
+                    return regeneratorRuntime.wrap(function _callee42$(_context42) {
                         while (1) {
-                            switch (_context46.prev = _context46.next) {
+                            switch (_context42.prev = _context42.next) {
                                 case 0:
                                     (function () {
-                                        var _fetch = _this24.playerWin.fetch;
-                                        _this24.playerWin.fetch = function (input, init) {
+                                        var _fetch = _this23.playerWin.fetch;
+                                        _this23.playerWin.fetch = function (input, init) {
                                             if (!input.slice || input.slice(0, 5) != 'blob:') {
                                                 return _fetch(input, init);
                                             }
@@ -3271,7 +3127,7 @@ new Promise(function (resolve) {
                                             return _fetch(input.slice(0, bstart), init);
                                         };
                                     })();
-                                    _context46.next = 3;
+                                    _context42.next = 3;
                                     return this.loadAllFLVFromCache();
 
                                 case 3:
@@ -3281,33 +3137,66 @@ new Promise(function (resolve) {
                                     for (i = 0; i < this.flvsBlob.length; i++) {
                                         if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
                                     }
-                                    return _context46.abrupt('return', onsuccess(resProxy));
+                                    return _context42.abrupt('return', onsuccess(resProxy));
 
                                 case 7:
                                 case 'end':
-                                    return _context46.stop();
+                                    return _context42.stop();
                             }
                         }
-                    }, _callee46, this);
+                    }, _callee42, this);
                 }));
 
-                function setupProxy(_x47, _x48) {
-                    return _ref51.apply(this, arguments);
+                function setupProxy(_x45, _x46) {
+                    return _ref47.apply(this, arguments);
                 }
 
                 return setupProxy;
             }()
         }], [{
+            key: 'formatToValue',
+            value: function formatToValue(format) {
+                switch (format) {
+                    case 'flv':
+                        return '80';
+                    case 'hdmp4':
+                        return '64';
+                    case 'mp4':
+                        return '16';
+                    default:
+                        return null;
+                }
+            }
+        }, {
+            key: 'valueToFormat',
+            value: function valueToFormat(value) {
+                switch (parseInt(value)) {
+                    case 112:
+                    case 80:
+                    case 4:
+                    case 3:
+                        return 'flv';
+                    case 48:
+                    case 2:
+                        return 'hdmp4';
+                    case 16:
+                    case 1:
+                        return 'mp4';
+                    default:
+                        return null;
+                }
+            }
+        }, {
             key: 'loadASSScript',
             value: function () {
-                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
                     var src = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js';
                     var script, head, foot;
-                    return regeneratorRuntime.wrap(function _callee47$(_context47) {
+                    return regeneratorRuntime.wrap(function _callee43$(_context43) {
                         while (1) {
-                            switch (_context47.prev = _context47.next) {
+                            switch (_context43.prev = _context43.next) {
                                 case 0:
-                                    _context47.next = 2;
+                                    _context43.next = 2;
                                     return new Promise(function (resolve, reject) {
                                         var req = new XMLHttpRequest();
                                         req.onload = function () {
@@ -3319,25 +3208,25 @@ new Promise(function (resolve) {
                                     });
 
                                 case 2:
-                                    script = _context47.sent;
+                                    script = _context43.sent;
 
                                     script = script.slice(0, script.indexOf('var init = function ()'));
                                     head = '\n        (function () {\n        ';
                                     foot = '\n            fetchXML = function (cid, callback) {\n                var oReq = new XMLHttpRequest();\n                oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n                oReq.onload = function () {\n                    var content = oReq.responseText.replace(/(?:[\0-\b\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, "");\n                    callback(content);\n                };\n                oReq.send();\n            };\n            initFont();\n            return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };\n        })()\n        ';
 
                                     script = '' + head + script + foot;
-                                    return _context47.abrupt('return', top.eval(script));
+                                    return _context43.abrupt('return', top.eval(script));
 
                                 case 8:
                                 case 'end':
-                                    return _context47.stop();
+                                    return _context43.stop();
                             }
                         }
-                    }, _callee47, this);
+                    }, _callee43, this);
                 }));
 
                 function loadASSScript() {
-                    return _ref52.apply(this, arguments);
+                    return _ref48.apply(this, arguments);
                 }
 
                 return loadASSScript;
@@ -3345,24 +3234,24 @@ new Promise(function (resolve) {
         }, {
             key: '_UNIT_TEST',
             value: function _UNIT_TEST() {
-                var _this25 = this;
+                var _this24 = this;
 
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
                     var playerWin;
-                    return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                    return regeneratorRuntime.wrap(function _callee44$(_context44) {
                         while (1) {
-                            switch (_context48.prev = _context48.next) {
+                            switch (_context44.prev = _context44.next) {
                                 case 0:
-                                    _context48.next = 2;
+                                    _context44.next = 2;
                                     return BiliUserJS.getPlayerWin();
 
                                 case 2:
-                                    playerWin = _context48.sent;
+                                    playerWin = _context44.sent;
 
                                     window.m = new BiliMonkey(playerWin);
 
                                     console.warn('sniffDefaultFormat test');
-                                    _context48.next = 7;
+                                    _context44.next = 7;
                                     return m.sniffDefaultFormat();
 
                                 case 7:
@@ -3373,31 +3262,31 @@ new Promise(function (resolve) {
                                     console.log(m.queryInfo('mp4'));
 
                                     console.warn('getNonCurrentFormat test');
-                                    _context48.t0 = console;
-                                    _context48.next = 15;
+                                    _context44.t0 = console;
+                                    _context44.next = 15;
                                     return m.queryInfo('mp4');
 
                                 case 15:
-                                    _context48.t1 = _context48.sent;
+                                    _context44.t1 = _context44.sent;
 
-                                    _context48.t0.log.call(_context48.t0, _context48.t1);
+                                    _context44.t0.log.call(_context44.t0, _context44.t1);
 
                                     console.warn('getCurrentFormat test');
-                                    _context48.t2 = console;
-                                    _context48.next = 21;
+                                    _context44.t2 = console;
+                                    _context44.next = 21;
                                     return m.queryInfo('flv');
 
                                 case 21:
-                                    _context48.t3 = _context48.sent;
+                                    _context44.t3 = _context44.sent;
 
-                                    _context48.t2.log.call(_context48.t2, _context48.t3);
+                                    _context44.t2.log.call(_context44.t2, _context44.t3);
 
                                 case 23:
                                 case 'end':
-                                    return _context48.stop();
+                                    return _context44.stop();
                             }
                         }
-                    }, _callee48, _this25);
+                    }, _callee44, _this24);
                 }))();
             }
         }]);
@@ -3467,59 +3356,59 @@ new Promise(function (resolve) {
         }, {
             key: 'setFunctions',
             value: function () {
-                var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
-                    var _this26 = this;
+                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                    var _this25 = this;
 
-                    var _ref55 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                        _ref55$videoRefresh = _ref55.videoRefresh,
-                        videoRefresh = _ref55$videoRefresh === undefined ? false : _ref55$videoRefresh;
+                    var _ref51 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                        _ref51$videoRefresh = _ref51.videoRefresh,
+                        videoRefresh = _ref51$videoRefresh === undefined ? false : _ref51$videoRefresh;
 
-                    return regeneratorRuntime.wrap(function _callee49$(_context49) {
+                    return regeneratorRuntime.wrap(function _callee45$(_context45) {
                         while (1) {
-                            switch (_context49.prev = _context49.next) {
+                            switch (_context45.prev = _context45.next) {
                                 case 0:
                                     if (this.option.betabeta) {
-                                        _context49.next = 5;
+                                        _context45.next = 5;
                                         break;
                                     }
 
-                                    _context49.next = 3;
+                                    _context45.next = 3;
                                     return this.getPlayerVideo();
 
                                 case 3:
                                     this.userdata = { oped: {} };
-                                    return _context49.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 5:
                                     if (!videoRefresh) {
-                                        _context49.next = 14;
+                                        _context45.next = 14;
                                         break;
                                     }
 
                                     this.video = this.playerWin.document.getElementsByTagName('video')[0];
 
                                     if (this.video) {
-                                        _context49.next = 9;
+                                        _context45.next = 9;
                                         break;
                                     }
 
-                                    return _context49.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 9:
                                     if (this.option.dblclick) this.dblclickFullScreen();
                                     if (this.option.electric) this.reallocateElectricPanel();
                                     if (this.option.oped) this.skipOPED();
                                     this.video.addEventListener('emptied', function () {
-                                        return _this26.setFunctions({ videoRefresh: true });
+                                        return _this25.setFunctions({ videoRefresh: true });
                                     });
-                                    return _context49.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 14:
-                                    _context49.next = 16;
+                                    _context45.next = 16;
                                     return this.getPlayerVideo();
 
                                 case 16:
-                                    this.video = _context49.sent;
+                                    this.video = _context45.sent;
 
                                     this.retriveUserdata();
                                     if (this.option.badgeWatchLater) this.badgeWatchLater();
@@ -3537,27 +3426,27 @@ new Promise(function (resolve) {
                                     if (this.option.menuFocus) this.menuFocusOnPlayer();
                                     if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
                                     this.playerWin.addEventListener('beforeunload', function () {
-                                        return _this26.saveUserdata();
+                                        return _this25.saveUserdata();
                                     });
                                     this.video.addEventListener('emptied', function () {
-                                        return _this26.setFunctions({ videoRefresh: true });
+                                        return _this25.setFunctions({ videoRefresh: true });
                                     });
                                     // beta
                                     if (this.option.speech) top.document.body.addEventListener('click', function (e) {
-                                        return e.detail > 2 ? _this26.speechRecognition() : undefined;
+                                        return e.detail > 2 ? _this25.speechRecognition() : undefined;
                                     });
                                     if (this.option.series) this.inferNextInSeries();
 
                                 case 36:
                                 case 'end':
-                                    return _context49.stop();
+                                    return _context45.stop();
                             }
                         }
-                    }, _callee49, this);
+                    }, _callee45, this);
                 }));
 
                 function setFunctions() {
-                    return _ref54.apply(this, arguments);
+                    return _ref50.apply(this, arguments);
                 }
 
                 return setFunctions;
@@ -3565,11 +3454,11 @@ new Promise(function (resolve) {
         }, {
             key: 'inferNextInSeries',
             value: function () {
-                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
+                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
                     var title, epNumberText, seriesTitle, ep, mid, vlist;
-                    return regeneratorRuntime.wrap(function _callee50$(_context50) {
+                    return regeneratorRuntime.wrap(function _callee46$(_context46) {
                         while (1) {
-                            switch (_context50.prev = _context50.next) {
+                            switch (_context46.prev = _context46.next) {
                                 case 0:
                                     title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
@@ -3578,11 +3467,11 @@ new Promise(function (resolve) {
                                     epNumberText = title.match(/\d+/g);
 
                                     if (epNumberText) {
-                                        _context50.next = 4;
+                                        _context46.next = 4;
                                         break;
                                     }
 
-                                    return _context50.abrupt('return', this.series = []);
+                                    return _context46.abrupt('return', this.series = []);
 
                                 case 4:
                                     epNumberText = epNumberText.pop();
@@ -3599,15 +3488,15 @@ new Promise(function (resolve) {
                                     mid = top.document.getElementById('r-info-rank');
 
                                     if (mid) {
-                                        _context50.next = 12;
+                                        _context46.next = 12;
                                         break;
                                     }
 
-                                    return _context50.abrupt('return', this.series = []);
+                                    return _context46.abrupt('return', this.series = []);
 
                                 case 12:
                                     mid = mid.children[0].href.match(/\d+/)[0];
-                                    _context50.next = 15;
+                                    _context46.next = 15;
                                     return Promise.all([title].concat(_toConsumableArray(ep)).map(function (keyword) {
                                         return new Promise(function (resolve, reject) {
                                             var req = new XMLHttpRequest();
@@ -3622,7 +3511,7 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 15:
-                                    vlist = _context50.sent;
+                                    vlist = _context46.sent;
 
 
                                     vlist[0] = [vlist[0].find(function (e) {
@@ -3630,11 +3519,11 @@ new Promise(function (resolve) {
                                     })];
 
                                     if (vlist[0][0]) {
-                                        _context50.next = 20;
+                                        _context46.next = 20;
                                         break;
                                     }
 
-                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context50.abrupt('return', this.series = []);
+                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context46.abrupt('return', this.series = []);
 
                                 case 20:
                                     this.series = [vlist[1].find(function (e) {
@@ -3649,18 +3538,18 @@ new Promise(function (resolve) {
                                         return e.created > vlist[0][0].created;
                                     }) || null;
 
-                                    return _context50.abrupt('return', this.series);
+                                    return _context46.abrupt('return', this.series);
 
                                 case 24:
                                 case 'end':
-                                    return _context50.stop();
+                                    return _context46.stop();
                             }
                         }
-                    }, _callee50, this);
+                    }, _callee46, this);
                 }));
 
                 function inferNextInSeries() {
-                    return _ref56.apply(this, arguments);
+                    return _ref52.apply(this, arguments);
                 }
 
                 return inferNextInSeries;
@@ -3697,10 +3586,10 @@ new Promise(function (resolve) {
         }, {
             key: 'dblclickFullScreen',
             value: function dblclickFullScreen() {
-                var _this27 = this;
+                var _this26 = this;
 
                 this.video.addEventListener('dblclick', function () {
-                    return _this27.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                    return _this26.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
                 });
             }
         }, {
@@ -3722,20 +3611,20 @@ new Promise(function (resolve) {
         }, {
             key: 'reallocateElectricPanel',
             value: function reallocateElectricPanel() {
-                var _this28 = this;
+                var _this27 = this;
 
                 if (!this.playerWin.localStorage.bilibili_player_settings) return;
                 if (!this.playerWin.localStorage.bilibili_player_settings.includes('"autopart":1') && !this.option.electricSkippable) return;
                 this.video.addEventListener('ended', function () {
                     setTimeout(function () {
-                        var i = _this28.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
+                        var i = _this27.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0];
                         if (!i) return;
                         i.children[2].click();
                         i.style.display = 'block';
                         i.style.zIndex = 233;
                         var j = 5;
                         var h = setInterval(function () {
-                            if (_this28.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
+                            if (_this27.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) i.style.zIndex = '';
                             if (j > 0) {
                                 i.children[2].children[0].textContent = '0' + j;
                                 j--;
@@ -3765,10 +3654,10 @@ new Promise(function (resolve) {
         }, {
             key: 'autoResume',
             value: function autoResume() {
-                var _this29 = this;
+                var _this28 = this;
 
                 var h = function h() {
-                    var span = _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+                    var span = _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
                     if (!span) return;
 
                     var _span$textContent$spl = span.textContent.split(':'),
@@ -3778,37 +3667,37 @@ new Promise(function (resolve) {
 
                     if (!min || !sec) return;
                     var time = parseInt(min) * 60 + parseInt(sec);
-                    if (time < _this29.video.duration - 10) {
-                        if (!_this29.video.paused || _this29.video.autoplay) {
-                            _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                    if (time < _this28.video.duration - 10) {
+                        if (!_this28.video.paused || _this28.video.autoplay) {
+                            _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
                         } else {
-                            var play = _this29.video.play;
-                            _this29.video.play = function () {
+                            var play = _this28.video.play;
+                            _this28.video.play = function () {
                                 return setTimeout(function () {
-                                    _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                                    _this29.video.play = play;
+                                    _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
+                                    _this28.video.play = play;
                                 }, 0);
                             };
-                            _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
+                            _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
                         }
                     } else {
-                        _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
-                        _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
+                        _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-close').click();
+                        _this28.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom').children[0].style.visibility = 'hidden';
                     }
                 };
                 this.video.addEventListener('canplay', h);
                 setTimeout(function () {
-                    return _this29.video && _this29.video.removeEventListener && _this29.video.removeEventListener('canplay', h);
+                    return _this28.video && _this28.video.removeEventListener && _this28.video.removeEventListener('canplay', h);
                 }, 3000);
             }
         }, {
             key: 'autoPlay',
             value: function autoPlay() {
-                var _this30 = this;
+                var _this29 = this;
 
                 this.video.autoplay = true;
                 setTimeout(function () {
-                    if (_this30.video.paused) _this30.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (_this29.video.paused) _this29.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                 }, 0);
             }
         }, {
@@ -3849,7 +3738,7 @@ new Promise(function (resolve) {
         }, {
             key: 'skipOPED',
             value: function skipOPED() {
-                var _this31 = this;
+                var _this30 = this;
 
                 var collectionId = this.getCollectionId();
                 if (!(this.userdata.oped[collectionId] instanceof Array)) return;
@@ -3861,7 +3750,7 @@ new Promise(function (resolve) {
                 }
                 if (this.userdata.oped[collectionId][1]) {
                     var edHandler = function edHandler(v) {
-                        if (v.target.currentTime > _this31.userdata.oped[collectionId][1]) {
+                        if (v.target.currentTime > _this30.userdata.oped[collectionId][1]) {
                             v.target.removeEventListener('timeupdate', edHandler);
                             v.target.dispatchEvent(new Event('ended'));
                         }
@@ -3883,34 +3772,34 @@ new Promise(function (resolve) {
         }, {
             key: 'menuFocusOnPlayer',
             value: function menuFocusOnPlayer() {
-                var _this32 = this;
+                var _this31 = this;
 
                 this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0].addEventListener('click', function () {
                     return setTimeout(function () {
-                        return _this32.focusOnPlayer();
+                        return _this31.focusOnPlayer();
                     }, 0);
                 });
             }
         }, {
             key: 'limitedKeydownFullScreenPlay',
             value: function limitedKeydownFullScreenPlay() {
-                var _this33 = this;
+                var _this32 = this;
 
                 var h = function h(e) {
                     if (!e.isTrusted) return;
                     if (e.key == 'Enter') {
-                        if (_this33.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
-                            _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                        if (_this32.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
+                            _this32.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
                         }
-                        if (_this33.video.paused) {
-                            if (_this33.video.readyState) {
-                                _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        if (_this32.video.paused) {
+                            if (_this32.video.readyState) {
+                                _this32.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                             } else {
                                 var i = function i() {
-                                    _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                                    _this33.video.removeEventListener('canplay', i);
+                                    _this32.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
+                                    _this32.video.removeEventListener('canplay', i);
                                 };
-                                _this33.video.addEventListener('canplay', i);
+                                _this32.video.addEventListener('canplay', i);
                             }
                         }
                     }
@@ -3923,7 +3812,7 @@ new Promise(function (resolve) {
         }, {
             key: 'speechRecognition',
             value: function speechRecognition() {
-                var _this34 = this;
+                var _this33 = this;
 
                 var r = void 0,
                     g = void 0;
@@ -3959,32 +3848,32 @@ new Promise(function (resolve) {
                     var transcript = e.results[last][0].transcript;
                     switch (transcript) {
                         case '播放':
-                            if (_this34.video.paused) _this34.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u64AD\u653E');
+                            if (_this33.video.paused) _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:\u64AD\u653E');
                             break;
                         case '暂停':
-                            if (!_this34.video.paused) _this34.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u6682\u505C');
+                            if (!_this33.video.paused) _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:\u6682\u505C');
                             break;
                         case '全屏':
-                            _this34.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u5168\u5C4F');
+                            _this33.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:\u5168\u5C4F');
                             break;
                         case '关闭':
                             top.close();
                             break;
                         case '加速':
-                            _this34.setVideoSpeed(2);
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u52A0\u901F');
+                            _this33.setVideoSpeed(2);
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:\u52A0\u901F');
                             break;
                         case '减速':
-                            _this34.setVideoSpeed(0.5);
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:\u51CF\u901F');
+                            _this33.setVideoSpeed(0.5);
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:\u51CF\u901F');
                             break;
                         case '下一集':
-                            _this34.video.dispatchEvent(new Event('ended'));
+                            _this33.video.dispatchEvent(new Event('ended'));
                         default:
-                            _this34.hintInfo('BiliPolyfill: \u8BED\u97F3:"' + transcript + '"\uFF1F');
+                            _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:"' + transcript + '"\uFF1F');
                             break;
                     }
                     console && console.log(e.results);
@@ -4011,41 +3900,41 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerVideo',
             value: function () {
-                var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
-                    var _this35 = this;
+                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+                    var _this34 = this;
 
-                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
+                    return regeneratorRuntime.wrap(function _callee47$(_context47) {
                         while (1) {
-                            switch (_context51.prev = _context51.next) {
+                            switch (_context47.prev = _context47.next) {
                                 case 0:
                                     if (!this.playerWin.document.getElementsByTagName('video').length) {
-                                        _context51.next = 4;
+                                        _context47.next = 4;
                                         break;
                                     }
 
-                                    return _context51.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
+                                    return _context47.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
 
                                 case 4:
-                                    return _context51.abrupt('return', new Promise(function (resolve) {
+                                    return _context47.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
-                                            if (_this35.playerWin.document.getElementsByTagName('video').length) {
+                                            if (_this34.playerWin.document.getElementsByTagName('video').length) {
                                                 observer.disconnect();
-                                                resolve(_this35.video = _this35.playerWin.document.getElementsByTagName('video')[0]);
+                                                resolve(_this34.video = _this34.playerWin.document.getElementsByTagName('video')[0]);
                                             }
                                         });
-                                        observer.observe(_this35.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+                                        observer.observe(_this34.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
                                     }));
 
                                 case 5:
                                 case 'end':
-                                    return _context51.stop();
+                                    return _context47.stop();
                             }
                         }
-                    }, _callee51, this);
+                    }, _callee47, this);
                 }));
 
                 function getPlayerVideo() {
-                    return _ref57.apply(this, arguments);
+                    return _ref53.apply(this, arguments);
                 }
 
                 return getPlayerVideo;
@@ -4053,7 +3942,7 @@ new Promise(function (resolve) {
         }], [{
             key: 'openMinimizedPlayer',
             value: function openMinimizedPlayer() {
-                var _this36 = this;
+                var _this35 = this;
 
                 var option = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { cid: top.cid, aid: '' };
 
@@ -4062,13 +3951,13 @@ new Promise(function (resolve) {
                 if (!option.aid) option.aid = '';
                 var h = top.open('//www.bilibili.com/blackboard/html5player.html?cid=' + option.cid + '&aid=' + option.aid + '&crossDomain=' + (top.document.domain != 'www.bilibili.com' ? 'true' : ''), undefined, ' ');
 
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
                     var div, i;
-                    return regeneratorRuntime.wrap(function _callee52$(_context52) {
+                    return regeneratorRuntime.wrap(function _callee48$(_context48) {
                         while (1) {
-                            switch (_context52.prev = _context52.next) {
+                            switch (_context48.prev = _context48.next) {
                                 case 0:
-                                    _context52.next = 2;
+                                    _context48.next = 2;
                                     return new Promise(function (resolve) {
                                         h.addEventListener('load', resolve);
                                         setTimeout(function () {
@@ -4081,14 +3970,14 @@ new Promise(function (resolve) {
                                     div = h.document.getElementById('bilibiliPlayer');
 
                                     if (div) {
-                                        _context52.next = 6;
+                                        _context48.next = 6;
                                         break;
                                     }
 
-                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context52.abrupt('return');
+                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context48.abrupt('return');
 
                                 case 6:
-                                    _context52.next = 8;
+                                    _context48.next = 8;
                                     return new Promise(function (resolve) {
                                         if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve(); else {
                                             var observer = new MutationObserver(function () {
@@ -4113,10 +4002,10 @@ new Promise(function (resolve) {
 
                                 case 15:
                                 case 'end':
-                                    return _context52.stop();
+                                    return _context48.stop();
                             }
                         }
-                    }, _callee52, _this36);
+                    }, _callee48, _this35);
                 }))();
             }
         }, {
@@ -4175,20 +4064,20 @@ new Promise(function (resolve) {
         _createClass(BiliUserJS, null, [{
             key: 'getIframeWin',
             value: function () {
-                var _ref59 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
-                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
+                var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
+                    return regeneratorRuntime.wrap(function _callee49$(_context49) {
                         while (1) {
-                            switch (_context53.prev = _context53.next) {
+                            switch (_context49.prev = _context49.next) {
                                 case 0:
                                     if (!document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-                                        _context53.next = 4;
+                                        _context49.next = 4;
                                         break;
                                     }
 
-                                    return _context53.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
+                                    return _context49.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
 
                                 case 4:
-                                    return _context53.abrupt('return', new Promise(function (resolve) {
+                                    return _context49.abrupt('return', new Promise(function (resolve) {
                                         document.querySelector('#bofqi > iframe').addEventListener('load', function () {
                                             resolve(document.querySelector('#bofqi > iframe').contentWindow);
                                         });
@@ -4196,14 +4085,14 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
-                                    return _context53.stop();
+                                    return _context49.stop();
                             }
                         }
-                    }, _callee53, this);
+                    }, _callee49, this);
                 }));
 
                 function getIframeWin() {
-                    return _ref59.apply(this, arguments);
+                    return _ref55.apply(this, arguments);
                 }
 
                 return getIframeWin;
@@ -4211,17 +4100,17 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerWin',
             value: function () {
-                var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54() {
-                    return regeneratorRuntime.wrap(function _callee54$(_context54) {
+                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
+                    return regeneratorRuntime.wrap(function _callee50$(_context50) {
                         while (1) {
-                            switch (_context54.prev = _context54.next) {
+                            switch (_context50.prev = _context50.next) {
                                 case 0:
                                     if (!location.href.includes('/watchlater/#/list')) {
-                                        _context54.next = 3;
+                                        _context50.next = 3;
                                         break;
                                     }
 
-                                    _context54.next = 3;
+                                    _context50.next = 3;
                                     return new Promise(function (resolve) {
                                         var h = function h() {
                                             resolve();
@@ -4232,16 +4121,16 @@ new Promise(function (resolve) {
 
                                 case 3:
                                     if (!location.href.includes('/watchlater/#/')) {
-                                        _context54.next = 7;
+                                        _context50.next = 7;
                                         break;
                                     }
 
                                     if (document.getElementById('bofqi')) {
-                                        _context54.next = 7;
+                                        _context50.next = 7;
                                         break;
                                     }
 
-                                    _context54.next = 7;
+                                    _context50.next = 7;
                                     return new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bofqi')) {
@@ -4254,27 +4143,27 @@ new Promise(function (resolve) {
 
                                 case 7:
                                     if (!(location.host == 'bangumi.bilibili.com')) {
-                                        _context54.next = 19;
+                                        _context50.next = 19;
                                         break;
                                     }
 
                                     if (!document.querySelector('#bofqi > iframe')) {
-                                        _context54.next = 12;
+                                        _context50.next = 12;
                                         break;
                                     }
 
-                                    return _context54.abrupt('return', BiliUserJS.getIframeWin());
+                                    return _context50.abrupt('return', BiliUserJS.getIframeWin());
 
                                 case 12:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context54.next = 16;
+                                        _context50.next = 16;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 16:
-                                    return _context54.abrupt('return', new Promise(function (resolve) {
+                                    return _context50.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.querySelector('#bofqi > iframe')) {
                                                 observer.disconnect();
@@ -4288,27 +4177,27 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 17:
-                                    _context54.next = 28;
+                                    _context50.next = 28;
                                     break;
 
                                 case 19:
                                     if (!document.getElementById('bilibiliPlayer')) {
-                                        _context54.next = 23;
+                                        _context50.next = 23;
                                         break;
                                     }
 
-                                    return _context54.abrupt('return', window);
+                                    return _context50.abrupt('return', window);
 
                                 case 23:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context54.next = 27;
+                                        _context50.next = 27;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 27:
-                                    return _context54.abrupt('return', new Promise(function (resolve) {
+                                    return _context50.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bilibiliPlayer')) {
                                                 observer.disconnect();
@@ -4323,14 +4212,14 @@ new Promise(function (resolve) {
 
                                 case 28:
                                 case 'end':
-                                    return _context54.stop();
+                                    return _context50.stop();
                             }
                         }
-                    }, _callee54, this);
+                    }, _callee50, this);
                 }));
 
                 function getPlayerWin() {
-                    return _ref60.apply(this, arguments);
+                    return _ref56.apply(this, arguments);
                 }
 
                 return getPlayerWin;
@@ -4354,7 +4243,7 @@ new Promise(function (resolve) {
 
             // Title Append
             value: function titleAppend(monkey) {
-                var _this38 = this;
+                var _this37 = this;
 
                 var h = document.querySelector('div.viewbox div.info') || document.querySelector('div.video-top-info div.video-info-module');
                 var tminfo = document.querySelector('div.tminfo');
@@ -4366,15 +4255,15 @@ new Promise(function (resolve) {
                 mp4A.textContent = '原生MP4';
                 assA.textContent = '弹幕ASS';
 
-                flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55() {
+                flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
                     var flvDiv;
-                    return regeneratorRuntime.wrap(function _callee55$(_context55) {
+                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
                         while (1) {
-                            switch (_context55.prev = _context55.next) {
+                            switch (_context51.prev = _context51.next) {
                                 case 0:
                                     flvA.textContent = '正在FLV';
                                     flvA.onmouseover = null;
-                                    _context55.next = 4;
+                                    _context51.next = 4;
                                     return monkey.queryInfo('flv');
 
                                 case 4:
@@ -4388,23 +4277,23 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context55.stop();
+                                    return _context51.stop();
                             }
                         }
-                    }, _callee55, _this38);
+                    }, _callee51, _this37);
                 }));
-                mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
-                    return regeneratorRuntime.wrap(function _callee56$(_context56) {
+                mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
+                    return regeneratorRuntime.wrap(function _callee52$(_context52) {
                         while (1) {
-                            switch (_context56.prev = _context56.next) {
+                            switch (_context52.prev = _context52.next) {
                                 case 0:
                                     mp4A.textContent = '正在MP4';
                                     mp4A.onmouseover = null;
-                                    _context56.next = 4;
+                                    _context52.next = 4;
                                     return monkey.queryInfo('mp4');
 
                                 case 4:
-                                    mp4A.href = _context56.sent;
+                                    mp4A.href = _context52.sent;
 
                                     mp4A.textContent = '原生MP4';
                                     mp4A.download = '';
@@ -4412,33 +4301,33 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context56.stop();
+                                    return _context52.stop();
                             }
                         }
-                    }, _callee56, _this38);
+                    }, _callee52, _this37);
                 }));
-                assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57() {
-                    return regeneratorRuntime.wrap(function _callee57$(_context57) {
+                assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
+                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
                         while (1) {
-                            switch (_context57.prev = _context57.next) {
+                            switch (_context53.prev = _context53.next) {
                                 case 0:
                                     assA.textContent = '正在ASS';
                                     assA.onmouseover = null;
-                                    _context57.next = 4;
+                                    _context53.next = 4;
                                     return monkey.queryInfo('ass');
 
                                 case 4:
-                                    assA.href = _context57.sent;
+                                    assA.href = _context53.sent;
 
                                     assA.textContent = '弹幕ASS';
                                     if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass'; else assA.download = monkey.cid + '.ass';
 
                                 case 7:
                                 case 'end':
-                                    return _context57.stop();
+                                    return _context53.stop();
                             }
                         }
-                    }, _callee57, _this38);
+                    }, _callee53, _this37);
                 }));
 
                 flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '16px';
@@ -4458,7 +4347,7 @@ new Promise(function (resolve) {
         }, {
             key: 'genFLVDiv',
             value: function genFLVDiv(monkey) {
-                var _this39 = this;
+                var _this38 = this;
 
                 var flvs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.flvs;
                 var cache = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : monkey.cache;
@@ -4505,12 +4394,12 @@ new Promise(function (resolve) {
                     return UI.allowDrag(e);
                 };
                 div.ondrop = function () {
-                    var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(e) {
+                    var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(e) {
                         var files, _iteratorNormalCompletion8, _didIteratorError8, _iteratorError8, _iterator8, _step8, file, outputName, url;
 
-                        return regeneratorRuntime.wrap(function _callee58$(_context58) {
+                        return regeneratorRuntime.wrap(function _callee54$(_context54) {
                             while (1) {
-                                switch (_context58.prev = _context58.next) {
+                                switch (_context54.prev = _context54.next) {
                                     case 0:
                                         UI.allowDrag(e);
                                         files = Array.from(e.dataTransfer.files);
@@ -4525,67 +4414,67 @@ new Promise(function (resolve) {
                                         _iteratorNormalCompletion8 = true;
                                         _didIteratorError8 = false;
                                         _iteratorError8 = undefined;
-                                        _context58.prev = 6;
+                                        _context54.prev = 6;
                                         for (_iterator8 = files[Symbol.iterator](); !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                                             file = _step8.value;
 
                                             table.insertRow(-1).innerHTML = '<td colspan="3">' + file.name + '</td>';
                                         }
-                                        _context58.next = 14;
+                                        _context54.next = 14;
                                         break;
 
                                     case 10:
-                                        _context58.prev = 10;
-                                        _context58.t0 = _context58['catch'](6);
+                                        _context54.prev = 10;
+                                        _context54.t0 = _context54['catch'](6);
                                         _didIteratorError8 = true;
-                                        _iteratorError8 = _context58.t0;
+                                        _iteratorError8 = _context54.t0;
 
                                     case 14:
-                                        _context58.prev = 14;
-                                        _context58.prev = 15;
+                                        _context54.prev = 14;
+                                        _context54.prev = 15;
 
                                         if (!_iteratorNormalCompletion8 && _iterator8.return) {
                                             _iterator8.return();
                                         }
 
                                     case 17:
-                                        _context58.prev = 17;
+                                        _context54.prev = 17;
 
                                         if (!_didIteratorError8) {
-                                            _context58.next = 20;
+                                            _context54.next = 20;
                                             break;
                                         }
 
                                         throw _iteratorError8;
 
                                     case 20:
-                                        return _context58.finish(17);
+                                        return _context54.finish(17);
 
                                     case 21:
-                                        return _context58.finish(14);
+                                        return _context54.finish(14);
 
                                     case 22:
                                         outputName = files[0].name.match(/\d+-\d+(?:-\d+)?\.flv/);
 
                                         if (outputName) outputName = outputName[0].replace(/-\d/, ""); else outputName = 'merge_' + files[0].name;
-                                        _context58.next = 26;
+                                        _context54.next = 26;
                                         return UI.mergeFLVFiles(files);
 
                                     case 26:
-                                        url = _context58.sent;
+                                        url = _context54.sent;
 
                                         table.insertRow(-1).innerHTML = '<td colspan="3"><a href="' + url + '" download="' + outputName + '">' + outputName + '</a></td>';
 
                                     case 28:
                                     case 'end':
-                                        return _context58.stop();
+                                        return _context54.stop();
                                 }
                             }
-                        }, _callee58, _this39, [[6, 10, 14, 22], [15, , 17, 21]]);
+                        }, _callee54, _this38, [[6, 10, 14, 22], [15, , 17, 21]]);
                     }));
 
-                    return function (_x58) {
-                        return _ref64.apply(this, arguments);
+                    return function (_x56) {
+                        return _ref60.apply(this, arguments);
                     };
                 }();
 
@@ -4619,19 +4508,19 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadAllFLVs',
             value: function () {
-                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(a, monkey, table) {
+                var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(a, monkey, table) {
                     var i, bar, _i2, blobs, mergedFLV, url, outputName;
 
-                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
+                    return regeneratorRuntime.wrap(function _callee55$(_context55) {
                         while (1) {
-                            switch (_context59.prev = _context59.next) {
+                            switch (_context55.prev = _context55.next) {
                                 case 0:
                                     if (!(table.rows[0].cells.length < 3)) {
-                                        _context59.next = 2;
+                                        _context55.next = 2;
                                         break;
                                     }
 
-                                    return _context59.abrupt('return');
+                                    return _context55.abrupt('return');
 
                                 case 2:
                                     monkey.hangPlayer();
@@ -4650,44 +4539,44 @@ new Promise(function (resolve) {
                                             return bar.value++;
                                         });
                                     } blobs = void 0;
-                                    _context59.next = 12;
+                                    _context55.next = 12;
                                     return monkey.getAllFLVs();
 
                                 case 12:
-                                    blobs = _context59.sent;
-                                    _context59.next = 15;
+                                    blobs = _context55.sent;
+                                    _context55.next = 15;
                                     return FLV.mergeBlobs(blobs);
 
                                 case 15:
-                                    mergedFLV = _context59.sent;
+                                    mergedFLV = _context55.sent;
                                     url = URL.createObjectURL(mergedFLV);
-                                    outputName = document.getElementsByClassName('v-title')[0].textContent;
+                                    outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
 
 
                                     bar.value++;
-                                    _context59.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
-                                    _context59.next = 22;
+                                    _context55.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
+                                    _context55.next = 22;
                                     return monkey.ass;
 
                                 case 22:
-                                    _context59.t1 = _context59.sent;
-                                    _context59.t2 = _context59.t0 + _context59.t1;
-                                    _context59.t3 = _context59.t2 + '" download="';
-                                    _context59.t4 = outputName;
-                                    _context59.t5 = _context59.t3 + _context59.t4;
-                                    table.insertRow(0).innerHTML = _context59.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
-                                    return _context59.abrupt('return', url);
+                                    _context55.t1 = _context55.sent;
+                                    _context55.t2 = _context55.t0 + _context55.t1;
+                                    _context55.t3 = _context55.t2 + '" download="';
+                                    _context55.t4 = outputName;
+                                    _context55.t5 = _context55.t3 + _context55.t4;
+                                    table.insertRow(0).innerHTML = _context55.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
+                                    return _context55.abrupt('return', url);
 
                                 case 29:
                                 case 'end':
-                                    return _context59.stop();
+                                    return _context55.stop();
                             }
                         }
-                    }, _callee59, this);
+                    }, _callee55, this);
                 }));
 
-                function downloadAllFLVs(_x59, _x60, _x61) {
-                    return _ref65.apply(this, arguments);
+                function downloadAllFLVs(_x57, _x58, _x59) {
+                    return _ref61.apply(this, arguments);
                 }
 
                 return downloadAllFLVs;
@@ -4695,12 +4584,12 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadFLV',
             value: function () {
-                var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60(a, monkey, index) {
+                var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(a, monkey, index) {
                     var bar = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
                     var handler, url;
-                    return regeneratorRuntime.wrap(function _callee60$(_context60) {
+                    return regeneratorRuntime.wrap(function _callee56$(_context56) {
                         while (1) {
-                            switch (_context60.prev = _context60.next) {
+                            switch (_context56.prev = _context56.next) {
                                 case 0:
                                     handler = function handler(e) {
                                         return UI.beforeUnloadHandler(e);
@@ -4717,29 +4606,29 @@ new Promise(function (resolve) {
                                     };
 
                                     url = void 0;
-                                    _context60.prev = 5;
-                                    _context60.next = 8;
+                                    _context56.prev = 5;
+                                    _context56.next = 8;
                                     return monkey.getFLV(index, function (loaded, total) {
                                         bar.value = loaded;
                                         bar.max = total;
                                     });
 
                                 case 8:
-                                    url = _context60.sent;
+                                    url = _context56.sent;
 
                                     url = URL.createObjectURL(url);
                                     if (bar.value == 0) bar.value = bar.max = 1;
-                                    _context60.next = 19;
+                                    _context56.next = 19;
                                     break;
 
                                 case 13:
-                                    _context60.prev = 13;
-                                    _context60.t0 = _context60['catch'](5);
+                                    _context56.prev = 13;
+                                    _context56.t0 = _context56['catch'](5);
 
                                     a.onclick = null;
                                     window.removeEventListener('beforeunload', handler);
                                     a.textContent = '错误';
-                                    throw _context60.t0;
+                                    throw _context56.t0;
 
                                 case 19:
 
@@ -4748,18 +4637,18 @@ new Promise(function (resolve) {
                                     a.textContent = '另存为';
                                     a.download = monkey.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
                                     a.href = url;
-                                    return _context60.abrupt('return', url);
+                                    return _context56.abrupt('return', url);
 
                                 case 25:
                                 case 'end':
-                                    return _context60.stop();
+                                    return _context56.stop();
                             }
                         }
-                    }, _callee60, this, [[5, 13]]);
+                    }, _callee56, this, [[5, 13]]);
                 }));
 
-                function downloadFLV(_x62, _x63, _x64) {
-                    return _ref66.apply(this, arguments);
+                function downloadFLV(_x60, _x61, _x62) {
+                    return _ref62.apply(this, arguments);
                 }
 
                 return downloadFLV;
@@ -4767,29 +4656,29 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeFLVFiles',
             value: function () {
-                var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(files) {
+                var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(files) {
                     var merged;
-                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
+                    return regeneratorRuntime.wrap(function _callee57$(_context57) {
                         while (1) {
-                            switch (_context61.prev = _context61.next) {
+                            switch (_context57.prev = _context57.next) {
                                 case 0:
-                                    _context61.next = 2;
+                                    _context57.next = 2;
                                     return FLV.mergeBlobs(files);
 
                                 case 2:
-                                    merged = _context61.sent;
-                                    return _context61.abrupt('return', URL.createObjectURL(merged));
+                                    merged = _context57.sent;
+                                    return _context57.abrupt('return', URL.createObjectURL(merged));
 
                                 case 4:
                                 case 'end':
-                                    return _context61.stop();
+                                    return _context57.stop();
                             }
                         }
-                    }, _callee61, this);
+                    }, _callee57, this);
                 }));
 
-                function mergeFLVFiles(_x66) {
-                    return _ref67.apply(this, arguments);
+                function mergeFLVFiles(_x64) {
+                    return _ref63.apply(this, arguments);
                 }
 
                 return mergeFLVFiles;
@@ -4797,28 +4686,28 @@ new Promise(function (resolve) {
         }, {
             key: 'clearCacheDB',
             value: function () {
-                var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(cache) {
-                    return regeneratorRuntime.wrap(function _callee62$(_context62) {
+                var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(cache) {
+                    return regeneratorRuntime.wrap(function _callee58$(_context58) {
                         while (1) {
-                            switch (_context62.prev = _context62.next) {
+                            switch (_context58.prev = _context58.next) {
                                 case 0:
                                     if (!cache) {
-                                        _context62.next = 2;
+                                        _context58.next = 2;
                                         break;
                                     }
 
-                                    return _context62.abrupt('return', cache.deleteEntireDB());
+                                    return _context58.abrupt('return', cache.deleteEntireDB());
 
                                 case 2:
                                 case 'end':
-                                    return _context62.stop();
+                                    return _context58.stop();
                             }
                         }
-                    }, _callee62, this);
+                    }, _callee58, this);
                 }));
 
-                function clearCacheDB(_x67) {
-                    return _ref68.apply(this, arguments);
+                function clearCacheDB(_x65) {
+                    return _ref64.apply(this, arguments);
                 }
 
                 return clearCacheDB;
@@ -4826,12 +4715,12 @@ new Promise(function (resolve) {
         }, {
             key: 'displayQuota',
             value: function () {
-                var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(tr) {
-                    return regeneratorRuntime.wrap(function _callee63$(_context63) {
+                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(tr) {
+                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
                         while (1) {
-                            switch (_context63.prev = _context63.next) {
+                            switch (_context59.prev = _context59.next) {
                                 case 0:
-                                    return _context63.abrupt('return', new Promise(function (resolve) {
+                                    return _context59.abrupt('return', new Promise(function (resolve) {
                                         var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                         if (!temporaryStorage) return resolve(tr.innerHTML = '<td colspan="3">\u8FD9\u4E2A\u6D4F\u89C8\u5668\u4E0D\u652F\u6301\u7F13\u5B58\u5462~\u5173\u6389\u6807\u7B7E\u9875\u540E\uFF0C\u7F13\u5B58\u9A6C\u4E0A\u5C31\u4F1A\u6D88\u5931\u54E6</td>');
                                         temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -4841,14 +4730,14 @@ new Promise(function (resolve) {
 
                                 case 1:
                                 case 'end':
-                                    return _context63.stop();
+                                    return _context59.stop();
                             }
                         }
-                    }, _callee63, this);
+                    }, _callee59, this);
                 }));
 
-                function displayQuota(_x68) {
-                    return _ref69.apply(this, arguments);
+                function displayQuota(_x66) {
+                    return _ref65.apply(this, arguments);
                 }
 
                 return displayQuota;
@@ -4858,12 +4747,12 @@ new Promise(function (resolve) {
 
         }, {
             key: 'menuAppend',
-            value: function menuAppend(playerWin, _ref70) {
-                var monkey = _ref70.monkey,
-                    monkeyTitle = _ref70.monkeyTitle,
-                    polyfill = _ref70.polyfill,
-                    displayPolyfillDataDiv = _ref70.displayPolyfillDataDiv,
-                    optionDiv = _ref70.optionDiv;
+            value: function menuAppend(playerWin, _ref66) {
+                var monkey = _ref66.monkey,
+                    monkeyTitle = _ref66.monkeyTitle,
+                    polyfill = _ref66.polyfill,
+                    displayPolyfillDataDiv = _ref66.displayPolyfillDataDiv,
+                    optionDiv = _ref66.optionDiv;
 
                 var monkeyMenu = UI.genMonkeyMenu(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, optionDiv: optionDiv });
                 var polyfillMenu = UI.genPolyfillMenu(playerWin, { polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
@@ -4877,12 +4766,12 @@ new Promise(function (resolve) {
             }
         }, {
             key: 'genMonkeyMenu',
-            value: function genMonkeyMenu(playerWin, _ref71) {
-                var _this40 = this;
+            value: function genMonkeyMenu(playerWin, _ref67) {
+                var _this39 = this;
 
-                var monkey = _ref71.monkey,
-                    monkeyTitle = _ref71.monkeyTitle,
-                    optionDiv = _ref71.optionDiv;
+                var monkey = _ref67.monkey,
+                    monkeyTitle = _ref67.monkeyTitle,
+                    optionDiv = _ref67.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -4891,99 +4780,99 @@ new Promise(function (resolve) {
                     return playerWin.document.getElementById('bilibiliPlayer').click();
                 };
                 var ul = li.children[1];
-                ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
-                    return regeneratorRuntime.wrap(function _callee64$(_context64) {
+                ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+                    return regeneratorRuntime.wrap(function _callee60$(_context60) {
                         while (1) {
-                            switch (_context64.prev = _context64.next) {
+                            switch (_context60.prev = _context60.next) {
                                 case 0:
                                     if (!monkeyTitle.flvA.onmouseover) {
-                                        _context64.next = 3;
+                                        _context60.next = 3;
                                         break;
                                     }
 
-                                    _context64.next = 3;
+                                    _context60.next = 3;
                                     return monkeyTitle.flvA.onmouseover();
 
                                 case 3:
                                     monkeyTitle.flvA.click();
                                 case 4:
                                 case 'end':
-                                    return _context64.stop();
+                                    return _context60.stop();
                             }
                         }
-                    }, _callee64, _this40);
+                    }, _callee60, _this39);
                 }));
-                ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
-                    return regeneratorRuntime.wrap(function _callee65$(_context65) {
+                ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
+                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
                         while (1) {
-                            switch (_context65.prev = _context65.next) {
+                            switch (_context61.prev = _context61.next) {
                                 case 0:
                                     if (!monkeyTitle.mp4A.onmouseover) {
-                                        _context65.next = 3;
+                                        _context61.next = 3;
                                         break;
                                     }
 
-                                    _context65.next = 3;
+                                    _context61.next = 3;
                                     return monkeyTitle.mp4A.onmouseover();
 
                                 case 3:
                                     monkeyTitle.mp4A.click();
                                 case 4:
                                 case 'end':
-                                    return _context65.stop();
+                                    return _context61.stop();
                             }
                         }
-                    }, _callee65, _this40);
+                    }, _callee61, _this39);
                 }));
-                ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
-                    return regeneratorRuntime.wrap(function _callee66$(_context66) {
+                ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
+                    return regeneratorRuntime.wrap(function _callee62$(_context62) {
                         while (1) {
-                            switch (_context66.prev = _context66.next) {
+                            switch (_context62.prev = _context62.next) {
                                 case 0:
                                     if (!monkeyTitle.assA.onmouseover) {
-                                        _context66.next = 3;
+                                        _context62.next = 3;
                                         break;
                                     }
 
-                                    _context66.next = 3;
+                                    _context62.next = 3;
                                     return monkeyTitle.assA.onmouseover();
 
                                 case 3:
                                     monkeyTitle.assA.click();
                                 case 4:
                                 case 'end':
-                                    return _context66.stop();
+                                    return _context62.stop();
                             }
                         }
-                    }, _callee66, _this40);
+                    }, _callee62, _this39);
                 }));
                 ul.children[3].onclick = function () {
                     optionDiv.style.display = 'block';
                 };
-                ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-                    return regeneratorRuntime.wrap(function _callee67$(_context67) {
+                ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
+                    return regeneratorRuntime.wrap(function _callee63$(_context63) {
                         while (1) {
-                            switch (_context67.prev = _context67.next) {
+                            switch (_context63.prev = _context63.next) {
                                 case 0:
                                     monkey.proxy = true;
                                     monkey.flvs = null;
                                     UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                     // Yes, I AM lazy.
-                                    playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div > ul > li:nth-child(1)').click();
-                                    _context67.next = 6;
+                                    playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
+                                    _context63.next = 6;
                                     return new Promise(function (r) {
                                         return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                     });
 
                                 case 6:
-                                    return _context67.abrupt('return', monkey.queryInfo('flv'));
+                                    return _context63.abrupt('return', monkey.queryInfo('flv'));
 
                                 case 7:
                                 case 'end':
-                                    return _context67.stop();
+                                    return _context63.stop();
                             }
                         }
-                    }, _callee67, _this40);
+                    }, _callee63, _this39);
                 }));
                 ul.children[5].onclick = function () {
                     top.location.reload(true);
@@ -4998,10 +4887,10 @@ new Promise(function (resolve) {
             }
         }, {
             key: 'genPolyfillMenu',
-            value: function genPolyfillMenu(playerWin, _ref76) {
-                var polyfill = _ref76.polyfill,
-                    displayPolyfillDataDiv = _ref76.displayPolyfillDataDiv,
-                    optionDiv = _ref76.optionDiv;
+            value: function genPolyfillMenu(playerWin, _ref72) {
+                var polyfill = _ref72.polyfill,
+                    displayPolyfillDataDiv = _ref72.displayPolyfillDataDiv,
+                    optionDiv = _ref72.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -5492,6 +5381,17 @@ new Promise(function (resolve) {
                 }
             }
         }, {
+            key: 'menuStyleFix',
+            value: function menuStyleFix(playerWin) {
+                if (playerWin.document.getElementById('bilitwinMenuStyleFix')) return;
+                var style = document.createElement('style');
+                style.type = 'text/css';
+                style.rel = 'stylesheet';
+                style.id = 'bilitwinMenuStyleFix';
+                style.textContent = '\n            .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {\n                background: rgba(255,255,255,.12);\n                transition: all .3s ease-in-out;\n                cursor: pointer;\n            }\n            ';
+                playerWin.document.head.appendChild(style);
+            }
+        }, {
             key: 'cleanUp',
             value: function cleanUp() {
                 Array.from(document.getElementsByClassName('bilitwin')).filter(function (e) {
@@ -5508,37 +5408,38 @@ new Promise(function (resolve) {
         }, {
             key: 'start',
             value: function () {
-                var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
-                    var _this41 = this;
+                var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+                    var _this40 = this;
 
-                    var cidRefresh, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref78, _ref79, monkey, polyfill, h, _ref82;
+                    var cidRefresh, href, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref74, _ref75, monkey, polyfill, h, _ref78;
 
-                    return regeneratorRuntime.wrap(function _callee70$(_context70) {
+                    return regeneratorRuntime.wrap(function _callee66$(_context66) {
                         while (1) {
-                            switch (_context70.prev = _context70.next) {
+                            switch (_context66.prev = _context66.next) {
                                 case 0:
                                     cidRefresh = new AsyncContainer();
+                                    href = location.href;
 
                                     // 1. playerWin and option
 
                                     playerWin = void 0;
-                                    _context70.prev = 2;
-                                    _context70.next = 5;
+                                    _context66.prev = 3;
+                                    _context66.next = 6;
                                     return UI.getPlayerWin();
 
-                                case 5:
-                                    playerWin = _context70.sent;
-                                    _context70.next = 12;
+                                case 6:
+                                    playerWin = _context66.sent;
+                                    _context66.next = 13;
                                     break;
 
-                                case 8:
-                                    _context70.prev = 8;
-                                    _context70.t0 = _context70['catch'](2);
+                                case 9:
+                                    _context66.prev = 9;
+                                    _context66.t0 = _context66['catch'](3);
 
-                                    if (_context70.t0 == 'Need H5 Player') UI.requestH5Player();
-                                    throw _context70.t0;
+                                    if (_context66.t0 == 'Need H5 Player') UI.requestH5Player();
+                                    throw _context66.t0;
 
-                                case 12:
+                                case 13:
                                     option = UI.getOption(playerWin);
                                     optionDiv = UI.genOptionDiv(option);
 
@@ -5551,59 +5452,68 @@ new Promise(function (resolve) {
                                         return UI.displayPolyfillDataDiv(polyfill);
                                     };
 
-                                    _context70.next = 19;
-                                    return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
+                                    _context66.next = 20;
+                                    return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
                                         var monkey;
-                                        return regeneratorRuntime.wrap(function _callee68$(_context68) {
+                                        return regeneratorRuntime.wrap(function _callee64$(_context64) {
                                             while (1) {
-                                                switch (_context68.prev = _context68.next) {
+                                                switch (_context64.prev = _context64.next) {
                                                     case 0:
                                                         monkey = new BiliMonkey(playerWin, option);
-                                                        _context68.next = 3;
+                                                        _context64.next = 3;
                                                         return monkey.execOptions();
 
                                                     case 3:
                                                         monkeyTitle = UI.titleAppend(monkey);
-                                                        return _context68.abrupt('return', monkey);
+                                                        return _context64.abrupt('return', monkey);
 
                                                     case 5:
                                                     case 'end':
-                                                        return _context68.stop();
+                                                        return _context64.stop();
                                                 }
                                             }
-                                        }, _callee68, _this41);
-                                    }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+                                        }, _callee64, _this40);
+                                    }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
                                         var polyfill;
-                                        return regeneratorRuntime.wrap(function _callee69$(_context69) {
+                                        return regeneratorRuntime.wrap(function _callee65$(_context65) {
                                             while (1) {
-                                                switch (_context69.prev = _context69.next) {
+                                                switch (_context65.prev = _context65.next) {
                                                     case 0:
                                                         polyfill = new BiliPolyfill(playerWin, option, function (t) {
                                                             return UI.hintInfo(t, playerWin);
                                                         });
-                                                        _context69.next = 3;
+                                                        _context65.next = 3;
                                                         return polyfill.setFunctions();
 
                                                     case 3:
-                                                        return _context69.abrupt('return', polyfill);
+                                                        return _context65.abrupt('return', polyfill);
 
                                                     case 4:
                                                     case 'end':
-                                                        return _context69.stop();
+                                                        return _context65.stop();
                                                 }
                                             }
-                                        }, _callee69, _this41);
+                                        }, _callee65, _this40);
                                     }))()]);
 
-                                case 19:
-                                    _ref78 = _context70.sent;
-                                    _ref79 = _slicedToArray(_ref78, 2);
-                                    monkey = _ref79[0];
-                                    polyfill = _ref79[1];
+                                case 20:
+                                    _ref74 = _context66.sent;
+                                    _ref75 = _slicedToArray(_ref74, 2);
+                                    monkey = _ref75[0];
+                                    polyfill = _ref75[1];
 
+                                    if (!(href != location.href)) {
+                                        _context66.next = 26;
+                                        break;
+                                    }
+
+                                    return _context66.abrupt('return', UI.cleanUp());
+
+                                case 26:
 
                                     // 3. menu
                                     UI.menuAppend(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
+                                    UI.menuStyleFix(playerWin);
 
                                     // 4. refresh
 
@@ -5626,25 +5536,25 @@ new Promise(function (resolve) {
                                     if (top.debugOption && top.debugOption.debug) {
                                         ;
 
-                                        _ref82 = [monkey, polyfill];
-                                        (top.unsafeWindow || top).m = _ref82[0];
-                                        (top.unsafeWindow || top).p = _ref82[1];
-                                    } _context70.next = 31;
+                                        _ref78 = [monkey, polyfill];
+                                        (top.unsafeWindow || top).m = _ref78[0];
+                                        (top.unsafeWindow || top).p = _ref78[1];
+                                    } _context66.next = 35;
                                     return cidRefresh;
 
-                                case 31:
+                                case 35:
                                     UI.cleanUp();
 
-                                case 32:
+                                case 36:
                                 case 'end':
-                                    return _context70.stop();
+                                    return _context66.stop();
                             }
                         }
-                    }, _callee70, this, [[2, 8]]);
+                    }, _callee66, this, [[3, 9]]);
                 }));
 
                 function start() {
-                    return _ref77.apply(this, arguments);
+                    return _ref73.apply(this, arguments);
                 }
 
                 return start;
@@ -5652,17 +5562,17 @@ new Promise(function (resolve) {
         }, {
             key: 'init',
             value: function () {
-                var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
-                    return regeneratorRuntime.wrap(function _callee71$(_context71) {
+                var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
+                    return regeneratorRuntime.wrap(function _callee67$(_context67) {
                         while (1) {
-                            switch (_context71.prev = _context71.next) {
+                            switch (_context67.prev = _context67.next) {
                                 case 0:
                                     if (document.body) {
-                                        _context71.next = 2;
+                                        _context67.next = 2;
                                         break;
                                     }
 
-                                    return _context71.abrupt('return');
+                                    return _context67.abrupt('return');
 
                                 case 2:
                                     UI.outdatedEngineClearance();
@@ -5671,27 +5581,27 @@ new Promise(function (resolve) {
 
                                 case 5:
                                     if (!1) {
-                                        _context71.next = 10;
+                                        _context67.next = 10;
                                         break;
                                     }
 
-                                    _context71.next = 8;
+                                    _context67.next = 8;
                                     return UI.start();
 
                                 case 8:
-                                    _context71.next = 5;
+                                    _context67.next = 5;
                                     break;
 
                                 case 10:
                                 case 'end':
-                                    return _context71.stop();
+                                    return _context67.stop();
                             }
                         }
-                    }, _callee71, this);
+                    }, _callee67, this);
                 }));
 
                 function init() {
-                    return _ref83.apply(this, arguments);
+                    return _ref79.apply(this, arguments);
                 }
 
                 return init;
