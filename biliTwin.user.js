@@ -2824,6 +2824,22 @@ class UI extends BiliUserJS {
         }
     }
 
+    static menuStyleFix(playerWin) {
+        if (playerWin.document.getElementById('bilitwinMenuStyleFix')) return;
+        let style = document.createElement('style');
+        style.type = 'text/css';
+        style.rel = 'stylesheet';
+        style.id = 'bilitwinMenuStyleFix';
+        style.textContent = `
+            .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {
+                background: rgba(255,255,255,.12);
+                transition: all .3s ease-in-out;
+                cursor: pointer;
+            }
+            `;
+        playerWin.document.head.appendChild(style);
+    }
+
     static cleanUp() {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
@@ -2835,6 +2851,7 @@ class UI extends BiliUserJS {
 
     static async start() {
         let cidRefresh = new AsyncContainer();
+        let href = location.href;
 
         // 1. playerWin and option
         let playerWin;
@@ -2864,9 +2881,11 @@ class UI extends BiliUserJS {
                 return polyfill;
             })()
         ]);
+        if (href != location.href) return UI.cleanUp();
 
         // 3. menu
         UI.menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv });
+        UI.menuStyleFix(playerWin);
 
         // 4. refresh
         let h = () => {
