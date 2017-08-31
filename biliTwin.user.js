@@ -540,7 +540,7 @@ class CacheDB {
 }
 
 class DetailedFetchBlob {
-    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
+    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror, fetch = init.fetch || top.fetch) {
         // Fire in the Fox fix
         if (this.firefoxConstructor(input, init, onprogress, onabort, onerror)) return;
         // Now I know why standardizing cancelable Promise is that difficult
@@ -817,7 +817,7 @@ class BiliMonkey {
         switch (format) {
             case 'flv':
                 // Single writer is not a must.
-                // Plus, if one writer failed, others should be able to overwrite its garbage.
+                // Plus, if one writer fail, others should be able to overwrite its garbage.
                 //if (this.flvs) return this.flvs; 
                 return this.flvs = new AsyncContainer();
             case 'hdmp4':
@@ -1316,6 +1316,7 @@ class BiliMonkey {
             let burl = this.flvs[index];
             if (partialCache) burl += `&bstart=${partialCache.size}`;
             let opt = {
+                fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
