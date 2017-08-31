@@ -1680,7 +1680,7 @@ class BiliPolyfill {
                 else {
                     let play = this.video.play;
                     this.video.play = () => setTimeout(() => {
-                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                         this.video.play = play;
                     }, 0);
                     this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-jump').click();
@@ -1698,7 +1698,7 @@ class BiliPolyfill {
     autoPlay() {
         this.video.autoplay = true;
         setTimeout(() => {
-            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click()
+            if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click()
         }, 0);
     }
 
@@ -1775,11 +1775,11 @@ class BiliPolyfill {
                 }
                 if (this.video.paused) {
                     if (this.video.readyState) {
-                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                        this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     }
                     else {
                         let i = () => {
-                            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                             this.video.removeEventListener('canplay', i);
                         }
                         this.video.addEventListener('canplay', i);
@@ -1819,11 +1819,11 @@ class BiliPolyfill {
             let transcript = e.results[last][0].transcript;
             switch (transcript) {
                 case '播放':
-                    if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     this.hintInfo(`BiliPolyfill: 语音:播放`);
                     break;
                 case '暂停':
-                    if (!this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn').click();
+                    if (!this.video.paused) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-start').click();
                     this.hintInfo(`BiliPolyfill: 语音:暂停`);
                     break;
                 case '全屏':
