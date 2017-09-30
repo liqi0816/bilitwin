@@ -2392,7 +2392,7 @@ class UI extends BiliUserJS {
 
         ul.children[1].children[1].children[0].onclick = () => { polyfill.setVideoSpeed(0.1); };
         ul.children[1].children[1].children[1].onclick = () => { polyfill.setVideoSpeed(3); };
-        ul.children[1].children[1].children[2].onclick = () => { polyfill.setVideoSpeed(ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value); };
+        ul.children[1].children[1].children[2].onclick = e => { polyfill.setVideoSpeed(e.target.getElementsByTagName('input')[0].value); };
         ul.children[1].children[1].children[2].getElementsByTagName('input')[0].onclick = e => e.stopPropagation();
 
         ul.children[2].children[1].children[0].onclick = () => { polyfill.markOPPosition(); };
