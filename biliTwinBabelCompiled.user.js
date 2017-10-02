@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.7
+// @version     1.8
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -47,7 +47,7 @@ new Promise(function (resolve) {
     // @match       *://www.bilibili.com/video/av*
     // @match       *://bangumi.bilibili.com/anime/*/play*
     // @match       *://www.bilibili.com/watchlater/
-    // @version     1.7
+    // @version     1.8
     // @author      qli5
     // @copyright   qli5, 2014+, 田生, grepmusic
     // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -479,12 +479,12 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeBlobs',
             value: function () {
-                var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(blobs) {
+                var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(blobs) {
                     var _this2 = this;
 
                     var resultParts, basetimestamp, lasttimestamp, duration, durationDataView, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _loop, _iterator3, _step3;
 
-                    return regeneratorRuntime.wrap(function _callee2$(_context2) {
+                    return regeneratorRuntime.wrap(function _callee$(_context2) {
                         while (1) {
                             switch (_context2.prev = _context2.next) {
                                 case 0:
@@ -505,10 +505,10 @@ new Promise(function (resolve) {
                                     _didIteratorError3 = false;
                                     _iteratorError3 = undefined;
                                     _context2.prev = 10;
-                                    _loop = /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+                                    _loop = /*#__PURE__*/regeneratorRuntime.mark(function _loop() {
                                         var blob, bts, foundDuration, flv, _iteratorNormalCompletion4, _didIteratorError4, _iteratorError4, _iterator4, _step4, tag, _tag$getDurationAndVi2;
 
-                                        return regeneratorRuntime.wrap(function _callee$(_context) {
+                                        return regeneratorRuntime.wrap(function _loop$(_context) {
                                             while (1) {
                                                 switch (_context.prev = _context.next) {
                                                     case 0:
@@ -598,7 +598,7 @@ new Promise(function (resolve) {
                                                         return _context.stop();
                                                 }
                                             }
-                                        }, _callee, _this2, [[12, 16, 20, 28], [21, , 23, 27]]);
+                                        }, _loop, _this2, [[12, 16, 20, 28], [21, , 23, 27]]);
                                     });
                                     _iterator3 = blobs[Symbol.iterator]();
 
@@ -659,7 +659,7 @@ new Promise(function (resolve) {
                                     return _context2.stop();
                             }
                         }
-                    }, _callee2, this, [[10, 20, 24, 32], [25, , 27, 31]]);
+                    }, _callee, this, [[10, 20, 24, 32], [25, , 27, 31]]);
                 }));
 
                 function mergeBlobs(_x3) {
@@ -692,10 +692,10 @@ new Promise(function (resolve) {
         _createClass(CacheDB, [{
             key: 'getDB',
             value: function () {
-                var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
+                var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
                     var _this3 = this;
 
-                    return regeneratorRuntime.wrap(function _callee3$(_context3) {
+                    return regeneratorRuntime.wrap(function _callee2$(_context3) {
                         while (1) {
                             switch (_context3.prev = _context3.next) {
                                 case 0:
@@ -727,7 +727,7 @@ new Promise(function (resolve) {
                                     return _context3.stop();
                             }
                         }
-                    }, _callee3, this);
+                    }, _callee2, this);
                 }));
 
                 function getDB() {
@@ -739,7 +739,7 @@ new Promise(function (resolve) {
         }, {
             key: 'addData',
             value: function () {
-                var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(item) {
+                var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(item) {
                     var _this4 = this;
 
                     var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : item.name;
@@ -747,7 +747,7 @@ new Promise(function (resolve) {
 
                     var db, itemChunks, numChunks, i, reqArr, _iteratorNormalCompletion5, _didIteratorError5, _iteratorError5, _loop2, _iterator5, _step5;
 
-                    return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                    return regeneratorRuntime.wrap(function _callee3$(_context4) {
                         while (1) {
                             switch (_context4.prev = _context4.next) {
                                 case 0:
@@ -835,7 +835,7 @@ new Promise(function (resolve) {
                                     return _context4.stop();
                             }
                         }
-                    }, _callee4, this, [[12, 17, 21, 29], [22, , 24, 28]]);
+                    }, _callee3, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
                 function addData(_x8) {
@@ -847,7 +847,7 @@ new Promise(function (resolve) {
         }, {
             key: 'putData',
             value: function () {
-                var _ref6 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(item) {
+                var _ref6 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(item) {
                     var _this5 = this;
 
                     var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : item.name;
@@ -855,7 +855,7 @@ new Promise(function (resolve) {
 
                     var db, itemChunks, numChunks, i, reqArr, _iteratorNormalCompletion6, _didIteratorError6, _iteratorError6, _loop3, _iterator6, _step6;
 
-                    return regeneratorRuntime.wrap(function _callee5$(_context5) {
+                    return regeneratorRuntime.wrap(function _callee4$(_context5) {
                         while (1) {
                             switch (_context5.prev = _context5.next) {
                                 case 0:
@@ -943,7 +943,7 @@ new Promise(function (resolve) {
                                     return _context5.stop();
                             }
                         }
-                    }, _callee5, this, [[12, 17, 21, 29], [22, , 24, 28]]);
+                    }, _callee4, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
                 function putData(_x11) {
@@ -955,12 +955,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getData',
             value: function () {
-                var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(index) {
+                var _ref7 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(index) {
                     var _this6 = this;
 
                     var db, item_0, numChunks, data_0, reqArr, _loop4, i, itemChunks;
 
-                    return regeneratorRuntime.wrap(function _callee6$(_context6) {
+                    return regeneratorRuntime.wrap(function _callee5$(_context6) {
                         while (1) {
                             switch (_context6.prev = _context6.next) {
                                 case 0:
@@ -1018,7 +1018,7 @@ new Promise(function (resolve) {
                                     return _context6.stop();
                             }
                         }
-                    }, _callee6, this);
+                    }, _callee5, this);
                 }));
 
                 function getData(_x14) {
@@ -1030,12 +1030,12 @@ new Promise(function (resolve) {
         }, {
             key: 'deleteData',
             value: function () {
-                var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(index) {
+                var _ref8 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(index) {
                     var _this7 = this;
 
                     var db, item_0, numChunks, reqArr, _loop5, i;
 
-                    return regeneratorRuntime.wrap(function _callee7$(_context7) {
+                    return regeneratorRuntime.wrap(function _callee6$(_context7) {
                         while (1) {
                             switch (_context7.prev = _context7.next) {
                                 case 0:
@@ -1085,7 +1085,7 @@ new Promise(function (resolve) {
                                     return _context7.stop();
                             }
                         }
-                    }, _callee7, this);
+                    }, _callee6, this);
                 }));
 
                 function deleteData(_x15) {
@@ -1097,11 +1097,11 @@ new Promise(function (resolve) {
         }, {
             key: 'deleteEntireDB',
             value: function () {
-                var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8() {
+                var _ref9 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7() {
                     var _this8 = this;
 
                     var req;
-                    return regeneratorRuntime.wrap(function _callee8$(_context8) {
+                    return regeneratorRuntime.wrap(function _callee7$(_context8) {
                         while (1) {
                             switch (_context8.prev = _context8.next) {
                                 case 0:
@@ -1118,7 +1118,7 @@ new Promise(function (resolve) {
                                     return _context8.stop();
                             }
                         }
-                    }, _callee8, this);
+                    }, _callee7, this);
                 }));
 
                 function deleteEntireDB() {
@@ -1203,8 +1203,8 @@ new Promise(function (resolve) {
         }, {
             key: 'getBlob',
             value: function () {
-                var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
-                    return regeneratorRuntime.wrap(function _callee9$(_context9) {
+                var _ref10 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8() {
+                    return regeneratorRuntime.wrap(function _callee8$(_context9) {
                         while (1) {
                             switch (_context9.prev = _context9.next) {
                                 case 0:
@@ -1215,7 +1215,7 @@ new Promise(function (resolve) {
                                     return _context9.stop();
                             }
                         }
-                    }, _callee9, this);
+                    }, _callee8, this);
                 }));
 
                 function getBlob() {
@@ -1227,10 +1227,10 @@ new Promise(function (resolve) {
         }, {
             key: 'pump',
             value: function () {
-                var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10() {
+                var _ref11 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee9() {
                     var _ref12, done, value;
 
-                    return regeneratorRuntime.wrap(function _callee10$(_context10) {
+                    return regeneratorRuntime.wrap(function _callee9$(_context10) {
                         while (1) {
                             switch (_context10.prev = _context10.next) {
                                 case 0:
@@ -1266,7 +1266,7 @@ new Promise(function (resolve) {
                                     return _context10.stop();
                             }
                         }
-                    }, _callee10, this);
+                    }, _callee9, this);
                 }));
 
                 function pump() {
@@ -1278,8 +1278,8 @@ new Promise(function (resolve) {
         }, {
             key: 'consume',
             value: function () {
-                var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11() {
-                    return regeneratorRuntime.wrap(function _callee11$(_context11) {
+                var _ref13 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee10() {
+                    return regeneratorRuntime.wrap(function _callee10$(_context11) {
                         while (1) {
                             switch (_context11.prev = _context11.next) {
                                 case 0:
@@ -1296,7 +1296,7 @@ new Promise(function (resolve) {
                                     return _context11.stop();
                             }
                         }
-                    }, _callee11, this);
+                    }, _callee10, this);
                 }));
 
                 function consume() {
@@ -1372,10 +1372,10 @@ new Promise(function (resolve) {
         _createClass(Mutex, [{
             key: 'lock',
             value: function () {
-                var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12() {
+                var _ref14 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee11() {
                     var myResolve, _queueTail;
 
-                    return regeneratorRuntime.wrap(function _callee12$(_context12) {
+                    return regeneratorRuntime.wrap(function _callee11$(_context12) {
                         while (1) {
                             switch (_context12.prev = _context12.next) {
                                 case 0:
@@ -1397,7 +1397,7 @@ new Promise(function (resolve) {
                                     return _context12.stop();
                             }
                         }
-                    }, _callee12, this);
+                    }, _callee11, this);
                 }));
 
                 function lock() {
@@ -1415,9 +1415,9 @@ new Promise(function (resolve) {
         }, {
             key: 'lockAndAwait',
             value: function () {
-                var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13(asyncFunc) {
+                var _ref15 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee12(asyncFunc) {
                     var ret;
-                    return regeneratorRuntime.wrap(function _callee13$(_context13) {
+                    return regeneratorRuntime.wrap(function _callee12$(_context13) {
                         while (1) {
                             switch (_context13.prev = _context13.next) {
                                 case 0:
@@ -1447,7 +1447,7 @@ new Promise(function (resolve) {
                                     return _context13.stop();
                             }
                         }
-                    }, _callee13, this, [[3, , 7, 10]]);
+                    }, _callee12, this, [[3, , 7, 10]]);
                 }));
 
                 function lockAndAwait(_x25) {
@@ -1476,8 +1476,8 @@ new Promise(function (resolve) {
                     console.warn('1 1 1 1 1:5s');
                     console.warn('         1 1 1 1 1:10s');
                 });
-                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14() {
-                    return regeneratorRuntime.wrap(function _callee14$(_context14) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee13() {
+                    return regeneratorRuntime.wrap(function _callee13$(_context14) {
                         while (1) {
                             switch (_context14.prev = _context14.next) {
                                 case 0:
@@ -1505,10 +1505,10 @@ new Promise(function (resolve) {
                                     return _context14.stop();
                             }
                         }
-                    }, _callee14, _this11);
+                    }, _callee13, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15() {
-                    return regeneratorRuntime.wrap(function _callee15$(_context15) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee14() {
+                    return regeneratorRuntime.wrap(function _callee14$(_context15) {
                         while (1) {
                             switch (_context15.prev = _context15.next) {
                                 case 0:
@@ -1519,10 +1519,10 @@ new Promise(function (resolve) {
                                     return _context15.stop();
                             }
                         }
-                    }, _callee15, _this11);
+                    }, _callee14, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16() {
-                    return regeneratorRuntime.wrap(function _callee16$(_context16) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee15() {
+                    return regeneratorRuntime.wrap(function _callee15$(_context16) {
                         while (1) {
                             switch (_context16.prev = _context16.next) {
                                 case 0:
@@ -1550,10 +1550,10 @@ new Promise(function (resolve) {
                                     return _context16.stop();
                             }
                         }
-                    }, _callee16, _this11);
+                    }, _callee15, _this11);
                 })));
-                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17() {
-                    return regeneratorRuntime.wrap(function _callee17$(_context17) {
+                m.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee16() {
+                    return regeneratorRuntime.wrap(function _callee16$(_context17) {
                         while (1) {
                             switch (_context17.prev = _context17.next) {
                                 case 0:
@@ -1564,7 +1564,7 @@ new Promise(function (resolve) {
                                     return _context17.stop();
                             }
                         }
-                    }, _callee17, _this11);
+                    }, _callee16, _this11);
                 })));
             }
         }]);
@@ -1631,9 +1631,9 @@ new Promise(function (resolve) {
             key: '_UNIT_TEST',
             value: function _UNIT_TEST() {
                 var foo = function () {
-                    var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
+                    var _ref20 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee17() {
                         var buf, ac;
-                        return regeneratorRuntime.wrap(function _callee18$(_context18) {
+                        return regeneratorRuntime.wrap(function _callee17$(_context18) {
                             while (1) {
                                 switch (_context18.prev = _context18.next) {
                                     case 0:
@@ -1655,7 +1655,7 @@ new Promise(function (resolve) {
                                         return _context18.stop();
                                 }
                             }
-                        }, _callee18, this);
+                        }, _callee17, this);
                     }));
 
                     return function foo() {
@@ -1691,6 +1691,8 @@ new Promise(function (resolve) {
             this.flvs = null;
             this.mp4 = null;
             this.ass = null;
+            this.flvFormatName = null;
+            this.mp4FormatName = null;
             this.cidAsyncContainer = new AsyncContainer();
             this.cidAsyncContainer.then(function (cid) {
                 _this13.cid = cid; _this13.ass = _this13.getASS();
@@ -1714,16 +1716,13 @@ new Promise(function (resolve) {
             this.flvsBlob = [];
 
             this.defaultFormatPromise = null;
-            this.hdmp4Available = null;
             this.assAsyncScript = BiliMonkey.loadASSScript();
             this.queryInfoMutex = new Mutex();
             this.queryInfoMutex.lockAndAwait(function () {
                 return _this13.getPlayer();
             });
             this.queryInfoMutex.lockAndAwait(function () {
-                return _this13.hdmp4Available = Array.from(_this13.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).every(function (e) {
-                    return e.getAttribute('data-value') != '32';
-                });
+                return _this13.getAvailableFormatName();
             });
         }
 
@@ -1737,14 +1736,15 @@ new Promise(function (resolve) {
                 var h = this.playerWin.document.getElementsByClassName('bilibili-player-video-toast-top')[0];
                 if (h) h.style.visibility = 'hidden';
                 switch (format) {
+                    // Single writer is not a must.
+                    // Plus, if one writer fail, others should be able to overwrite its garbage.
                     case 'flv':
-                        // Single writer is not a must.
-                        // Plus, if one writer fail, others should be able to overwrite its garbage.
+                    case 'hdflv2':
+                    case 'flv720':
+                    case 'flv480':
                         //if (this.flvs) return this.flvs; 
                         return this.flvs = new AsyncContainer();
                     case 'hdmp4':
-                        //if (this.mp4) return this.mp4;
-                        return this.mp4 = new AsyncContainer();
                     case 'mp4':
                         //if (this.mp4) return this.mp4;
                         return this.mp4 = new AsyncContainer();
@@ -1768,14 +1768,24 @@ new Promise(function (resolve) {
                     var j = this.playerWin.document.getElementsByTagName('video')[0];
                     if (j) j.addEventListener('emptied', i);
                 }
-                if (shouldBe && shouldBe != res.format) throw 'URL interface error: response is not ' + shouldBe;
+                if (shouldBe && shouldBe != res.format) {
+                    switch (shouldBe) {
+                        case 'flv': case 'hdflv2': case 'flv720': case 'flv480':
+                            this.flvs = null; break;
+                        case 'hdmp4': case 'mp4':
+                            this.mp4 = null; break;
+                    }
+                    throw 'URL interface error: response is not ' + shouldBe;
+                }
                 switch (res.format) {
                     case 'flv':
+                    case 'hdflv2':
+                    case 'flv720':
+                    case 'flv480':
                         return this.flvs = this.flvs.resolve(res.durl.map(function (e) {
                             return e.url.replace('http:', _this14.protocol);
                         }));
                     case 'hdmp4':
-                        return this.mp4 = this.mp4.resolve(res.durl[0].url.replace('http:', this.protocol));
                     case 'mp4':
                         return this.mp4 = this.mp4.resolve(res.durl[0].url.replace('http:', this.protocol));
                     default:
@@ -1785,8 +1795,8 @@ new Promise(function (resolve) {
         }, {
             key: 'execOptions',
             value: function () {
-                var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
-                    return regeneratorRuntime.wrap(function _callee19$(_context19) {
+                var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
+                    return regeneratorRuntime.wrap(function _callee18$(_context19) {
                         while (1) {
                             switch (_context19.prev = _context19.next) {
                                 case 0:
@@ -1816,7 +1826,7 @@ new Promise(function (resolve) {
                                     return _context19.stop();
                             }
                         }
-                    }, _callee19, this);
+                    }, _callee18, this);
                 }));
 
                 function execOptions() {
@@ -1828,12 +1838,12 @@ new Promise(function (resolve) {
         }, {
             key: 'sniffDefaultFormat',
             value: function () {
-                var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20() {
+                var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
                     var _this15 = this;
 
                     var jq, _ajax, defquality;
 
-                    return regeneratorRuntime.wrap(function _callee20$(_context20) {
+                    return regeneratorRuntime.wrap(function _callee19$(_context20) {
                         while (1) {
                             switch (_context20.prev = _context20.next) {
                                 case 0:
@@ -1870,7 +1880,6 @@ new Promise(function (resolve) {
                                             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                                                 clearTimeout(timeout);
                                                 var format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
-                                                if (self.hdmp4Available && format == 'hdmp4') format = null;
                                                 if (!format) {
                                                     console && console.error('lockFormat error: ' + a.url.match(/quality=\d*/)[0].slice(8) + ' is a unrecognizable format'); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c);
                                                 }
@@ -1878,14 +1887,17 @@ new Promise(function (resolve) {
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 var _success = a.success;
                                                 a.success = function (res) {
-                                                    if (self.proxy && res.format == 'flv') {
-                                                        self.resolveFormat(res, format);
-                                                        self.setupProxy(res, _success);
-                                                    } else {
-                                                        _success(res);
-                                                        self.resolveFormat(res, format);
+                                                    try {
+                                                        if (self.proxy && res.format == 'flv') {
+                                                            self.resolveFormat(res, format);
+                                                            self.setupProxy(res, _success);
+                                                        } else {
+                                                            _success(res);
+                                                            self.resolveFormat(res, format);
+                                                        }
+                                                    } finally {
+                                                        resolve(res);
                                                     }
-                                                    resolve(res);
                                                 };
                                                 jq.ajax = _ajax;
                                             }
@@ -1899,7 +1911,7 @@ new Promise(function (resolve) {
                                     return _context20.stop();
                             }
                         }
-                    }, _callee20, this);
+                    }, _callee19, this);
                 }));
 
                 function sniffDefaultFormat() {
@@ -1911,10 +1923,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getBackgroundFormat',
             value: function () {
-                var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(format) {
+                var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(format) {
                     var src, _pendingFormat, jq, _ajax, pendingFormat, self;
 
-                    return regeneratorRuntime.wrap(function _callee21$(_context21) {
+                    return regeneratorRuntime.wrap(function _callee20$(_context21) {
                         while (1) {
                             switch (_context21.prev = _context21.next) {
                                 case 0:
@@ -1970,7 +1982,7 @@ new Promise(function (resolve) {
                                     return _context21.stop();
                             }
                         }
-                    }, _callee21, this);
+                    }, _callee20, this);
                 }));
 
                 function getBackgroundFormat(_x27) {
@@ -1982,19 +1994,19 @@ new Promise(function (resolve) {
         }, {
             key: 'getCurrentFormat',
             value: function () {
-                var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
+                var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(format) {
                     var _this16 = this;
 
                     var jq, _ajax, _setItem, siblingFormat, fakedRes, pendingFormat, self, blockedRequest, siblingOK;
 
-                    return regeneratorRuntime.wrap(function _callee22$(_context22) {
+                    return regeneratorRuntime.wrap(function _callee21$(_context22) {
                         while (1) {
                             switch (_context22.prev = _context22.next) {
                                 case 0:
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
                                     _setItem = this.playerWin.localStorage.setItem;
-                                    siblingFormat = format == 'flv' ? this.hdmp4Available ? 'hdmp4' : 'mp4' : 'flv';
+                                    siblingFormat = format == this.flvFormatName ? this.mp4FormatName : this.flvFormatName;
                                     fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
                                     pendingFormat = this.lockFormat(format);
                                     self = this;
@@ -2025,7 +2037,7 @@ new Promise(function (resolve) {
 
                                 case 9:
                                     blockedRequest = _context22.sent;
-                                    siblingOK = siblingFormat == 'flv' ? this.flvs : this.mp4;
+                                    siblingOK = siblingFormat == this.flvFormatName ? this.flvs : this.mp4;
 
                                     if (!siblingOK) {
                                         this.lockFormat(siblingFormat);
@@ -2066,7 +2078,7 @@ new Promise(function (resolve) {
                                     return _context22.stop();
                             }
                         }
-                    }, _callee22, this);
+                    }, _callee21, this);
                 }));
 
                 function getCurrentFormat(_x28) {
@@ -2078,12 +2090,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getNonCurrentFormat',
             value: function () {
-                var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(format) {
+                var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
                     var _this17 = this;
 
                     var jq, _ajax, _setItem, pendingFormat, self;
 
-                    return regeneratorRuntime.wrap(function _callee23$(_context23) {
+                    return regeneratorRuntime.wrap(function _callee22$(_context23) {
                         while (1) {
                             switch (_context23.prev = _context23.next) {
                                 case 0:
@@ -2119,7 +2131,7 @@ new Promise(function (resolve) {
                                     return _context23.stop();
                             }
                         }
-                    }, _callee23, this);
+                    }, _callee22, this);
                 }));
 
                 function getNonCurrentFormat(_x29) {
@@ -2131,10 +2143,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getASS',
             value: function () {
-                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25(clickableFormat) {
+                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(clickableFormat) {
                     var _this18 = this;
 
-                    return regeneratorRuntime.wrap(function _callee25$(_context25) {
+                    return regeneratorRuntime.wrap(function _callee24$(_context25) {
                         while (1) {
                             switch (_context25.prev = _context25.next) {
                                 case 0:
@@ -2147,10 +2159,10 @@ new Promise(function (resolve) {
 
                                 case 2:
                                     this.ass = new Promise(function () {
-                                        var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(resolve) {
+                                        var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(resolve) {
                                             var _ref28, _ref29, _ref29$, fetchDanmaku, generateASS, setPosition, cid;
 
-                                            return regeneratorRuntime.wrap(function _callee24$(_context24) {
+                                            return regeneratorRuntime.wrap(function _callee23$(_context24) {
                                                 while (1) {
                                                     switch (_context24.prev = _context24.next) {
                                                         case 0:
@@ -2223,7 +2235,7 @@ new Promise(function (resolve) {
                                                             return _context24.stop();
                                                     }
                                                 }
-                                            }, _callee24, _this18);
+                                            }, _callee23, _this18);
                                         }));
 
                                         return function (_x31) {
@@ -2237,7 +2249,7 @@ new Promise(function (resolve) {
                                     return _context25.stop();
                             }
                         }
-                    }, _callee25, this);
+                    }, _callee24, this);
                 }));
 
                 function getASS(_x30) {
@@ -2249,162 +2261,88 @@ new Promise(function (resolve) {
         }, {
             key: 'queryInfo',
             value: function () {
-                var _ref30 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27(format) {
+                var _ref30 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26(format) {
                     var _this19 = this;
 
-                    return regeneratorRuntime.wrap(function _callee27$(_context27) {
+                    return regeneratorRuntime.wrap(function _callee26$(_context27) {
                         while (1) {
                             switch (_context27.prev = _context27.next) {
                                 case 0:
-                                    return _context27.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee26() {
-                                        return regeneratorRuntime.wrap(function _callee26$(_context26) {
+                                    return _context27.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee25() {
+                                        return regeneratorRuntime.wrap(function _callee25$(_context26) {
                                             while (1) {
                                                 switch (_context26.prev = _context26.next) {
                                                     case 0:
-                                                        if (_this19.hdmp4Available) {
-                                                            _context26.next = 34;
-                                                            break;
-                                                        }
-
                                                         _context26.t0 = format;
-                                                        _context26.next = _context26.t0 === 'flv' ? 4 : _context26.t0 === 'mp4' ? 13 : _context26.t0 === 'ass' ? 22 : 31;
+                                                        _context26.next = _context26.t0 === 'flv' ? 3 : _context26.t0 === 'mp4' ? 12 : _context26.t0 === 'ass' ? 21 : 30;
                                                         break;
 
-                                                    case 4:
+                                                    case 3:
                                                         if (!_this19.flvs) {
-                                                            _context26.next = 8;
+                                                            _context26.next = 7;
                                                             break;
                                                         }
 
                                                         return _context26.abrupt('return', _this19.flvs);
 
-                                                    case 8:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
-                                                            _context26.next = 12;
+                                                    case 7:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(_this19.flvFormatName))) {
+                                                            _context26.next = 11;
                                                             break;
                                                         }
 
-                                                        return _context26.abrupt('return', _this19.getCurrentFormat('flv'));
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat(_this19.flvFormatName));
+
+                                                    case 11:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat(_this19.flvFormatName));
 
                                                     case 12:
-                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('flv'));
-
-                                                    case 13:
                                                         if (!_this19.mp4) {
-                                                            _context26.next = 17;
+                                                            _context26.next = 16;
                                                             break;
                                                         }
 
                                                         return _context26.abrupt('return', _this19.mp4);
 
-                                                    case 17:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '16')) {
-                                                            _context26.next = 21;
+                                                    case 16:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(_this19.mp4FormatName))) {
+                                                            _context26.next = 20;
                                                             break;
                                                         }
 
-                                                        return _context26.abrupt('return', _this19.getCurrentFormat('mp4'));
+                                                        return _context26.abrupt('return', _this19.getCurrentFormat(_this19.mp4FormatName));
+
+                                                    case 20:
+                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat(_this19.mp4FormatName));
 
                                                     case 21:
-                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('mp4'));
-
-                                                    case 22:
                                                         if (!_this19.ass) {
-                                                            _context26.next = 26;
+                                                            _context26.next = 25;
                                                             break;
                                                         }
 
                                                         return _context26.abrupt('return', _this19.ass);
 
-                                                    case 26:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
-                                                            _context26.next = 30;
+                                                    case 25:
+                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(_this19.flvFormatName))) {
+                                                            _context26.next = 29;
                                                             break;
                                                         }
 
-                                                        return _context26.abrupt('return', _this19.getASS('mp4'));
+                                                        return _context26.abrupt('return', _this19.getASS(_this19.mp4FormatName));
+
+                                                    case 29:
+                                                        return _context26.abrupt('return', _this19.getASS(_this19.flvFormatName));
 
                                                     case 30:
-                                                        return _context26.abrupt('return', _this19.getASS('flv'));
+                                                        throw 'Bilimonkey: What is format ' + format + '?';
 
                                                     case 31:
-                                                        throw 'Bilimonkey: What is format ' + format + '?';
-
-                                                    case 32:
-                                                        _context26.next = 65;
-                                                        break;
-
-                                                    case 34:
-                                                        _context26.t1 = format;
-                                                        _context26.next = _context26.t1 === 'flv' ? 37 : _context26.t1 === 'mp4' ? 46 : _context26.t1 === 'ass' ? 55 : 64;
-                                                        break;
-
-                                                    case 37:
-                                                        if (!_this19.flvs) {
-                                                            _context26.next = 41;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.flvs);
-
-                                                    case 41:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
-                                                            _context26.next = 45;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.getCurrentFormat('flv'));
-
-                                                    case 45:
-                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('flv'));
-
-                                                    case 46:
-                                                        if (!_this19.mp4) {
-                                                            _context26.next = 50;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.mp4);
-
-                                                    case 50:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '64')) {
-                                                            _context26.next = 54;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.getCurrentFormat('hdmp4'));
-
-                                                    case 54:
-                                                        return _context26.abrupt('return', _this19.getNonCurrentFormat('hdmp4'));
-
-                                                    case 55:
-                                                        if (!_this19.ass) {
-                                                            _context26.next = 59;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.ass);
-
-                                                    case 59:
-                                                        if (!(_this19.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == '80')) {
-                                                            _context26.next = 63;
-                                                            break;
-                                                        }
-
-                                                        return _context26.abrupt('return', _this19.getASS('hdmp4'));
-
-                                                    case 63:
-                                                        return _context26.abrupt('return', _this19.getASS('flv'));
-
-                                                    case 64:
-                                                        throw 'Bilimonkey: What is format ' + format + '?';
-
-                                                    case 65:
                                                     case 'end':
                                                         return _context26.stop();
                                                 }
                                             }
-                                        }, _callee26, _this19);
+                                        }, _callee25, _this19);
                                     }))));
 
                                 case 1:
@@ -2412,7 +2350,7 @@ new Promise(function (resolve) {
                                     return _context27.stop();
                             }
                         }
-                    }, _callee27, this);
+                    }, _callee26, this);
                 }));
 
                 function queryInfo(_x32) {
@@ -2424,10 +2362,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayer',
             value: function () {
-                var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28() {
+                var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27() {
                     var _this20 = this;
 
-                    return regeneratorRuntime.wrap(function _callee28$(_context28) {
+                    return regeneratorRuntime.wrap(function _callee27$(_context28) {
                         while (1) {
                             switch (_context28.prev = _context28.next) {
                                 case 0:
@@ -2454,7 +2392,7 @@ new Promise(function (resolve) {
                                     return _context28.stop();
                             }
                         }
-                    }, _callee28, this);
+                    }, _callee27, this);
                 }));
 
                 function getPlayer() {
@@ -2466,12 +2404,12 @@ new Promise(function (resolve) {
         }, {
             key: 'hangPlayer',
             value: function () {
-                var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
+                var _ref33 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29() {
                     var _this21 = this;
 
                     var fakedRes, jq, _ajax, _setItem;
 
-                    return regeneratorRuntime.wrap(function _callee30$(_context30) {
+                    return regeneratorRuntime.wrap(function _callee29$(_context30) {
                         while (1) {
                             switch (_context30.prev = _context30.next) {
                                 case 0:
@@ -2484,9 +2422,9 @@ new Promise(function (resolve) {
                                     _ajax = jq.ajax;
                                     _setItem = this.playerWin.localStorage.setItem;
                                     return _context30.abrupt('return', new Promise(function () {
-                                        var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(resolve) {
+                                        var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(resolve) {
                                             var blockerTimeout, button;
-                                            return regeneratorRuntime.wrap(function _callee29$(_context29) {
+                                            return regeneratorRuntime.wrap(function _callee28$(_context29) {
                                                 while (1) {
                                                     switch (_context29.prev = _context29.next) {
                                                         case 0:
@@ -2521,7 +2459,7 @@ new Promise(function (resolve) {
                                                             return _context29.stop();
                                                     }
                                                 }
-                                            }, _callee29, _this21);
+                                            }, _callee28, _this21);
                                         }));
 
                                         return function (_x33) {
@@ -2534,7 +2472,7 @@ new Promise(function (resolve) {
                                     return _context30.stop();
                             }
                         }
-                    }, _callee30, this);
+                    }, _callee29, this);
                 }));
 
                 function hangPlayer() {
@@ -2546,9 +2484,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadFLVFromCache',
             value: function () {
-                var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(index) {
+                var _ref35 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30(index) {
                     var name, item;
-                    return regeneratorRuntime.wrap(function _callee31$(_context31) {
+                    return regeneratorRuntime.wrap(function _callee30$(_context31) {
                         while (1) {
                             switch (_context31.prev = _context31.next) {
                                 case 0:
@@ -2590,7 +2528,7 @@ new Promise(function (resolve) {
                                     return _context31.stop();
                             }
                         }
-                    }, _callee31, this);
+                    }, _callee30, this);
                 }));
 
                 function loadFLVFromCache(_x34) {
@@ -2602,9 +2540,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadPartialFLVFromCache',
             value: function () {
-                var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32(index) {
+                var _ref36 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee31(index) {
                     var name, item;
-                    return regeneratorRuntime.wrap(function _callee32$(_context32) {
+                    return regeneratorRuntime.wrap(function _callee31$(_context32) {
                         while (1) {
                             switch (_context32.prev = _context32.next) {
                                 case 0:
@@ -2648,7 +2586,7 @@ new Promise(function (resolve) {
                                     return _context32.stop();
                             }
                         }
-                    }, _callee32, this);
+                    }, _callee31, this);
                 }));
 
                 function loadPartialFLVFromCache(_x35) {
@@ -2660,9 +2598,9 @@ new Promise(function (resolve) {
         }, {
             key: 'loadAllFLVFromCache',
             value: function () {
-                var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33() {
+                var _ref37 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee32() {
                     var promises, i;
-                    return regeneratorRuntime.wrap(function _callee33$(_context33) {
+                    return regeneratorRuntime.wrap(function _callee32$(_context33) {
                         while (1) {
                             switch (_context33.prev = _context33.next) {
                                 case 0:
@@ -2693,7 +2631,7 @@ new Promise(function (resolve) {
                                     return _context33.stop();
                             }
                         }
-                    }, _callee33, this);
+                    }, _callee32, this);
                 }));
 
                 function loadAllFLVFromCache() {
@@ -2705,9 +2643,9 @@ new Promise(function (resolve) {
         }, {
             key: 'saveFLVToCache',
             value: function () {
-                var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34(index, blob) {
+                var _ref38 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee33(index, blob) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee34$(_context34) {
+                    return regeneratorRuntime.wrap(function _callee33$(_context34) {
                         while (1) {
                             switch (_context34.prev = _context34.next) {
                                 case 0:
@@ -2735,7 +2673,7 @@ new Promise(function (resolve) {
                                     return _context34.stop();
                             }
                         }
-                    }, _callee34, this);
+                    }, _callee33, this);
                 }));
 
                 function saveFLVToCache(_x36, _x37) {
@@ -2747,9 +2685,9 @@ new Promise(function (resolve) {
         }, {
             key: 'savePartialFLVToCache',
             value: function () {
-                var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(index, blob) {
+                var _ref39 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34(index, blob) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee35$(_context35) {
+                    return regeneratorRuntime.wrap(function _callee34$(_context35) {
                         while (1) {
                             switch (_context35.prev = _context35.next) {
                                 case 0:
@@ -2779,7 +2717,7 @@ new Promise(function (resolve) {
                                     return _context35.stop();
                             }
                         }
-                    }, _callee35, this);
+                    }, _callee34, this);
                 }));
 
                 function savePartialFLVToCache(_x38, _x39) {
@@ -2791,9 +2729,9 @@ new Promise(function (resolve) {
         }, {
             key: 'cleanPartialFLVInCache',
             value: function () {
-                var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36(index) {
+                var _ref40 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee35(index) {
                     var name;
-                    return regeneratorRuntime.wrap(function _callee36$(_context36) {
+                    return regeneratorRuntime.wrap(function _callee35$(_context36) {
                         while (1) {
                             switch (_context36.prev = _context36.next) {
                                 case 0:
@@ -2823,7 +2761,7 @@ new Promise(function (resolve) {
                                     return _context36.stop();
                             }
                         }
-                    }, _callee36, this);
+                    }, _callee35, this);
                 }));
 
                 function cleanPartialFLVInCache(_x40) {
@@ -2835,10 +2773,10 @@ new Promise(function (resolve) {
         }, {
             key: 'getFLV',
             value: function () {
-                var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(index, progressHandler) {
+                var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37(index, progressHandler) {
                     var _this22 = this;
 
-                    return regeneratorRuntime.wrap(function _callee38$(_context38) {
+                    return regeneratorRuntime.wrap(function _callee37$(_context38) {
                         while (1) {
                             switch (_context38.prev = _context38.next) {
                                 case 0:
@@ -2858,9 +2796,9 @@ new Promise(function (resolve) {
                                     throw 'BiliMonkey: info uninitialized';
 
                                 case 4:
-                                    this.flvsBlob[index] = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee37() {
+                                    this.flvsBlob[index] = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee36() {
                                         var cache, partialCache, burl, opt, fch, fullResponse;
-                                        return regeneratorRuntime.wrap(function _callee37$(_context37) {
+                                        return regeneratorRuntime.wrap(function _callee36$(_context37) {
                                             while (1) {
                                                 switch (_context37.prev = _context37.next) {
                                                     case 0:
@@ -2928,7 +2866,7 @@ new Promise(function (resolve) {
                                                         return _context37.stop();
                                                 }
                                             }
-                                        }, _callee37, _this22);
+                                        }, _callee36, _this22);
                                     }))();
                                     return _context38.abrupt('return', this.flvsBlob[index]);
 
@@ -2937,7 +2875,7 @@ new Promise(function (resolve) {
                                     return _context38.stop();
                             }
                         }
-                    }, _callee38, this);
+                    }, _callee37, this);
                 }));
 
                 function getFLV(_x41, _x42) {
@@ -2949,8 +2887,8 @@ new Promise(function (resolve) {
         }, {
             key: 'abortFLV',
             value: function () {
-                var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(index) {
-                    return regeneratorRuntime.wrap(function _callee39$(_context39) {
+                var _ref44 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee38(index) {
+                    return regeneratorRuntime.wrap(function _callee38$(_context39) {
                         while (1) {
                             switch (_context39.prev = _context39.next) {
                                 case 0:
@@ -2966,7 +2904,7 @@ new Promise(function (resolve) {
                                     return _context39.stop();
                             }
                         }
-                    }, _callee39, this);
+                    }, _callee38, this);
                 }));
 
                 function abortFLV(_x43) {
@@ -2978,9 +2916,9 @@ new Promise(function (resolve) {
         }, {
             key: 'getAllFLVs',
             value: function () {
-                var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40(progressHandler) {
+                var _ref45 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee39(progressHandler) {
                     var promises, i;
-                    return regeneratorRuntime.wrap(function _callee40$(_context40) {
+                    return regeneratorRuntime.wrap(function _callee39$(_context40) {
                         while (1) {
                             switch (_context40.prev = _context40.next) {
                                 case 0:
@@ -3003,7 +2941,7 @@ new Promise(function (resolve) {
                                     return _context40.stop();
                             }
                         }
-                    }, _callee40, this);
+                    }, _callee39, this);
                 }));
 
                 function getAllFLVs(_x44) {
@@ -3015,10 +2953,10 @@ new Promise(function (resolve) {
         }, {
             key: 'cleanAllFLVsInCache',
             value: function () {
-                var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41() {
+                var _ref46 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee40() {
                     var promises, _iteratorNormalCompletion7, _didIteratorError7, _iteratorError7, _iterator7, _step7, _flv, name;
 
-                    return regeneratorRuntime.wrap(function _callee41$(_context41) {
+                    return regeneratorRuntime.wrap(function _callee40$(_context41) {
                         while (1) {
                             switch (_context41.prev = _context41.next) {
                                 case 0:
@@ -3092,7 +3030,7 @@ new Promise(function (resolve) {
                                     return _context41.stop();
                             }
                         }
-                    }, _callee41, this, [[8, 12, 16, 24], [17, , 19, 23]]);
+                    }, _callee40, this, [[8, 12, 16, 24], [17, , 19, 23]]);
                 }));
 
                 function cleanAllFLVsInCache() {
@@ -3104,11 +3042,11 @@ new Promise(function (resolve) {
         }, {
             key: 'setupProxy',
             value: function () {
-                var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42(res, onsuccess) {
+                var _ref47 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee41(res, onsuccess) {
                     var _this23 = this;
 
                     var resProxy, i;
-                    return regeneratorRuntime.wrap(function _callee42$(_context42) {
+                    return regeneratorRuntime.wrap(function _callee41$(_context42) {
                         while (1) {
                             switch (_context42.prev = _context42.next) {
                                 case 0:
@@ -3144,7 +3082,7 @@ new Promise(function (resolve) {
                                     return _context42.stop();
                             }
                         }
-                    }, _callee42, this);
+                    }, _callee41, this);
                 }));
 
                 function setupProxy(_x45, _x46) {
@@ -3153,14 +3091,52 @@ new Promise(function (resolve) {
 
                 return setupProxy;
             }()
+        }, {
+            key: 'getAvailableFormatName',
+            value: function () {
+                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42() {
+                    var h;
+                    return regeneratorRuntime.wrap(function _callee42$(_context43) {
+                        while (1) {
+                            switch (_context43.prev = _context43.next) {
+                                case 0:
+                                    h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
+
+                                    this.flvFormatName = h.some(function (e) {
+                                        return e.getAttribute('data-value') == '80';
+                                    }) ? 'flv' : 'flv720';
+                                    this.mp4FormatName = h.every(function (e) {
+                                        return e.getAttribute('data-value') != '32';
+                                    }) ? 'hdmp4' : 'mp4';
+
+                                case 3:
+                                case 'end':
+                                    return _context43.stop();
+                            }
+                        }
+                    }, _callee42, this);
+                }));
+
+                function getAvailableFormatName() {
+                    return _ref48.apply(this, arguments);
+                }
+
+                return getAvailableFormatName;
+            }()
         }], [{
             key: 'formatToValue',
             value: function formatToValue(format) {
                 switch (format) {
+                    case 'hdflv2':
+                        return '112';
                     case 'flv':
                         return '80';
-                    case 'hdmp4':
+                    case 'flv720':
                         return '64';
+                    case 'hdmp4':
+                        return '64'; // data-value is still '64' instead of '48'. return '48';
+                    case 'flv480':
+                        return '32';
                     case 'mp4':
                         return '16';
                     default:
@@ -3172,14 +3148,21 @@ new Promise(function (resolve) {
             value: function valueToFormat(value) {
                 switch (parseInt(value)) {
                     case 112:
+                        return 'hdflv2';
                     case 80:
-                    case 4:
+                        return 'flv';
+                    case 64:
+                        return 'flv720';
+                    case 48:
+                        return 'hdmp4';
+                    case 32:
+                        return 'flv480';
+                    case 16:
+                        return 'mp4';
                     case 3:
                         return 'flv';
-                    case 48:
                     case 2:
                         return 'hdmp4';
-                    case 16:
                     case 1:
                         return 'mp4';
                     default:
@@ -3189,14 +3172,14 @@ new Promise(function (resolve) {
         }, {
             key: 'loadASSScript',
             value: function () {
-                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
+                var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
                     var src = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js';
                     var script, head, foot;
-                    return regeneratorRuntime.wrap(function _callee43$(_context43) {
+                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
                         while (1) {
-                            switch (_context43.prev = _context43.next) {
+                            switch (_context44.prev = _context44.next) {
                                 case 0:
-                                    _context43.next = 2;
+                                    _context44.next = 2;
                                     return new Promise(function (resolve, reject) {
                                         var req = new XMLHttpRequest();
                                         req.onload = function () {
@@ -3208,25 +3191,25 @@ new Promise(function (resolve) {
                                     });
 
                                 case 2:
-                                    script = _context43.sent;
+                                    script = _context44.sent;
 
                                     script = script.slice(0, script.indexOf('var init = function ()'));
                                     head = '\n        (function () {\n        ';
                                     foot = '\n            fetchXML = function (cid, callback) {\n                var oReq = new XMLHttpRequest();\n                oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n                oReq.onload = function () {\n                    var content = oReq.responseText.replace(/(?:[\0-\b\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, "");\n                    callback(content);\n                };\n                oReq.send();\n            };\n            initFont();\n            return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };\n        })()\n        ';
 
                                     script = '' + head + script + foot;
-                                    return _context43.abrupt('return', top.eval(script));
+                                    return _context44.abrupt('return', top.eval(script));
 
                                 case 8:
                                 case 'end':
-                                    return _context43.stop();
+                                    return _context44.stop();
                             }
                         }
                     }, _callee43, this);
                 }));
 
                 function loadASSScript() {
-                    return _ref48.apply(this, arguments);
+                    return _ref49.apply(this, arguments);
                 }
 
                 return loadASSScript;
@@ -3238,20 +3221,20 @@ new Promise(function (resolve) {
 
                 _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
                     var playerWin;
-                    return regeneratorRuntime.wrap(function _callee44$(_context44) {
+                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
                         while (1) {
-                            switch (_context44.prev = _context44.next) {
+                            switch (_context45.prev = _context45.next) {
                                 case 0:
-                                    _context44.next = 2;
+                                    _context45.next = 2;
                                     return BiliUserJS.getPlayerWin();
 
                                 case 2:
-                                    playerWin = _context44.sent;
+                                    playerWin = _context45.sent;
 
                                     window.m = new BiliMonkey(playerWin);
 
                                     console.warn('sniffDefaultFormat test');
-                                    _context44.next = 7;
+                                    _context45.next = 7;
                                     return m.sniffDefaultFormat();
 
                                 case 7:
@@ -3262,28 +3245,28 @@ new Promise(function (resolve) {
                                     console.log(m.queryInfo('mp4'));
 
                                     console.warn('getNonCurrentFormat test');
-                                    _context44.t0 = console;
-                                    _context44.next = 15;
+                                    _context45.t0 = console;
+                                    _context45.next = 15;
                                     return m.queryInfo('mp4');
 
                                 case 15:
-                                    _context44.t1 = _context44.sent;
+                                    _context45.t1 = _context45.sent;
 
-                                    _context44.t0.log.call(_context44.t0, _context44.t1);
+                                    _context45.t0.log.call(_context45.t0, _context45.t1);
 
                                     console.warn('getCurrentFormat test');
-                                    _context44.t2 = console;
-                                    _context44.next = 21;
+                                    _context45.t2 = console;
+                                    _context45.next = 21;
                                     return m.queryInfo('flv');
 
                                 case 21:
-                                    _context44.t3 = _context44.sent;
+                                    _context45.t3 = _context45.sent;
 
-                                    _context44.t2.log.call(_context44.t2, _context44.t3);
+                                    _context45.t2.log.call(_context45.t2, _context45.t3);
 
                                 case 23:
                                 case 'end':
-                                    return _context44.stop();
+                                    return _context45.stop();
                             }
                         }
                     }, _callee44, _this24);
@@ -3356,43 +3339,43 @@ new Promise(function (resolve) {
         }, {
             key: 'setFunctions',
             value: function () {
-                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
                     var _this25 = this;
 
-                    var _ref51 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                        _ref51$videoRefresh = _ref51.videoRefresh,
-                        videoRefresh = _ref51$videoRefresh === undefined ? false : _ref51$videoRefresh;
+                    var _ref52 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                        _ref52$videoRefresh = _ref52.videoRefresh,
+                        videoRefresh = _ref52$videoRefresh === undefined ? false : _ref52$videoRefresh;
 
-                    return regeneratorRuntime.wrap(function _callee45$(_context45) {
+                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
                         while (1) {
-                            switch (_context45.prev = _context45.next) {
+                            switch (_context46.prev = _context46.next) {
                                 case 0:
                                     if (this.option.betabeta) {
-                                        _context45.next = 5;
+                                        _context46.next = 5;
                                         break;
                                     }
 
-                                    _context45.next = 3;
+                                    _context46.next = 3;
                                     return this.getPlayerVideo();
 
                                 case 3:
                                     this.userdata = { oped: {} };
-                                    return _context45.abrupt('return');
+                                    return _context46.abrupt('return');
 
                                 case 5:
                                     if (!videoRefresh) {
-                                        _context45.next = 14;
+                                        _context46.next = 14;
                                         break;
                                     }
 
                                     this.video = this.playerWin.document.getElementsByTagName('video')[0];
 
                                     if (this.video) {
-                                        _context45.next = 9;
+                                        _context46.next = 9;
                                         break;
                                     }
 
-                                    return _context45.abrupt('return');
+                                    return _context46.abrupt('return');
 
                                 case 9:
                                     if (this.option.dblclick) this.dblclickFullScreen();
@@ -3401,14 +3384,14 @@ new Promise(function (resolve) {
                                     this.video.addEventListener('emptied', function () {
                                         return _this25.setFunctions({ videoRefresh: true });
                                     });
-                                    return _context45.abrupt('return');
+                                    return _context46.abrupt('return');
 
                                 case 14:
-                                    _context45.next = 16;
+                                    _context46.next = 16;
                                     return this.getPlayerVideo();
 
                                 case 16:
-                                    this.video = _context45.sent;
+                                    this.video = _context46.sent;
 
                                     this.retriveUserdata();
                                     if (this.option.badgeWatchLater) this.badgeWatchLater();
@@ -3439,14 +3422,14 @@ new Promise(function (resolve) {
 
                                 case 36:
                                 case 'end':
-                                    return _context45.stop();
+                                    return _context46.stop();
                             }
                         }
                     }, _callee45, this);
                 }));
 
                 function setFunctions() {
-                    return _ref50.apply(this, arguments);
+                    return _ref51.apply(this, arguments);
                 }
 
                 return setFunctions;
@@ -3454,11 +3437,11 @@ new Promise(function (resolve) {
         }, {
             key: 'inferNextInSeries',
             value: function () {
-                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
                     var title, epNumberText, seriesTitle, ep, mid, vlist;
-                    return regeneratorRuntime.wrap(function _callee46$(_context46) {
+                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
                         while (1) {
-                            switch (_context46.prev = _context46.next) {
+                            switch (_context47.prev = _context47.next) {
                                 case 0:
                                     title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
@@ -3467,11 +3450,11 @@ new Promise(function (resolve) {
                                     epNumberText = title.match(/\d+/g);
 
                                     if (epNumberText) {
-                                        _context46.next = 4;
+                                        _context47.next = 4;
                                         break;
                                     }
 
-                                    return _context46.abrupt('return', this.series = []);
+                                    return _context47.abrupt('return', this.series = []);
 
                                 case 4:
                                     epNumberText = epNumberText.pop();
@@ -3488,15 +3471,15 @@ new Promise(function (resolve) {
                                     mid = top.document.getElementById('r-info-rank');
 
                                     if (mid) {
-                                        _context46.next = 12;
+                                        _context47.next = 12;
                                         break;
                                     }
 
-                                    return _context46.abrupt('return', this.series = []);
+                                    return _context47.abrupt('return', this.series = []);
 
                                 case 12:
                                     mid = mid.children[0].href.match(/\d+/)[0];
-                                    _context46.next = 15;
+                                    _context47.next = 15;
                                     return Promise.all([title].concat(_toConsumableArray(ep)).map(function (keyword) {
                                         return new Promise(function (resolve, reject) {
                                             var req = new XMLHttpRequest();
@@ -3511,7 +3494,7 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 15:
-                                    vlist = _context46.sent;
+                                    vlist = _context47.sent;
 
 
                                     vlist[0] = [vlist[0].find(function (e) {
@@ -3519,11 +3502,11 @@ new Promise(function (resolve) {
                                     })];
 
                                     if (vlist[0][0]) {
-                                        _context46.next = 20;
+                                        _context47.next = 20;
                                         break;
                                     }
 
-                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context46.abrupt('return', this.series = []);
+                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context47.abrupt('return', this.series = []);
 
                                 case 20:
                                     this.series = [vlist[1].find(function (e) {
@@ -3538,18 +3521,18 @@ new Promise(function (resolve) {
                                         return e.created > vlist[0][0].created;
                                     }) || null;
 
-                                    return _context46.abrupt('return', this.series);
+                                    return _context47.abrupt('return', this.series);
 
                                 case 24:
                                 case 'end':
-                                    return _context46.stop();
+                                    return _context47.stop();
                             }
                         }
                     }, _callee46, this);
                 }));
 
                 function inferNextInSeries() {
-                    return _ref52.apply(this, arguments);
+                    return _ref53.apply(this, arguments);
                 }
 
                 return inferNextInSeries;
@@ -3642,7 +3625,7 @@ new Promise(function (resolve) {
                 // MUST initialize setting panel before click
                 this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseover'));
                 this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseout'));
-                if (this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].nextSibling.getAttribute('data-pressed') !== 'true') this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].click();
+                if (!this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].nextSibling.className.includes('bpui-state-active')) this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0].click();
             }
         }, {
             key: 'loadOffineSubtitles',
@@ -3900,22 +3883,22 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerVideo',
             value: function () {
-                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+                var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
                     var _this34 = this;
 
-                    return regeneratorRuntime.wrap(function _callee47$(_context47) {
+                    return regeneratorRuntime.wrap(function _callee47$(_context48) {
                         while (1) {
-                            switch (_context47.prev = _context47.next) {
+                            switch (_context48.prev = _context48.next) {
                                 case 0:
                                     if (!this.playerWin.document.getElementsByTagName('video').length) {
-                                        _context47.next = 4;
+                                        _context48.next = 4;
                                         break;
                                     }
 
-                                    return _context47.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
+                                    return _context48.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
 
                                 case 4:
-                                    return _context47.abrupt('return', new Promise(function (resolve) {
+                                    return _context48.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (_this34.playerWin.document.getElementsByTagName('video').length) {
                                                 observer.disconnect();
@@ -3927,14 +3910,14 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
-                                    return _context47.stop();
+                                    return _context48.stop();
                             }
                         }
                     }, _callee47, this);
                 }));
 
                 function getPlayerVideo() {
-                    return _ref53.apply(this, arguments);
+                    return _ref54.apply(this, arguments);
                 }
 
                 return getPlayerVideo;
@@ -3953,11 +3936,11 @@ new Promise(function (resolve) {
 
                 _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
                     var div, i;
-                    return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                    return regeneratorRuntime.wrap(function _callee48$(_context49) {
                         while (1) {
-                            switch (_context48.prev = _context48.next) {
+                            switch (_context49.prev = _context49.next) {
                                 case 0:
-                                    _context48.next = 2;
+                                    _context49.next = 2;
                                     return new Promise(function (resolve) {
                                         h.addEventListener('load', resolve);
                                         setTimeout(function () {
@@ -3970,14 +3953,14 @@ new Promise(function (resolve) {
                                     div = h.document.getElementById('bilibiliPlayer');
 
                                     if (div) {
-                                        _context48.next = 6;
+                                        _context49.next = 6;
                                         break;
                                     }
 
-                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context48.abrupt('return');
+                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context49.abrupt('return');
 
                                 case 6:
-                                    _context48.next = 8;
+                                    _context49.next = 8;
                                     return new Promise(function (resolve) {
                                         if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve(); else {
                                             var observer = new MutationObserver(function () {
@@ -4002,7 +3985,7 @@ new Promise(function (resolve) {
 
                                 case 15:
                                 case 'end':
-                                    return _context48.stop();
+                                    return _context49.stop();
                             }
                         }
                     }, _callee48, _this35);
@@ -4064,20 +4047,20 @@ new Promise(function (resolve) {
         _createClass(BiliUserJS, null, [{
             key: 'getIframeWin',
             value: function () {
-                var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
-                    return regeneratorRuntime.wrap(function _callee49$(_context49) {
+                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
+                    return regeneratorRuntime.wrap(function _callee49$(_context50) {
                         while (1) {
-                            switch (_context49.prev = _context49.next) {
+                            switch (_context50.prev = _context50.next) {
                                 case 0:
                                     if (!document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-                                        _context49.next = 4;
+                                        _context50.next = 4;
                                         break;
                                     }
 
-                                    return _context49.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
+                                    return _context50.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
 
                                 case 4:
-                                    return _context49.abrupt('return', new Promise(function (resolve) {
+                                    return _context50.abrupt('return', new Promise(function (resolve) {
                                         document.querySelector('#bofqi > iframe').addEventListener('load', function () {
                                             resolve(document.querySelector('#bofqi > iframe').contentWindow);
                                         });
@@ -4085,14 +4068,14 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
-                                    return _context49.stop();
+                                    return _context50.stop();
                             }
                         }
                     }, _callee49, this);
                 }));
 
                 function getIframeWin() {
-                    return _ref55.apply(this, arguments);
+                    return _ref56.apply(this, arguments);
                 }
 
                 return getIframeWin;
@@ -4100,17 +4083,17 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerWin',
             value: function () {
-                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
-                    return regeneratorRuntime.wrap(function _callee50$(_context50) {
+                var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
+                    return regeneratorRuntime.wrap(function _callee50$(_context51) {
                         while (1) {
-                            switch (_context50.prev = _context50.next) {
+                            switch (_context51.prev = _context51.next) {
                                 case 0:
                                     if (!location.href.includes('/watchlater/#/list')) {
-                                        _context50.next = 3;
+                                        _context51.next = 3;
                                         break;
                                     }
 
-                                    _context50.next = 3;
+                                    _context51.next = 3;
                                     return new Promise(function (resolve) {
                                         var h = function h() {
                                             resolve();
@@ -4121,16 +4104,16 @@ new Promise(function (resolve) {
 
                                 case 3:
                                     if (!location.href.includes('/watchlater/#/')) {
-                                        _context50.next = 7;
+                                        _context51.next = 7;
                                         break;
                                     }
 
                                     if (document.getElementById('bofqi')) {
-                                        _context50.next = 7;
+                                        _context51.next = 7;
                                         break;
                                     }
 
-                                    _context50.next = 7;
+                                    _context51.next = 7;
                                     return new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bofqi')) {
@@ -4143,27 +4126,27 @@ new Promise(function (resolve) {
 
                                 case 7:
                                     if (!(location.host == 'bangumi.bilibili.com')) {
-                                        _context50.next = 19;
+                                        _context51.next = 19;
                                         break;
                                     }
 
                                     if (!document.querySelector('#bofqi > iframe')) {
-                                        _context50.next = 12;
+                                        _context51.next = 12;
                                         break;
                                     }
 
-                                    return _context50.abrupt('return', BiliUserJS.getIframeWin());
+                                    return _context51.abrupt('return', BiliUserJS.getIframeWin());
 
                                 case 12:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context50.next = 16;
+                                        _context51.next = 16;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 16:
-                                    return _context50.abrupt('return', new Promise(function (resolve) {
+                                    return _context51.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.querySelector('#bofqi > iframe')) {
                                                 observer.disconnect();
@@ -4177,27 +4160,27 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 17:
-                                    _context50.next = 28;
+                                    _context51.next = 28;
                                     break;
 
                                 case 19:
                                     if (!document.getElementById('bilibiliPlayer')) {
-                                        _context50.next = 23;
+                                        _context51.next = 23;
                                         break;
                                     }
 
-                                    return _context50.abrupt('return', window);
+                                    return _context51.abrupt('return', window);
 
                                 case 23:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context50.next = 27;
+                                        _context51.next = 27;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 27:
-                                    return _context50.abrupt('return', new Promise(function (resolve) {
+                                    return _context51.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bilibiliPlayer')) {
                                                 observer.disconnect();
@@ -4212,14 +4195,14 @@ new Promise(function (resolve) {
 
                                 case 28:
                                 case 'end':
-                                    return _context50.stop();
+                                    return _context51.stop();
                             }
                         }
                     }, _callee50, this);
                 }));
 
                 function getPlayerWin() {
-                    return _ref56.apply(this, arguments);
+                    return _ref57.apply(this, arguments);
                 }
 
                 return getPlayerWin;
@@ -4257,13 +4240,13 @@ new Promise(function (resolve) {
 
                 flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
                     var flvDiv;
-                    return regeneratorRuntime.wrap(function _callee51$(_context51) {
+                    return regeneratorRuntime.wrap(function _callee51$(_context52) {
                         while (1) {
-                            switch (_context51.prev = _context51.next) {
+                            switch (_context52.prev = _context52.next) {
                                 case 0:
                                     flvA.textContent = '正在FLV';
                                     flvA.onmouseover = null;
-                                    _context51.next = 4;
+                                    _context52.next = 4;
                                     return monkey.queryInfo('flv');
 
                                 case 4:
@@ -4277,23 +4260,23 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context51.stop();
+                                    return _context52.stop();
                             }
                         }
                     }, _callee51, _this37);
                 }));
                 mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
-                    return regeneratorRuntime.wrap(function _callee52$(_context52) {
+                    return regeneratorRuntime.wrap(function _callee52$(_context53) {
                         while (1) {
-                            switch (_context52.prev = _context52.next) {
+                            switch (_context53.prev = _context53.next) {
                                 case 0:
                                     mp4A.textContent = '正在MP4';
                                     mp4A.onmouseover = null;
-                                    _context52.next = 4;
+                                    _context53.next = 4;
                                     return monkey.queryInfo('mp4');
 
                                 case 4:
-                                    mp4A.href = _context52.sent;
+                                    mp4A.href = _context53.sent;
 
                                     mp4A.textContent = '原生MP4';
                                     mp4A.download = '';
@@ -4301,30 +4284,30 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context52.stop();
+                                    return _context53.stop();
                             }
                         }
                     }, _callee52, _this37);
                 }));
                 assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
-                    return regeneratorRuntime.wrap(function _callee53$(_context53) {
+                    return regeneratorRuntime.wrap(function _callee53$(_context54) {
                         while (1) {
-                            switch (_context53.prev = _context53.next) {
+                            switch (_context54.prev = _context54.next) {
                                 case 0:
                                     assA.textContent = '正在ASS';
                                     assA.onmouseover = null;
-                                    _context53.next = 4;
+                                    _context54.next = 4;
                                     return monkey.queryInfo('ass');
 
                                 case 4:
-                                    assA.href = _context53.sent;
+                                    assA.href = _context54.sent;
 
                                     assA.textContent = '弹幕ASS';
                                     if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass'; else assA.download = monkey.cid + '.ass';
 
                                 case 7:
                                 case 'end':
-                                    return _context53.stop();
+                                    return _context54.stop();
                             }
                         }
                     }, _callee53, _this37);
@@ -4394,12 +4377,12 @@ new Promise(function (resolve) {
                     return UI.allowDrag(e);
                 };
                 div.ondrop = function () {
-                    var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(e) {
+                    var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(e) {
                         var files, _iteratorNormalCompletion8, _didIteratorError8, _iteratorError8, _iterator8, _step8, file, outputName, url;
 
-                        return regeneratorRuntime.wrap(function _callee54$(_context54) {
+                        return regeneratorRuntime.wrap(function _callee54$(_context55) {
                             while (1) {
-                                switch (_context54.prev = _context54.next) {
+                                switch (_context55.prev = _context55.next) {
                                     case 0:
                                         UI.allowDrag(e);
                                         files = Array.from(e.dataTransfer.files);
@@ -4414,67 +4397,67 @@ new Promise(function (resolve) {
                                         _iteratorNormalCompletion8 = true;
                                         _didIteratorError8 = false;
                                         _iteratorError8 = undefined;
-                                        _context54.prev = 6;
+                                        _context55.prev = 6;
                                         for (_iterator8 = files[Symbol.iterator](); !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                                             file = _step8.value;
 
                                             table.insertRow(-1).innerHTML = '<td colspan="3">' + file.name + '</td>';
                                         }
-                                        _context54.next = 14;
+                                        _context55.next = 14;
                                         break;
 
                                     case 10:
-                                        _context54.prev = 10;
-                                        _context54.t0 = _context54['catch'](6);
+                                        _context55.prev = 10;
+                                        _context55.t0 = _context55['catch'](6);
                                         _didIteratorError8 = true;
-                                        _iteratorError8 = _context54.t0;
+                                        _iteratorError8 = _context55.t0;
 
                                     case 14:
-                                        _context54.prev = 14;
-                                        _context54.prev = 15;
+                                        _context55.prev = 14;
+                                        _context55.prev = 15;
 
                                         if (!_iteratorNormalCompletion8 && _iterator8.return) {
                                             _iterator8.return();
                                         }
 
                                     case 17:
-                                        _context54.prev = 17;
+                                        _context55.prev = 17;
 
                                         if (!_didIteratorError8) {
-                                            _context54.next = 20;
+                                            _context55.next = 20;
                                             break;
                                         }
 
                                         throw _iteratorError8;
 
                                     case 20:
-                                        return _context54.finish(17);
+                                        return _context55.finish(17);
 
                                     case 21:
-                                        return _context54.finish(14);
+                                        return _context55.finish(14);
 
                                     case 22:
                                         outputName = files[0].name.match(/\d+-\d+(?:-\d+)?\.flv/);
 
                                         if (outputName) outputName = outputName[0].replace(/-\d/, ""); else outputName = 'merge_' + files[0].name;
-                                        _context54.next = 26;
+                                        _context55.next = 26;
                                         return UI.mergeFLVFiles(files);
 
                                     case 26:
-                                        url = _context54.sent;
+                                        url = _context55.sent;
 
                                         table.insertRow(-1).innerHTML = '<td colspan="3"><a href="' + url + '" download="' + outputName + '">' + outputName + '</a></td>';
 
                                     case 28:
                                     case 'end':
-                                        return _context54.stop();
+                                        return _context55.stop();
                                 }
                             }
                         }, _callee54, _this38, [[6, 10, 14, 22], [15, , 17, 21]]);
                     }));
 
                     return function (_x56) {
-                        return _ref60.apply(this, arguments);
+                        return _ref61.apply(this, arguments);
                     };
                 }();
 
@@ -4508,19 +4491,19 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadAllFLVs',
             value: function () {
-                var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(a, monkey, table) {
+                var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(a, monkey, table) {
                     var i, bar, _i2, blobs, mergedFLV, url, outputName;
 
-                    return regeneratorRuntime.wrap(function _callee55$(_context55) {
+                    return regeneratorRuntime.wrap(function _callee55$(_context56) {
                         while (1) {
-                            switch (_context55.prev = _context55.next) {
+                            switch (_context56.prev = _context56.next) {
                                 case 0:
                                     if (!(table.rows[0].cells.length < 3)) {
-                                        _context55.next = 2;
+                                        _context56.next = 2;
                                         break;
                                     }
 
-                                    return _context55.abrupt('return');
+                                    return _context56.abrupt('return');
 
                                 case 2:
                                     monkey.hangPlayer();
@@ -4539,44 +4522,44 @@ new Promise(function (resolve) {
                                             return bar.value++;
                                         });
                                     } blobs = void 0;
-                                    _context55.next = 12;
+                                    _context56.next = 12;
                                     return monkey.getAllFLVs();
 
                                 case 12:
-                                    blobs = _context55.sent;
-                                    _context55.next = 15;
+                                    blobs = _context56.sent;
+                                    _context56.next = 15;
                                     return FLV.mergeBlobs(blobs);
 
                                 case 15:
-                                    mergedFLV = _context55.sent;
+                                    mergedFLV = _context56.sent;
                                     url = URL.createObjectURL(mergedFLV);
                                     outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
 
 
                                     bar.value++;
-                                    _context55.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
-                                    _context55.next = 22;
+                                    _context56.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
+                                    _context56.next = 22;
                                     return monkey.ass;
 
                                 case 22:
-                                    _context55.t1 = _context55.sent;
-                                    _context55.t2 = _context55.t0 + _context55.t1;
-                                    _context55.t3 = _context55.t2 + '" download="';
-                                    _context55.t4 = outputName;
-                                    _context55.t5 = _context55.t3 + _context55.t4;
-                                    table.insertRow(0).innerHTML = _context55.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
-                                    return _context55.abrupt('return', url);
+                                    _context56.t1 = _context56.sent;
+                                    _context56.t2 = _context56.t0 + _context56.t1;
+                                    _context56.t3 = _context56.t2 + '" download="';
+                                    _context56.t4 = outputName;
+                                    _context56.t5 = _context56.t3 + _context56.t4;
+                                    table.insertRow(0).innerHTML = _context56.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
+                                    return _context56.abrupt('return', url);
 
                                 case 29:
                                 case 'end':
-                                    return _context55.stop();
+                                    return _context56.stop();
                             }
                         }
                     }, _callee55, this);
                 }));
 
                 function downloadAllFLVs(_x57, _x58, _x59) {
-                    return _ref61.apply(this, arguments);
+                    return _ref62.apply(this, arguments);
                 }
 
                 return downloadAllFLVs;
@@ -4584,12 +4567,12 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadFLV',
             value: function () {
-                var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(a, monkey, index) {
+                var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(a, monkey, index) {
                     var bar = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
                     var handler, url;
-                    return regeneratorRuntime.wrap(function _callee56$(_context56) {
+                    return regeneratorRuntime.wrap(function _callee56$(_context57) {
                         while (1) {
-                            switch (_context56.prev = _context56.next) {
+                            switch (_context57.prev = _context57.next) {
                                 case 0:
                                     handler = function handler(e) {
                                         return UI.beforeUnloadHandler(e);
@@ -4606,29 +4589,29 @@ new Promise(function (resolve) {
                                     };
 
                                     url = void 0;
-                                    _context56.prev = 5;
-                                    _context56.next = 8;
+                                    _context57.prev = 5;
+                                    _context57.next = 8;
                                     return monkey.getFLV(index, function (loaded, total) {
                                         bar.value = loaded;
                                         bar.max = total;
                                     });
 
                                 case 8:
-                                    url = _context56.sent;
+                                    url = _context57.sent;
 
                                     url = URL.createObjectURL(url);
                                     if (bar.value == 0) bar.value = bar.max = 1;
-                                    _context56.next = 19;
+                                    _context57.next = 19;
                                     break;
 
                                 case 13:
-                                    _context56.prev = 13;
-                                    _context56.t0 = _context56['catch'](5);
+                                    _context57.prev = 13;
+                                    _context57.t0 = _context57['catch'](5);
 
                                     a.onclick = null;
                                     window.removeEventListener('beforeunload', handler);
                                     a.textContent = '错误';
-                                    throw _context56.t0;
+                                    throw _context57.t0;
 
                                 case 19:
 
@@ -4637,18 +4620,18 @@ new Promise(function (resolve) {
                                     a.textContent = '另存为';
                                     a.download = monkey.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
                                     a.href = url;
-                                    return _context56.abrupt('return', url);
+                                    return _context57.abrupt('return', url);
 
                                 case 25:
                                 case 'end':
-                                    return _context56.stop();
+                                    return _context57.stop();
                             }
                         }
                     }, _callee56, this, [[5, 13]]);
                 }));
 
                 function downloadFLV(_x60, _x61, _x62) {
-                    return _ref62.apply(this, arguments);
+                    return _ref63.apply(this, arguments);
                 }
 
                 return downloadFLV;
@@ -4656,29 +4639,29 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeFLVFiles',
             value: function () {
-                var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(files) {
+                var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(files) {
                     var merged;
-                    return regeneratorRuntime.wrap(function _callee57$(_context57) {
+                    return regeneratorRuntime.wrap(function _callee57$(_context58) {
                         while (1) {
-                            switch (_context57.prev = _context57.next) {
+                            switch (_context58.prev = _context58.next) {
                                 case 0:
-                                    _context57.next = 2;
+                                    _context58.next = 2;
                                     return FLV.mergeBlobs(files);
 
                                 case 2:
-                                    merged = _context57.sent;
-                                    return _context57.abrupt('return', URL.createObjectURL(merged));
+                                    merged = _context58.sent;
+                                    return _context58.abrupt('return', URL.createObjectURL(merged));
 
                                 case 4:
                                 case 'end':
-                                    return _context57.stop();
+                                    return _context58.stop();
                             }
                         }
                     }, _callee57, this);
                 }));
 
                 function mergeFLVFiles(_x64) {
-                    return _ref63.apply(this, arguments);
+                    return _ref64.apply(this, arguments);
                 }
 
                 return mergeFLVFiles;
@@ -4686,28 +4669,28 @@ new Promise(function (resolve) {
         }, {
             key: 'clearCacheDB',
             value: function () {
-                var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(cache) {
-                    return regeneratorRuntime.wrap(function _callee58$(_context58) {
+                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(cache) {
+                    return regeneratorRuntime.wrap(function _callee58$(_context59) {
                         while (1) {
-                            switch (_context58.prev = _context58.next) {
+                            switch (_context59.prev = _context59.next) {
                                 case 0:
                                     if (!cache) {
-                                        _context58.next = 2;
+                                        _context59.next = 2;
                                         break;
                                     }
 
-                                    return _context58.abrupt('return', cache.deleteEntireDB());
+                                    return _context59.abrupt('return', cache.deleteEntireDB());
 
                                 case 2:
                                 case 'end':
-                                    return _context58.stop();
+                                    return _context59.stop();
                             }
                         }
                     }, _callee58, this);
                 }));
 
                 function clearCacheDB(_x65) {
-                    return _ref64.apply(this, arguments);
+                    return _ref65.apply(this, arguments);
                 }
 
                 return clearCacheDB;
@@ -4715,12 +4698,12 @@ new Promise(function (resolve) {
         }, {
             key: 'displayQuota',
             value: function () {
-                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(tr) {
-                    return regeneratorRuntime.wrap(function _callee59$(_context59) {
+                var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(tr) {
+                    return regeneratorRuntime.wrap(function _callee59$(_context60) {
                         while (1) {
-                            switch (_context59.prev = _context59.next) {
+                            switch (_context60.prev = _context60.next) {
                                 case 0:
-                                    return _context59.abrupt('return', new Promise(function (resolve) {
+                                    return _context60.abrupt('return', new Promise(function (resolve) {
                                         var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                         if (!temporaryStorage) return resolve(tr.innerHTML = '<td colspan="3">\u8FD9\u4E2A\u6D4F\u89C8\u5668\u4E0D\u652F\u6301\u7F13\u5B58\u5462~\u5173\u6389\u6807\u7B7E\u9875\u540E\uFF0C\u7F13\u5B58\u9A6C\u4E0A\u5C31\u4F1A\u6D88\u5931\u54E6</td>');
                                         temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -4730,14 +4713,14 @@ new Promise(function (resolve) {
 
                                 case 1:
                                 case 'end':
-                                    return _context59.stop();
+                                    return _context60.stop();
                             }
                         }
                     }, _callee59, this);
                 }));
 
                 function displayQuota(_x66) {
-                    return _ref65.apply(this, arguments);
+                    return _ref66.apply(this, arguments);
                 }
 
                 return displayQuota;
@@ -4747,12 +4730,12 @@ new Promise(function (resolve) {
 
         }, {
             key: 'menuAppend',
-            value: function menuAppend(playerWin, _ref66) {
-                var monkey = _ref66.monkey,
-                    monkeyTitle = _ref66.monkeyTitle,
-                    polyfill = _ref66.polyfill,
-                    displayPolyfillDataDiv = _ref66.displayPolyfillDataDiv,
-                    optionDiv = _ref66.optionDiv;
+            value: function menuAppend(playerWin, _ref67) {
+                var monkey = _ref67.monkey,
+                    monkeyTitle = _ref67.monkeyTitle,
+                    polyfill = _ref67.polyfill,
+                    displayPolyfillDataDiv = _ref67.displayPolyfillDataDiv,
+                    optionDiv = _ref67.optionDiv;
 
                 var monkeyMenu = UI.genMonkeyMenu(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, optionDiv: optionDiv });
                 var polyfillMenu = UI.genPolyfillMenu(playerWin, { polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
@@ -4766,12 +4749,12 @@ new Promise(function (resolve) {
             }
         }, {
             key: 'genMonkeyMenu',
-            value: function genMonkeyMenu(playerWin, _ref67) {
+            value: function genMonkeyMenu(playerWin, _ref68) {
                 var _this39 = this;
 
-                var monkey = _ref67.monkey,
-                    monkeyTitle = _ref67.monkeyTitle,
-                    optionDiv = _ref67.optionDiv;
+                var monkey = _ref68.monkey,
+                    monkeyTitle = _ref68.monkeyTitle,
+                    optionDiv = _ref68.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -4781,67 +4764,67 @@ new Promise(function (resolve) {
                 };
                 var ul = li.children[1];
                 ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
-                    return regeneratorRuntime.wrap(function _callee60$(_context60) {
+                    return regeneratorRuntime.wrap(function _callee60$(_context61) {
                         while (1) {
-                            switch (_context60.prev = _context60.next) {
+                            switch (_context61.prev = _context61.next) {
                                 case 0:
                                     if (!monkeyTitle.flvA.onmouseover) {
-                                        _context60.next = 3;
+                                        _context61.next = 3;
                                         break;
                                     }
 
-                                    _context60.next = 3;
+                                    _context61.next = 3;
                                     return monkeyTitle.flvA.onmouseover();
 
                                 case 3:
                                     monkeyTitle.flvA.click();
                                 case 4:
                                 case 'end':
-                                    return _context60.stop();
+                                    return _context61.stop();
                             }
                         }
                     }, _callee60, _this39);
                 }));
                 ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
-                    return regeneratorRuntime.wrap(function _callee61$(_context61) {
+                    return regeneratorRuntime.wrap(function _callee61$(_context62) {
                         while (1) {
-                            switch (_context61.prev = _context61.next) {
+                            switch (_context62.prev = _context62.next) {
                                 case 0:
                                     if (!monkeyTitle.mp4A.onmouseover) {
-                                        _context61.next = 3;
+                                        _context62.next = 3;
                                         break;
                                     }
 
-                                    _context61.next = 3;
+                                    _context62.next = 3;
                                     return monkeyTitle.mp4A.onmouseover();
 
                                 case 3:
                                     monkeyTitle.mp4A.click();
                                 case 4:
                                 case 'end':
-                                    return _context61.stop();
+                                    return _context62.stop();
                             }
                         }
                     }, _callee61, _this39);
                 }));
                 ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
-                    return regeneratorRuntime.wrap(function _callee62$(_context62) {
+                    return regeneratorRuntime.wrap(function _callee62$(_context63) {
                         while (1) {
-                            switch (_context62.prev = _context62.next) {
+                            switch (_context63.prev = _context63.next) {
                                 case 0:
                                     if (!monkeyTitle.assA.onmouseover) {
-                                        _context62.next = 3;
+                                        _context63.next = 3;
                                         break;
                                     }
 
-                                    _context62.next = 3;
+                                    _context63.next = 3;
                                     return monkeyTitle.assA.onmouseover();
 
                                 case 3:
                                     monkeyTitle.assA.click();
                                 case 4:
                                 case 'end':
-                                    return _context62.stop();
+                                    return _context63.stop();
                             }
                         }
                     }, _callee62, _this39);
@@ -4850,26 +4833,26 @@ new Promise(function (resolve) {
                     optionDiv.style.display = 'block';
                 };
                 ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
-                    return regeneratorRuntime.wrap(function _callee63$(_context63) {
+                    return regeneratorRuntime.wrap(function _callee63$(_context64) {
                         while (1) {
-                            switch (_context63.prev = _context63.next) {
+                            switch (_context64.prev = _context64.next) {
                                 case 0:
                                     monkey.proxy = true;
                                     monkey.flvs = null;
                                     UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                     // Yes, I AM lazy.
                                     playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                    _context63.next = 6;
+                                    _context64.next = 6;
                                     return new Promise(function (r) {
                                         return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                     });
 
                                 case 6:
-                                    return _context63.abrupt('return', monkey.queryInfo('flv'));
+                                    return _context64.abrupt('return', monkey.queryInfo('flv'));
 
                                 case 7:
                                 case 'end':
-                                    return _context63.stop();
+                                    return _context64.stop();
                             }
                         }
                     }, _callee63, _this39);
@@ -4887,10 +4870,10 @@ new Promise(function (resolve) {
             }
         }, {
             key: 'genPolyfillMenu',
-            value: function genPolyfillMenu(playerWin, _ref72) {
-                var polyfill = _ref72.polyfill,
-                    displayPolyfillDataDiv = _ref72.displayPolyfillDataDiv,
-                    optionDiv = _ref72.optionDiv;
+            value: function genPolyfillMenu(playerWin, _ref73) {
+                var polyfill = _ref73.polyfill,
+                    displayPolyfillDataDiv = _ref73.displayPolyfillDataDiv,
+                    optionDiv = _ref73.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -4910,8 +4893,8 @@ new Promise(function (resolve) {
                 ul.children[1].children[1].children[1].onclick = function () {
                     polyfill.setVideoSpeed(3);
                 };
-                ul.children[1].children[1].children[2].onclick = function () {
-                    polyfill.setVideoSpeed(ul.children[2].children[1].children[2].getElementsByTagName('input')[0].value);
+                ul.children[1].children[1].children[2].onclick = function (e) {
+                    polyfill.setVideoSpeed(e.target.getElementsByTagName('input')[0].value);
                 };
                 ul.children[1].children[1].children[2].getElementsByTagName('input')[0].onclick = function (e) {
                     return e.stopPropagation();
@@ -5408,14 +5391,14 @@ new Promise(function (resolve) {
         }, {
             key: 'start',
             value: function () {
-                var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+                var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
                     var _this40 = this;
 
-                    var cidRefresh, href, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref74, _ref75, monkey, polyfill, h, _ref78;
+                    var cidRefresh, href, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref75, _ref76, monkey, polyfill, h, _ref79;
 
-                    return regeneratorRuntime.wrap(function _callee66$(_context66) {
+                    return regeneratorRuntime.wrap(function _callee66$(_context67) {
                         while (1) {
-                            switch (_context66.prev = _context66.next) {
+                            switch (_context67.prev = _context67.next) {
                                 case 0:
                                     cidRefresh = new AsyncContainer();
                                     href = location.href;
@@ -5423,21 +5406,21 @@ new Promise(function (resolve) {
                                     // 1. playerWin and option
 
                                     playerWin = void 0;
-                                    _context66.prev = 3;
-                                    _context66.next = 6;
+                                    _context67.prev = 3;
+                                    _context67.next = 6;
                                     return UI.getPlayerWin();
 
                                 case 6:
-                                    playerWin = _context66.sent;
-                                    _context66.next = 13;
+                                    playerWin = _context67.sent;
+                                    _context67.next = 13;
                                     break;
 
                                 case 9:
-                                    _context66.prev = 9;
-                                    _context66.t0 = _context66['catch'](3);
+                                    _context67.prev = 9;
+                                    _context67.t0 = _context67['catch'](3);
 
-                                    if (_context66.t0 == 'Need H5 Player') UI.requestH5Player();
-                                    throw _context66.t0;
+                                    if (_context67.t0 == 'Need H5 Player') UI.requestH5Player();
+                                    throw _context67.t0;
 
                                 case 13:
                                     option = UI.getOption(playerWin);
@@ -5452,62 +5435,62 @@ new Promise(function (resolve) {
                                         return UI.displayPolyfillDataDiv(polyfill);
                                     };
 
-                                    _context66.next = 20;
+                                    _context67.next = 20;
                                     return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
                                         var monkey;
-                                        return regeneratorRuntime.wrap(function _callee64$(_context64) {
+                                        return regeneratorRuntime.wrap(function _callee64$(_context65) {
                                             while (1) {
-                                                switch (_context64.prev = _context64.next) {
+                                                switch (_context65.prev = _context65.next) {
                                                     case 0:
                                                         monkey = new BiliMonkey(playerWin, option);
-                                                        _context64.next = 3;
+                                                        _context65.next = 3;
                                                         return monkey.execOptions();
 
                                                     case 3:
                                                         monkeyTitle = UI.titleAppend(monkey);
-                                                        return _context64.abrupt('return', monkey);
+                                                        return _context65.abrupt('return', monkey);
 
                                                     case 5:
                                                     case 'end':
-                                                        return _context64.stop();
+                                                        return _context65.stop();
                                                 }
                                             }
                                         }, _callee64, _this40);
                                     }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
                                         var polyfill;
-                                        return regeneratorRuntime.wrap(function _callee65$(_context65) {
+                                        return regeneratorRuntime.wrap(function _callee65$(_context66) {
                                             while (1) {
-                                                switch (_context65.prev = _context65.next) {
+                                                switch (_context66.prev = _context66.next) {
                                                     case 0:
                                                         polyfill = new BiliPolyfill(playerWin, option, function (t) {
                                                             return UI.hintInfo(t, playerWin);
                                                         });
-                                                        _context65.next = 3;
+                                                        _context66.next = 3;
                                                         return polyfill.setFunctions();
 
                                                     case 3:
-                                                        return _context65.abrupt('return', polyfill);
+                                                        return _context66.abrupt('return', polyfill);
 
                                                     case 4:
                                                     case 'end':
-                                                        return _context65.stop();
+                                                        return _context66.stop();
                                                 }
                                             }
                                         }, _callee65, _this40);
                                     }))()]);
 
                                 case 20:
-                                    _ref74 = _context66.sent;
-                                    _ref75 = _slicedToArray(_ref74, 2);
-                                    monkey = _ref75[0];
-                                    polyfill = _ref75[1];
+                                    _ref75 = _context67.sent;
+                                    _ref76 = _slicedToArray(_ref75, 2);
+                                    monkey = _ref76[0];
+                                    polyfill = _ref76[1];
 
                                     if (!(href != location.href)) {
-                                        _context66.next = 26;
+                                        _context67.next = 26;
                                         break;
                                     }
 
-                                    return _context66.abrupt('return', UI.cleanUp());
+                                    return _context67.abrupt('return', UI.cleanUp());
 
                                 case 26:
 
@@ -5536,10 +5519,10 @@ new Promise(function (resolve) {
                                     if (top.debugOption && top.debugOption.debug) {
                                         ;
 
-                                        _ref78 = [monkey, polyfill];
-                                        (top.unsafeWindow || top).m = _ref78[0];
-                                        (top.unsafeWindow || top).p = _ref78[1];
-                                    } _context66.next = 35;
+                                        _ref79 = [monkey, polyfill];
+                                        (top.unsafeWindow || top).m = _ref79[0];
+                                        (top.unsafeWindow || top).p = _ref79[1];
+                                    } _context67.next = 35;
                                     return cidRefresh;
 
                                 case 35:
@@ -5547,14 +5530,14 @@ new Promise(function (resolve) {
 
                                 case 36:
                                 case 'end':
-                                    return _context66.stop();
+                                    return _context67.stop();
                             }
                         }
                     }, _callee66, this, [[3, 9]]);
                 }));
 
                 function start() {
-                    return _ref73.apply(this, arguments);
+                    return _ref74.apply(this, arguments);
                 }
 
                 return start;
@@ -5562,17 +5545,17 @@ new Promise(function (resolve) {
         }, {
             key: 'init',
             value: function () {
-                var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-                    return regeneratorRuntime.wrap(function _callee67$(_context67) {
+                var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
+                    return regeneratorRuntime.wrap(function _callee67$(_context68) {
                         while (1) {
-                            switch (_context67.prev = _context67.next) {
+                            switch (_context68.prev = _context68.next) {
                                 case 0:
                                     if (document.body) {
-                                        _context67.next = 2;
+                                        _context68.next = 2;
                                         break;
                                     }
 
-                                    return _context67.abrupt('return');
+                                    return _context68.abrupt('return');
 
                                 case 2:
                                     UI.outdatedEngineClearance();
@@ -5581,27 +5564,27 @@ new Promise(function (resolve) {
 
                                 case 5:
                                     if (!1) {
-                                        _context67.next = 10;
+                                        _context68.next = 10;
                                         break;
                                     }
 
-                                    _context67.next = 8;
+                                    _context68.next = 8;
                                     return UI.start();
 
                                 case 8:
-                                    _context67.next = 5;
+                                    _context68.next = 5;
                                     break;
 
                                 case 10:
                                 case 'end':
-                                    return _context67.stop();
+                                    return _context68.stop();
                             }
                         }
                     }, _callee67, this);
                 }));
 
                 function init() {
-                    return _ref79.apply(this, arguments);
+                    return _ref80.apply(this, arguments);
                 }
 
                 return init;
