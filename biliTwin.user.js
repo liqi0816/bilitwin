@@ -1301,7 +1301,7 @@ class BiliMonkey {
 
     async getAvailableFormatName() {
         let h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
-        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : 'flv720';
+        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : h.some(e => e.getAttribute('data-value') == '64') ? 'flv720' : 'flv480';
         this.mp4FormatName = h.every(e => e.getAttribute('data-value') != '32') ? 'hdmp4' : 'mp4';
     }
 
