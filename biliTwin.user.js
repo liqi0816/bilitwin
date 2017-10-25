@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.8
+// @version     1.9
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -25,7 +25,7 @@ top.debugOption = {
 };
 
 /**
- * BiliTwin consist of two parts - BiliMonkey and BiliPolyfill. 
+ * BiliTwin consists of two parts - BiliMonkey and BiliPolyfill. 
  * They are bundled because I am too lazy to write two user interfaces.
  * 
  * So what is the difference between BiliMonkey and BiliPolyfill?
@@ -1301,7 +1301,7 @@ class BiliMonkey {
 
     async getAvailableFormatName() {
         let h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
-        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : 'flv720';
+        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : h.some(e => e.getAttribute('data-value') == '64') ? 'flv720' : 'flv480';
         this.mp4FormatName = h.every(e => e.getAttribute('data-value') != '32') ? 'hdmp4' : 'mp4';
     }
 
@@ -2018,15 +2018,17 @@ class UI extends BiliUserJS {
             else assA.download = monkey.cid + '.ass';
         };
 
-        flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '16px';
+        flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '15px';
         div.appendChild(flvA);
         div.appendChild(document.createTextNode(' '));
         div.appendChild(mp4A);
         div.appendChild(document.createTextNode(' '));
         div.appendChild(assA);
-        div.className = 'info bilitwin';
+        div.className = 'bilitwin';
         div.style.zIndex = '1';
+        div.style.paddingTop = '4px';
         div.style.width = '32%';
+        div.style.float = 'left';
         tminfo.style.float = 'left';
         tminfo.style.width = '68%';
         h.insertBefore(div, tminfo);
