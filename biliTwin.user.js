@@ -865,6 +865,12 @@ class BiliMonkey {
         }
     }
 
+    getAvailableFormatName(accept_quality) {
+        if (!(accept_quality instanceof Array)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
+        this.flvFormatName = accept_quality.includes('80') ? 'flv' : accept_quality.includes('64') ? 'flv720' : 'flv480';
+        this.mp4FormatName = !accept_quality.includes('32') ? 'hdmp4' : 'mp4';
+    }
+
     async execOptions() {
         if (this.cache) await this.cache.getDB();
         if (this.option.autoDefault) await this.sniffDefaultFormat();
@@ -878,7 +884,6 @@ class BiliMonkey {
 
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
-        const defquality = this.playerWin.localStorage && this.playerWin.localStorage.bilibili_player_settings ? JSON.parse(this.playerWin.localStorage.bilibili_player_settings).setting_config.defquality : undefined;
 
         this.defaultFormatPromise = new Promise(resolve => {
             let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 5000);
@@ -887,25 +892,31 @@ class BiliMonkey {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(timeout);
-                    let format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
-                    if (!format) { console && console.error(`lockFormat error: ${a.url.match(/quality=\d*/)[0].slice(8)} is a unrecognizable format`); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c); }
-                    self.lockFormat(format);
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     let _success = a.success;
                     a.success = res => {
-                        try {
-                            if (self.proxy && res.format == 'flv') {
+                        let format = res.format;
+                        let accept_format = res.accept_format.split(',');
+                        switch (format) {
+                            case 'flv480':
+                                if (accept_format.includes('flv720')) break;
+                            case 'flv720':
+                                if (accept_format.includes('flv')) break;
+                            case 'flv':
+                            case 'hdflv2':
+                                self.lockFormat(format);
                                 self.resolveFormat(res, format);
-                                self.setupProxy(res, _success);
-                            }
-                            else {
-                                _success(res);
+                                break;
+
+                            case 'mp4':
+                                if (accept_format.includes('hdmp4')) break;
+                            case 'hdmp4':
+                                self.lockFormat(format);
                                 self.resolveFormat(res, format);
-                            }
+                                break;
                         }
-                        finally {
-                            resolve(res);
-                        }
+                        _success(res);
+                        resolve(res);
                     };
                     jq.ajax = _ajax;
                 }
@@ -1297,12 +1308,6 @@ class BiliMonkey {
             if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
         }
         return onsuccess(resProxy);
-    }
-
-    async getAvailableFormatName() {
-        let h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
-        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : h.some(e => e.getAttribute('data-value') == '64') ? 'flv720' : 'flv480';
-        this.mp4FormatName = h.every(e => e.getAttribute('data-value') != '32') ? 'hdmp4' : 'mp4';
     }
 
     static formatToValue(format) {
