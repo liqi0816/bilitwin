@@ -1476,7 +1476,7 @@ class BiliPolyfill {
         this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
-        if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 ? this.speechRecognition() : undefined);
+        if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 && this.speechRecognition());
         if (this.option.series) this.inferNextInSeries();
     }
 
@@ -2059,16 +2059,14 @@ class UI extends BiliUserJS {
         tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
-        tr.children[0].children[0].onclick = () => {
-            UI.copyToClipboard(flvs.join('\n'));
+        if (top.location.origin == 'bangumi.bilibili.com') {
+            tr.children[0].children[0].onclick = () => UI.copyToClipboard(flvs.join('\n'));
         }
-        tr.children[1].children[0].onclick = () => {
-            UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
-        }
-        if (flvs[0].includes('-80.flv')) {
+        else {
             tr.children[0].innerHTML = '<a download="biliTwin.ef2">IDM导出</a>';
             tr.children[0].children[0].href = URL.createObjectURL(new Blob([UI.exportIDM(flvs, top.location.origin)]));
         }
+        tr.children[1].children[0].onclick = () => UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
         table.insertRow(-1).innerHTML = '<td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td>';
         table.insertRow(-1).innerHTML = cache ? '<td colspan="3">下载的缓存分段会暂时停留在电脑里，过一段时间会自动消失。建议只开一个标签页。</td>' : '<td colspan="3">建议只开一个标签页。关掉标签页后，缓存就会被清理。别忘了另存为！</td>';
         UI.displayQuota(table.insertRow(-1));
@@ -2282,7 +2280,7 @@ class UI extends BiliUserJS {
         };
         ul.children[5].onclick = () => { top.location.reload(true); };
         ul.children[6].onclick = () => { playerWin.dispatchEvent(new Event('unload')); };
-        ul.children[7].onclick = () => { playerWin.player ? playerWin.player.destroy() : undefined; };
+        ul.children[7].onclick = () => { playerWin.player && playerWin.player.destroy() };
         return li;
     }
 
@@ -2790,7 +2788,7 @@ class UI extends BiliUserJS {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
             .forEach(e => Array.from(e.getElementsByTagName('a')).forEach(
-                e => e.textContent == '取消' ? e.click() : undefined
+                e => e.textContent == '取消' && e.click()
             ));
         Array.from(document.getElementsByClassName('bilitwin')).forEach(e => e.remove());
     }
