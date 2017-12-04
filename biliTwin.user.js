@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.9
+// @version     1.10
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -865,6 +865,12 @@ class BiliMonkey {
         }
     }
 
+    getAvailableFormatName(accept_quality) {
+        if (!(accept_quality instanceof Array)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
+        this.flvFormatName = accept_quality.includes('80') ? 'flv' : accept_quality.includes('64') ? 'flv720' : 'flv480';
+        this.mp4FormatName = 'mp4';
+    }
+
     async execOptions() {
         if (this.cache) await this.cache.getDB();
         if (this.option.autoDefault) await this.sniffDefaultFormat();
@@ -878,7 +884,6 @@ class BiliMonkey {
 
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
-        const defquality = this.playerWin.localStorage && this.playerWin.localStorage.bilibili_player_settings ? JSON.parse(this.playerWin.localStorage.bilibili_player_settings).setting_config.defquality : undefined;
 
         this.defaultFormatPromise = new Promise(resolve => {
             let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 5000);
@@ -887,25 +892,31 @@ class BiliMonkey {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
                 if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                     clearTimeout(timeout);
-                    let format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
-                    if (!format) { console && console.error(`lockFormat error: ${a.url.match(/quality=\d*/)[0].slice(8)} is a unrecognizable format`); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c); }
-                    self.lockFormat(format);
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     let _success = a.success;
                     a.success = res => {
-                        try {
-                            if (self.proxy && res.format == 'flv') {
+                        let format = res.format;
+                        let accept_format = res.accept_format.split(',');
+                        switch (format) {
+                            case 'flv480':
+                                if (accept_format.includes('flv720')) break;
+                            case 'flv720':
+                                if (accept_format.includes('flv')) break;
+                            case 'flv':
+                            case 'hdflv2':
+                                self.lockFormat(format);
                                 self.resolveFormat(res, format);
-                                self.setupProxy(res, _success);
-                            }
-                            else {
-                                _success(res);
+                                break;
+
+                            case 'mp4':
+                                if (accept_format.includes('hdmp4')) break;
+                            case 'hdmp4':
+                                self.lockFormat(format);
                                 self.resolveFormat(res, format);
-                            }
+                                break;
                         }
-                        finally {
-                            resolve(res);
-                        }
+                        _success(res);
+                        resolve(res);
                     };
                     jq.ajax = _ajax;
                 }
@@ -1299,12 +1310,6 @@ class BiliMonkey {
         return onsuccess(resProxy);
     }
 
-    async getAvailableFormatName() {
-        let h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
-        this.flvFormatName = h.some(e => e.getAttribute('data-value') == '80') ? 'flv' : h.some(e => e.getAttribute('data-value') == '64') ? 'flv720' : 'flv480';
-        this.mp4FormatName = h.every(e => e.getAttribute('data-value') != '32') ? 'hdmp4' : 'mp4';
-    }
-
     static formatToValue(format) {
         switch (format) {
             case 'hdflv2': return '112';
@@ -1471,7 +1476,7 @@ class BiliPolyfill {
         this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
         // beta
-        if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 ? this.speechRecognition() : undefined);
+        if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 && this.speechRecognition());
         if (this.option.series) this.inferNextInSeries();
     }
 
@@ -2054,16 +2059,14 @@ class UI extends BiliUserJS {
         tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
-        tr.children[0].children[0].onclick = () => {
-            UI.copyToClipboard(flvs.join('\n'));
+        if (top.location.origin == 'bangumi.bilibili.com') {
+            tr.children[0].children[0].onclick = () => UI.copyToClipboard(flvs.join('\n'));
         }
-        tr.children[1].children[0].onclick = () => {
-            UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
-        }
-        if (flvs[0].includes('-80.flv')) {
+        else {
             tr.children[0].innerHTML = '<a download="biliTwin.ef2">IDM导出</a>';
             tr.children[0].children[0].href = URL.createObjectURL(new Blob([UI.exportIDM(flvs, top.location.origin)]));
         }
+        tr.children[1].children[0].onclick = () => UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
         table.insertRow(-1).innerHTML = '<td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td>';
         table.insertRow(-1).innerHTML = cache ? '<td colspan="3">下载的缓存分段会暂时停留在电脑里，过一段时间会自动消失。建议只开一个标签页。</td>' : '<td colspan="3">建议只开一个标签页。关掉标签页后，缓存就会被清理。别忘了另存为！</td>';
         UI.displayQuota(table.insertRow(-1));
@@ -2277,7 +2280,7 @@ class UI extends BiliUserJS {
         };
         ul.children[5].onclick = () => { top.location.reload(true); };
         ul.children[6].onclick = () => { playerWin.dispatchEvent(new Event('unload')); };
-        ul.children[7].onclick = () => { playerWin.player ? playerWin.player.destroy() : undefined; };
+        ul.children[7].onclick = () => { playerWin.player && playerWin.player.destroy() };
         return li;
     }
 
@@ -2785,7 +2788,7 @@ class UI extends BiliUserJS {
         Array.from(document.getElementsByClassName('bilitwin'))
             .filter(e => e.textContent.includes('FLV分段'))
             .forEach(e => Array.from(e.getElementsByTagName('a')).forEach(
-                e => e.textContent == '取消' ? e.click() : undefined
+                e => e.textContent == '取消' && e.click()
             ));
         Array.from(document.getElementsByClassName('bilitwin')).forEach(e => e.remove());
     }

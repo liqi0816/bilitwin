@@ -6,7 +6,7 @@
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.9
+// @version     1.10
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -47,7 +47,7 @@ new Promise(function (resolve) {
     // @match       *://www.bilibili.com/video/av*
     // @match       *://bangumi.bilibili.com/anime/*/play*
     // @match       *://www.bilibili.com/watchlater/
-    // @version     1.9
+    // @version     1.10
     // @author      qli5
     // @copyright   qli5, 2014+, 田生, grepmusic
     // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1793,6 +1793,15 @@ new Promise(function (resolve) {
                 }
             }
         }, {
+            key: 'getAvailableFormatName',
+            value: function getAvailableFormatName(accept_quality) {
+                if (!(accept_quality instanceof Array)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(function (e) {
+                    return e.getAttribute('data-value');
+                });
+                this.flvFormatName = accept_quality.includes('80') ? 'flv' : accept_quality.includes('64') ? 'flv720' : 'flv480';
+                this.mp4FormatName = 'mp4';
+            }
+        }, {
             key: 'execOptions',
             value: function () {
                 var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
@@ -1841,7 +1850,7 @@ new Promise(function (resolve) {
                 var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
                     var _this15 = this;
 
-                    var jq, _ajax, defquality;
+                    var jq, _ajax;
 
                     return regeneratorRuntime.wrap(function _callee19$(_context20) {
                         while (1) {
@@ -1865,7 +1874,6 @@ new Promise(function (resolve) {
                                 case 4:
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
-                                    defquality = this.playerWin.localStorage && this.playerWin.localStorage.bilibili_player_settings ? JSON.parse(this.playerWin.localStorage.bilibili_player_settings).setting_config.defquality : undefined;
 
 
                                     this.defaultFormatPromise = new Promise(function (resolve) {
@@ -1879,25 +1887,31 @@ new Promise(function (resolve) {
                                             };
                                             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
                                                 clearTimeout(timeout);
-                                                var format = BiliMonkey.valueToFormat(a.url.match(/quality=\d*/)[0].slice(8));
-                                                if (!format) {
-                                                    console && console.error('lockFormat error: ' + a.url.match(/quality=\d*/)[0].slice(8) + ' is a unrecognizable format'); jq.ajax = _ajax; resolve(); return _ajax.call(jq, a, c);
-                                                }
-                                                self.lockFormat(format);
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 var _success = a.success;
                                                 a.success = function (res) {
-                                                    try {
-                                                        if (self.proxy && res.format == 'flv') {
+                                                    var format = res.format;
+                                                    var accept_format = res.accept_format.split(',');
+                                                    switch (format) {
+                                                        case 'flv480':
+                                                            if (accept_format.includes('flv720')) break;
+                                                        case 'flv720':
+                                                            if (accept_format.includes('flv')) break;
+                                                        case 'flv':
+                                                        case 'hdflv2':
+                                                            self.lockFormat(format);
                                                             self.resolveFormat(res, format);
-                                                            self.setupProxy(res, _success);
-                                                        } else {
-                                                            _success(res);
+                                                            break;
+
+                                                        case 'mp4':
+                                                            if (accept_format.includes('hdmp4')) break;
+                                                        case 'hdmp4':
+                                                            self.lockFormat(format);
                                                             self.resolveFormat(res, format);
-                                                        }
-                                                    } finally {
-                                                        resolve(res);
+                                                            break;
                                                     }
+                                                    _success(res);
+                                                    resolve(res);
                                                 };
                                                 jq.ajax = _ajax;
                                             }
@@ -1906,7 +1920,7 @@ new Promise(function (resolve) {
                                     });
                                     return _context20.abrupt('return', this.defaultFormatPromise);
 
-                                case 9:
+                                case 8:
                                 case 'end':
                                     return _context20.stop();
                             }
@@ -3091,40 +3105,6 @@ new Promise(function (resolve) {
 
                 return setupProxy;
             }()
-        }, {
-            key: 'getAvailableFormatName',
-            value: function () {
-                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42() {
-                    var h;
-                    return regeneratorRuntime.wrap(function _callee42$(_context43) {
-                        while (1) {
-                            switch (_context43.prev = _context43.next) {
-                                case 0:
-                                    h = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'));
-
-                                    this.flvFormatName = h.some(function (e) {
-                                        return e.getAttribute('data-value') == '80';
-                                    }) ? 'flv' : h.some(function (e) {
-                                        return e.getAttribute('data-value') == '64';
-                                    }) ? 'flv720' : 'flv480';
-                                    this.mp4FormatName = h.every(function (e) {
-                                        return e.getAttribute('data-value') != '32';
-                                    }) ? 'hdmp4' : 'mp4';
-
-                                case 3:
-                                case 'end':
-                                    return _context43.stop();
-                            }
-                        }
-                    }, _callee42, this);
-                }));
-
-                function getAvailableFormatName() {
-                    return _ref48.apply(this, arguments);
-                }
-
-                return getAvailableFormatName;
-            }()
         }], [{
             key: 'formatToValue',
             value: function formatToValue(format) {
@@ -3174,14 +3154,14 @@ new Promise(function (resolve) {
         }, {
             key: 'loadASSScript',
             value: function () {
-                var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
+                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42() {
                     var src = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js';
                     var script, head, foot;
-                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
+                    return regeneratorRuntime.wrap(function _callee42$(_context43) {
                         while (1) {
-                            switch (_context44.prev = _context44.next) {
+                            switch (_context43.prev = _context43.next) {
                                 case 0:
-                                    _context44.next = 2;
+                                    _context43.next = 2;
                                     return new Promise(function (resolve, reject) {
                                         var req = new XMLHttpRequest();
                                         req.onload = function () {
@@ -3193,25 +3173,25 @@ new Promise(function (resolve) {
                                     });
 
                                 case 2:
-                                    script = _context44.sent;
+                                    script = _context43.sent;
 
                                     script = script.slice(0, script.indexOf('var init = function ()'));
                                     head = '\n        (function () {\n        ';
                                     foot = '\n            fetchXML = function (cid, callback) {\n                var oReq = new XMLHttpRequest();\n                oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n                oReq.onload = function () {\n                    var content = oReq.responseText.replace(/(?:[\0-\b\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, "");\n                    callback(content);\n                };\n                oReq.send();\n            };\n            initFont();\n            return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };\n        })()\n        ';
 
                                     script = '' + head + script + foot;
-                                    return _context44.abrupt('return', top.eval(script));
+                                    return _context43.abrupt('return', top.eval(script));
 
                                 case 8:
                                 case 'end':
-                                    return _context44.stop();
+                                    return _context43.stop();
                             }
                         }
-                    }, _callee43, this);
+                    }, _callee42, this);
                 }));
 
                 function loadASSScript() {
-                    return _ref49.apply(this, arguments);
+                    return _ref48.apply(this, arguments);
                 }
 
                 return loadASSScript;
@@ -3221,22 +3201,22 @@ new Promise(function (resolve) {
             value: function _UNIT_TEST() {
                 var _this24 = this;
 
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
                     var playerWin;
-                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
+                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
                         while (1) {
-                            switch (_context45.prev = _context45.next) {
+                            switch (_context44.prev = _context44.next) {
                                 case 0:
-                                    _context45.next = 2;
+                                    _context44.next = 2;
                                     return BiliUserJS.getPlayerWin();
 
                                 case 2:
-                                    playerWin = _context45.sent;
+                                    playerWin = _context44.sent;
 
                                     window.m = new BiliMonkey(playerWin);
 
                                     console.warn('sniffDefaultFormat test');
-                                    _context45.next = 7;
+                                    _context44.next = 7;
                                     return m.sniffDefaultFormat();
 
                                 case 7:
@@ -3247,31 +3227,31 @@ new Promise(function (resolve) {
                                     console.log(m.queryInfo('mp4'));
 
                                     console.warn('getNonCurrentFormat test');
-                                    _context45.t0 = console;
-                                    _context45.next = 15;
+                                    _context44.t0 = console;
+                                    _context44.next = 15;
                                     return m.queryInfo('mp4');
 
                                 case 15:
-                                    _context45.t1 = _context45.sent;
+                                    _context44.t1 = _context44.sent;
 
-                                    _context45.t0.log.call(_context45.t0, _context45.t1);
+                                    _context44.t0.log.call(_context44.t0, _context44.t1);
 
                                     console.warn('getCurrentFormat test');
-                                    _context45.t2 = console;
-                                    _context45.next = 21;
+                                    _context44.t2 = console;
+                                    _context44.next = 21;
                                     return m.queryInfo('flv');
 
                                 case 21:
-                                    _context45.t3 = _context45.sent;
+                                    _context44.t3 = _context44.sent;
 
-                                    _context45.t2.log.call(_context45.t2, _context45.t3);
+                                    _context44.t2.log.call(_context44.t2, _context44.t3);
 
                                 case 23:
                                 case 'end':
-                                    return _context45.stop();
+                                    return _context44.stop();
                             }
                         }
-                    }, _callee44, _this24);
+                    }, _callee43, _this24);
                 }))();
             }
         }]);
@@ -3341,43 +3321,43 @@ new Promise(function (resolve) {
         }, {
             key: 'setFunctions',
             value: function () {
-                var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
                     var _this25 = this;
 
-                    var _ref52 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                        _ref52$videoRefresh = _ref52.videoRefresh,
-                        videoRefresh = _ref52$videoRefresh === undefined ? false : _ref52$videoRefresh;
+                    var _ref51 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                        _ref51$videoRefresh = _ref51.videoRefresh,
+                        videoRefresh = _ref51$videoRefresh === undefined ? false : _ref51$videoRefresh;
 
-                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
+                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
                         while (1) {
-                            switch (_context46.prev = _context46.next) {
+                            switch (_context45.prev = _context45.next) {
                                 case 0:
                                     if (this.option.betabeta) {
-                                        _context46.next = 5;
+                                        _context45.next = 5;
                                         break;
                                     }
 
-                                    _context46.next = 3;
+                                    _context45.next = 3;
                                     return this.getPlayerVideo();
 
                                 case 3:
                                     this.userdata = { oped: {} };
-                                    return _context46.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 5:
                                     if (!videoRefresh) {
-                                        _context46.next = 14;
+                                        _context45.next = 14;
                                         break;
                                     }
 
                                     this.video = this.playerWin.document.getElementsByTagName('video')[0];
 
                                     if (this.video) {
-                                        _context46.next = 9;
+                                        _context45.next = 9;
                                         break;
                                     }
 
-                                    return _context46.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 9:
                                     if (this.option.dblclick) this.dblclickFullScreen();
@@ -3386,14 +3366,14 @@ new Promise(function (resolve) {
                                     this.video.addEventListener('emptied', function () {
                                         return _this25.setFunctions({ videoRefresh: true });
                                     });
-                                    return _context46.abrupt('return');
+                                    return _context45.abrupt('return');
 
                                 case 14:
-                                    _context46.next = 16;
+                                    _context45.next = 16;
                                     return this.getPlayerVideo();
 
                                 case 16:
-                                    this.video = _context46.sent;
+                                    this.video = _context45.sent;
 
                                     this.retriveUserdata();
                                     if (this.option.badgeWatchLater) this.badgeWatchLater();
@@ -3418,20 +3398,20 @@ new Promise(function (resolve) {
                                     });
                                     // beta
                                     if (this.option.speech) top.document.body.addEventListener('click', function (e) {
-                                        return e.detail > 2 ? _this25.speechRecognition() : undefined;
+                                        return e.detail > 2 && _this25.speechRecognition();
                                     });
                                     if (this.option.series) this.inferNextInSeries();
 
                                 case 36:
                                 case 'end':
-                                    return _context46.stop();
+                                    return _context45.stop();
                             }
                         }
-                    }, _callee45, this);
+                    }, _callee44, this);
                 }));
 
                 function setFunctions() {
-                    return _ref51.apply(this, arguments);
+                    return _ref50.apply(this, arguments);
                 }
 
                 return setFunctions;
@@ -3439,11 +3419,11 @@ new Promise(function (resolve) {
         }, {
             key: 'inferNextInSeries',
             value: function () {
-                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
                     var title, epNumberText, seriesTitle, ep, mid, vlist;
-                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
+                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
                         while (1) {
-                            switch (_context47.prev = _context47.next) {
+                            switch (_context46.prev = _context46.next) {
                                 case 0:
                                     title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
@@ -3452,11 +3432,11 @@ new Promise(function (resolve) {
                                     epNumberText = title.match(/\d+/g);
 
                                     if (epNumberText) {
-                                        _context47.next = 4;
+                                        _context46.next = 4;
                                         break;
                                     }
 
-                                    return _context47.abrupt('return', this.series = []);
+                                    return _context46.abrupt('return', this.series = []);
 
                                 case 4:
                                     epNumberText = epNumberText.pop();
@@ -3473,15 +3453,15 @@ new Promise(function (resolve) {
                                     mid = top.document.getElementById('r-info-rank');
 
                                     if (mid) {
-                                        _context47.next = 12;
+                                        _context46.next = 12;
                                         break;
                                     }
 
-                                    return _context47.abrupt('return', this.series = []);
+                                    return _context46.abrupt('return', this.series = []);
 
                                 case 12:
                                     mid = mid.children[0].href.match(/\d+/)[0];
-                                    _context47.next = 15;
+                                    _context46.next = 15;
                                     return Promise.all([title].concat(_toConsumableArray(ep)).map(function (keyword) {
                                         return new Promise(function (resolve, reject) {
                                             var req = new XMLHttpRequest();
@@ -3496,7 +3476,7 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 15:
-                                    vlist = _context47.sent;
+                                    vlist = _context46.sent;
 
 
                                     vlist[0] = [vlist[0].find(function (e) {
@@ -3504,11 +3484,11 @@ new Promise(function (resolve) {
                                     })];
 
                                     if (vlist[0][0]) {
-                                        _context47.next = 20;
+                                        _context46.next = 20;
                                         break;
                                     }
 
-                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context47.abrupt('return', this.series = []);
+                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context46.abrupt('return', this.series = []);
 
                                 case 20:
                                     this.series = [vlist[1].find(function (e) {
@@ -3523,18 +3503,18 @@ new Promise(function (resolve) {
                                         return e.created > vlist[0][0].created;
                                     }) || null;
 
-                                    return _context47.abrupt('return', this.series);
+                                    return _context46.abrupt('return', this.series);
 
                                 case 24:
                                 case 'end':
-                                    return _context47.stop();
+                                    return _context46.stop();
                             }
                         }
-                    }, _callee46, this);
+                    }, _callee45, this);
                 }));
 
                 function inferNextInSeries() {
-                    return _ref53.apply(this, arguments);
+                    return _ref52.apply(this, arguments);
                 }
 
                 return inferNextInSeries;
@@ -3885,22 +3865,22 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerVideo',
             value: function () {
-                var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
                     var _this34 = this;
 
-                    return regeneratorRuntime.wrap(function _callee47$(_context48) {
+                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
                         while (1) {
-                            switch (_context48.prev = _context48.next) {
+                            switch (_context47.prev = _context47.next) {
                                 case 0:
                                     if (!this.playerWin.document.getElementsByTagName('video').length) {
-                                        _context48.next = 4;
+                                        _context47.next = 4;
                                         break;
                                     }
 
-                                    return _context48.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
+                                    return _context47.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
 
                                 case 4:
-                                    return _context48.abrupt('return', new Promise(function (resolve) {
+                                    return _context47.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (_this34.playerWin.document.getElementsByTagName('video').length) {
                                                 observer.disconnect();
@@ -3912,14 +3892,14 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
-                                    return _context48.stop();
+                                    return _context47.stop();
                             }
                         }
-                    }, _callee47, this);
+                    }, _callee46, this);
                 }));
 
                 function getPlayerVideo() {
-                    return _ref54.apply(this, arguments);
+                    return _ref53.apply(this, arguments);
                 }
 
                 return getPlayerVideo;
@@ -3936,13 +3916,13 @@ new Promise(function (resolve) {
                 if (!option.aid) option.aid = '';
                 var h = top.open('//www.bilibili.com/blackboard/html5player.html?cid=' + option.cid + '&aid=' + option.aid + '&crossDomain=' + (top.document.domain != 'www.bilibili.com' ? 'true' : ''), undefined, ' ');
 
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
                     var div, i;
-                    return regeneratorRuntime.wrap(function _callee48$(_context49) {
+                    return regeneratorRuntime.wrap(function _callee47$(_context48) {
                         while (1) {
-                            switch (_context49.prev = _context49.next) {
+                            switch (_context48.prev = _context48.next) {
                                 case 0:
-                                    _context49.next = 2;
+                                    _context48.next = 2;
                                     return new Promise(function (resolve) {
                                         h.addEventListener('load', resolve);
                                         setTimeout(function () {
@@ -3955,14 +3935,14 @@ new Promise(function (resolve) {
                                     div = h.document.getElementById('bilibiliPlayer');
 
                                     if (div) {
-                                        _context49.next = 6;
+                                        _context48.next = 6;
                                         break;
                                     }
 
-                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context49.abrupt('return');
+                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context48.abrupt('return');
 
                                 case 6:
-                                    _context49.next = 8;
+                                    _context48.next = 8;
                                     return new Promise(function (resolve) {
                                         if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve(); else {
                                             var observer = new MutationObserver(function () {
@@ -3987,10 +3967,10 @@ new Promise(function (resolve) {
 
                                 case 15:
                                 case 'end':
-                                    return _context49.stop();
+                                    return _context48.stop();
                             }
                         }
-                    }, _callee48, _this35);
+                    }, _callee47, _this35);
                 }))();
             }
         }, {
@@ -4049,20 +4029,20 @@ new Promise(function (resolve) {
         _createClass(BiliUserJS, null, [{
             key: 'getIframeWin',
             value: function () {
-                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
-                    return regeneratorRuntime.wrap(function _callee49$(_context50) {
+                var _ref55 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                    return regeneratorRuntime.wrap(function _callee48$(_context49) {
                         while (1) {
-                            switch (_context50.prev = _context50.next) {
+                            switch (_context49.prev = _context49.next) {
                                 case 0:
                                     if (!document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-                                        _context50.next = 4;
+                                        _context49.next = 4;
                                         break;
                                     }
 
-                                    return _context50.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
+                                    return _context49.abrupt('return', document.querySelector('#bofqi > iframe').contentWindow);
 
                                 case 4:
-                                    return _context50.abrupt('return', new Promise(function (resolve) {
+                                    return _context49.abrupt('return', new Promise(function (resolve) {
                                         document.querySelector('#bofqi > iframe').addEventListener('load', function () {
                                             resolve(document.querySelector('#bofqi > iframe').contentWindow);
                                         });
@@ -4070,14 +4050,14 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
-                                    return _context50.stop();
+                                    return _context49.stop();
                             }
                         }
-                    }, _callee49, this);
+                    }, _callee48, this);
                 }));
 
                 function getIframeWin() {
-                    return _ref56.apply(this, arguments);
+                    return _ref55.apply(this, arguments);
                 }
 
                 return getIframeWin;
@@ -4085,17 +4065,17 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerWin',
             value: function () {
-                var _ref57 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
-                    return regeneratorRuntime.wrap(function _callee50$(_context51) {
+                var _ref56 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
+                    return regeneratorRuntime.wrap(function _callee49$(_context50) {
                         while (1) {
-                            switch (_context51.prev = _context51.next) {
+                            switch (_context50.prev = _context50.next) {
                                 case 0:
                                     if (!location.href.includes('/watchlater/#/list')) {
-                                        _context51.next = 3;
+                                        _context50.next = 3;
                                         break;
                                     }
 
-                                    _context51.next = 3;
+                                    _context50.next = 3;
                                     return new Promise(function (resolve) {
                                         var h = function h() {
                                             resolve();
@@ -4106,16 +4086,16 @@ new Promise(function (resolve) {
 
                                 case 3:
                                     if (!location.href.includes('/watchlater/#/')) {
-                                        _context51.next = 7;
+                                        _context50.next = 7;
                                         break;
                                     }
 
                                     if (document.getElementById('bofqi')) {
-                                        _context51.next = 7;
+                                        _context50.next = 7;
                                         break;
                                     }
 
-                                    _context51.next = 7;
+                                    _context50.next = 7;
                                     return new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bofqi')) {
@@ -4128,27 +4108,27 @@ new Promise(function (resolve) {
 
                                 case 7:
                                     if (!(location.host == 'bangumi.bilibili.com')) {
-                                        _context51.next = 19;
+                                        _context50.next = 19;
                                         break;
                                     }
 
                                     if (!document.querySelector('#bofqi > iframe')) {
-                                        _context51.next = 12;
+                                        _context50.next = 12;
                                         break;
                                     }
 
-                                    return _context51.abrupt('return', BiliUserJS.getIframeWin());
+                                    return _context50.abrupt('return', BiliUserJS.getIframeWin());
 
                                 case 12:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context51.next = 16;
+                                        _context50.next = 16;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 16:
-                                    return _context51.abrupt('return', new Promise(function (resolve) {
+                                    return _context50.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.querySelector('#bofqi > iframe')) {
                                                 observer.disconnect();
@@ -4162,27 +4142,27 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 17:
-                                    _context51.next = 28;
+                                    _context50.next = 28;
                                     break;
 
                                 case 19:
                                     if (!document.getElementById('bilibiliPlayer')) {
-                                        _context51.next = 23;
+                                        _context50.next = 23;
                                         break;
                                     }
 
-                                    return _context51.abrupt('return', window);
+                                    return _context50.abrupt('return', window);
 
                                 case 23:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context51.next = 27;
+                                        _context50.next = 27;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
                                 case 27:
-                                    return _context51.abrupt('return', new Promise(function (resolve) {
+                                    return _context50.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bilibiliPlayer')) {
                                                 observer.disconnect();
@@ -4197,14 +4177,14 @@ new Promise(function (resolve) {
 
                                 case 28:
                                 case 'end':
-                                    return _context51.stop();
+                                    return _context50.stop();
                             }
                         }
-                    }, _callee50, this);
+                    }, _callee49, this);
                 }));
 
                 function getPlayerWin() {
-                    return _ref57.apply(this, arguments);
+                    return _ref56.apply(this, arguments);
                 }
 
                 return getPlayerWin;
@@ -4240,15 +4220,15 @@ new Promise(function (resolve) {
                 mp4A.textContent = '原生MP4';
                 assA.textContent = '弹幕ASS';
 
-                flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
+                flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
                     var flvDiv;
-                    return regeneratorRuntime.wrap(function _callee51$(_context52) {
+                    return regeneratorRuntime.wrap(function _callee50$(_context51) {
                         while (1) {
-                            switch (_context52.prev = _context52.next) {
+                            switch (_context51.prev = _context51.next) {
                                 case 0:
                                     flvA.textContent = '正在FLV';
                                     flvA.onmouseover = null;
-                                    _context52.next = 4;
+                                    _context51.next = 4;
                                     return monkey.queryInfo('flv');
 
                                 case 4:
@@ -4262,23 +4242,23 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context52.stop();
+                                    return _context51.stop();
                             }
                         }
-                    }, _callee51, _this37);
+                    }, _callee50, _this37);
                 }));
-                mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
-                    return regeneratorRuntime.wrap(function _callee52$(_context53) {
+                mp4A.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
+                    return regeneratorRuntime.wrap(function _callee51$(_context52) {
                         while (1) {
-                            switch (_context53.prev = _context53.next) {
+                            switch (_context52.prev = _context52.next) {
                                 case 0:
                                     mp4A.textContent = '正在MP4';
                                     mp4A.onmouseover = null;
-                                    _context53.next = 4;
+                                    _context52.next = 4;
                                     return monkey.queryInfo('mp4');
 
                                 case 4:
-                                    mp4A.href = _context53.sent;
+                                    mp4A.href = _context52.sent;
 
                                     mp4A.textContent = '原生MP4';
                                     mp4A.download = '';
@@ -4286,33 +4266,33 @@ new Promise(function (resolve) {
 
                                 case 8:
                                 case 'end':
-                                    return _context53.stop();
+                                    return _context52.stop();
                             }
                         }
-                    }, _callee52, _this37);
+                    }, _callee51, _this37);
                 }));
-                assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
-                    return regeneratorRuntime.wrap(function _callee53$(_context54) {
+                assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
+                    return regeneratorRuntime.wrap(function _callee52$(_context53) {
                         while (1) {
-                            switch (_context54.prev = _context54.next) {
+                            switch (_context53.prev = _context53.next) {
                                 case 0:
                                     assA.textContent = '正在ASS';
                                     assA.onmouseover = null;
-                                    _context54.next = 4;
+                                    _context53.next = 4;
                                     return monkey.queryInfo('ass');
 
                                 case 4:
-                                    assA.href = _context54.sent;
+                                    assA.href = _context53.sent;
 
                                     assA.textContent = '弹幕ASS';
                                     if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass'; else assA.download = monkey.cid + '.ass';
 
                                 case 7:
                                 case 'end':
-                                    return _context54.stop();
+                                    return _context53.stop();
                             }
                         }
-                    }, _callee53, _this37);
+                    }, _callee52, _this37);
                 }));
 
                 flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '15px';
@@ -4362,16 +4342,17 @@ new Promise(function (resolve) {
                 tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
                 tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
                 tr.insertCell(2).innerHTML = '<progress value="0" max="' + (flvs.length + 1) + '">\u8FDB\u5EA6\u6761</progress>';
-                tr.children[0].children[0].onclick = function () {
-                    UI.copyToClipboard(flvs.join('\n'));
-                };
-                tr.children[1].children[0].onclick = function () {
-                    UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
-                };
-                if (flvs[0].includes('-80.flv')) {
+                if (top.location.origin == 'bangumi.bilibili.com') {
+                    tr.children[0].children[0].onclick = function () {
+                        return UI.copyToClipboard(flvs.join('\n'));
+                    };
+                } else {
                     tr.children[0].innerHTML = '<a download="biliTwin.ef2">IDM导出</a>';
                     tr.children[0].children[0].href = URL.createObjectURL(new Blob([UI.exportIDM(flvs, top.location.origin)]));
                 }
+                tr.children[1].children[0].onclick = function () {
+                    return UI.downloadAllFLVs(tr.children[1].children[0], monkey, table);
+                };
                 table.insertRow(-1).innerHTML = '<td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td>';
                 table.insertRow(-1).innerHTML = cache ? '<td colspan="3">下载的缓存分段会暂时停留在电脑里，过一段时间会自动消失。建议只开一个标签页。</td>' : '<td colspan="3">建议只开一个标签页。关掉标签页后，缓存就会被清理。别忘了另存为！</td>';
                 UI.displayQuota(table.insertRow(-1));
@@ -4381,12 +4362,12 @@ new Promise(function (resolve) {
                     return UI.allowDrag(e);
                 };
                 div.ondrop = function () {
-                    var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(e) {
+                    var _ref60 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53(e) {
                         var files, _iteratorNormalCompletion8, _didIteratorError8, _iteratorError8, _iterator8, _step8, file, outputName, url;
 
-                        return regeneratorRuntime.wrap(function _callee54$(_context55) {
+                        return regeneratorRuntime.wrap(function _callee53$(_context54) {
                             while (1) {
-                                switch (_context55.prev = _context55.next) {
+                                switch (_context54.prev = _context54.next) {
                                     case 0:
                                         UI.allowDrag(e);
                                         files = Array.from(e.dataTransfer.files);
@@ -4401,67 +4382,67 @@ new Promise(function (resolve) {
                                         _iteratorNormalCompletion8 = true;
                                         _didIteratorError8 = false;
                                         _iteratorError8 = undefined;
-                                        _context55.prev = 6;
+                                        _context54.prev = 6;
                                         for (_iterator8 = files[Symbol.iterator](); !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
                                             file = _step8.value;
 
                                             table.insertRow(-1).innerHTML = '<td colspan="3">' + file.name + '</td>';
                                         }
-                                        _context55.next = 14;
+                                        _context54.next = 14;
                                         break;
 
                                     case 10:
-                                        _context55.prev = 10;
-                                        _context55.t0 = _context55['catch'](6);
+                                        _context54.prev = 10;
+                                        _context54.t0 = _context54['catch'](6);
                                         _didIteratorError8 = true;
-                                        _iteratorError8 = _context55.t0;
+                                        _iteratorError8 = _context54.t0;
 
                                     case 14:
-                                        _context55.prev = 14;
-                                        _context55.prev = 15;
+                                        _context54.prev = 14;
+                                        _context54.prev = 15;
 
                                         if (!_iteratorNormalCompletion8 && _iterator8.return) {
                                             _iterator8.return();
                                         }
 
                                     case 17:
-                                        _context55.prev = 17;
+                                        _context54.prev = 17;
 
                                         if (!_didIteratorError8) {
-                                            _context55.next = 20;
+                                            _context54.next = 20;
                                             break;
                                         }
 
                                         throw _iteratorError8;
 
                                     case 20:
-                                        return _context55.finish(17);
+                                        return _context54.finish(17);
 
                                     case 21:
-                                        return _context55.finish(14);
+                                        return _context54.finish(14);
 
                                     case 22:
                                         outputName = files[0].name.match(/\d+-\d+(?:-\d+)?\.flv/);
 
                                         if (outputName) outputName = outputName[0].replace(/-\d/, ""); else outputName = 'merge_' + files[0].name;
-                                        _context55.next = 26;
+                                        _context54.next = 26;
                                         return UI.mergeFLVFiles(files);
 
                                     case 26:
-                                        url = _context55.sent;
+                                        url = _context54.sent;
 
                                         table.insertRow(-1).innerHTML = '<td colspan="3"><a href="' + url + '" download="' + outputName + '">' + outputName + '</a></td>';
 
                                     case 28:
                                     case 'end':
-                                        return _context55.stop();
+                                        return _context54.stop();
                                 }
                             }
-                        }, _callee54, _this38, [[6, 10, 14, 22], [15, , 17, 21]]);
+                        }, _callee53, _this38, [[6, 10, 14, 22], [15, , 17, 21]]);
                     }));
 
                     return function (_x56) {
-                        return _ref61.apply(this, arguments);
+                        return _ref60.apply(this, arguments);
                     };
                 }();
 
@@ -4495,19 +4476,19 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadAllFLVs',
             value: function () {
-                var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(a, monkey, table) {
+                var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(a, monkey, table) {
                     var i, bar, _i2, blobs, mergedFLV, url, outputName;
 
-                    return regeneratorRuntime.wrap(function _callee55$(_context56) {
+                    return regeneratorRuntime.wrap(function _callee54$(_context55) {
                         while (1) {
-                            switch (_context56.prev = _context56.next) {
+                            switch (_context55.prev = _context55.next) {
                                 case 0:
                                     if (!(table.rows[0].cells.length < 3)) {
-                                        _context56.next = 2;
+                                        _context55.next = 2;
                                         break;
                                     }
 
-                                    return _context56.abrupt('return');
+                                    return _context55.abrupt('return');
 
                                 case 2:
                                     monkey.hangPlayer();
@@ -4526,44 +4507,44 @@ new Promise(function (resolve) {
                                             return bar.value++;
                                         });
                                     } blobs = void 0;
-                                    _context56.next = 12;
+                                    _context55.next = 12;
                                     return monkey.getAllFLVs();
 
                                 case 12:
-                                    blobs = _context56.sent;
-                                    _context56.next = 15;
+                                    blobs = _context55.sent;
+                                    _context55.next = 15;
                                     return FLV.mergeBlobs(blobs);
 
                                 case 15:
-                                    mergedFLV = _context56.sent;
+                                    mergedFLV = _context55.sent;
                                     url = URL.createObjectURL(mergedFLV);
                                     outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
 
 
                                     bar.value++;
-                                    _context56.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
-                                    _context56.next = 22;
+                                    _context55.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
+                                    _context55.next = 22;
                                     return monkey.ass;
 
                                 case 22:
-                                    _context56.t1 = _context56.sent;
-                                    _context56.t2 = _context56.t0 + _context56.t1;
-                                    _context56.t3 = _context56.t2 + '" download="';
-                                    _context56.t4 = outputName;
-                                    _context56.t5 = _context56.t3 + _context56.t4;
-                                    table.insertRow(0).innerHTML = _context56.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
-                                    return _context56.abrupt('return', url);
+                                    _context55.t1 = _context55.sent;
+                                    _context55.t2 = _context55.t0 + _context55.t1;
+                                    _context55.t3 = _context55.t2 + '" download="';
+                                    _context55.t4 = outputName;
+                                    _context55.t5 = _context55.t3 + _context55.t4;
+                                    table.insertRow(0).innerHTML = _context55.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
+                                    return _context55.abrupt('return', url);
 
                                 case 29:
                                 case 'end':
-                                    return _context56.stop();
+                                    return _context55.stop();
                             }
                         }
-                    }, _callee55, this);
+                    }, _callee54, this);
                 }));
 
                 function downloadAllFLVs(_x57, _x58, _x59) {
-                    return _ref62.apply(this, arguments);
+                    return _ref61.apply(this, arguments);
                 }
 
                 return downloadAllFLVs;
@@ -4571,12 +4552,12 @@ new Promise(function (resolve) {
         }, {
             key: 'downloadFLV',
             value: function () {
-                var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(a, monkey, index) {
+                var _ref62 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55(a, monkey, index) {
                     var bar = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
                     var handler, url;
-                    return regeneratorRuntime.wrap(function _callee56$(_context57) {
+                    return regeneratorRuntime.wrap(function _callee55$(_context56) {
                         while (1) {
-                            switch (_context57.prev = _context57.next) {
+                            switch (_context56.prev = _context56.next) {
                                 case 0:
                                     handler = function handler(e) {
                                         return UI.beforeUnloadHandler(e);
@@ -4593,29 +4574,29 @@ new Promise(function (resolve) {
                                     };
 
                                     url = void 0;
-                                    _context57.prev = 5;
-                                    _context57.next = 8;
+                                    _context56.prev = 5;
+                                    _context56.next = 8;
                                     return monkey.getFLV(index, function (loaded, total) {
                                         bar.value = loaded;
                                         bar.max = total;
                                     });
 
                                 case 8:
-                                    url = _context57.sent;
+                                    url = _context56.sent;
 
                                     url = URL.createObjectURL(url);
                                     if (bar.value == 0) bar.value = bar.max = 1;
-                                    _context57.next = 19;
+                                    _context56.next = 19;
                                     break;
 
                                 case 13:
-                                    _context57.prev = 13;
-                                    _context57.t0 = _context57['catch'](5);
+                                    _context56.prev = 13;
+                                    _context56.t0 = _context56['catch'](5);
 
                                     a.onclick = null;
                                     window.removeEventListener('beforeunload', handler);
                                     a.textContent = '错误';
-                                    throw _context57.t0;
+                                    throw _context56.t0;
 
                                 case 19:
 
@@ -4624,18 +4605,18 @@ new Promise(function (resolve) {
                                     a.textContent = '另存为';
                                     a.download = monkey.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
                                     a.href = url;
-                                    return _context57.abrupt('return', url);
+                                    return _context56.abrupt('return', url);
 
                                 case 25:
                                 case 'end':
-                                    return _context57.stop();
+                                    return _context56.stop();
                             }
                         }
-                    }, _callee56, this, [[5, 13]]);
+                    }, _callee55, this, [[5, 13]]);
                 }));
 
                 function downloadFLV(_x60, _x61, _x62) {
-                    return _ref63.apply(this, arguments);
+                    return _ref62.apply(this, arguments);
                 }
 
                 return downloadFLV;
@@ -4643,29 +4624,29 @@ new Promise(function (resolve) {
         }, {
             key: 'mergeFLVFiles',
             value: function () {
-                var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(files) {
+                var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56(files) {
                     var merged;
-                    return regeneratorRuntime.wrap(function _callee57$(_context58) {
+                    return regeneratorRuntime.wrap(function _callee56$(_context57) {
                         while (1) {
-                            switch (_context58.prev = _context58.next) {
+                            switch (_context57.prev = _context57.next) {
                                 case 0:
-                                    _context58.next = 2;
+                                    _context57.next = 2;
                                     return FLV.mergeBlobs(files);
 
                                 case 2:
-                                    merged = _context58.sent;
-                                    return _context58.abrupt('return', URL.createObjectURL(merged));
+                                    merged = _context57.sent;
+                                    return _context57.abrupt('return', URL.createObjectURL(merged));
 
                                 case 4:
                                 case 'end':
-                                    return _context58.stop();
+                                    return _context57.stop();
                             }
                         }
-                    }, _callee57, this);
+                    }, _callee56, this);
                 }));
 
                 function mergeFLVFiles(_x64) {
-                    return _ref64.apply(this, arguments);
+                    return _ref63.apply(this, arguments);
                 }
 
                 return mergeFLVFiles;
@@ -4673,28 +4654,28 @@ new Promise(function (resolve) {
         }, {
             key: 'clearCacheDB',
             value: function () {
-                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(cache) {
-                    return regeneratorRuntime.wrap(function _callee58$(_context59) {
+                var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(cache) {
+                    return regeneratorRuntime.wrap(function _callee57$(_context58) {
                         while (1) {
-                            switch (_context59.prev = _context59.next) {
+                            switch (_context58.prev = _context58.next) {
                                 case 0:
                                     if (!cache) {
-                                        _context59.next = 2;
+                                        _context58.next = 2;
                                         break;
                                     }
 
-                                    return _context59.abrupt('return', cache.deleteEntireDB());
+                                    return _context58.abrupt('return', cache.deleteEntireDB());
 
                                 case 2:
                                 case 'end':
-                                    return _context59.stop();
+                                    return _context58.stop();
                             }
                         }
-                    }, _callee58, this);
+                    }, _callee57, this);
                 }));
 
                 function clearCacheDB(_x65) {
-                    return _ref65.apply(this, arguments);
+                    return _ref64.apply(this, arguments);
                 }
 
                 return clearCacheDB;
@@ -4702,12 +4683,12 @@ new Promise(function (resolve) {
         }, {
             key: 'displayQuota',
             value: function () {
-                var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(tr) {
-                    return regeneratorRuntime.wrap(function _callee59$(_context60) {
+                var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(tr) {
+                    return regeneratorRuntime.wrap(function _callee58$(_context59) {
                         while (1) {
-                            switch (_context60.prev = _context60.next) {
+                            switch (_context59.prev = _context59.next) {
                                 case 0:
-                                    return _context60.abrupt('return', new Promise(function (resolve) {
+                                    return _context59.abrupt('return', new Promise(function (resolve) {
                                         var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                         if (!temporaryStorage) return resolve(tr.innerHTML = '<td colspan="3">\u8FD9\u4E2A\u6D4F\u89C8\u5668\u4E0D\u652F\u6301\u7F13\u5B58\u5462~\u5173\u6389\u6807\u7B7E\u9875\u540E\uFF0C\u7F13\u5B58\u9A6C\u4E0A\u5C31\u4F1A\u6D88\u5931\u54E6</td>');
                                         temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -4717,14 +4698,14 @@ new Promise(function (resolve) {
 
                                 case 1:
                                 case 'end':
-                                    return _context60.stop();
+                                    return _context59.stop();
                             }
                         }
-                    }, _callee59, this);
+                    }, _callee58, this);
                 }));
 
                 function displayQuota(_x66) {
-                    return _ref66.apply(this, arguments);
+                    return _ref65.apply(this, arguments);
                 }
 
                 return displayQuota;
@@ -4734,12 +4715,12 @@ new Promise(function (resolve) {
 
         }, {
             key: 'menuAppend',
-            value: function menuAppend(playerWin, _ref67) {
-                var monkey = _ref67.monkey,
-                    monkeyTitle = _ref67.monkeyTitle,
-                    polyfill = _ref67.polyfill,
-                    displayPolyfillDataDiv = _ref67.displayPolyfillDataDiv,
-                    optionDiv = _ref67.optionDiv;
+            value: function menuAppend(playerWin, _ref66) {
+                var monkey = _ref66.monkey,
+                    monkeyTitle = _ref66.monkeyTitle,
+                    polyfill = _ref66.polyfill,
+                    displayPolyfillDataDiv = _ref66.displayPolyfillDataDiv,
+                    optionDiv = _ref66.optionDiv;
 
                 var monkeyMenu = UI.genMonkeyMenu(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, optionDiv: optionDiv });
                 var polyfillMenu = UI.genPolyfillMenu(playerWin, { polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
@@ -4753,12 +4734,12 @@ new Promise(function (resolve) {
             }
         }, {
             key: 'genMonkeyMenu',
-            value: function genMonkeyMenu(playerWin, _ref68) {
+            value: function genMonkeyMenu(playerWin, _ref67) {
                 var _this39 = this;
 
-                var monkey = _ref68.monkey,
-                    monkeyTitle = _ref68.monkeyTitle,
-                    optionDiv = _ref68.optionDiv;
+                var monkey = _ref67.monkey,
+                    monkeyTitle = _ref67.monkeyTitle,
+                    optionDiv = _ref67.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -4767,21 +4748,43 @@ new Promise(function (resolve) {
                     return playerWin.document.getElementById('bilibiliPlayer').click();
                 };
                 var ul = li.children[1];
-                ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+                ul.children[0].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59() {
+                    return regeneratorRuntime.wrap(function _callee59$(_context60) {
+                        while (1) {
+                            switch (_context60.prev = _context60.next) {
+                                case 0:
+                                    if (!monkeyTitle.flvA.onmouseover) {
+                                        _context60.next = 3;
+                                        break;
+                                    }
+
+                                    _context60.next = 3;
+                                    return monkeyTitle.flvA.onmouseover();
+
+                                case 3:
+                                    monkeyTitle.flvA.click();
+                                case 4:
+                                case 'end':
+                                    return _context60.stop();
+                            }
+                        }
+                    }, _callee59, _this39);
+                }));
+                ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
                     return regeneratorRuntime.wrap(function _callee60$(_context61) {
                         while (1) {
                             switch (_context61.prev = _context61.next) {
                                 case 0:
-                                    if (!monkeyTitle.flvA.onmouseover) {
+                                    if (!monkeyTitle.mp4A.onmouseover) {
                                         _context61.next = 3;
                                         break;
                                     }
 
                                     _context61.next = 3;
-                                    return monkeyTitle.flvA.onmouseover();
+                                    return monkeyTitle.mp4A.onmouseover();
 
                                 case 3:
-                                    monkeyTitle.flvA.click();
+                                    monkeyTitle.mp4A.click();
                                 case 4:
                                 case 'end':
                                     return _context61.stop();
@@ -4789,21 +4792,21 @@ new Promise(function (resolve) {
                         }
                     }, _callee60, _this39);
                 }));
-                ul.children[1].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
+                ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
                     return regeneratorRuntime.wrap(function _callee61$(_context62) {
                         while (1) {
                             switch (_context62.prev = _context62.next) {
                                 case 0:
-                                    if (!monkeyTitle.mp4A.onmouseover) {
+                                    if (!monkeyTitle.assA.onmouseover) {
                                         _context62.next = 3;
                                         break;
                                     }
 
                                     _context62.next = 3;
-                                    return monkeyTitle.mp4A.onmouseover();
+                                    return monkeyTitle.assA.onmouseover();
 
                                 case 3:
-                                    monkeyTitle.mp4A.click();
+                                    monkeyTitle.assA.click();
                                 case 4:
                                 case 'end':
                                     return _context62.stop();
@@ -4811,55 +4814,33 @@ new Promise(function (resolve) {
                         }
                     }, _callee61, _this39);
                 }));
-                ul.children[2].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
-                    return regeneratorRuntime.wrap(function _callee62$(_context63) {
-                        while (1) {
-                            switch (_context63.prev = _context63.next) {
-                                case 0:
-                                    if (!monkeyTitle.assA.onmouseover) {
-                                        _context63.next = 3;
-                                        break;
-                                    }
-
-                                    _context63.next = 3;
-                                    return monkeyTitle.assA.onmouseover();
-
-                                case 3:
-                                    monkeyTitle.assA.click();
-                                case 4:
-                                case 'end':
-                                    return _context63.stop();
-                            }
-                        }
-                    }, _callee62, _this39);
-                }));
                 ul.children[3].onclick = function () {
                     optionDiv.style.display = 'block';
                 };
-                ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
-                    return regeneratorRuntime.wrap(function _callee63$(_context64) {
+                ul.children[4].onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62() {
+                    return regeneratorRuntime.wrap(function _callee62$(_context63) {
                         while (1) {
-                            switch (_context64.prev = _context64.next) {
+                            switch (_context63.prev = _context63.next) {
                                 case 0:
                                     monkey.proxy = true;
                                     monkey.flvs = null;
                                     UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                     // Yes, I AM lazy.
                                     playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                    _context64.next = 6;
+                                    _context63.next = 6;
                                     return new Promise(function (r) {
                                         return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                     });
 
                                 case 6:
-                                    return _context64.abrupt('return', monkey.queryInfo('flv'));
+                                    return _context63.abrupt('return', monkey.queryInfo('flv'));
 
                                 case 7:
                                 case 'end':
-                                    return _context64.stop();
+                                    return _context63.stop();
                             }
                         }
-                    }, _callee63, _this39);
+                    }, _callee62, _this39);
                 }));
                 ul.children[5].onclick = function () {
                     top.location.reload(true);
@@ -4868,16 +4849,16 @@ new Promise(function (resolve) {
                     playerWin.dispatchEvent(new Event('unload'));
                 };
                 ul.children[7].onclick = function () {
-                    playerWin.player ? playerWin.player.destroy() : undefined;
+                    playerWin.player && playerWin.player.destroy();
                 };
                 return li;
             }
         }, {
             key: 'genPolyfillMenu',
-            value: function genPolyfillMenu(playerWin, _ref73) {
-                var polyfill = _ref73.polyfill,
-                    displayPolyfillDataDiv = _ref73.displayPolyfillDataDiv,
-                    optionDiv = _ref73.optionDiv;
+            value: function genPolyfillMenu(playerWin, _ref72) {
+                var polyfill = _ref72.polyfill,
+                    displayPolyfillDataDiv = _ref72.displayPolyfillDataDiv,
+                    optionDiv = _ref72.optionDiv;
 
                 var li = playerWin.document.createElement('li');
                 li.className = 'context-menu-menu bilitwin';
@@ -5385,7 +5366,7 @@ new Promise(function (resolve) {
                     return e.textContent.includes('FLV分段');
                 }).forEach(function (e) {
                     return Array.from(e.getElementsByTagName('a')).forEach(function (e) {
-                        return e.textContent == '取消' ? e.click() : undefined;
+                        return e.textContent == '取消' && e.click();
                     });
                 });
                 Array.from(document.getElementsByClassName('bilitwin')).forEach(function (e) {
@@ -5395,14 +5376,14 @@ new Promise(function (resolve) {
         }, {
             key: 'start',
             value: function () {
-                var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+                var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
                     var _this40 = this;
 
-                    var cidRefresh, href, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref75, _ref76, monkey, polyfill, h, _ref79;
+                    var cidRefresh, href, playerWin, option, optionDiv, monkeyTitle, displayPolyfillDataDiv, _ref74, _ref75, monkey, polyfill, h, _ref78;
 
-                    return regeneratorRuntime.wrap(function _callee66$(_context67) {
+                    return regeneratorRuntime.wrap(function _callee65$(_context66) {
                         while (1) {
-                            switch (_context67.prev = _context67.next) {
+                            switch (_context66.prev = _context66.next) {
                                 case 0:
                                     cidRefresh = new AsyncContainer();
                                     href = location.href;
@@ -5410,21 +5391,21 @@ new Promise(function (resolve) {
                                     // 1. playerWin and option
 
                                     playerWin = void 0;
-                                    _context67.prev = 3;
-                                    _context67.next = 6;
+                                    _context66.prev = 3;
+                                    _context66.next = 6;
                                     return UI.getPlayerWin();
 
                                 case 6:
-                                    playerWin = _context67.sent;
-                                    _context67.next = 13;
+                                    playerWin = _context66.sent;
+                                    _context66.next = 13;
                                     break;
 
                                 case 9:
-                                    _context67.prev = 9;
-                                    _context67.t0 = _context67['catch'](3);
+                                    _context66.prev = 9;
+                                    _context66.t0 = _context66['catch'](3);
 
-                                    if (_context67.t0 == 'Need H5 Player') UI.requestH5Player();
-                                    throw _context67.t0;
+                                    if (_context66.t0 == 'Need H5 Player') UI.requestH5Player();
+                                    throw _context66.t0;
 
                                 case 13:
                                     option = UI.getOption(playerWin);
@@ -5439,62 +5420,62 @@ new Promise(function (resolve) {
                                         return UI.displayPolyfillDataDiv(polyfill);
                                     };
 
-                                    _context67.next = 20;
-                                    return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+                                    _context66.next = 20;
+                                    return Promise.all([_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
                                         var monkey;
-                                        return regeneratorRuntime.wrap(function _callee64$(_context65) {
+                                        return regeneratorRuntime.wrap(function _callee63$(_context64) {
                                             while (1) {
-                                                switch (_context65.prev = _context65.next) {
+                                                switch (_context64.prev = _context64.next) {
                                                     case 0:
                                                         monkey = new BiliMonkey(playerWin, option);
-                                                        _context65.next = 3;
+                                                        _context64.next = 3;
                                                         return monkey.execOptions();
 
                                                     case 3:
                                                         monkeyTitle = UI.titleAppend(monkey);
-                                                        return _context65.abrupt('return', monkey);
+                                                        return _context64.abrupt('return', monkey);
 
                                                     case 5:
+                                                    case 'end':
+                                                        return _context64.stop();
+                                                }
+                                            }
+                                        }, _callee63, _this40);
+                                    }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+                                        var polyfill;
+                                        return regeneratorRuntime.wrap(function _callee64$(_context65) {
+                                            while (1) {
+                                                switch (_context65.prev = _context65.next) {
+                                                    case 0:
+                                                        polyfill = new BiliPolyfill(playerWin, option, function (t) {
+                                                            return UI.hintInfo(t, playerWin);
+                                                        });
+                                                        _context65.next = 3;
+                                                        return polyfill.setFunctions();
+
+                                                    case 3:
+                                                        return _context65.abrupt('return', polyfill);
+
+                                                    case 4:
                                                     case 'end':
                                                         return _context65.stop();
                                                 }
                                             }
                                         }, _callee64, _this40);
-                                    }))(), _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
-                                        var polyfill;
-                                        return regeneratorRuntime.wrap(function _callee65$(_context66) {
-                                            while (1) {
-                                                switch (_context66.prev = _context66.next) {
-                                                    case 0:
-                                                        polyfill = new BiliPolyfill(playerWin, option, function (t) {
-                                                            return UI.hintInfo(t, playerWin);
-                                                        });
-                                                        _context66.next = 3;
-                                                        return polyfill.setFunctions();
-
-                                                    case 3:
-                                                        return _context66.abrupt('return', polyfill);
-
-                                                    case 4:
-                                                    case 'end':
-                                                        return _context66.stop();
-                                                }
-                                            }
-                                        }, _callee65, _this40);
                                     }))()]);
 
                                 case 20:
-                                    _ref75 = _context67.sent;
-                                    _ref76 = _slicedToArray(_ref75, 2);
-                                    monkey = _ref76[0];
-                                    polyfill = _ref76[1];
+                                    _ref74 = _context66.sent;
+                                    _ref75 = _slicedToArray(_ref74, 2);
+                                    monkey = _ref75[0];
+                                    polyfill = _ref75[1];
 
                                     if (!(href != location.href)) {
-                                        _context67.next = 26;
+                                        _context66.next = 26;
                                         break;
                                     }
 
-                                    return _context67.abrupt('return', UI.cleanUp());
+                                    return _context66.abrupt('return', UI.cleanUp());
 
                                 case 26:
 
@@ -5523,10 +5504,10 @@ new Promise(function (resolve) {
                                     if (top.debugOption && top.debugOption.debug) {
                                         ;
 
-                                        _ref79 = [monkey, polyfill];
-                                        (top.unsafeWindow || top).m = _ref79[0];
-                                        (top.unsafeWindow || top).p = _ref79[1];
-                                    } _context67.next = 35;
+                                        _ref78 = [monkey, polyfill];
+                                        (top.unsafeWindow || top).m = _ref78[0];
+                                        (top.unsafeWindow || top).p = _ref78[1];
+                                    } _context66.next = 35;
                                     return cidRefresh;
 
                                 case 35:
@@ -5534,14 +5515,14 @@ new Promise(function (resolve) {
 
                                 case 36:
                                 case 'end':
-                                    return _context67.stop();
+                                    return _context66.stop();
                             }
                         }
-                    }, _callee66, this, [[3, 9]]);
+                    }, _callee65, this, [[3, 9]]);
                 }));
 
                 function start() {
-                    return _ref74.apply(this, arguments);
+                    return _ref73.apply(this, arguments);
                 }
 
                 return start;
@@ -5549,17 +5530,17 @@ new Promise(function (resolve) {
         }, {
             key: 'init',
             value: function () {
-                var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-                    return regeneratorRuntime.wrap(function _callee67$(_context68) {
+                var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+                    return regeneratorRuntime.wrap(function _callee66$(_context67) {
                         while (1) {
-                            switch (_context68.prev = _context68.next) {
+                            switch (_context67.prev = _context67.next) {
                                 case 0:
                                     if (document.body) {
-                                        _context68.next = 2;
+                                        _context67.next = 2;
                                         break;
                                     }
 
-                                    return _context68.abrupt('return');
+                                    return _context67.abrupt('return');
 
                                 case 2:
                                     UI.outdatedEngineClearance();
@@ -5568,27 +5549,27 @@ new Promise(function (resolve) {
 
                                 case 5:
                                     if (!1) {
-                                        _context68.next = 10;
+                                        _context67.next = 10;
                                         break;
                                     }
 
-                                    _context68.next = 8;
+                                    _context67.next = 8;
                                     return UI.start();
 
                                 case 8:
-                                    _context68.next = 5;
+                                    _context67.next = 5;
                                     break;
 
                                 case 10:
                                 case 'end':
-                                    return _context68.stop();
+                                    return _context67.stop();
                             }
                         }
-                    }, _callee67, this);
+                    }, _callee66, this);
                 }));
 
                 function init() {
-                    return _ref80.apply(this, arguments);
+                    return _ref79.apply(this, arguments);
                 }
 
                 return init;
