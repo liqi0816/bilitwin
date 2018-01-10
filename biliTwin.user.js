@@ -5608,14 +5608,14 @@ class BiliPolyfill {
         this.getStorage = option.getStorage;
         this.hintInfo = hintInfo;
         this.series = [];
-        this.userdata = null;
+        this.userdata = { oped: {} };
     }
 
     saveUserdata() {
         this.setStorage('biliPolyfill', JSON.stringify(this.userdata));
     }
 
-    retriveUserdata() {
+    retrieveUserdata() {
         try {
             this.userdata = this.getStorage('biliPolyfill');
             if (this.userdata.length > 1073741824) top.alert('BiliPolyfill脚本数据已经快满了，在播放器上右键->BiliPolyfill->片头片尾->检视数据，删掉一些吧。');
@@ -5629,45 +5629,45 @@ class BiliPolyfill {
     }
 
     async setFunctions({ videoRefresh = false } = {}) {
-        if (!this.option.betabeta) {
-            await this.getPlayerVideo();
-            this.userdata = { oped: {} };
-            return;
-        }
-        if (videoRefresh) {
-            this.video = this.playerWin.document.getElementsByTagName('video')[0];
-            if (!this.video) return;
-            if (this.option.dblclick) this.dblclickFullScreen();
-            if (this.option.electric) this.reallocateElectricPanel();
-            if (this.option.oped) this.skipOPED();
-            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
-            return;
-        }
+        // 1. Initialize
         this.video = await this.getPlayerVideo();
-        this.retriveUserdata();
-        if (this.option.badgeWatchLater) this.badgeWatchLater();
-        if (this.option.dblclick) this.dblclickFullScreen();
-        if (this.option.scroll) this.scrollToPlayer();
-        if (this.option.recommend) this.showRecommendTab();
-        if (this.option.electric) this.reallocateElectricPanel();
+
+        // 2. If not enabled, run the process without real actions
+        if (!this.option.betabeta) return this.getPlayerMenu();
+
+        // 3. Set up functions that are page static
+        if (!videoRefresh) {
+            this.retrieveUserdata();
+            if (this.option.badgeWatchLater) this.badgeWatchLater();
+            if (this.option.scroll) this.scrollToPlayer();
+            if (this.option.recommend) this.showRecommendTab();
+            if (this.option.autoResume) this.autoResume();
+            if (this.option.autoPlay) this.autoPlay();
+            if (this.option.autoWideScreen) this.autoWideScreen();
+            if (this.option.autoFullScreen) this.autoFullScreen();
+            if (this.option.focus) this.focusOnPlayer();
+            if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
+            if (this.option.series) this.inferNextInSeries();
+            this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
+        }
+
+        // 4. Set up functions that are binded to the video DOM
         if (this.option.lift) this.liftBottomDanmuku();
-        if (this.option.autoResume) this.autoResume();
-        if (this.option.autoPlay) this.autoPlay();
-        if (this.option.autoWideScreen) this.autoWideScreen();
-        if (this.option.autoFullScreen) this.autoFullScreen();
+        if (this.option.dblclick) this.dblclickFullScreen();
+        if (this.option.electric) this.reallocateElectricPanel();
         if (this.option.oped) this.skipOPED();
-        if (this.option.focus) this.focusOnPlayer();
-        if (this.option.menuFocus) this.menuFocusOnPlayer();
-        if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
-        this.playerWin.addEventListener('beforeunload', () => this.saveUserdata());
         this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }));
-        // beta
+
+        // 5. Set up functions that require everything to be ready
+        await this.getPlayerMenu();
+        if (this.option.menuFocus) this.menuFocusOnPlayer();
+
+        // 6. Set up experimental functions
         if (this.option.speech) top.document.body.addEventListener('click', e => e.detail > 2 && this.speechRecognition());
-        if (this.option.series) this.inferNextInSeries();
     }
 
     async inferNextInSeries() {
-        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
+        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -5746,14 +5746,12 @@ class BiliPolyfill {
     }
 
     getCoverImage() {
-        if (top.document.querySelector('.cover_image'))
-            return top.document.querySelector('.cover_image').src;
-        else if (top.document.querySelector('div.v1-bangumi-info-img > a > img'))
-            return top.document.querySelector('div.v1-bangumi-info-img > a > img').src.slice(0, top.document.querySelector('div.v1-bangumi-info-img > a > img').src.indexOf('.jpg') + 4);
-        else if (top.document.querySelector('[data-state-play="true"]  img'))
-            return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4);
-        else
-            return null;
+        let ret = top.document.querySelector('.cover_image') || top.document.querySelector('div.info-cover > a > img') || top.document.querySelector('[data-state-play="true"]  img');
+        if (!ret) return null;
+
+        ret = ret.src;
+        ret = ret.slice(0, ret.indexOf('.jpg') + 4);
+        return ret;
     }
 
     reallocateElectricPanel() {
@@ -5843,7 +5841,7 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/) || top.location.hash.match(/av\d+/))[0];
+        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
     }
 
     markOPPosition() {
@@ -5924,11 +5922,8 @@ class BiliPolyfill {
     }
 
     speechRecognition() {
-        let r, g;
-        try { [r, g] = [SpeechRecognition, SpeechGrammarList] } catch (e) {
-            try { [r, g] = [webkitSpeechRecognition, webkitSpeechGrammarList] } catch (e) { }
-        }
-        let [SpeechRecognition, SpeechGrammarList] = [r, g];
+        const SpeechRecognition = top.SpeechRecognition || top.webkitSpeechRecognition;
+        const SpeechGrammarList = top.SpeechGrammarList || top.webkitSpeechGrammarList;
         alert('Yahaha! You found me!\nBiliTwin支持的语音命令: 播放 暂停 全屏 关闭 加速 减速 下一集\nChrome may support Cantonese or Hakka as well. See BiliPolyfill::speechRecognition.');
         if (!SpeechRecognition || !SpeechGrammarList) alert('浏览器太旧啦~彩蛋没法运行~');
         let player = ['播放', '暂停', '全屏', '关闭', '加速', '减速', '下一集'];
@@ -5977,8 +5972,8 @@ class BiliPolyfill {
                     this.hintInfo(`BiliPolyfill: 语音:"${transcript}"？`);
                     break;
             }
-            console && console.log(e.results);
-            console && console.log(`transcript:${transcript} confidence:${e.results[0][0].confidence}`);
+            typeof console == "object" && console.log(e.results);
+            typeof console == "object" && console.log(`transcript:${transcript} confidence:${e.results[0][0].confidence}`);
         };
     }
 
@@ -6012,40 +6007,96 @@ class BiliPolyfill {
         }
     }
 
-    static openMinimizedPlayer(option = { cid: top.cid, aid: '' }) {
+    async getPlayerMenu() {
+        if (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
+            return this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+        }
+        else {
+            return new Promise(resolve => {
+                let observer = new MutationObserver(() => {
+                    if (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
+                        observer.disconnect();
+                        resolve(this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0]);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
+    static async openMinimizedPlayer(option = { cid: top.cid, aid: top.aid, playerWin: top }) {
         if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
         if (!option.cid) throw 'player init: cid missing';
-        if (!option.aid) option.aid = '';
-        let h = top.open(`//www.bilibili.com/blackboard/html5player.html?cid=${option.cid}&aid=${option.aid}&crossDomain=${top.document.domain != 'www.bilibili.com' ? 'true' : ''}`, undefined, ' ');
+        if (!option.aid) option.aid = top.aid;
+        if (!option.playerWin) option.playerWin = top;
 
-        (async () => {
-            await new Promise(resolve => {
-                h.addEventListener('load', resolve);
-                setTimeout(() => {
-                    h.removeEventListener('load', resolve);
-                    resolve();
-                }, 6000);
-            });
-            let div = h.document.getElementById('bilibiliPlayer');
-            if (!div) { console.warn('openMinimizedPlayer: fullscreen timeout'); return; }
-            await new Promise(resolve => {
-                if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve();
-                else {
-                    let observer = new MutationObserver(() => {
-                        if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) {
-                            observer.disconnect();
-                            resolve();
-                        }
-                    });
-                    observer.observe(h.document.getElementById('bilibiliPlayer'), { childList: true });
+        let h = top.open(`//www.bilibili.com/blackboard/html5player.html?cid=${option.cid}&aid=${option.aid}&crossDomain=${top.document.domain != 'www.bilibili.com' ? 'true' : ''}`, undefined, ' ');
+        let res = top.location.href.includes('bangumi') && await new Promise(resolve => {
+            const jq = option.playerWin.jQuery;
+            const _ajax = jq.ajax;
+
+            jq.ajax = function (a, c) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                    a.success = resolve;
+                    jq.ajax = _ajax;
                 }
-            });
-            let i = [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen];
-            div.webkitRequestFullscreen = div.mozRequestFullScreen = div.msRequestFullscreen = div.requestFullscreen = () => { };
-            if (h.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off'))
-                h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
-            [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen] = i;
-        })();
+                return _ajax.call(jq, a, c);
+            };
+            option.playerWin.player.reloadAccess();
+        });
+
+        await new Promise(resolve => {
+            let i = setInterval(() => h.document.getElementById('bilibiliPlayer') && resolve(), 500);
+            h.addEventListener('load', resolve);
+            setTimeout(() => {
+                clearInterval(i);
+                h.removeEventListener('load', resolve);
+                resolve();
+            }, 6000);
+        });
+        let div = h.document.getElementById('bilibiliPlayer');
+        if (!div) { console.warn('openMinimizedPlayer: document load timeout'); return; }
+
+        if (res) {
+            await new Promise(resolve => {
+                const jq = h.jQuery;
+                const _ajax = jq.ajax;
+
+                jq.ajax = function (a, c) {
+                    if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                        a.success(res)
+                        jq.ajax = _ajax;
+                        resolve();
+                    }
+                    else {
+                        return _ajax.call(jq, a, c);
+                    }
+                };
+                h.player = new h.bilibiliPlayer({ cid: option.cid, aid: option.aid });
+                // h.eval(`player = new bilibiliPlayer({ cid: ${option.cid}, aid: ${option.aid} })`);
+                // console.log(`player = new bilibiliPlayer({ cid: ${option.cid}, aid: ${option.aid} })`);
+            })
+        }
+
+        await new Promise(resolve => {
+            if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve();
+            else {
+                let observer = new MutationObserver(() => {
+                    if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) {
+                        observer.disconnect();
+                        resolve();
+                    }
+                });
+                observer.observe(h.document.getElementById('bilibiliPlayer'), { childList: true });
+            }
+        });
+        let i = [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen];
+        div.webkitRequestFullscreen = div.mozRequestFullScreen = div.msRequestFullscreen = div.requestFullscreen = () => { };
+        if (h.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off'))
+            h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+        [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen] = i;
     }
 
     static parseHref(href = top.location.href) {
@@ -6581,7 +6632,7 @@ class UI extends BiliUserJS {
         ul.children[6].onclick = () => { polyfill.saveUserdata() };
         ul.children[7].onclick = () => {
             BiliPolyfill.clearAllUserdata(playerWin);
-            polyfill.retriveUserdata();
+            polyfill.retrieveUserdata();
         };
 
         li.onmouseenter = () => {
@@ -6684,8 +6735,8 @@ class UI extends BiliUserJS {
             ['focus', '自动聚焦到播放器'],
             ['menuFocus', '关闭菜单后聚焦到播放器'],
             ['limitedKeydown', '首次回车键可全屏自动播放'],
+            ['series', '尝试自动找上下集'],
             ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'],
-            ['series', '(测)尝试自动找上下集'],
         ];
 
         let table = document.createElement('table');
