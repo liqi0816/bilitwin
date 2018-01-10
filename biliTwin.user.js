@@ -6305,6 +6305,7 @@ class UI extends BiliUserJS {
         let blobs;
         blobs = await monkey.getAllFLVs();
         let mergedFLV = await FLV.mergeBlobs(blobs);
+        let ass = await monkey.ass;
         let url = URL.createObjectURL(mergedFLV);
         let outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
 
@@ -6312,10 +6313,12 @@ class UI extends BiliUserJS {
         table.insertRow(0).innerHTML = `
         <td colspan="3" style="border: 1px solid black">
             <a href="${url}" download="${outputName}.flv">保存合并后FLV</a> 
-            <a href="${await monkey.ass}" download="${outputName}.ass">弹幕ASS</a> 
+            <a href="${ass}" download="${outputName}.ass">弹幕ASS</a> 
+            <a>打包MKV(软字幕封装)</a>
             记得清理分段缓存哦~
         </td>
         `;
+        table.rows[0].cells[0].children[2].onclick = () => new MKVTransmuxer().exec(url, ass, `${outputName}.mkv`);
         return url;
     }
 
