@@ -2,13 +2,13 @@
 // @name        bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
 // @homepageURL https://github.com/liqi0816/bilitwin/
-// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
+// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/watchlater/
 // @version     1.10
 // @author      qli5
-// @copyright   qli5, 2014+, 田生, grepmusic
+// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
 // @grant       none
 // ==/UserScript==
@@ -85,6 +85,17 @@ top.debugOption = {
  * https://tiansh.github.io/us-danmaku/bilibili/
  * by tiansh
  * 
+ * The FLV demuxer is from
+ * https://github.com/Bilibili/flv.js/
+ * by zheng qian
+ * 
+ * The EMBL builder is from
+ * <https://www.npmjs.com/package/simple-ebml-builder>
+ * by ryiwamoto
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
 /**
