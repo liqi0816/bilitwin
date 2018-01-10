@@ -15,7 +15,7 @@
 // @grant       none
 // ==/UserScript==
 
-top.debugOption = {
+let debugOption = {
     // console会清空，生成 window.m 和 window.p
     //debug: 1,
 
@@ -6156,8 +6156,8 @@ class BiliUserJS {
 class UI extends BiliUserJS {
     // Title Append
     static titleAppend(monkey) {
-        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.video-top-info div.video-info-module');
-        let tminfo = document.querySelector('div.tminfo');
+        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.bangumi-header div.header-info') || document.querySelector('div.video-info-module');
+        let tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
         let div = document.createElement('div');
         let flvA = document.createElement('a');
         let mp4A = document.createElement('a');
@@ -6199,12 +6199,9 @@ class UI extends BiliUserJS {
         div.appendChild(document.createTextNode(' '));
         div.appendChild(assA);
         div.className = 'bilitwin';
-        div.style.zIndex = '1';
-        div.style.paddingTop = '4px';
-        div.style.width = '32%';
         div.style.float = 'left';
-        tminfo.style.float = 'left';
-        tminfo.style.width = '68%';
+        tminfo.style.float = 'none';
+        tminfo.style.marginLeft = '185px';
         h.insertBefore(div, tminfo);
         return { flvA, mp4A, assA };
     }
@@ -6228,7 +6225,7 @@ class UI extends BiliUserJS {
         tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
         tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
         tr.insertCell(2).innerHTML = `<progress value="0" max="${flvs.length + 1}">进度条</progress>`;
-        if (top.location.origin == 'bangumi.bilibili.com') {
+        if (top.location.href.includes('bangumi')) {
             tr.children[0].children[0].onclick = () => UI.copyToClipboard(flvs.join('\n'));
         }
         else {
@@ -6299,7 +6296,7 @@ class UI extends BiliUserJS {
         let mergedFLV = await FLV.mergeBlobs(blobs);
         let ass = await monkey.ass;
         let url = URL.createObjectURL(mergedFLV);
-        let outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
+        let outputName = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.trim();
 
         bar.value++;
         table.insertRow(0).innerHTML = `
@@ -6876,7 +6873,7 @@ class UI extends BiliUserJS {
                 series: true,
                 betabeta: false
             };
-            return Object.assign({}, defaultOption, rawOption, top.debugOption);
+            return Object.assign({}, defaultOption, rawOption, debugOption);
         }
     }
 
@@ -6893,7 +6890,7 @@ class UI extends BiliUserJS {
 
     static firefoxClearance() {
         if (navigator.userAgent.includes('Firefox')) {
-            top.debugOption.proxy = false;
+            debugOption.proxy = false;
             if (!window.navigator.temporaryStorage && !window.navigator.mozTemporaryStorage) window.navigator.temporaryStorage = { queryUsageAndQuota: func => func(-1048576, 10484711424) };
         }
     }
@@ -6920,40 +6917,51 @@ class UI extends BiliUserJS {
         }
     }
 
-    static watchLaterClearnce() {
-        if (location.pathname == '/watchlater/') {
-            let style = document.createElement('style');
-            style.type = 'text/css';
-            style.rel = 'stylesheet';
-            style.textContent = `
-                .bilitwin a {
-                    cursor: pointer;
-                    color: #00a1d6;
-                }
-
-                div.video-top-info > div.video-info-module > div.info.bilitwin {
-                    padding-top: 5px;
-                    float: left;
-                }
-                `;
-            document.head.appendChild(style);
+    static styleClearance() {
+        let ret = `
+        .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {
+            background: rgba(255,255,255,.12);
+            transition: all .3s ease-in-out;
+            cursor: pointer;
         }
-    }
+        `;
+        if (!top.location.href.includes('www.bilibili.com/video/av')) ret += `
+        .bilitwin a {
+            cursor: pointer;
+            color: #00a1d6;
+        }
 
-    static menuStyleFix(playerWin) {
-        if (playerWin.document.getElementById('bilitwinMenuStyleFix')) return;
+        .bilitwin a:hover {
+            color: #f25d8e;
+        }
+
+        .bilitwin button {
+            color: #fff;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 4px;
+            background-color: #00a1d6;
+            vertical-align: middle;
+            border: 1px solid #00a1d6;
+            transition: .1s;
+            transition-property: background-color,border,color;
+            user-select: none;
+        }
+
+        .bilitwin button:hover {
+            background-color: #00b5e5;
+            border-color: #00b5e5;
+        }
+
+        .bilitwin progress {
+            -webkit-appearance: progress;
+        }
+        `;
         let style = document.createElement('style');
         style.type = 'text/css';
         style.rel = 'stylesheet';
-        style.id = 'bilitwinMenuStyleFix';
-        style.textContent = `
-            .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {
-                background: rgba(255,255,255,.12);
-                transition: all .3s ease-in-out;
-                cursor: pointer;
-            }
-            `;
-        playerWin.document.head.appendChild(style);
+        style.textContent = ret;
+        document.head.appendChild(style);
     }
 
     static cleanUp() {
@@ -7001,7 +7009,6 @@ class UI extends BiliUserJS {
 
         // 3. menu
         UI.menuAppend(playerWin, { monkey, monkeyTitle, polyfill, displayPolyfillDataDiv, optionDiv });
-        UI.menuStyleFix(playerWin);
 
         // 4. refresh
         let h = () => {
@@ -7013,8 +7020,8 @@ class UI extends BiliUserJS {
         playerWin.addEventListener('unload', () => setTimeout(() => cidRefresh.resolve(), 0));
 
         // 5. debug
-        if (top.debugOption && top.debugOption.debug && top.console) top.console.clear();
-        if (top.debugOption && top.debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
+        if (debugOption.debug && top.console) top.console.clear();
+        if (debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
 
         await cidRefresh;
         UI.cleanUp();
@@ -7024,7 +7031,7 @@ class UI extends BiliUserJS {
         if (!document.body) return;
         UI.outdatedEngineClearance();
         UI.firefoxClearance();
-        UI.watchLaterClearnce();
+        UI.styleClearance();
 
         while (1) {
             await UI.start();
