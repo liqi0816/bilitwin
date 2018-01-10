@@ -145,13 +145,12 @@ class TwentyFourDataView extends DataView {
     }
 
     getUint24(byteOffset, littleEndian) {
-        if (littleEndian) throw 'littleEndian int24 not supported';
-        let msb = this.getUint8(byteOffset);
-        return (msb << 16 | this.getUint16(byteOffset + 1));
+        if (littleEndian) throw 'littleEndian int24 not implemented';
+        return this.getUint32(byteOffset - 1) & 0x00FFFFFF;
     }
 
     setUint24(byteOffset, value, littleEndian) {
-        if (littleEndian) throw 'littleEndian int24 not supported';
+        if (littleEndian) throw 'littleEndian int24 not implemented';
         if (value > 0x00FFFFFF) throw 'setUint24: number out of range';
         let msb = value >> 16;
         let lsb = value & 0xFFFF;
@@ -193,7 +192,7 @@ class TwentyFourDataView extends DataView {
 }
 
 class FLVTag {
-    constructor(dataView, currentOffset) {
+    constructor(dataView, currentOffset = 0) {
         this.tagHeader = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + currentOffset, 11);
         this.tagData = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + currentOffset + 11, this.dataSize);
         this.previousSize = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + currentOffset + 11 + this.dataSize, 4);
