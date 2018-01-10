@@ -5,6 +5,8 @@
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
+// @match       *://www.bilibili.com/bangumi/play/ep*
+// @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
 // @version     1.10
 // @author      qli5
@@ -5021,7 +5023,7 @@ class BiliMonkey {
 
         this.defaultFormatPromise = null;
         this.queryInfoMutex = new Mutex();
-        this.queryInfoMutex.lockAndAwait(() => this.getPlayer());
+        this.queryInfoMutex.lockAndAwait(() => this.getPlayerButtons());
         this.queryInfoMutex.lockAndAwait(() => this.getAvailableFormatName());
     }
 
@@ -5108,7 +5110,7 @@ class BiliMonkey {
             let self = this;
             jq.ajax = function (a, c) {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                     clearTimeout(timeout);
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     let _success = a.success;
@@ -5161,7 +5163,7 @@ class BiliMonkey {
         let self = this;
         jq.ajax = function (a, c) {
             if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                 let _success = a.success;
                 a.success = res => {
@@ -5190,7 +5192,7 @@ class BiliMonkey {
         let blockedRequest = await new Promise(resolve => {
             jq.ajax = function (a, c) {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                     // Send back a fake response to enable the change-format button.
                     self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                     a.success(fakedRes);
@@ -5215,7 +5217,7 @@ class BiliMonkey {
 
         jq.ajax = function (a, c) {
             if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                 let _success = a.success;
                 a.success = res => {
                     if (self.proxy && res.format == 'flv') {
@@ -5246,7 +5248,7 @@ class BiliMonkey {
         let self = this;
         jq.ajax = function (a, c) {
             if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                 let _success = a.success;
                 _success({});
@@ -5273,7 +5275,7 @@ class BiliMonkey {
                 let self = this;
                 jq.ajax = function (a, c) {
                     if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                         resolve(self.cid = a.url.match(/cid=\d+/)[0].slice(4));
                         let _success = a.success;
                         _success({});
@@ -5339,7 +5341,7 @@ class BiliMonkey {
         });
     }
 
-    async getPlayer() {
+    async getPlayerButtons() {
         if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
             return this.playerWin;
         }
@@ -5357,18 +5359,16 @@ class BiliMonkey {
     }
 
     async hangPlayer() {
-        await this.getPlayer();
-
         const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
         const _setItem = this.playerWin.localStorage.setItem;
 
-        return new Promise(async resolve => {
+        return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
             let blockerTimeout;
             jq.ajax = function (a, c) {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                     clearTimeout(blockerTimeout);
                     a.success(fakedRes);
                     blockerTimeout = setTimeout(() => {
@@ -5384,7 +5384,7 @@ class BiliMonkey {
             let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
                 .find(e => !e.getAttribute('data-selected') && !e.children.length);
             button.click();
-        });
+        }));
     }
 
     async loadFLVFromCache(index) {
@@ -5520,8 +5520,7 @@ class BiliMonkey {
             }
         })();
         await this.loadAllFLVFromCache();
-        let resProxy = {};
-        Object.assign(resProxy, res);
+        let resProxy = Object.assign({}, res);
         for (let i = 0; i < this.flvsBlob.length; i++) {
             if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
         }
