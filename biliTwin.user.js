@@ -6103,7 +6103,7 @@ class BiliUserJS {
         if (location.href.includes('/watchlater/#/list')) {
             await new Promise(resolve => {
                 let h = () => {
-                    resolve();
+                    resolve(location.href);
                     window.removeEventListener('hashchange', h);
                 };
                 window.addEventListener('hashchange', h)
@@ -6114,7 +6114,7 @@ class BiliUserJS {
                 await new Promise(resolve => {
                     let observer = new MutationObserver(() => {
                         if (document.getElementById('bofqi')) {
-                            resolve();
+                            resolve(document.getElementById('bofqi'));
                             observer.disconnect();
                         }
                     });
@@ -6122,51 +6122,33 @@ class BiliUserJS {
                 });
             }
         }
-        if (location.host == 'bangumi.bilibili.com') {
-            if (document.querySelector('#bofqi > iframe')) {
-                return BiliUserJS.getIframeWin();
-            }
-            else if (document.querySelector('#bofqi > object')) {
-                throw 'Need H5 Player';
-            }
-            else {
-                return new Promise(resolve => {
-                    let observer = new MutationObserver(() => {
-                        if (document.querySelector('#bofqi > iframe')) {
-                            observer.disconnect();
-                            resolve(BiliUserJS.getIframeWin());
-                        }
-                        else if (document.querySelector('#bofqi > object')) {
-                            observer.disconnect();
-                            throw 'Need H5 Player';
-                        }
-                    });
-                    observer.observe(document.getElementById('bofqi'), { childList: true });
-                });
-            }
+        if (document.getElementById('bilibiliPlayer')) {
+            return window;
+        }
+        else if (document.querySelector('#bofqi > iframe')) {
+            return BiliUserJS.getIframeWin();
+        }
+        else if (document.querySelector('#bofqi > object')) {
+            throw 'Need H5 Player';
         }
         else {
-            if (document.getElementById('bilibiliPlayer')) {
-                return window;
-            }
-            else if (document.querySelector('#bofqi > object')) {
-                throw 'Need H5 Player';
-            }
-            else {
-                return new Promise(resolve => {
-                    let observer = new MutationObserver(() => {
-                        if (document.getElementById('bilibiliPlayer')) {
-                            observer.disconnect();
-                            resolve(window);
-                        }
-                        else if (document.querySelector('#bofqi > object')) {
-                            observer.disconnect();
-                            throw 'Need H5 Player';
-                        }
-                    });
-                    observer.observe(document.getElementById('bofqi'), { childList: true });
-                })
-            }
+            return new Promise(resolve => {
+                let observer = new MutationObserver(() => {
+                    if (document.getElementById('bilibiliPlayer')) {
+                        observer.disconnect();
+                        resolve(window);
+                    }
+                    else if (document.querySelector('#bofqi > iframe')) {
+                        observer.disconnect();
+                        resolve(BiliUserJS.getIframeWin());
+                    }
+                    else if (document.querySelector('#bofqi > object')) {
+                        observer.disconnect();
+                        throw 'Need H5 Player';
+                    }
+                });
+                observer.observe(document.getElementById('bofqi'), { childList: true });
+            })
         }
     }
 }
