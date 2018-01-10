@@ -25,6 +25,8 @@ top.debugOption = {
 };
 
 /**
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
  * BiliTwin consists of two parts - BiliMonkey and BiliPolyfill. 
  * They are bundled because I am too lazy to write two user interfaces.
  * 
@@ -37,9 +39,10 @@ top.debugOption = {
  * 
  * BiliPolyfill will be pointless in the long run - I believe bilibili 
  * will finally provide these functions themselves.
- *  
- * This script is licensed under Mozilla Public License 2.0
- * https://www.mozilla.org/MPL/2.0/
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  * 
  * Covered Software is provided under this License on an “as is” basis, 
  * without warranty of any kind, either expressed, implied, or statutory, 
@@ -78,16 +81,10 @@ top.debugOption = {
  * https://github.com/grepmusic/flvmerge
  * by grepmusic
  * 
- * The ASS convert utility is a wrapper of
+ * The ASS convert utility is a fork of
  * https://tiansh.github.io/us-danmaku/bilibili/
  * by tiansh
- * (This script is loaded dynamically so that updates can be applied 
- * instantly. If github gets blocked from your region, please give 
- * BiliMonkey::loadASSScript a new default src.)
- * （如果github被墙了，Ctrl+F搜索loadASSScript，给它一个新的网址。）
  * 
- * This script is licensed under Mozilla Public License 2.0
- * https://www.mozilla.org/MPL/2.0/
  */
 
 /**
@@ -95,8 +92,9 @@ top.debugOption = {
  * A bilibili user script
  * by qli5 goodlq11[at](gmail|163).com
  * 
- * This script is licensed under Mozilla Public License 2.0
- * https://www.mozilla.org/MPL/2.0/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
 class TwentyFourDataView extends DataView {
