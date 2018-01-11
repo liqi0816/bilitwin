@@ -2,13 +2,15 @@
 // @name        (Babel)bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
 // @homepageURL https://github.com/liqi0816/bilitwin/
-// @description (国产浏览器专用)bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
+// @description (国产浏览器专用)bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
+// @match       *://www.bilibili.com/bangumi/play/ep*
+// @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.10
+// @version     1.11
 // @author      qli5
-// @copyright   qli5, 2014+, 田生, grepmusic
+// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
 // @grant       none
 // ==/UserScript==
@@ -16,7 +18,7 @@
 new Promise(function (resolve) {
     var req = new XMLHttpRequest();
     req.onload = function () { resolve(req.responseText); };
-    req.open('get', 'https://cdn.bootcss.com/babel-polyfill/6.23.0/polyfill.min.js');
+    req.open('get', 'https://cdn.bootcss.com/babel-polyfill/6.26.0/polyfill.min.js');
     req.send();
 }).then(function (script) {
     top.eval(script);
@@ -43,18 +45,20 @@ new Promise(function (resolve) {
     // @name        bilibili merged flv+mp4+ass+enhance
     // @namespace   http://qli5.tk/
     // @homepageURL https://github.com/liqi0816/bilitwin/
-    // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,播放体验增强,HTTPS,原生appsecret,不借助其他网站
+    // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
     // @match       *://www.bilibili.com/video/av*
     // @match       *://bangumi.bilibili.com/anime/*/play*
+    // @match       *://www.bilibili.com/bangumi/play/ep*
+    // @match       *://www.bilibili.com/bangumi/play/ss*
     // @match       *://www.bilibili.com/watchlater/
-    // @version     1.10
+    // @version     1.11
     // @author      qli5
-    // @copyright   qli5, 2014+, 田生, grepmusic
+    // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
     // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
     // @grant       none
     // ==/UserScript==
 
-    top.debugOption = {
+    var debugOption = {
         // console会清空，生成 window.m 和 window.p
         //debug: 1,
 
@@ -66,6 +70,8 @@ new Promise(function (resolve) {
     };
 
     /**
+     * @author qli5 <goodlq11[at](163|gmail).com>
+     * 
      * BiliTwin consists of two parts - BiliMonkey and BiliPolyfill. 
      * They are bundled because I am too lazy to write two user interfaces.
      * 
@@ -78,9 +84,10 @@ new Promise(function (resolve) {
      * 
      * BiliPolyfill will be pointless in the long run - I believe bilibili 
      * will finally provide these functions themselves.
-     *  
-     * This script is licensed under Mozilla Public License 2.0
-     * https://www.mozilla.org/MPL/2.0/
+     * 
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
      * 
      * Covered Software is provided under this License on an “as is” basis, 
      * without warranty of any kind, either expressed, implied, or statutory, 
@@ -119,16 +126,21 @@ new Promise(function (resolve) {
      * https://github.com/grepmusic/flvmerge
      * by grepmusic
      * 
-     * The ASS convert utility is a wrapper of
+     * The ASS convert utility is a fork of
      * https://tiansh.github.io/us-danmaku/bilibili/
      * by tiansh
-     * (This script is loaded dynamically so that updates can be applied 
-     * instantly. If github gets blocked from your region, please give 
-     * BiliMonkey::loadASSScript a new default src.)
-     * （如果github被墙了，Ctrl+F搜索loadASSScript，给它一个新的网址。）
      * 
-     * This script is licensed under Mozilla Public License 2.0
-     * https://www.mozilla.org/MPL/2.0/
+     * The FLV demuxer is from
+     * https://github.com/Bilibili/flv.js/
+     * by zheng qian
+     * 
+     * The EMBL builder is from
+     * <https://www.npmjs.com/package/simple-ebml-builder>
+     * by ryiwamoto
+     * 
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
      */
 
     /**
@@ -136,8 +148,9 @@ new Promise(function (resolve) {
      * A bilibili user script
      * by qli5 goodlq11[at](gmail|163).com
      * 
-     * This script is licensed under Mozilla Public License 2.0
-     * https://www.mozilla.org/MPL/2.0/
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
      */
 
     var TwentyFourDataView = function (_DataView) {
@@ -191,14 +204,13 @@ new Promise(function (resolve) {
         _createClass(TwentyFourDataView, [{
             key: 'getUint24',
             value: function getUint24(byteOffset, littleEndian) {
-                if (littleEndian) throw 'littleEndian int24 not supported';
-                var msb = this.getUint8(byteOffset);
-                return msb << 16 | this.getUint16(byteOffset + 1);
+                if (littleEndian) throw 'littleEndian int24 not implemented';
+                return this.getUint32(byteOffset - 1) & 0x00FFFFFF;
             }
         }, {
             key: 'setUint24',
             value: function setUint24(byteOffset, value, littleEndian) {
-                if (littleEndian) throw 'littleEndian int24 not supported';
+                if (littleEndian) throw 'littleEndian int24 not implemented';
                 if (value > 0x00FFFFFF) throw 'setUint24: number out of range';
                 var msb = value >> 16;
                 var lsb = value & 0xFFFF;
@@ -246,7 +258,9 @@ new Promise(function (resolve) {
     }(DataView);
 
     var FLVTag = function () {
-        function FLVTag(dataView, currentOffset) {
+        function FLVTag(dataView) {
+            var currentOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
             _classCallCheck(this, FLVTag);
 
             this.tagHeader = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + currentOffset, 11);
@@ -662,7 +676,7 @@ new Promise(function (resolve) {
                     }, _callee, this, [[10, 20, 24, 32], [25, , 27, 31]]);
                 }));
 
-                function mergeBlobs(_x3) {
+                function mergeBlobs(_x4) {
                     return _ref3.apply(this, arguments);
                 }
 
@@ -838,7 +852,7 @@ new Promise(function (resolve) {
                     }, _callee3, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
-                function addData(_x8) {
+                function addData(_x9) {
                     return _ref5.apply(this, arguments);
                 }
 
@@ -946,7 +960,7 @@ new Promise(function (resolve) {
                     }, _callee4, this, [[12, 17, 21, 29], [22, , 24, 28]]);
                 }));
 
-                function putData(_x11) {
+                function putData(_x12) {
                     return _ref6.apply(this, arguments);
                 }
 
@@ -1021,7 +1035,7 @@ new Promise(function (resolve) {
                     }, _callee5, this);
                 }));
 
-                function getData(_x14) {
+                function getData(_x15) {
                     return _ref7.apply(this, arguments);
                 }
 
@@ -1088,7 +1102,7 @@ new Promise(function (resolve) {
                     }, _callee6, this);
                 }));
 
-                function deleteData(_x15) {
+                function deleteData(_x16) {
                     return _ref8.apply(this, arguments);
                 }
 
@@ -1450,7 +1464,7 @@ new Promise(function (resolve) {
                     }, _callee12, this, [[3, , 7, 10]]);
                 }));
 
-                function lockAndAwait(_x25) {
+                function lockAndAwait(_x26) {
                     return _ref15.apply(this, arguments);
                 }
 
@@ -1677,6 +1691,63 @@ new Promise(function (resolve) {
         return AsyncContainer;
     }();
 
+    var ASSDownloader = function () {
+        function ASSDownloader(option) {
+            _classCallCheck(this, ASSDownloader);
+
+            var _ref21 = new Function('option', '\n        // ==UserScript==\n        // @name        bilibili ASS Danmaku Downloader\n        // @namespace   https://github.com/tiansh\n        // @description \u4EE5 ASS \u683C\u5F0F\u4E0B\u8F7D bilibili \u7684\u5F39\u5E55\n        // @include     http://www.bilibili.com/video/av*\n        // @include     http://bangumi.bilibili.com/movie/*\n        // @updateURL   https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.meta.js\n        // @downloadURL https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js\n        // @version     1.11\n        // @grant       GM_addStyle\n        // @grant       GM_xmlhttpRequest\n        // @run-at      document-start\n        // @author      \u7530\u751F\n        // @copyright   2014+, \u7530\u751F\n        // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/\n        // @license     CC Attribution-ShareAlike 4.0 International; http://creativecommons.org/licenses/by-sa/4.0/\n        // @connect-src comment.bilibili.com\n        // @connect-src interface.bilibili.com\n        // ==/UserScript==\n        \n        /*\n         * Common\n         */\n        \n        // \u8BBE\u7F6E\u9879\n        var config = {\n          \'playResX\': 560,           // \u5C4F\u5E55\u5206\u8FA8\u7387\u5BBD\uFF08\u50CF\u7D20\uFF09\n          \'playResY\': 420,           // \u5C4F\u5E55\u5206\u8FA8\u7387\u9AD8\uFF08\u50CF\u7D20\uFF09\n          \'fontlist\': [              // \u5B57\u5F62\uFF08\u4F1A\u81EA\u52A8\u9009\u62E9\u6700\u524D\u9762\u4E00\u4E2A\u53EF\u7528\u7684\uFF09\n            \'Microsoft YaHei UI\',\n            \'Microsoft YaHei\',\n            \'\u6587\u6CC9\u9A7F\u6B63\u9ED1\',\n            \'STHeitiSC\',\n            \'\u9ED1\u4F53\',\n          ],\n          \'font_size\': 1.0,          // \u5B57\u53F7\uFF08\u6BD4\u4F8B\uFF09\n          \'r2ltime\': 8,              // \u53F3\u5230\u5DE6\u5F39\u5E55\u6301\u7EED\u65F6\u95F4\uFF08\u79D2\uFF09\n          \'fixtime\': 4,              // \u56FA\u5B9A\u5F39\u5E55\u6301\u7EED\u65F6\u95F4\uFF08\u79D2\uFF09\n          \'opacity\': 0.6,            // \u4E0D\u900F\u660E\u5EA6\uFF08\u6BD4\u4F8B\uFF09\n          \'space\': 0,                // \u5F39\u5E55\u95F4\u9694\u7684\u6700\u5C0F\u6C34\u5E73\u8DDD\u79BB\uFF08\u50CF\u7D20\uFF09\n          \'max_delay\': 6,            // \u6700\u591A\u5141\u8BB8\u5EF6\u8FDF\u51E0\u79D2\u51FA\u73B0\u5F39\u5E55\n          \'bottom\': 50,              // \u5E95\u7AEF\u7ED9\u5B57\u5E55\u4FDD\u7559\u7684\u7A7A\u95F4\uFF08\u50CF\u7D20\uFF09\n          \'use_canvas\': null,        // \u662F\u5426\u4F7F\u7528canvas\u8BA1\u7B97\u6587\u672C\u5BBD\u5EA6\uFF08\u5E03\u5C14\u503C\uFF0CLinux\u4E0B\u7684\u706B\u72D0\u9ED8\u8BA4\u5426\uFF0C\u5176\u4ED6\u9ED8\u8BA4\u662F\uFF0CFirefox bug #561361\uFF09\n          \'debug\': false,            // \u6253\u5370\u8C03\u8BD5\u4FE1\u606F\n        };\n        if (option instanceof Object) {\n            for (var prop in config) {\n                if (prop in option) {\n                    config[prop] = option[prop]\n                }\n            }\n        }\n        \n        var debug = config.debug ? console.log.bind(console) : function () { };\n        \n        // \u5C06\u5B57\u5178\u4E2D\u7684\u503C\u586B\u5165\u5B57\u7B26\u4E32\n        var fillStr = function (str) {\n          var dict = Array.apply(Array, arguments);\n          return str.replace(/{{([^}]+)}}/g, function (r, o) {\n            var ret;\n            dict.some(function (i) { return ret = i[o]; });\n            return ret || \'\';\n          });\n        };\n        \n        // \u5C06\u989C\u8272\u7684\u6570\u503C\u5316\u4E3A\u5341\u516D\u8FDB\u5236\u5B57\u7B26\u4E32\u8868\u793A\n        var RRGGBB = function (color) {\n          var t = Number(color).toString(16).toUpperCase();\n          return (Array(7).join(\'0\') + t).slice(-6);\n        };\n        \n        // \u5C06\u53EF\u89C1\u5EA6\u8F6C\u6362\u4E3A\u900F\u660E\u5EA6\n        var hexAlpha = function (opacity) {\n          var alpha = Math.round(0xFF * (1 - opacity)).toString(16).toUpperCase();\n          return Array(3 - alpha.length).join(\'0\') + alpha;\n        };\n        \n        // \u5B57\u7B26\u4E32\n        var funStr = function (fun) {\n          return fun.toString().split(/\\r\\n|\\n|\\r/).slice(1, -1).join(\'\\n\');\n        };\n        \n        // \u5E73\u65B9\u548C\u5F00\u6839\n        var hypot = Math.hypot ? Math.hypot.bind(Math) : function () {\n          return Math.sqrt([0].concat(Array.apply(Array, arguments))\n            .reduce(function (x, y) { return x + y * y; }));\n        };\n        \n        // \u521B\u5EFA\u4E0B\u8F7D\n        var startDownload = function (data, filename) {\n          var blob = new Blob([data], { type: \'application/octet-stream\' });\n          var url = window.URL.createObjectURL(blob);\n          var saveas = document.createElement(\'a\');\n          saveas.href = url;\n          saveas.style.display = \'none\';\n          document.body.appendChild(saveas);\n          saveas.download = filename;\n          saveas.click();\n          setTimeout(function () { saveas.parentNode.removeChild(saveas); }, 1000)\n          document.addEventListener(\'unload\', function () { window.URL.revokeObjectURL(url); });\n        };\n        \n        // \u8BA1\u7B97\u6587\u5B57\u5BBD\u5EA6\n        var calcWidth = (function () {\n        \n          // \u4F7F\u7528Canvas\u8BA1\u7B97\n          var calcWidthCanvas = function () {\n            var canvas = document.createElement("canvas");\n            var context = canvas.getContext("2d");\n            return function (fontname, text, fontsize) {\n              context.font = \'bold \' + fontsize + \'px \' + fontname;\n              return Math.ceil(context.measureText(text).width + config.space);\n            };\n          }\n        \n          // \u4F7F\u7528Div\u8BA1\u7B97\n          var calcWidthDiv = function () {\n            var d = document.createElement(\'div\');\n            d.setAttribute(\'style\', [\n              \'all: unset\', \'top: -10000px\', \'left: -10000px\',\n              \'width: auto\', \'height: auto\', \'position: absolute\',\n            \'\',].join(\' !important; \'));\n            var ld = function () { document.body.parentNode.appendChild(d); }\n            if (!document.body) document.addEventListener(\'DOMContentLoaded\', ld);\n            else ld();\n            return function (fontname, text, fontsize) {\n              d.textContent = text;\n              d.style.font = \'bold \' + fontsize + \'px \' + fontname;\n              return d.clientWidth + config.space;\n            };\n          };\n        \n          // \u68C0\u67E5\u4F7F\u7528\u54EA\u4E2A\u6D4B\u91CF\u6587\u5B57\u5BBD\u5EA6\u7684\u65B9\u6CD5\n          if (config.use_canvas === null) {\n            if (navigator.platform.match(/linux/i) &&\n            !navigator.userAgent.match(/chrome/i)) config.use_canvas = false;\n          }\n          debug(\'use canvas: %o\', config.use_canvas !== false);\n          if (config.use_canvas === false) return calcWidthDiv();\n          return calcWidthCanvas();\n        \n        }());\n        \n        // \u9009\u62E9\u5408\u9002\u7684\u5B57\u4F53\n        var choseFont = function (fontlist) {\n          // \u68C0\u67E5\u8FD9\u4E2A\u5B57\u4E32\u7684\u5BBD\u5EA6\u6765\u68C0\u67E5\u5B57\u4F53\u662F\u5426\u5B58\u5728\n          var sampleText =\n            \'The quick brown fox jumps over the lazy dog\' +\n            \'7531902468\' + \',.!-\' + \'\uFF0C\u3002\uFF1A\uFF01\' +\n            \'\u5929\u5730\u7384\u9EC4\' + \'\u5247\u8FD1\u9053\u77E3\';\n          // \u548C\u8FD9\u4E9B\u5B57\u4F53\u8FDB\u884C\u6BD4\u8F83\n          var sampleFont = [\n            \'monospace\', \'sans-serif\', \'sans\',\n            \'Symbol\', \'Arial\', \'Comic Sans MS\', \'Fixed\', \'Terminal\',\n            \'Times\', \'Times New Roman\',\n            \'\u5B8B\u4F53\', \'\u9ED1\u4F53\', \'\u6587\u6CC9\u9A7F\u6B63\u9ED1\', \'Microsoft YaHei\'\n          ];\n          // \u5982\u679C\u88AB\u68C0\u67E5\u7684\u5B57\u4F53\u548C\u57FA\u51C6\u5B57\u4F53\u53EF\u4EE5\u6E32\u67D3\u51FA\u4E0D\u540C\u7684\u5BBD\u5EA6\n          // \u90A3\u4E48\u8BF4\u660E\u88AB\u68C0\u67E5\u7684\u5B57\u4F53\u603B\u662F\u5B58\u5728\u7684\n          var diffFont = function (base, test) {\n            var baseSize = calcWidth(base, sampleText, 72);\n            var testSize = calcWidth(test + \',\' + base, sampleText, 72);\n            return baseSize !== testSize;\n          };\n          var validFont = function (test) {\n            var valid = sampleFont.some(function (base) {\n              return diffFont(base, test);\n            });\n            debug(\'font %s: %o\', test, valid);\n            return valid;\n          };\n          // \u627E\u4E00\u4E2A\u80FD\u7528\u7684\u5B57\u4F53\n          var f = fontlist[fontlist.length - 1];\n          fontlist = fontlist.filter(validFont);\n          debug(\'fontlist: %o\', fontlist);\n          return fontlist[0] || f;\n        };\n        \n        // \u4ECE\u5907\u9009\u7684\u5B57\u4F53\u4E2D\u9009\u62E9\u4E00\u4E2A\u673A\u5668\u4E0A\u63D0\u4F9B\u4E86\u7684\u5B57\u4F53\n        var initFont = (function () {\n          var done = false;\n          return function () {\n            if (done) return; done = true;\n            calcWidth = calcWidth.bind(window,\n              config.font = choseFont(config.fontlist)\n            );\n          };\n        }());\n        \n        var generateASS = function (danmaku, info) {\n          var assHeader = fillStr(\n            \'[Script Info]\\nTitle: {{title}}\\nOriginal Script: \\u6839\\u636E {{ori}} \\u7684\\u5F39\\u5E55\\u4FE1\\u606F\\uFF0C\\u7531 https://github.com/tiansh/us-danmaku \\u751F\\u6210\\nScriptType: v4.00+\\nCollisions: Normal\\nPlayResX: {{playResX}}\\nPlayResY: {{playResY}}\\nTimer: 10.0000\\n\\n[V4+ Styles]\\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\\nStyle: Fix,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,1,0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\nStyle: R2L,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,1,0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\n\\n[Events]\\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\\n\',\n            config, info, {\'alpha\': hexAlpha(config.opacity) }\n          );\n          // \u8865\u9F50\u6570\u5B57\u5F00\u5934\u76840\n          var paddingNum = function (num, len) {\n            num = \'\' + num;\n            while (num.length < len) num = \'0\' + num;\n            return num;\n          };\n          // \u683C\u5F0F\u5316\u65F6\u95F4\n          var formatTime = function (time) {\n            time = 100 * time ^ 0;\n            var l = [[100, 2], [60, 2], [60, 2], [Infinity, 0]].map(function (c) {\n              var r = time % c[0];\n              time = (time - r) / c[0];\n              return paddingNum(r, c[1]);\n            }).reverse();\n            return l.slice(0, -1).join(\':\') + \'.\' + l[3];\n          };\n          // \u683C\u5F0F\u5316\u7279\u6548\n          var format = (function () {\n            // \u9002\u7528\u4E8E\u6240\u6709\u5F39\u5E55\n            var common = function (line) {\n              var s = \'\';\n              var rgb = line.color.split(/(..)/).filter(function (x) { return x; })\n                .map(function (x) { return parseInt(x, 16); });\n              // \u5982\u679C\u4E0D\u662F\u767D\u8272\uFF0C\u8981\u6307\u5B9A\u5F39\u5E55\u7279\u6B8A\u7684\u989C\u8272\n              if (line.color !== \'FFFFFF\') // line.color \u662F RRGGBB \u683C\u5F0F\n                s += \'\\\\c&H\' + line.color.split(/(..)/).reverse().join(\'\');\n              // \u5982\u679C\u5F39\u5E55\u989C\u8272\u6BD4\u8F83\u6DF1\uFF0C\u7528\u767D\u8272\u7684\u5916\u8FB9\u6846\n              var dark = rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114 < 0x30;\n              if (dark) s += \'\\\\3c&HFFFFFF\';\n              if (line.size !== 25) s += \'\\\\fs\' + line.size;\n              return s;\n            };\n            // \u9002\u7528\u4E8E\u4ECE\u53F3\u5230\u5DE6\u5F39\u5E55\n            var r2l = function (line) {\n              return \'\\\\move(\' + [\n                line.poss.x, line.poss.y, line.posd.x, line.posd.y\n              ].join(\',\') + \')\';\n            };\n            // \u9002\u7528\u4E8E\u56FA\u5B9A\u4F4D\u7F6E\u5F39\u5E55\n            var fix = function (line) {\n              return \'\\\\pos(\' + [\n                line.poss.x, line.poss.y\n              ].join(\',\') + \')\';\n            };\n            var withCommon = function (f) {\n              return function (line) { return f(line) + common(line); };\n            };\n            return {\n              \'R2L\': withCommon(r2l),\n              \'Fix\': withCommon(fix),\n            };\n          }());\n          // \u8F6C\u4E49\u4E00\u4E9B\u5B57\u7B26\n          var escapeAssText = function (s) {\n            // "{"\u3001"}"\u5B57\u7B26libass\u53EF\u4EE5\u8F6C\u4E49\uFF0C\u4F46\u662FVSFilter\u4E0D\u53EF\u4EE5\uFF0C\u6240\u4EE5\u76F4\u63A5\u7528\u5168\u89D2\u8865\u4E0A\n            return s.replace(/{/g, \'\uFF5B\').replace(/}/g, \'\uFF5D\').replace(/\\r|\\n/g, \'\');\n          };\n          // \u5C06\u4E00\u884C\u8F6C\u6362\u4E3AASS\u7684\u4E8B\u4EF6\n          var convert2Ass = function (line) {\n            return \'Dialogue: \' + [\n              0,\n              formatTime(line.stime),\n              formatTime(line.dtime),\n              line.type,\n              \',20,20,2,,\',\n            ].join(\',\')\n              + \'{\' + format[line.type](line) + \'}\'\n              + escapeAssText(line.text);\n          };\n          return assHeader +\n            danmaku.map(convert2Ass)\n            .filter(function (x) { return x; })\n            .join(\'\\n\');\n        };\n        \n        /*\n        \n        \u4E0B\u6587\u5B57\u6BCD\u542B\u4E49\uFF1A\n        0       ||----------------------x---------------------->\n                   _____________________c_____________________\n        =        /                     wc                      \\      0\n        |       |                   |--v--|                 wv  |  |--v--|\n        |    d  |--v--|               d f                 |--v--|\n        y |--v--|  l                                         f  |  s    _ p\n        |       |              VIDEO           |--v--|          |--v--| _ m\n        v       |              AREA            (x ^ y)          |\n        \n        v: \u5F39\u5E55\n        c: \u5C4F\u5E55\n        \n        0: \u5F39\u5E55\u53D1\u9001\n        a: \u53EF\u884C\u65B9\u6848\n        \n        s: \u5F00\u59CB\u51FA\u73B0\n        f: \u51FA\u73B0\u5B8C\u5168\n        l: \u5F00\u59CB\u6D88\u5931\n        d: \u6D88\u5931\u5B8C\u5168\n        \n        p: \u4E0A\u8FB9\u7F18\uFF08\u542B\uFF09\n        m: \u4E0B\u8FB9\u7F18\uFF08\u4E0D\u542B\uFF09\n        \n        w: \u5BBD\u5EA6\n        h: \u9AD8\u5EA6\n        b: \u5E95\u7AEF\u4FDD\u7559\n        \n        t: \u65F6\u95F4\u70B9\n        u: \u65F6\u95F4\u6BB5\n        r: \u5EF6\u8FDF\n        \n        \u5E76\u89C4\u5B9A\n        ts := t0s + r\n        tf := wv / (wc + ws) * p + ts\n        tl := ws / (wc + ws) * p + ts\n        td := p + ts\n        \n        */\n        \n        // \u6EDA\u52A8\u5F39\u5E55\n        var normalDanmaku = (function (wc, hc, b, u, maxr) {\n          return function () {\n            // \u521D\u59CB\u5316\u5C4F\u5E55\u5916\u9762\u662F\u4E0D\u53EF\u7528\u7684\n            var used = [\n              { \'p\': -Infinity, \'m\': 0, \'tf\': Infinity, \'td\': Infinity, \'b\': false },\n              { \'p\': hc, \'m\': Infinity, \'tf\': Infinity, \'td\': Infinity, \'b\': false },\n              { \'p\': hc - b, \'m\': hc, \'tf\': Infinity, \'td\': Infinity, \'b\': true },\n            ];\n            // \u68C0\u67E5\u4E00\u4E9B\u53EF\u7528\u7684\u4F4D\u7F6E\n            var available = function (hv, t0s, t0l, b) {\n              var suggestion = [];\n              // \u8FD9\u4E9B\u4E0A\u8FB9\u7F18\u603B\u4E4B\u522B\u7684\u5757\u7684\u4E0B\u8FB9\u7F18\n              used.forEach(function (i) {\n                if (i.m > hc) return;\n                var p = i.m;\n                var m = p + hv;\n                var tas = t0s;\n                var tal = t0l;\n                // \u8FD9\u4E9B\u5757\u7684\u5DE6\u8FB9\u7F18\u603B\u662F\u8FD9\u4E2A\u533A\u57DF\u91CC\u9762\u6700\u5927\u7684\u8FB9\u7F18\n                used.forEach(function (j) {\n                  if (j.p >= m) return;\n                  if (j.m <= p) return;\n                  if (j.b && b) return;\n                  tas = Math.max(tas, j.tf);\n                  tal = Math.max(tal, j.td);\n                });\n                // \u6700\u540E\u4F5C\u4E3A\u4E00\u79CD\u5907\u9009\u7559\u4E0B\u6765\n                suggestion.push({\n                  \'p\': p,\n                  \'r\': Math.max(tas - t0s, tal - t0l),\n                });\n              });\n              // \u6839\u636E\u9AD8\u5EA6\u6392\u5E8F\n              suggestion.sort(function (x, y) { return x.p - y.p; });\n              var mr = maxr;\n              // \u53C8\u9760\u53F3\u53C8\u9760\u4E0B\u7684\u9009\u62E9\u53EF\u4EE5\u5FFD\u7565\uFF0C\u5269\u4E0B\u7684\u8FD4\u56DE\n              suggestion = suggestion.filter(function (i) {\n                if (i.r >= mr) return false;\n                mr = i.r;\n                return true;\n              });\n              return suggestion;\n            };\n            // \u6DFB\u52A0\u4E00\u4E2A\u88AB\u4F7F\u7528\u7684\n            var use = function (p, m, tf, td) {\n              used.push({ \'p\': p, \'m\': m, \'tf\': tf, \'td\': td, \'b\': false });\n            };\n            // \u6839\u636E\u65F6\u95F4\u540C\u6B65\u6389\u65E0\u7528\u7684\n            var syn = function (t0s, t0l) {\n              used = used.filter(function (i) { return i.tf > t0s || i.td > t0l; });\n            };\n            // \u7ED9\u6240\u6709\u53EF\u80FD\u7684\u4F4D\u7F6E\u6253\u5206\uFF0C\u5206\u6570\u662F[0, 1)\u7684\n            var score = function (i) {\n              if (i.r > maxr) return -Infinity;\n              return 1 - hypot(i.r / maxr, i.p / hc) * Math.SQRT1_2;\n            };\n            // \u6DFB\u52A0\u4E00\u6761\n            return function (t0s, wv, hv, b) {\n              var t0l = wc / (wv + wc) * u + t0s;\n              syn(t0s, t0l);\n              var al = available(hv, t0s, t0l, b);\n              if (!al.length) return null;\n              var scored = al.map(function (i) { return [score(i), i]; });\n              var best = scored.reduce(function (x, y) {\n                return x[0] > y[0] ? x : y;\n              })[1];\n              var ts = t0s + best.r;\n              var tf = wv / (wv + wc) * u + ts;\n              var td = u + ts;\n              use(best.p, best.p + hv, tf, td);\n              return {\n                \'top\': best.p,\n                \'time\': ts,\n              };\n            };\n          };\n        }(config.playResX, config.playResY, config.bottom, config.r2ltime, config.max_delay));\n        \n        // \u9876\u90E8\u3001\u5E95\u90E8\u5F39\u5E55\n        var sideDanmaku = (function (hc, b, u, maxr) {\n          return function () {\n            var used = [\n              { \'p\': -Infinity, \'m\': 0, \'td\': Infinity, \'b\': false },\n              { \'p\': hc, \'m\': Infinity, \'td\': Infinity, \'b\': false },\n              { \'p\': hc - b, \'m\': hc, \'td\': Infinity, \'b\': true },\n            ];\n            // \u67E5\u627E\u53EF\u7528\u7684\u4F4D\u7F6E\n            var fr = function (p, m, t0s, b) {\n              var tas = t0s;\n              used.forEach(function (j) {\n                if (j.p >= m) return;\n                if (j.m <= p) return;\n                if (j.b && b) return;\n                tas = Math.max(tas, j.td);\n              });\n              return { \'r\': tas - t0s, \'p\': p, \'m\': m };\n            };\n            // \u9876\u90E8\n            var top = function (hv, t0s, b) {\n              var suggestion = [];\n              used.forEach(function (i) {\n                if (i.m > hc) return;\n                suggestion.push(fr(i.m, i.m + hv, t0s, b));\n              });\n              return suggestion;\n            };\n            // \u5E95\u90E8\n            var bottom = function (hv, t0s, b) {\n              var suggestion = [];\n              used.forEach(function (i) {\n                if (i.p < 0) return;\n                suggestion.push(fr(i.p - hv, i.p, t0s, b));\n              });\n              return suggestion;\n            };\n            var use = function (p, m, td) {\n              used.push({ \'p\': p, \'m\': m, \'td\': td, \'b\': false });\n            };\n            var syn = function (t0s) {\n              used = used.filter(function (i) { return i.td > t0s; });\n            };\n            // \u6311\u9009\u6700\u597D\u7684\u65B9\u6848\uFF1A\u5EF6\u8FDF\u5C0F\u7684\u4F18\u5148\uFF0C\u4F4D\u7F6E\u4E0D\u91CD\u8981\n            var score = function (i, is_top) {\n              if (i.r > maxr) return -Infinity;\n              var f = function (p) { return is_top ? p : (hc - p); };\n              return 1 - (i.r / maxr * (31/32) + f(i.p) / hc * (1/32));\n            };\n            return function (t0s, hv, is_top, b) {\n              syn(t0s);\n              var al = (is_top ? top : bottom)(hv, t0s, b);\n              if (!al.length) return null;\n              var scored = al.map(function (i) { return [score(i, is_top), i]; });\n              var best = scored.reduce(function (x, y) {\n                return x[0] > y[0] ? x : y;\n              })[1];\n              use(best.p, best.m, best.r + t0s + u)\n              return { \'top\': best.p, \'time\': best.r + t0s };\n            };\n          };\n        }(config.playResY, config.bottom, config.fixtime, config.max_delay));\n        \n        // \u4E3A\u6BCF\u6761\u5F39\u5E55\u5B89\u7F6E\u4F4D\u7F6E\n        var setPosition = function (danmaku) {\n          var normal = normalDanmaku(), side = sideDanmaku();\n          return danmaku\n            .sort(function (x, y) { return x.time - y.time; })\n            .map(function (line) {\n              var font_size = Math.round(line.size * config.font_size);\n              var width = calcWidth(line.text, font_size);\n              switch (line.mode) {\n                case \'R2L\': return (function () {\n                  var pos = normal(line.time, width, font_size, line.bottom);\n                  if (!pos) return null;\n                  line.type = \'R2L\';\n                  line.stime = pos.time;\n                  line.poss = {\n                    \'x\': config.playResX + width / 2,\n                    \'y\': pos.top + font_size,\n                  };\n                  line.posd = {\n                    \'x\': -width / 2,\n                    \'y\': pos.top + font_size,\n                  };\n                  line.dtime = config.r2ltime + line.stime;\n                  return line;\n                }());\n                case \'TOP\': case \'BOTTOM\': return (function (isTop) {\n                  var pos = side(line.time, font_size, isTop, line.bottom);\n                  if (!pos) return null;\n                  line.type = \'Fix\';\n                  line.stime = pos.time;\n                  line.posd = line.poss = {\n                    \'x\': Math.round(config.playResX / 2),\n                    \'y\': pos.top + font_size,\n                  };\n                  line.dtime = config.fixtime + line.stime;\n                  return line;\n                }(line.mode === \'TOP\'));\n                default: return null;\n              };\n            })\n            .filter(function (l) { return l; })\n            .sort(function (x, y) { return x.stime - y.stime; });\n        };\n        \n        /*\n         * bilibili\n         */\n        \n        // \u83B7\u53D6xml\n        var fetchXML = function (cid, callback) {\n          GM_xmlhttpRequest({\n            \'method\': \'GET\',\n            \'url\': \'http://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid),\n            \'onload\': function (resp) {\n              var content = resp.responseText.replace(/(?:[\\0-\\x08\\x0B\\f\\x0E-\\x1F\\uFFFE\\uFFFF]|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|(?:[^\\uD800-\\uDBFF]|^)[\\uDC00-\\uDFFF])/g, "");\n              callback(content);\n            }\n          });\n        };\n        \n        var fetchDanmaku = function (cid, callback) {\n          fetchXML(cid, function (content) {\n            callback(parseXML(content));\n          });\n        };\n        \n        var parseXML = function (content) {\n          var data = (new DOMParser()).parseFromString(content, \'text/xml\');\n          return Array.apply(Array, data.querySelectorAll(\'d\')).map(function (line) {\n            var info = line.getAttribute(\'p\').split(\',\'), text = line.textContent;\n            return {\n              \'text\': text,\n              \'time\': Number(info[0]),\n              \'mode\': [undefined, \'R2L\', \'R2L\', \'R2L\', \'BOTTOM\', \'TOP\'][Number(info[1])],\n              \'size\': Number(info[2]),\n              \'color\': RRGGBB(parseInt(info[3], 10) & 0xffffff),\n              \'bottom\': Number(info[5]) > 0,\n              // \'create\': new Date(Number(info[4])),\n              // \'pool\': Number(info[5]),\n              // \'sender\': String(info[6]),\n              // \'dmid\': Number(info[7]),\n            };\n          });\n        };\n        \n        fetchXML = function (cid, callback) {\n            var oReq = new XMLHttpRequest();\n            oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n            oReq.onload = function () {\n                var content = oReq.responseText.replace(/(?:[\\0-\\x08\\x0B\\f\\x0E-\\x1F\\uFFFE\\uFFFF]|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|(?:[^\\uD800-\\uDBFF]|^)[\\uDC00-\\uDFFF])/g, "");\n                callback(content);\n            };\n            oReq.send();\n        };\n        \n        initFont();\n        \n        return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };        \n        ')(option);
+
+            this.fetchDanmaku = _ref21.fetchDanmaku;
+            this.generateASS = _ref21.generateASS;
+            this.setPosition = _ref21.setPosition;
+        }
+
+        _createClass(ASSDownloader, [{
+            key: 'fetchDanmaku',
+            value: function fetchDanmaku() { }
+        }, {
+            key: 'generateASS',
+            value: function generateASS() { }
+        }, {
+            key: 'setPosition',
+            value: function setPosition() { }
+        }]);
+
+        return ASSDownloader;
+    }();
+
+    var MKVTransmuxer = function () {
+        function MKVTransmuxer(option) {
+            _classCallCheck(this, MKVTransmuxer);
+
+            this.playerWin = null;
+            this.option = option;
+        }
+
+        _createClass(MKVTransmuxer, [{
+            key: 'exec',
+            value: function exec(flv, ass, name) {
+                // 1. Allocate for a new window
+                if (!this.playerWin) this.playerWin = top.open('', undefined, ' ');
+
+                // 2. Inject scripts
+                this.playerWin.document.write('\n        <p>\n            \u52A0\u8F7D\u6587\u4EF6\u2026\u2026 loading files...\n            <progress value="0" max="100" id="fileProgress"></progress>\n        </p>\n        <p>\n            \u6784\u5EFAmkv\u2026\u2026 building mkv...\n            <progress value="0" max="100" id="mkvProgress"></progress>\n        </p>\n        <p>\n            <a id="a" download="merged.mkv">merged.mkv</a>\n        </p>\n        <script>\n        /**\n         * FLV + ASS => MKV transmuxer\n         * Demux FLV into H264 + AAC stream and ASS into line stream; then\n         * remux them into a MKV file.\n         * \n         * @author qli5 <goodlq11[at](163|gmail).com>\n         * \n         * This Source Code Form is subject to the terms of the Mozilla Public\n         * License, v. 2.0. If a copy of the MPL was not distributed with this\n         * file, You can obtain one at http://mozilla.org/MPL/2.0/.\n         * \n         * The FLV demuxer is from flv.js <https://github.com/Bilibili/flv.js/>\n         * by zheng qian <xqq@xqq.im>, licensed under Apache 2.0.\n         * \n         * The EMBL builder is from simple-ebml-builder\n         * <https://www.npmjs.com/package/simple-ebml-builder> by ryiwamoto, \n         * licensed under MIT.\n         */\n        \n        // nodejs polyfill\n        if (typeof Blob == \'undefined\') {\n            var Blob = class {\n                constructor(array) {\n                    return Buffer.concat(array.map(Buffer.from.bind(Buffer)));\n                }\n            };\n        }\n        if (typeof TextEncoder == \'undefined\') {\n            var TextEncoder = class {\n                /**\n                 * \n                 * @param {string} chunk \n                 * @returns {Uint8Array}\n                 */\n                encode(chunk) {\n                    return Buffer.from(chunk, \'utf-8\');\n                }\n            }\n        }\n        if (typeof TextDecoder == \'undefined\') {\n            const StringDecoder = require(\'string_decoder\').StringDecoder;\n            var TextDecoder = class extends StringDecoder {\n                /**\n                 * \n                 * @param {ArrayBuffer} chunk \n                 * @returns {string}\n                 */\n                decode(chunk) {\n                    return this.end(Buffer.from(chunk));\n                }\n            }\n        }\n        \n        /**\n         * The FLV demuxer is from flv.js\n         * \n         * Copyright (C) 2016 Bilibili. All Rights Reserved.\n         *\n         * @author zheng qian <xqq@xqq.im>\n         *\n         * Licensed under the Apache License, Version 2.0 (the "License");\n         * you may not use this file except in compliance with the License.\n         * You may obtain a copy of the License at\n         *\n         *     http://www.apache.org/licenses/LICENSE-2.0\n         *\n         * Unless required by applicable law or agreed to in writing, software\n         * distributed under the License is distributed on an "AS IS" BASIS,\n         * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n         * See the License for the specific language governing permissions and\n         * limitations under the License.\n         */\n        \n        const FLVDemuxer = (() => {\n            // I browserified flv.js manually - so that I can know how it works\n            if (typeof navigator == \'undefined\') navigator = {\n                userAgent: \'chrome\',\n            }\n        \n            // import FLVDemuxer from \'flv.js/src/demux/flv-demuxer\';\n            // ..import Log from \'../utils/logger.js\';\n            const Log = {\n                e: console.error.bind(console),\n                w: console.warn.bind(console),\n                i: console.log.bind(console),\n                v: console.log.bind(console),\n            };\n        \n            // ..import AMF from \'./amf-parser.js\';\n            // ....import Log from \'../utils/logger.js\';\n            // ....import decodeUTF8 from \'../utils/utf8-conv.js\';\n            function checkContinuation(uint8array, start, checkLength) {\n                let array = uint8array;\n                if (start + checkLength < array.length) {\n                    while (checkLength--) {\n                        if ((array[++start] & 0xC0) !== 0x80)\n                            return false;\n                    }\n                    return true;\n                } else {\n                    return false;\n                }\n            }\n        \n            function decodeUTF8(uint8array) {\n                let out = [];\n                let input = uint8array;\n                let i = 0;\n                let length = uint8array.length;\n        \n                while (i < length) {\n                    if (input[i] < 0x80) {\n                        out.push(String.fromCharCode(input[i]));\n                        ++i;\n                        continue;\n                    } else if (input[i] < 0xC0) {\n                        // fallthrough\n                    } else if (input[i] < 0xE0) {\n                        if (checkContinuation(input, i, 1)) {\n                            let ucs4 = (input[i] & 0x1F) << 6 | (input[i + 1] & 0x3F);\n                            if (ucs4 >= 0x80) {\n                                out.push(String.fromCharCode(ucs4 & 0xFFFF));\n                                i += 2;\n                                continue;\n                            }\n                        }\n                    } else if (input[i] < 0xF0) {\n                        if (checkContinuation(input, i, 2)) {\n                            let ucs4 = (input[i] & 0xF) << 12 | (input[i + 1] & 0x3F) << 6 | input[i + 2] & 0x3F;\n                            if (ucs4 >= 0x800 && (ucs4 & 0xF800) !== 0xD800) {\n                                out.push(String.fromCharCode(ucs4 & 0xFFFF));\n                                i += 3;\n                                continue;\n                            }\n                        }\n                    } else if (input[i] < 0xF8) {\n                        if (checkContinuation(input, i, 3)) {\n                            let ucs4 = (input[i] & 0x7) << 18 | (input[i + 1] & 0x3F) << 12\n                                | (input[i + 2] & 0x3F) << 6 | (input[i + 3] & 0x3F);\n                            if (ucs4 > 0x10000 && ucs4 < 0x110000) {\n                                ucs4 -= 0x10000;\n                                out.push(String.fromCharCode((ucs4 >>> 10) | 0xD800));\n                                out.push(String.fromCharCode((ucs4 & 0x3FF) | 0xDC00));\n                                i += 4;\n                                continue;\n                            }\n                        }\n                    }\n                    out.push(String.fromCharCode(0xFFFD));\n                    ++i;\n                }\n        \n                return out.join(\'\');\n            }\n        \n            // ....import {IllegalStateException} from \'../utils/exception.js\';\n            class IllegalStateException extends Error { }\n        \n            let le = (function () {\n                let buf = new ArrayBuffer(2);\n                (new DataView(buf)).setInt16(0, 256, true);  // little-endian write\n                return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE\n            })();\n        \n            class AMF {\n        \n                static parseScriptData(arrayBuffer, dataOffset, dataSize) {\n                    let data = {};\n        \n                    try {\n                        let name = AMF.parseValue(arrayBuffer, dataOffset, dataSize);\n                        let value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);\n        \n                        data[name.data] = value.data;\n                    } catch (e) {\n                        Log.e(\'AMF\', e.toString());\n                    }\n        \n                    return data;\n                }\n        \n                static parseObject(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 3) {\n                        throw new IllegalStateException(\'Data not enough when parse ScriptDataObject\');\n                    }\n                    let name = AMF.parseString(arrayBuffer, dataOffset, dataSize);\n                    let value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);\n                    let isObjectEnd = value.objectEnd;\n        \n                    return {\n                        data: {\n                            name: name.data,\n                            value: value.data\n                        },\n                        size: name.size + value.size,\n                        objectEnd: isObjectEnd\n                    };\n                }\n        \n                static parseVariable(arrayBuffer, dataOffset, dataSize) {\n                    return AMF.parseObject(arrayBuffer, dataOffset, dataSize);\n                }\n        \n                static parseString(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 2) {\n                        throw new IllegalStateException(\'Data not enough when parse String\');\n                    }\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n                    let length = v.getUint16(0, !le);\n        \n                    let str;\n                    if (length > 0) {\n                        str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 2, length));\n                    } else {\n                        str = \'\';\n                    }\n        \n                    return {\n                        data: str,\n                        size: 2 + length\n                    };\n                }\n        \n                static parseLongString(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 4) {\n                        throw new IllegalStateException(\'Data not enough when parse LongString\');\n                    }\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n                    let length = v.getUint32(0, !le);\n        \n                    let str;\n                    if (length > 0) {\n                        str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 4, length));\n                    } else {\n                        str = \'\';\n                    }\n        \n                    return {\n                        data: str,\n                        size: 4 + length\n                    };\n                }\n        \n                static parseDate(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 10) {\n                        throw new IllegalStateException(\'Data size invalid when parse Date\');\n                    }\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n                    let timestamp = v.getFloat64(0, !le);\n                    let localTimeOffset = v.getInt16(8, !le);\n                    timestamp += localTimeOffset * 60 * 1000;  // get UTC time\n        \n                    return {\n                        data: new Date(timestamp),\n                        size: 8 + 2\n                    };\n                }\n        \n                static parseValue(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 1) {\n                        throw new IllegalStateException(\'Data not enough when parse Value\');\n                    }\n        \n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n        \n                    let offset = 1;\n                    let type = v.getUint8(0);\n                    let value;\n                    let objectEnd = false;\n        \n                    try {\n                        switch (type) {\n                            case 0:  // Number(Double) type\n                                value = v.getFloat64(1, !le);\n                                offset += 8;\n                                break;\n                            case 1: {  // Boolean type\n                                let b = v.getUint8(1);\n                                value = b ? true : false;\n                                offset += 1;\n                                break;\n                            }\n                            case 2: {  // String type\n                                let amfstr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);\n                                value = amfstr.data;\n                                offset += amfstr.size;\n                                break;\n                            }\n                            case 3: { // Object(s) type\n                                value = {};\n                                let terminal = 0;  // workaround for malformed Objects which has missing ScriptDataObjectEnd\n                                if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {\n                                    terminal = 3;\n                                }\n                                while (offset < dataSize - 4) {  // 4 === type(UI8) + ScriptDataObjectEnd(UI24)\n                                    let amfobj = AMF.parseObject(arrayBuffer, dataOffset + offset, dataSize - offset - terminal);\n                                    if (amfobj.objectEnd)\n                                        break;\n                                    value[amfobj.data.name] = amfobj.data.value;\n                                    offset += amfobj.size;\n                                }\n                                if (offset <= dataSize - 3) {\n                                    let marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;\n                                    if (marker === 9) {\n                                        offset += 3;\n                                    }\n                                }\n                                break;\n                            }\n                            case 8: { // ECMA array type (Mixed array)\n                                value = {};\n                                offset += 4;  // ECMAArrayLength(UI32)\n                                let terminal = 0;  // workaround for malformed MixedArrays which has missing ScriptDataObjectEnd\n                                if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {\n                                    terminal = 3;\n                                }\n                                while (offset < dataSize - 8) {  // 8 === type(UI8) + ECMAArrayLength(UI32) + ScriptDataVariableEnd(UI24)\n                                    let amfvar = AMF.parseVariable(arrayBuffer, dataOffset + offset, dataSize - offset - terminal);\n                                    if (amfvar.objectEnd)\n                                        break;\n                                    value[amfvar.data.name] = amfvar.data.value;\n                                    offset += amfvar.size;\n                                }\n                                if (offset <= dataSize - 3) {\n                                    let marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;\n                                    if (marker === 9) {\n                                        offset += 3;\n                                    }\n                                }\n                                break;\n                            }\n                            case 9:  // ScriptDataObjectEnd\n                                value = undefined;\n                                offset = 1;\n                                objectEnd = true;\n                                break;\n                            case 10: {  // Strict array type\n                                // ScriptDataValue[n]. NOTE: according to video_file_format_spec_v10_1.pdf\n                                value = [];\n                                let strictArrayLength = v.getUint32(1, !le);\n                                offset += 4;\n                                for (let i = 0; i < strictArrayLength; i++) {\n                                    let val = AMF.parseValue(arrayBuffer, dataOffset + offset, dataSize - offset);\n                                    value.push(val.data);\n                                    offset += val.size;\n                                }\n                                break;\n                            }\n                            case 11: {  // Date type\n                                let date = AMF.parseDate(arrayBuffer, dataOffset + 1, dataSize - 1);\n                                value = date.data;\n                                offset += date.size;\n                                break;\n                            }\n                            case 12: {  // Long string type\n                                let amfLongStr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);\n                                value = amfLongStr.data;\n                                offset += amfLongStr.size;\n                                break;\n                            }\n                            default:\n                                // ignore and skip\n                                offset = dataSize;\n                                Log.w(\'AMF\', \'Unsupported AMF value type \' + type);\n                        }\n                    } catch (e) {\n                        Log.e(\'AMF\', e.toString());\n                    }\n        \n                    return {\n                        data: value,\n                        size: offset,\n                        objectEnd: objectEnd\n                    };\n                }\n        \n            }\n        \n            // ..import SPSParser from \'./sps-parser.js\';\n            // ....import ExpGolomb from \'./exp-golomb.js\';\n            // ......import {IllegalStateException, InvalidArgumentException} from \'../utils/exception.js\';\n            class InvalidArgumentException extends Error { }\n        \n            class ExpGolomb {\n        \n                constructor(uint8array) {\n                    this.TAG = \'ExpGolomb\';\n        \n                    this._buffer = uint8array;\n                    this._buffer_index = 0;\n                    this._total_bytes = uint8array.byteLength;\n                    this._total_bits = uint8array.byteLength * 8;\n                    this._current_word = 0;\n                    this._current_word_bits_left = 0;\n                }\n        \n                destroy() {\n                    this._buffer = null;\n                }\n        \n                _fillCurrentWord() {\n                    let buffer_bytes_left = this._total_bytes - this._buffer_index;\n                    if (buffer_bytes_left <= 0)\n                        throw new IllegalStateException(\'ExpGolomb: _fillCurrentWord() but no bytes available\');\n        \n                    let bytes_read = Math.min(4, buffer_bytes_left);\n                    let word = new Uint8Array(4);\n                    word.set(this._buffer.subarray(this._buffer_index, this._buffer_index + bytes_read));\n                    this._current_word = new DataView(word.buffer).getUint32(0, false);\n        \n                    this._buffer_index += bytes_read;\n                    this._current_word_bits_left = bytes_read * 8;\n                }\n        \n                readBits(bits) {\n                    if (bits > 32)\n                        throw new InvalidArgumentException(\'ExpGolomb: readBits() bits exceeded max 32bits!\');\n        \n                    if (bits <= this._current_word_bits_left) {\n                        let result = this._current_word >>> (32 - bits);\n                        this._current_word <<= bits;\n                        this._current_word_bits_left -= bits;\n                        return result;\n                    }\n        \n                    let result = this._current_word_bits_left ? this._current_word : 0;\n                    result = result >>> (32 - this._current_word_bits_left);\n                    let bits_need_left = bits - this._current_word_bits_left;\n        \n                    this._fillCurrentWord();\n                    let bits_read_next = Math.min(bits_need_left, this._current_word_bits_left);\n        \n                    let result2 = this._current_word >>> (32 - bits_read_next);\n                    this._current_word <<= bits_read_next;\n                    this._current_word_bits_left -= bits_read_next;\n        \n                    result = (result << bits_read_next) | result2;\n                    return result;\n                }\n        \n                readBool() {\n                    return this.readBits(1) === 1;\n                }\n        \n                readByte() {\n                    return this.readBits(8);\n                }\n        \n                _skipLeadingZero() {\n                    let zero_count;\n                    for (zero_count = 0; zero_count < this._current_word_bits_left; zero_count++) {\n                        if (0 !== (this._current_word & (0x80000000 >>> zero_count))) {\n                            this._current_word <<= zero_count;\n                            this._current_word_bits_left -= zero_count;\n                            return zero_count;\n                        }\n                    }\n                    this._fillCurrentWord();\n                    return zero_count + this._skipLeadingZero();\n                }\n        \n                readUEG() {  // unsigned exponential golomb\n                    let leading_zeros = this._skipLeadingZero();\n                    return this.readBits(leading_zeros + 1) - 1;\n                }\n        \n                readSEG() {  // signed exponential golomb\n                    let value = this.readUEG();\n                    if (value & 0x01) {\n                        return (value + 1) >>> 1;\n                    } else {\n                        return -1 * (value >>> 1);\n                    }\n                }\n        \n            }\n        \n            class SPSParser {\n        \n                static _ebsp2rbsp(uint8array) {\n                    let src = uint8array;\n                    let src_length = src.byteLength;\n                    let dst = new Uint8Array(src_length);\n                    let dst_idx = 0;\n        \n                    for (let i = 0; i < src_length; i++) {\n                        if (i >= 2) {\n                            // Unescape: Skip 0x03 after 00 00\n                            if (src[i] === 0x03 && src[i - 1] === 0x00 && src[i - 2] === 0x00) {\n                                continue;\n                            }\n                        }\n                        dst[dst_idx] = src[i];\n                        dst_idx++;\n                    }\n        \n                    return new Uint8Array(dst.buffer, 0, dst_idx);\n                }\n        \n                static parseSPS(uint8array) {\n                    let rbsp = SPSParser._ebsp2rbsp(uint8array);\n                    let gb = new ExpGolomb(rbsp);\n        \n                    gb.readByte();\n                    let profile_idc = gb.readByte();  // profile_idc\n                    gb.readByte();  // constraint_set_flags[5] + reserved_zero[3]\n                    let level_idc = gb.readByte();  // level_idc\n                    gb.readUEG();  // seq_parameter_set_id\n        \n                    let profile_string = SPSParser.getProfileString(profile_idc);\n                    let level_string = SPSParser.getLevelString(level_idc);\n                    let chroma_format_idc = 1;\n                    let chroma_format = 420;\n                    let chroma_format_table = [0, 420, 422, 444];\n                    let bit_depth = 8;\n        \n                    if (profile_idc === 100 || profile_idc === 110 || profile_idc === 122 ||\n                        profile_idc === 244 || profile_idc === 44 || profile_idc === 83 ||\n                        profile_idc === 86 || profile_idc === 118 || profile_idc === 128 ||\n                        profile_idc === 138 || profile_idc === 144) {\n        \n                        chroma_format_idc = gb.readUEG();\n                        if (chroma_format_idc === 3) {\n                            gb.readBits(1);  // separate_colour_plane_flag\n                        }\n                        if (chroma_format_idc <= 3) {\n                            chroma_format = chroma_format_table[chroma_format_idc];\n                        }\n        \n                        bit_depth = gb.readUEG() + 8;  // bit_depth_luma_minus8\n                        gb.readUEG();  // bit_depth_chroma_minus8\n                        gb.readBits(1);  // qpprime_y_zero_transform_bypass_flag\n                        if (gb.readBool()) {  // seq_scaling_matrix_present_flag\n                            let scaling_list_count = (chroma_format_idc !== 3) ? 8 : 12;\n                            for (let i = 0; i < scaling_list_count; i++) {\n                                if (gb.readBool()) {  // seq_scaling_list_present_flag\n                                    if (i < 6) {\n                                        SPSParser._skipScalingList(gb, 16);\n                                    } else {\n                                        SPSParser._skipScalingList(gb, 64);\n                                    }\n                                }\n                            }\n                        }\n                    }\n                    gb.readUEG();  // log2_max_frame_num_minus4\n                    let pic_order_cnt_type = gb.readUEG();\n                    if (pic_order_cnt_type === 0) {\n                        gb.readUEG();  // log2_max_pic_order_cnt_lsb_minus_4\n                    } else if (pic_order_cnt_type === 1) {\n                        gb.readBits(1);  // delta_pic_order_always_zero_flag\n                        gb.readSEG();  // offset_for_non_ref_pic\n                        gb.readSEG();  // offset_for_top_to_bottom_field\n                        let num_ref_frames_in_pic_order_cnt_cycle = gb.readUEG();\n                        for (let i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {\n                            gb.readSEG();  // offset_for_ref_frame\n                        }\n                    }\n                    gb.readUEG();  // max_num_ref_frames\n                    gb.readBits(1);  // gaps_in_frame_num_value_allowed_flag\n        \n                    let pic_width_in_mbs_minus1 = gb.readUEG();\n                    let pic_height_in_map_units_minus1 = gb.readUEG();\n        \n                    let frame_mbs_only_flag = gb.readBits(1);\n                    if (frame_mbs_only_flag === 0) {\n                        gb.readBits(1);  // mb_adaptive_frame_field_flag\n                    }\n                    gb.readBits(1);  // direct_8x8_inference_flag\n        \n                    let frame_crop_left_offset = 0;\n                    let frame_crop_right_offset = 0;\n                    let frame_crop_top_offset = 0;\n                    let frame_crop_bottom_offset = 0;\n        \n                    let frame_cropping_flag = gb.readBool();\n                    if (frame_cropping_flag) {\n                        frame_crop_left_offset = gb.readUEG();\n                        frame_crop_right_offset = gb.readUEG();\n                        frame_crop_top_offset = gb.readUEG();\n                        frame_crop_bottom_offset = gb.readUEG();\n                    }\n        \n                    let sar_width = 1, sar_height = 1;\n                    let fps = 0, fps_fixed = true, fps_num = 0, fps_den = 0;\n        \n                    let vui_parameters_present_flag = gb.readBool();\n                    if (vui_parameters_present_flag) {\n                        if (gb.readBool()) {  // aspect_ratio_info_present_flag\n                            let aspect_ratio_idc = gb.readByte();\n                            let sar_w_table = [1, 12, 10, 16, 40, 24, 20, 32, 80, 18, 15, 64, 160, 4, 3, 2];\n                            let sar_h_table = [1, 11, 11, 11, 33, 11, 11, 11, 33, 11, 11, 33, 99, 3, 2, 1];\n        \n                            if (aspect_ratio_idc > 0 && aspect_ratio_idc < 16) {\n                                sar_width = sar_w_table[aspect_ratio_idc - 1];\n                                sar_height = sar_h_table[aspect_ratio_idc - 1];\n                            } else if (aspect_ratio_idc === 255) {\n                                sar_width = gb.readByte() << 8 | gb.readByte();\n                                sar_height = gb.readByte() << 8 | gb.readByte();\n                            }\n                        }\n        \n                        if (gb.readBool()) {  // overscan_info_present_flag\n                            gb.readBool();  // overscan_appropriate_flag\n                        }\n                        if (gb.readBool()) {  // video_signal_type_present_flag\n                            gb.readBits(4);  // video_format & video_full_range_flag\n                            if (gb.readBool()) {  // colour_description_present_flag\n                                gb.readBits(24);  // colour_primaries & transfer_characteristics & matrix_coefficients\n                            }\n                        }\n                        if (gb.readBool()) {  // chroma_loc_info_present_flag\n                            gb.readUEG();  // chroma_sample_loc_type_top_field\n                            gb.readUEG();  // chroma_sample_loc_type_bottom_field\n                        }\n                        if (gb.readBool()) {  // timing_info_present_flag\n                            let num_units_in_tick = gb.readBits(32);\n                            let time_scale = gb.readBits(32);\n                            fps_fixed = gb.readBool();  // fixed_frame_rate_flag\n        \n                            fps_num = time_scale;\n                            fps_den = num_units_in_tick * 2;\n                            fps = fps_num / fps_den;\n                        }\n                    }\n        \n                    let sarScale = 1;\n                    if (sar_width !== 1 || sar_height !== 1) {\n                        sarScale = sar_width / sar_height;\n                    }\n        \n                    let crop_unit_x = 0, crop_unit_y = 0;\n                    if (chroma_format_idc === 0) {\n                        crop_unit_x = 1;\n                        crop_unit_y = 2 - frame_mbs_only_flag;\n                    } else {\n                        let sub_wc = (chroma_format_idc === 3) ? 1 : 2;\n                        let sub_hc = (chroma_format_idc === 1) ? 2 : 1;\n                        crop_unit_x = sub_wc;\n                        crop_unit_y = sub_hc * (2 - frame_mbs_only_flag);\n                    }\n        \n                    let codec_width = (pic_width_in_mbs_minus1 + 1) * 16;\n                    let codec_height = (2 - frame_mbs_only_flag) * ((pic_height_in_map_units_minus1 + 1) * 16);\n        \n                    codec_width -= (frame_crop_left_offset + frame_crop_right_offset) * crop_unit_x;\n                    codec_height -= (frame_crop_top_offset + frame_crop_bottom_offset) * crop_unit_y;\n        \n                    let present_width = Math.ceil(codec_width * sarScale);\n        \n                    gb.destroy();\n                    gb = null;\n        \n                    return {\n                        profile_string: profile_string,  // baseline, high, high10, ...\n                        level_string: level_string,  // 3, 3.1, 4, 4.1, 5, 5.1, ...\n                        bit_depth: bit_depth,  // 8bit, 10bit, ...\n                        chroma_format: chroma_format,  // 4:2:0, 4:2:2, ...\n                        chroma_format_string: SPSParser.getChromaFormatString(chroma_format),\n        \n                        frame_rate: {\n                            fixed: fps_fixed,\n                            fps: fps,\n                            fps_den: fps_den,\n                            fps_num: fps_num\n                        },\n        \n                        sar_ratio: {\n                            width: sar_width,\n                            height: sar_height\n                        },\n        \n                        codec_size: {\n                            width: codec_width,\n                            height: codec_height\n                        },\n        \n                        present_size: {\n                            width: present_width,\n                            height: codec_height\n                        }\n                    };\n                }\n        \n                static _skipScalingList(gb, count) {\n                    let last_scale = 8, next_scale = 8;\n                    let delta_scale = 0;\n                    for (let i = 0; i < count; i++) {\n                        if (next_scale !== 0) {\n                            delta_scale = gb.readSEG();\n                            next_scale = (last_scale + delta_scale + 256) % 256;\n                        }\n                        last_scale = (next_scale === 0) ? last_scale : next_scale;\n                    }\n                }\n        \n                static getProfileString(profile_idc) {\n                    switch (profile_idc) {\n                        case 66:\n                            return \'Baseline\';\n                        case 77:\n                            return \'Main\';\n                        case 88:\n                            return \'Extended\';\n                        case 100:\n                            return \'High\';\n                        case 110:\n                            return \'High10\';\n                        case 122:\n                            return \'High422\';\n                        case 244:\n                            return \'High444\';\n                        default:\n                            return \'Unknown\';\n                    }\n                }\n        \n                static getLevelString(level_idc) {\n                    return (level_idc / 10).toFixed(1);\n                }\n        \n                static getChromaFormatString(chroma) {\n                    switch (chroma) {\n                        case 420:\n                            return \'4:2:0\';\n                        case 422:\n                            return \'4:2:2\';\n                        case 444:\n                            return \'4:4:4\';\n                        default:\n                            return \'Unknown\';\n                    }\n                }\n        \n            }\n        \n            // ..import DemuxErrors from \'./demux-errors.js\';\n            const DemuxErrors = {\n                OK: \'OK\',\n                FORMAT_ERROR: \'FormatError\',\n                FORMAT_UNSUPPORTED: \'FormatUnsupported\',\n                CODEC_UNSUPPORTED: \'CodecUnsupported\'\n            };\n        \n            // ..import MediaInfo from \'../core/media-info.js\';\n            class MediaInfo {\n        \n                constructor() {\n                    this.mimeType = null;\n                    this.duration = null;\n        \n                    this.hasAudio = null;\n                    this.hasVideo = null;\n                    this.audioCodec = null;\n                    this.videoCodec = null;\n                    this.audioDataRate = null;\n                    this.videoDataRate = null;\n        \n                    this.audioSampleRate = null;\n                    this.audioChannelCount = null;\n        \n                    this.width = null;\n                    this.height = null;\n                    this.fps = null;\n                    this.profile = null;\n                    this.level = null;\n                    this.chromaFormat = null;\n                    this.sarNum = null;\n                    this.sarDen = null;\n        \n                    this.metadata = null;\n                    this.segments = null;  // MediaInfo[]\n                    this.segmentCount = null;\n                    this.hasKeyframesIndex = null;\n                    this.keyframesIndex = null;\n                }\n        \n                isComplete() {\n                    let audioInfoComplete = (this.hasAudio === false) ||\n                        (this.hasAudio === true &&\n                            this.audioCodec != null &&\n                            this.audioSampleRate != null &&\n                            this.audioChannelCount != null);\n        \n                    let videoInfoComplete = (this.hasVideo === false) ||\n                        (this.hasVideo === true &&\n                            this.videoCodec != null &&\n                            this.width != null &&\n                            this.height != null &&\n                            this.fps != null &&\n                            this.profile != null &&\n                            this.level != null &&\n                            this.chromaFormat != null &&\n                            this.sarNum != null &&\n                            this.sarDen != null);\n        \n                    // keyframesIndex may not be present\n                    return this.mimeType != null &&\n                        this.duration != null &&\n                        this.metadata != null &&\n                        this.hasKeyframesIndex != null &&\n                        audioInfoComplete &&\n                        videoInfoComplete;\n                }\n        \n                isSeekable() {\n                    return this.hasKeyframesIndex === true;\n                }\n        \n                getNearestKeyframe(milliseconds) {\n                    if (this.keyframesIndex == null) {\n                        return null;\n                    }\n        \n                    let table = this.keyframesIndex;\n                    let keyframeIdx = this._search(table.times, milliseconds);\n        \n                    return {\n                        index: keyframeIdx,\n                        milliseconds: table.times[keyframeIdx],\n                        fileposition: table.filepositions[keyframeIdx]\n                    };\n                }\n        \n                _search(list, value) {\n                    let idx = 0;\n        \n                    let last = list.length - 1;\n                    let mid = 0;\n                    let lbound = 0;\n                    let ubound = last;\n        \n                    if (value < list[0]) {\n                        idx = 0;\n                        lbound = ubound + 1;  // skip search\n                    }\n        \n                    while (lbound <= ubound) {\n                        mid = lbound + Math.floor((ubound - lbound) / 2);\n                        if (mid === last || (value >= list[mid] && value < list[mid + 1])) {\n                            idx = mid;\n                            break;\n                        } else if (list[mid] < value) {\n                            lbound = mid + 1;\n                        } else {\n                            ubound = mid - 1;\n                        }\n                    }\n        \n                    return idx;\n                }\n        \n            }\n        \n            function Swap16(src) {\n                return (((src >>> 8) & 0xFF) |\n                    ((src & 0xFF) << 8));\n            }\n        \n            function Swap32(src) {\n                return (((src & 0xFF000000) >>> 24) |\n                    ((src & 0x00FF0000) >>> 8) |\n                    ((src & 0x0000FF00) << 8) |\n                    ((src & 0x000000FF) << 24));\n            }\n        \n            function ReadBig32(array, index) {\n                return ((array[index] << 24) |\n                    (array[index + 1] << 16) |\n                    (array[index + 2] << 8) |\n                    (array[index + 3]));\n            }\n        \n            class FLVDemuxer {\n        \n                /**\n                 * Create a new FLV demuxer\n                 * @param {Object} probeData\n                 * @param {boolean} probeData.match\n                 * @param {number} probeData.consumed\n                 * @param {number} probeData.dataOffset\n                 * @param {booleam} probeData.hasAudioTrack\n                 * @param {boolean} probeData.hasVideoTrack\n                 * @param {*} config \n                 */\n                constructor(probeData, config) {\n                    this.TAG = \'FLVDemuxer\';\n        \n                    this._config = config;\n        \n                    this._onError = null;\n                    this._onMediaInfo = null;\n                    this._onTrackMetadata = null;\n                    this._onDataAvailable = null;\n        \n                    this._dataOffset = probeData.dataOffset;\n                    this._firstParse = true;\n                    this._dispatch = false;\n        \n                    this._hasAudio = probeData.hasAudioTrack;\n                    this._hasVideo = probeData.hasVideoTrack;\n        \n                    this._hasAudioFlagOverrided = false;\n                    this._hasVideoFlagOverrided = false;\n        \n                    this._audioInitialMetadataDispatched = false;\n                    this._videoInitialMetadataDispatched = false;\n        \n                    this._mediaInfo = new MediaInfo();\n                    this._mediaInfo.hasAudio = this._hasAudio;\n                    this._mediaInfo.hasVideo = this._hasVideo;\n                    this._metadata = null;\n                    this._audioMetadata = null;\n                    this._videoMetadata = null;\n        \n                    this._naluLengthSize = 4;\n                    this._timestampBase = 0;  // int32, in milliseconds\n                    this._timescale = 1000;\n                    this._duration = 0;  // int32, in milliseconds\n                    this._durationOverrided = false;\n                    this._referenceFrameRate = {\n                        fixed: true,\n                        fps: 23.976,\n                        fps_num: 23976,\n                        fps_den: 1000\n                    };\n        \n                    this._flvSoundRateTable = [5500, 11025, 22050, 44100, 48000];\n        \n                    this._mpegSamplingRates = [\n                        96000, 88200, 64000, 48000, 44100, 32000,\n                        24000, 22050, 16000, 12000, 11025, 8000, 7350\n                    ];\n        \n                    this._mpegAudioV10SampleRateTable = [44100, 48000, 32000, 0];\n                    this._mpegAudioV20SampleRateTable = [22050, 24000, 16000, 0];\n                    this._mpegAudioV25SampleRateTable = [11025, 12000, 8000, 0];\n        \n                    this._mpegAudioL1BitRateTable = [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, -1];\n                    this._mpegAudioL2BitRateTable = [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, -1];\n                    this._mpegAudioL3BitRateTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, -1];\n        \n                    this._videoTrack = { type: \'video\', id: 1, sequenceNumber: 0, samples: [], length: 0 };\n                    this._audioTrack = { type: \'audio\', id: 2, sequenceNumber: 0, samples: [], length: 0 };\n        \n                    this._littleEndian = (function () {\n                        let buf = new ArrayBuffer(2);\n                        (new DataView(buf)).setInt16(0, 256, true);  // little-endian write\n                        return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE\n                    })();\n                }\n        \n                destroy() {\n                    this._mediaInfo = null;\n                    this._metadata = null;\n                    this._audioMetadata = null;\n                    this._videoMetadata = null;\n                    this._videoTrack = null;\n                    this._audioTrack = null;\n        \n                    this._onError = null;\n                    this._onMediaInfo = null;\n                    this._onTrackMetadata = null;\n                    this._onDataAvailable = null;\n                }\n        \n                /**\n                 * Probe the flv data\n                 * @param {ArrayBuffer} buffer\n                 * @returns {Object} - probeData to be feed into constructor\n                 */\n                static probe(buffer) {\n                    let data = new Uint8Array(buffer);\n                    let mismatch = { match: false };\n        \n                    if (data[0] !== 0x46 || data[1] !== 0x4C || data[2] !== 0x56 || data[3] !== 0x01) {\n                        return mismatch;\n                    }\n        \n                    let hasAudio = ((data[4] & 4) >>> 2) !== 0;\n                    let hasVideo = (data[4] & 1) !== 0;\n        \n                    let offset = ReadBig32(data, 5);\n        \n                    if (offset < 9) {\n                        return mismatch;\n                    }\n        \n                    return {\n                        match: true,\n                        consumed: offset,\n                        dataOffset: offset,\n                        hasAudioTrack: hasAudio,\n                        hasVideoTrack: hasVideo\n                    };\n                }\n        \n                bindDataSource(loader) {\n                    loader.onDataArrival = this.parseChunks.bind(this);\n                    return this;\n                }\n        \n                // prototype: function(type: string, metadata: any): void\n                get onTrackMetadata() {\n                    return this._onTrackMetadata;\n                }\n        \n                set onTrackMetadata(callback) {\n                    this._onTrackMetadata = callback;\n                }\n        \n                // prototype: function(mediaInfo: MediaInfo): void\n                get onMediaInfo() {\n                    return this._onMediaInfo;\n                }\n        \n                set onMediaInfo(callback) {\n                    this._onMediaInfo = callback;\n                }\n        \n                // prototype: function(type: number, info: string): void\n                get onError() {\n                    return this._onError;\n                }\n        \n                set onError(callback) {\n                    this._onError = callback;\n                }\n        \n                // prototype: function(videoTrack: any, audioTrack: any): void\n                get onDataAvailable() {\n                    return this._onDataAvailable;\n                }\n        \n                set onDataAvailable(callback) {\n                    this._onDataAvailable = callback;\n                }\n        \n                // timestamp base for output samples, must be in milliseconds\n                get timestampBase() {\n                    return this._timestampBase;\n                }\n        \n                set timestampBase(base) {\n                    this._timestampBase = base;\n                }\n        \n                get overridedDuration() {\n                    return this._duration;\n                }\n        \n                // Force-override media duration. Must be in milliseconds, int32\n                set overridedDuration(duration) {\n                    this._durationOverrided = true;\n                    this._duration = duration;\n                    this._mediaInfo.duration = duration;\n                }\n        \n                // Force-override audio track present flag, boolean\n                set overridedHasAudio(hasAudio) {\n                    this._hasAudioFlagOverrided = true;\n                    this._hasAudio = hasAudio;\n                    this._mediaInfo.hasAudio = hasAudio;\n                }\n        \n                // Force-override video track present flag, boolean\n                set overridedHasVideo(hasVideo) {\n                    this._hasVideoFlagOverrided = true;\n                    this._hasVideo = hasVideo;\n                    this._mediaInfo.hasVideo = hasVideo;\n                }\n        \n                resetMediaInfo() {\n                    this._mediaInfo = new MediaInfo();\n                }\n        \n                _isInitialMetadataDispatched() {\n                    if (this._hasAudio && this._hasVideo) {  // both audio & video\n                        return this._audioInitialMetadataDispatched && this._videoInitialMetadataDispatched;\n                    }\n                    if (this._hasAudio && !this._hasVideo) {  // audio only\n                        return this._audioInitialMetadataDispatched;\n                    }\n                    if (!this._hasAudio && this._hasVideo) {  // video only\n                        return this._videoInitialMetadataDispatched;\n                    }\n                    return false;\n                }\n        \n                // function parseChunks(chunk: ArrayBuffer, byteStart: number): number;\n                parseChunks(chunk, byteStart) {\n                    if (!this._onError || !this._onMediaInfo || !this._onTrackMetadata || !this._onDataAvailable) {\n                        throw new IllegalStateException(\'Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified\');\n                    }\n        \n                    // qli5: fix nonzero byteStart\n                    let offset = byteStart || 0;\n                    let le = this._littleEndian;\n        \n                    if (byteStart === 0) {  // buffer with FLV header\n                        if (chunk.byteLength > 13) {\n                            let probeData = FLVDemuxer.probe(chunk);\n                            offset = probeData.dataOffset;\n                        } else {\n                            return 0;\n                        }\n                    }\n        \n                    if (this._firstParse) {  // handle PreviousTagSize0 before Tag1\n                        this._firstParse = false;\n                        if (offset !== this._dataOffset) {\n                            Log.w(this.TAG, \'First time parsing but chunk byteStart invalid!\');\n                        }\n        \n                        let v = new DataView(chunk, offset);\n                        let prevTagSize0 = v.getUint32(0, !le);\n                        if (prevTagSize0 !== 0) {\n                            Log.w(this.TAG, \'PrevTagSize0 !== 0 !!!\');\n                        }\n                        offset += 4;\n                    }\n        \n                    while (offset < chunk.byteLength) {\n                        this._dispatch = true;\n        \n                        let v = new DataView(chunk, offset);\n        \n                        if (offset + 11 + 4 > chunk.byteLength) {\n                            // data not enough for parsing an flv tag\n                            break;\n                        }\n        \n                        let tagType = v.getUint8(0);\n                        let dataSize = v.getUint32(0, !le) & 0x00FFFFFF;\n        \n                        if (offset + 11 + dataSize + 4 > chunk.byteLength) {\n                            // data not enough for parsing actual data body\n                            break;\n                        }\n        \n                        if (tagType !== 8 && tagType !== 9 && tagType !== 18) {\n                            Log.w(this.TAG, `Unsupported tag type ${tagType}, skipped`);\n                            // consume the whole tag (skip it)\n                            offset += 11 + dataSize + 4;\n                            continue;\n                        }\n        \n                        let ts2 = v.getUint8(4);\n                        let ts1 = v.getUint8(5);\n                        let ts0 = v.getUint8(6);\n                        let ts3 = v.getUint8(7);\n        \n                        let timestamp = ts0 | (ts1 << 8) | (ts2 << 16) | (ts3 << 24);\n        \n                        let streamId = v.getUint32(7, !le) & 0x00FFFFFF;\n                        if (streamId !== 0) {\n                            Log.w(this.TAG, \'Meet tag which has StreamID != 0!\');\n                        }\n        \n                        let dataOffset = offset + 11;\n        \n                        switch (tagType) {\n                            case 8:  // Audio\n                                this._parseAudioData(chunk, dataOffset, dataSize, timestamp);\n                                break;\n                            case 9:  // Video\n                                this._parseVideoData(chunk, dataOffset, dataSize, timestamp, byteStart + offset);\n                                break;\n                            case 18:  // ScriptDataObject\n                                this._parseScriptData(chunk, dataOffset, dataSize);\n                                break;\n                        }\n        \n                        let prevTagSize = v.getUint32(11 + dataSize, !le);\n                        if (prevTagSize !== 11 + dataSize) {\n                            Log.w(this.TAG, `Invalid PrevTagSize ${prevTagSize}`);\n                        }\n        \n                        offset += 11 + dataSize + 4;  // tagBody + dataSize + prevTagSize\n                    }\n        \n                    // dispatch parsed frames to consumer (typically, the remuxer)\n                    if (this._isInitialMetadataDispatched()) {\n                        if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {\n                            this._onDataAvailable(this._audioTrack, this._videoTrack);\n                        }\n                    }\n        \n                    return offset;  // consumed bytes, just equals latest offset index\n                }\n        \n                _parseScriptData(arrayBuffer, dataOffset, dataSize) {\n                    let scriptData = AMF.parseScriptData(arrayBuffer, dataOffset, dataSize);\n        \n                    if (scriptData.hasOwnProperty(\'onMetaData\')) {\n                        if (scriptData.onMetaData == null || typeof scriptData.onMetaData !== \'object\') {\n                            Log.w(this.TAG, \'Invalid onMetaData structure!\');\n                            return;\n                        }\n                        if (this._metadata) {\n                            Log.w(this.TAG, \'Found another onMetaData tag!\');\n                        }\n                        this._metadata = scriptData;\n                        let onMetaData = this._metadata.onMetaData;\n        \n                        if (typeof onMetaData.hasAudio === \'boolean\') {  // hasAudio\n                            if (this._hasAudioFlagOverrided === false) {\n                                this._hasAudio = onMetaData.hasAudio;\n                                this._mediaInfo.hasAudio = this._hasAudio;\n                            }\n                        }\n                        if (typeof onMetaData.hasVideo === \'boolean\') {  // hasVideo\n                            if (this._hasVideoFlagOverrided === false) {\n                                this._hasVideo = onMetaData.hasVideo;\n                                this._mediaInfo.hasVideo = this._hasVideo;\n                            }\n                        }\n                        if (typeof onMetaData.audiodatarate === \'number\') {  // audiodatarate\n                            this._mediaInfo.audioDataRate = onMetaData.audiodatarate;\n                        }\n                        if (typeof onMetaData.videodatarate === \'number\') {  // videodatarate\n                            this._mediaInfo.videoDataRate = onMetaData.videodatarate;\n                        }\n                        if (typeof onMetaData.width === \'number\') {  // width\n                            this._mediaInfo.width = onMetaData.width;\n                        }\n                        if (typeof onMetaData.height === \'number\') {  // height\n                            this._mediaInfo.height = onMetaData.height;\n                        }\n                        if (typeof onMetaData.duration === \'number\') {  // duration\n                            if (!this._durationOverrided) {\n                                let duration = Math.floor(onMetaData.duration * this._timescale);\n                                this._duration = duration;\n                                this._mediaInfo.duration = duration;\n                            }\n                        } else {\n                            this._mediaInfo.duration = 0;\n                        }\n                        if (typeof onMetaData.framerate === \'number\') {  // framerate\n                            let fps_num = Math.floor(onMetaData.framerate * 1000);\n                            if (fps_num > 0) {\n                                let fps = fps_num / 1000;\n                                this._referenceFrameRate.fixed = true;\n                                this._referenceFrameRate.fps = fps;\n                                this._referenceFrameRate.fps_num = fps_num;\n                                this._referenceFrameRate.fps_den = 1000;\n                                this._mediaInfo.fps = fps;\n                            }\n                        }\n                        if (typeof onMetaData.keyframes === \'object\') {  // keyframes\n                            this._mediaInfo.hasKeyframesIndex = true;\n                            let keyframes = onMetaData.keyframes;\n                            this._mediaInfo.keyframesIndex = this._parseKeyframesIndex(keyframes);\n                            onMetaData.keyframes = null;  // keyframes has been extracted, remove it\n                        } else {\n                            this._mediaInfo.hasKeyframesIndex = false;\n                        }\n                        this._dispatch = false;\n                        this._mediaInfo.metadata = onMetaData;\n                        Log.v(this.TAG, \'Parsed onMetaData\');\n                        if (this._mediaInfo.isComplete()) {\n                            this._onMediaInfo(this._mediaInfo);\n                        }\n                    }\n                }\n        \n                _parseKeyframesIndex(keyframes) {\n                    let times = [];\n                    let filepositions = [];\n        \n                    // ignore first keyframe which is actually AVC Sequence Header (AVCDecoderConfigurationRecord)\n                    for (let i = 1; i < keyframes.times.length; i++) {\n                        let time = this._timestampBase + Math.floor(keyframes.times[i] * 1000);\n                        times.push(time);\n                        filepositions.push(keyframes.filepositions[i]);\n                    }\n        \n                    return {\n                        times: times,\n                        filepositions: filepositions\n                    };\n                }\n        \n                _parseAudioData(arrayBuffer, dataOffset, dataSize, tagTimestamp) {\n                    if (dataSize <= 1) {\n                        Log.w(this.TAG, \'Flv: Invalid audio packet, missing SoundData payload!\');\n                        return;\n                    }\n        \n                    if (this._hasAudioFlagOverrided === true && this._hasAudio === false) {\n                        // If hasAudio: false indicated explicitly in MediaDataSource,\n                        // Ignore all the audio packets\n                        return;\n                    }\n        \n                    let le = this._littleEndian;\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n        \n                    let soundSpec = v.getUint8(0);\n        \n                    let soundFormat = soundSpec >>> 4;\n                    if (soundFormat !== 2 && soundFormat !== 10) {  // MP3 or AAC\n                        this._onError(DemuxErrors.CODEC_UNSUPPORTED, \'Flv: Unsupported audio codec idx: \' + soundFormat);\n                        return;\n                    }\n        \n                    let soundRate = 0;\n                    let soundRateIndex = (soundSpec & 12) >>> 2;\n                    if (soundRateIndex >= 0 && soundRateIndex <= 4) {\n                        soundRate = this._flvSoundRateTable[soundRateIndex];\n                    } else {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: Invalid audio sample rate idx: \' + soundRateIndex);\n                        return;\n                    }\n        \n                    let soundSize = (soundSpec & 2) >>> 1;  // unused\n                    let soundType = (soundSpec & 1);\n        \n        \n                    let meta = this._audioMetadata;\n                    let track = this._audioTrack;\n        \n                    if (!meta) {\n                        if (this._hasAudio === false && this._hasAudioFlagOverrided === false) {\n                            this._hasAudio = true;\n                            this._mediaInfo.hasAudio = true;\n                        }\n        \n                        // initial metadata\n                        meta = this._audioMetadata = {};\n                        meta.type = \'audio\';\n                        meta.id = track.id;\n                        meta.timescale = this._timescale;\n                        meta.duration = this._duration;\n                        meta.audioSampleRate = soundRate;\n                        meta.channelCount = (soundType === 0 ? 1 : 2);\n                    }\n        \n                    if (soundFormat === 10) {  // AAC\n                        let aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);\n                        if (aacData == undefined) {\n                            return;\n                        }\n        \n                        if (aacData.packetType === 0) {  // AAC sequence header (AudioSpecificConfig)\n                            if (meta.config) {\n                                Log.w(this.TAG, \'Found another AudioSpecificConfig!\');\n                            }\n                            let misc = aacData.data;\n                            meta.audioSampleRate = misc.samplingRate;\n                            meta.channelCount = misc.channelCount;\n                            meta.codec = misc.codec;\n                            meta.originalCodec = misc.originalCodec;\n                            meta.config = misc.config;\n                            // added by qli5\n                            meta.configRaw = misc.configRaw;\n                            // The decode result of an aac sample is 1024 PCM samples\n                            meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;\n                            Log.v(this.TAG, \'Parsed AudioSpecificConfig\');\n        \n                            if (this._isInitialMetadataDispatched()) {\n                                // Non-initial metadata, force dispatch (or flush) parsed frames to remuxer\n                                if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {\n                                    this._onDataAvailable(this._audioTrack, this._videoTrack);\n                                }\n                            } else {\n                                this._audioInitialMetadataDispatched = true;\n                            }\n                            // then notify new metadata\n                            this._dispatch = false;\n                            this._onTrackMetadata(\'audio\', meta);\n        \n                            let mi = this._mediaInfo;\n                            mi.audioCodec = meta.originalCodec;\n                            mi.audioSampleRate = meta.audioSampleRate;\n                            mi.audioChannelCount = meta.channelCount;\n                            if (mi.hasVideo) {\n                                if (mi.videoCodec != null) {\n                                    mi.mimeType = \'video/x-flv; codecs="\' + mi.videoCodec + \',\' + mi.audioCodec + \'"\';\n                                }\n                            } else {\n                                mi.mimeType = \'video/x-flv; codecs="\' + mi.audioCodec + \'"\';\n                            }\n                            if (mi.isComplete()) {\n                                this._onMediaInfo(mi);\n                            }\n                        } else if (aacData.packetType === 1) {  // AAC raw frame data\n                            let dts = this._timestampBase + tagTimestamp;\n                            let aacSample = { unit: aacData.data, length: aacData.data.byteLength, dts: dts, pts: dts };\n                            track.samples.push(aacSample);\n                            track.length += aacData.data.length;\n                        } else {\n                            Log.e(this.TAG, `Flv: Unsupported AAC data type ${aacData.packetType}`);\n                        }\n                    } else if (soundFormat === 2) {  // MP3\n                        if (!meta.codec) {\n                            // We need metadata for mp3 audio track, extract info from frame header\n                            let misc = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, true);\n                            if (misc == undefined) {\n                                return;\n                            }\n                            meta.audioSampleRate = misc.samplingRate;\n                            meta.channelCount = misc.channelCount;\n                            meta.codec = misc.codec;\n                            meta.originalCodec = misc.originalCodec;\n                            // The decode result of an mp3 sample is 1152 PCM samples\n                            meta.refSampleDuration = 1152 / meta.audioSampleRate * meta.timescale;\n                            Log.v(this.TAG, \'Parsed MPEG Audio Frame Header\');\n        \n                            this._audioInitialMetadataDispatched = true;\n                            this._onTrackMetadata(\'audio\', meta);\n        \n                            let mi = this._mediaInfo;\n                            mi.audioCodec = meta.codec;\n                            mi.audioSampleRate = meta.audioSampleRate;\n                            mi.audioChannelCount = meta.channelCount;\n                            mi.audioDataRate = misc.bitRate;\n                            if (mi.hasVideo) {\n                                if (mi.videoCodec != null) {\n                                    mi.mimeType = \'video/x-flv; codecs="\' + mi.videoCodec + \',\' + mi.audioCodec + \'"\';\n                                }\n                            } else {\n                                mi.mimeType = \'video/x-flv; codecs="\' + mi.audioCodec + \'"\';\n                            }\n                            if (mi.isComplete()) {\n                                this._onMediaInfo(mi);\n                            }\n                        }\n        \n                        // This packet is always a valid audio packet, extract it\n                        let data = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, false);\n                        if (data == undefined) {\n                            return;\n                        }\n                        let dts = this._timestampBase + tagTimestamp;\n                        let mp3Sample = { unit: data, length: data.byteLength, dts: dts, pts: dts };\n                        track.samples.push(mp3Sample);\n                        track.length += data.length;\n                    }\n                }\n        \n                _parseAACAudioData(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize <= 1) {\n                        Log.w(this.TAG, \'Flv: Invalid AAC packet, missing AACPacketType or/and Data!\');\n                        return;\n                    }\n        \n                    let result = {};\n                    let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);\n        \n                    result.packetType = array[0];\n        \n                    if (array[0] === 0) {\n                        result.data = this._parseAACAudioSpecificConfig(arrayBuffer, dataOffset + 1, dataSize - 1);\n                    } else {\n                        result.data = array.subarray(1);\n                    }\n        \n                    return result;\n                }\n        \n                _parseAACAudioSpecificConfig(arrayBuffer, dataOffset, dataSize) {\n                    let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);\n                    let config = null;\n        \n                    /* Audio Object Type:\n                       0: Null\n                       1: AAC Main\n                       2: AAC LC\n                       3: AAC SSR (Scalable Sample Rate)\n                       4: AAC LTP (Long Term Prediction)\n                       5: HE-AAC / SBR (Spectral Band Replication)\n                       6: AAC Scalable\n                    */\n        \n                    let audioObjectType = 0;\n                    let originalAudioObjectType = 0;\n                    let audioExtensionObjectType = null;\n                    let samplingIndex = 0;\n                    let extensionSamplingIndex = null;\n        \n                    // 5 bits\n                    audioObjectType = originalAudioObjectType = array[0] >>> 3;\n                    // 4 bits\n                    samplingIndex = ((array[0] & 0x07) << 1) | (array[1] >>> 7);\n                    if (samplingIndex < 0 || samplingIndex >= this._mpegSamplingRates.length) {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: AAC invalid sampling frequency index!\');\n                        return;\n                    }\n        \n                    let samplingFrequence = this._mpegSamplingRates[samplingIndex];\n        \n                    // 4 bits\n                    let channelConfig = (array[1] & 0x78) >>> 3;\n                    if (channelConfig < 0 || channelConfig >= 8) {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: AAC invalid channel configuration\');\n                        return;\n                    }\n        \n                    if (audioObjectType === 5) {  // HE-AAC?\n                        // 4 bits\n                        extensionSamplingIndex = ((array[1] & 0x07) << 1) | (array[2] >>> 7);\n                        // 5 bits\n                        audioExtensionObjectType = (array[2] & 0x7C) >>> 2;\n                    }\n        \n                    // workarounds for various browsers\n                    let userAgent = navigator.userAgent.toLowerCase();\n        \n                    if (userAgent.indexOf(\'firefox\') !== -1) {\n                        // firefox: use SBR (HE-AAC) if freq less than 24kHz\n                        if (samplingIndex >= 6) {\n                            audioObjectType = 5;\n                            config = new Array(4);\n                            extensionSamplingIndex = samplingIndex - 3;\n                        } else {  // use LC-AAC\n                            audioObjectType = 2;\n                            config = new Array(2);\n                            extensionSamplingIndex = samplingIndex;\n                        }\n                    } else if (userAgent.indexOf(\'android\') !== -1) {\n                        // android: always use LC-AAC\n                        audioObjectType = 2;\n                        config = new Array(2);\n                        extensionSamplingIndex = samplingIndex;\n                    } else {\n                        // for other browsers, e.g. chrome...\n                        // Always use HE-AAC to make it easier to switch aac codec profile\n                        audioObjectType = 5;\n                        extensionSamplingIndex = samplingIndex;\n                        config = new Array(4);\n        \n                        if (samplingIndex >= 6) {\n                            extensionSamplingIndex = samplingIndex - 3;\n                        } else if (channelConfig === 1) {  // Mono channel\n                            audioObjectType = 2;\n                            config = new Array(2);\n                            extensionSamplingIndex = samplingIndex;\n                        }\n                    }\n        \n                    config[0] = audioObjectType << 3;\n                    config[0] |= (samplingIndex & 0x0F) >>> 1;\n                    config[1] = (samplingIndex & 0x0F) << 7;\n                    config[1] |= (channelConfig & 0x0F) << 3;\n                    if (audioObjectType === 5) {\n                        config[1] |= ((extensionSamplingIndex & 0x0F) >>> 1);\n                        config[2] = (extensionSamplingIndex & 0x01) << 7;\n                        // extended audio object type: force to 2 (LC-AAC)\n                        config[2] |= (2 << 2);\n                        config[3] = 0;\n                    }\n        \n                    return {\n                        // configRaw: added by qli5\n                        configRaw: array,\n                        config: config,\n                        samplingRate: samplingFrequence,\n                        channelCount: channelConfig,\n                        codec: \'mp4a.40.\' + audioObjectType,\n                        originalCodec: \'mp4a.40.\' + originalAudioObjectType\n                    };\n                }\n        \n                _parseMP3AudioData(arrayBuffer, dataOffset, dataSize, requestHeader) {\n                    if (dataSize < 4) {\n                        Log.w(this.TAG, \'Flv: Invalid MP3 packet, header missing!\');\n                        return;\n                    }\n        \n                    let le = this._littleEndian;\n                    let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);\n                    let result = null;\n        \n                    if (requestHeader) {\n                        if (array[0] !== 0xFF) {\n                            return;\n                        }\n                        let ver = (array[1] >>> 3) & 0x03;\n                        let layer = (array[1] & 0x06) >> 1;\n        \n                        let bitrate_index = (array[2] & 0xF0) >>> 4;\n                        let sampling_freq_index = (array[2] & 0x0C) >>> 2;\n        \n                        let channel_mode = (array[3] >>> 6) & 0x03;\n                        let channel_count = channel_mode !== 3 ? 2 : 1;\n        \n                        let sample_rate = 0;\n                        let bit_rate = 0;\n                        let object_type = 34;  // Layer-3, listed in MPEG-4 Audio Object Types\n        \n                        let codec = \'mp3\';\n        \n                        switch (ver) {\n                            case 0:  // MPEG 2.5\n                                sample_rate = this._mpegAudioV25SampleRateTable[sampling_freq_index];\n                                break;\n                            case 2:  // MPEG 2\n                                sample_rate = this._mpegAudioV20SampleRateTable[sampling_freq_index];\n                                break;\n                            case 3:  // MPEG 1\n                                sample_rate = this._mpegAudioV10SampleRateTable[sampling_freq_index];\n                                break;\n                        }\n        \n                        switch (layer) {\n                            case 1:  // Layer 3\n                                object_type = 34;\n                                if (bitrate_index < this._mpegAudioL3BitRateTable.length) {\n                                    bit_rate = this._mpegAudioL3BitRateTable[bitrate_index];\n                                }\n                                break;\n                            case 2:  // Layer 2\n                                object_type = 33;\n                                if (bitrate_index < this._mpegAudioL2BitRateTable.length) {\n                                    bit_rate = this._mpegAudioL2BitRateTable[bitrate_index];\n                                }\n                                break;\n                            case 3:  // Layer 1\n                                object_type = 32;\n                                if (bitrate_index < this._mpegAudioL1BitRateTable.length) {\n                                    bit_rate = this._mpegAudioL1BitRateTable[bitrate_index];\n                                }\n                                break;\n                        }\n        \n                        result = {\n                            bitRate: bit_rate,\n                            samplingRate: sample_rate,\n                            channelCount: channel_count,\n                            codec: codec,\n                            originalCodec: codec\n                        };\n                    } else {\n                        result = array;\n                    }\n        \n                    return result;\n                }\n        \n                _parseVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition) {\n                    if (dataSize <= 1) {\n                        Log.w(this.TAG, \'Flv: Invalid video packet, missing VideoData payload!\');\n                        return;\n                    }\n        \n                    if (this._hasVideoFlagOverrided === true && this._hasVideo === false) {\n                        // If hasVideo: false indicated explicitly in MediaDataSource,\n                        // Ignore all the video packets\n                        return;\n                    }\n        \n                    let spec = (new Uint8Array(arrayBuffer, dataOffset, dataSize))[0];\n        \n                    let frameType = (spec & 240) >>> 4;\n                    let codecId = spec & 15;\n        \n                    if (codecId !== 7) {\n                        this._onError(DemuxErrors.CODEC_UNSUPPORTED, `Flv: Unsupported codec in video frame: ${codecId}`);\n                        return;\n                    }\n        \n                    this._parseAVCVideoPacket(arrayBuffer, dataOffset + 1, dataSize - 1, tagTimestamp, tagPosition, frameType);\n                }\n        \n                _parseAVCVideoPacket(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType) {\n                    if (dataSize < 4) {\n                        Log.w(this.TAG, \'Flv: Invalid AVC packet, missing AVCPacketType or/and CompositionTime\');\n                        return;\n                    }\n        \n                    let le = this._littleEndian;\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n        \n                    let packetType = v.getUint8(0);\n                    let cts = v.getUint32(0, !le) & 0x00FFFFFF;\n        \n                    if (packetType === 0) {  // AVCDecoderConfigurationRecord\n                        this._parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset + 4, dataSize - 4);\n                    } else if (packetType === 1) {  // One or more Nalus\n                        this._parseAVCVideoData(arrayBuffer, dataOffset + 4, dataSize - 4, tagTimestamp, tagPosition, frameType, cts);\n                    } else if (packetType === 2) {\n                        // empty, AVC end of sequence\n                    } else {\n                        this._onError(DemuxErrors.FORMAT_ERROR, `Flv: Invalid video packet type ${packetType}`);\n                        return;\n                    }\n                }\n        \n                _parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset, dataSize) {\n                    if (dataSize < 7) {\n                        Log.w(this.TAG, \'Flv: Invalid AVCDecoderConfigurationRecord, lack of data!\');\n                        return;\n                    }\n        \n                    let meta = this._videoMetadata;\n                    let track = this._videoTrack;\n                    let le = this._littleEndian;\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n        \n                    if (!meta) {\n                        if (this._hasVideo === false && this._hasVideoFlagOverrided === false) {\n                            this._hasVideo = true;\n                            this._mediaInfo.hasVideo = true;\n                        }\n        \n                        meta = this._videoMetadata = {};\n                        meta.type = \'video\';\n                        meta.id = track.id;\n                        meta.timescale = this._timescale;\n                        meta.duration = this._duration;\n                    } else {\n                        if (typeof meta.avcc !== \'undefined\') {\n                            Log.w(this.TAG, \'Found another AVCDecoderConfigurationRecord!\');\n                        }\n                    }\n        \n                    let version = v.getUint8(0);  // configurationVersion\n                    let avcProfile = v.getUint8(1);  // avcProfileIndication\n                    let profileCompatibility = v.getUint8(2);  // profile_compatibility\n                    let avcLevel = v.getUint8(3);  // AVCLevelIndication\n        \n                    if (version !== 1 || avcProfile === 0) {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: Invalid AVCDecoderConfigurationRecord\');\n                        return;\n                    }\n        \n                    this._naluLengthSize = (v.getUint8(4) & 3) + 1;  // lengthSizeMinusOne\n                    if (this._naluLengthSize !== 3 && this._naluLengthSize !== 4) {  // holy shit!!!\n                        this._onError(DemuxErrors.FORMAT_ERROR, `Flv: Strange NaluLengthSizeMinusOne: ${this._naluLengthSize - 1}`);\n                        return;\n                    }\n        \n                    let spsCount = v.getUint8(5) & 31;  // numOfSequenceParameterSets\n                    if (spsCount === 0) {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: Invalid AVCDecoderConfigurationRecord: No SPS\');\n                        return;\n                    } else if (spsCount > 1) {\n                        Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: SPS Count = ${spsCount}`);\n                    }\n        \n                    let offset = 6;\n        \n                    for (let i = 0; i < spsCount; i++) {\n                        let len = v.getUint16(offset, !le);  // sequenceParameterSetLength\n                        offset += 2;\n        \n                        if (len === 0) {\n                            continue;\n                        }\n        \n                        // Notice: Nalu without startcode header (00 00 00 01)\n                        let sps = new Uint8Array(arrayBuffer, dataOffset + offset, len);\n                        offset += len;\n        \n                        let config = SPSParser.parseSPS(sps);\n                        if (i !== 0) {\n                            // ignore other sps\'s config\n                            continue;\n                        }\n        \n                        meta.codecWidth = config.codec_size.width;\n                        meta.codecHeight = config.codec_size.height;\n                        meta.presentWidth = config.present_size.width;\n                        meta.presentHeight = config.present_size.height;\n        \n                        meta.profile = config.profile_string;\n                        meta.level = config.level_string;\n                        meta.bitDepth = config.bit_depth;\n                        meta.chromaFormat = config.chroma_format;\n                        meta.sarRatio = config.sar_ratio;\n                        meta.frameRate = config.frame_rate;\n        \n                        if (config.frame_rate.fixed === false ||\n                            config.frame_rate.fps_num === 0 ||\n                            config.frame_rate.fps_den === 0) {\n                            meta.frameRate = this._referenceFrameRate;\n                        }\n        \n                        let fps_den = meta.frameRate.fps_den;\n                        let fps_num = meta.frameRate.fps_num;\n                        meta.refSampleDuration = meta.timescale * (fps_den / fps_num);\n        \n                        let codecArray = sps.subarray(1, 4);\n                        let codecString = \'avc1.\';\n                        for (let j = 0; j < 3; j++) {\n                            let h = codecArray[j].toString(16);\n                            if (h.length < 2) {\n                                h = \'0\' + h;\n                            }\n                            codecString += h;\n                        }\n                        meta.codec = codecString;\n        \n                        let mi = this._mediaInfo;\n                        mi.width = meta.codecWidth;\n                        mi.height = meta.codecHeight;\n                        mi.fps = meta.frameRate.fps;\n                        mi.profile = meta.profile;\n                        mi.level = meta.level;\n                        mi.chromaFormat = config.chroma_format_string;\n                        mi.sarNum = meta.sarRatio.width;\n                        mi.sarDen = meta.sarRatio.height;\n                        mi.videoCodec = codecString;\n        \n                        if (mi.hasAudio) {\n                            if (mi.audioCodec != null) {\n                                mi.mimeType = \'video/x-flv; codecs="\' + mi.videoCodec + \',\' + mi.audioCodec + \'"\';\n                            }\n                        } else {\n                            mi.mimeType = \'video/x-flv; codecs="\' + mi.videoCodec + \'"\';\n                        }\n                        if (mi.isComplete()) {\n                            this._onMediaInfo(mi);\n                        }\n                    }\n        \n                    let ppsCount = v.getUint8(offset);  // numOfPictureParameterSets\n                    if (ppsCount === 0) {\n                        this._onError(DemuxErrors.FORMAT_ERROR, \'Flv: Invalid AVCDecoderConfigurationRecord: No PPS\');\n                        return;\n                    } else if (ppsCount > 1) {\n                        Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: PPS Count = ${ppsCount}`);\n                    }\n        \n                    offset++;\n        \n                    for (let i = 0; i < ppsCount; i++) {\n                        let len = v.getUint16(offset, !le);  // pictureParameterSetLength\n                        offset += 2;\n        \n                        if (len === 0) {\n                            continue;\n                        }\n        \n                        // pps is useless for extracting video information\n                        offset += len;\n                    }\n        \n                    meta.avcc = new Uint8Array(dataSize);\n                    meta.avcc.set(new Uint8Array(arrayBuffer, dataOffset, dataSize), 0);\n                    Log.v(this.TAG, \'Parsed AVCDecoderConfigurationRecord\');\n        \n                    if (this._isInitialMetadataDispatched()) {\n                        // flush parsed frames\n                        if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {\n                            this._onDataAvailable(this._audioTrack, this._videoTrack);\n                        }\n                    } else {\n                        this._videoInitialMetadataDispatched = true;\n                    }\n                    // notify new metadata\n                    this._dispatch = false;\n                    this._onTrackMetadata(\'video\', meta);\n                }\n        \n                _parseAVCVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType, cts) {\n                    let le = this._littleEndian;\n                    let v = new DataView(arrayBuffer, dataOffset, dataSize);\n        \n                    let units = [], length = 0;\n        \n                    let offset = 0;\n                    const lengthSize = this._naluLengthSize;\n                    let dts = this._timestampBase + tagTimestamp;\n                    let keyframe = (frameType === 1);  // from FLV Frame Type constants\n                    let refIdc = 1; // added by qli5\n        \n                    while (offset < dataSize) {\n                        if (offset + 4 >= dataSize) {\n                            Log.w(this.TAG, `Malformed Nalu near timestamp ${dts}, offset = ${offset}, dataSize = ${dataSize}`);\n                            break;  // data not enough for next Nalu\n                        }\n                        // Nalu with length-header (AVC1)\n                        let naluSize = v.getUint32(offset, !le);  // Big-Endian read\n                        if (lengthSize === 3) {\n                            naluSize >>>= 8;\n                        }\n                        if (naluSize > dataSize - lengthSize) {\n                            Log.w(this.TAG, `Malformed Nalus near timestamp ${dts}, NaluSize > DataSize!`);\n                            return;\n                        }\n        \n                        let unitType = v.getUint8(offset + lengthSize) & 0x1F;\n                        // added by qli5\n                        refIdc = v.getUint8(offset + lengthSize) & 0x60;\n        \n                        if (unitType === 5) {  // IDR\n                            keyframe = true;\n                        }\n        \n                        let data = new Uint8Array(arrayBuffer, dataOffset + offset, lengthSize + naluSize);\n                        let unit = { type: unitType, data: data };\n                        units.push(unit);\n                        length += data.byteLength;\n        \n                        offset += lengthSize + naluSize;\n                    }\n        \n                    if (units.length) {\n                        let track = this._videoTrack;\n                        let avcSample = {\n                            units: units,\n                            length: length,\n                            isKeyframe: keyframe,\n                            refIdc: refIdc,\n                            dts: dts,\n                            cts: cts,\n                            pts: (dts + cts)\n                        };\n                        if (keyframe) {\n                            avcSample.fileposition = tagPosition;\n                        }\n                        track.samples.push(avcSample);\n                        track.length += length;\n                    }\n                }\n        \n            }\n        \n            return FLVDemuxer;\n        })();\n        \n        const ASS = class {\n            /**\n             * Extract sections from ass string\n             * @param {string} str \n             * @returns {Object} - object from sections\n             */\n            static extractSections(str) {\n                const regex = /\\[(.*)\\]/g;\n                let match;\n                let matchArr = [];\n                while ((match = regex.exec(str)) !== null) {\n                    matchArr.push({ name: match[1], index: match.index });\n                }\n                let ret = {};\n                matchArr.forEach((match, i) => ret[match.name] = str.slice(match.index, matchArr[i + 1] && matchArr[i + 1].index));\n                return ret;\n            }\n        \n            /**\n             * Extract subtitle lines from section Events\n             * @param {string} str \n             * @returns {Array<Object>} - array of subtitle lines\n             */\n            static extractSubtitleLines(str) {\n                const lines = str.split(\'\\n\');\n                if (lines[0] != \'[Events]\' && lines[0] != \'[events]\') throw new Error(\'ASSDemuxer: section is not [Events]\');\n                if (lines[1].indexOf(\'Format:\') != 0 && lines[1].indexOf(\'format:\') != 0) throw new Error(\'ASSDemuxer: cannot find Format definition in section [Events]\');\n        \n                const format = lines[1].slice(lines[1].indexOf(\':\') + 1).split(\',\').map(e => e.trim());\n                return lines.slice(2).map(e => {\n                    let j = {};\n                    e.replace(/[d|D]ialogue:\\s*/, \'\')\n                        .match(new RegExp(new Array(format.length - 1).fill(\'(.*?),\').join(\'\') + \'(.*)\'))\n                        .slice(1)\n                        .forEach((k, index) => j[format[index]] = k)\n                    return j;\n                });\n            }\n        \n            /**\n             * Create a new ASS Demuxer\n             */\n            constructor() {\n                this.info = \'\';\n                this.styles = \'\';\n                this.events = \'\';\n                this.eventsHeader = \'\';\n                this.pictures = \'\';\n                this.fonts = \'\';\n                this.lines = \'\';\n            }\n        \n            get header() {\n                // return this.info + this.styles + this.eventsHeader;\n                return this.info + this.styles;\n            }\n        \n            /**\n             * Load a file from an arraybuffer of a string\n             * @param {(ArrayBuffer|string)} chunk \n             */\n            parseFile(chunk) {\n                const str = typeof chunk == \'string\' ? chunk : new TextDecoder(\'utf-8\').decode(chunk);\n                for (let [i, j] of Object.entries(ASS.extractSections(str))) {\n                    if (i.match(/Script Info(?:mation)?/i)) this.info = j;\n                    else if (i.match(/V4\\+? Styles?/i)) this.styles = j;\n                    else if (i.match(/Events?/i)) this.events = j;\n                    else if (i.match(/Pictures?/i)) this.pictures = j;\n                    else if (i.match(/Fonts?/i)) this.fonts = j;\n                }\n                this.eventsHeader = this.events.split(\'\\n\', 2).join(\'\\n\') + \'\\n\';\n                this.lines = ASS.extractSubtitleLines(this.events);\n                return this;\n            }\n        };\n        \n        /**\n         * The EMBL builder is from simple-ebml-builder\n         * \n         * Copyright 2017 ryiwamoto\n         * \n         * @author ryiwamoto\n         * \n         * Permission is hereby granted, free of charge, to any person obtaining\n         * a copy of this software and associated documentation files (the\n         * "Software"), to deal in the Software without restriction, including \n         * without limitation the rights to use, copy, modify, merge, publish, \n         * distribute, sublicense, and/or sell copies of the Software, and to \n         * permit persons to whom the Software is furnished to do so, subject \n         * to the following conditions:\n         * \n         * The above copyright notice and this permission notice shall be \n         * included in all copies or substantial portions of the Software.\n         * \n         * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS \n         * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n         * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL \n         * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR \n         * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, \n         * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER \n         * DEALINGS IN THE SOFTWARE.\n         */\n        // const EBML = require(\'./ebml\');\n        const EBML = (function e(t, n, r) { function s(o, u) { if (!n[o]) { if (!t[o]) { var a = typeof require == "function" && require; if (!u && a) return a(o, !0); if (i) return i(o, !0); var f = new Error("Cannot find module \'" + o + "\'"); throw f.code = "MODULE_NOT_FOUND", f } var l = n[o] = { exports: {} }; t[o][0].call(l.exports, function (e) { var n = t[o][1][e]; return s(n ? n : e) }, l, l.exports, e, t, n, r) } return n[o].exports } var i = typeof require == "function" && require; for (var o = 0; o < r.length; o++)s(r[o]); return s })({\n            1: [function (require, module, exports) {\n                let EBML = require(\'simple-ebml-builder\');\n                EBML.float = num => new EBML.Value(EBML.float32bit(num));\n                EBML.int16 = num => new EBML.Value(EBML.int16Bit(num));\n                module.exports = EBML;\n        \n            }, { "simple-ebml-builder": 5 }], 2: [function (require, module, exports) {\n                (function (global) {\n                    /**\n                     * lodash (Custom Build) <https://lodash.com/>\n                     * Build: `lodash modularize exports="npm" -o ./`\n                     * Copyright jQuery Foundation and other contributors <https://jquery.org/>\n                     * Released under MIT license <https://lodash.com/license>\n                     * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>\n                     * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors\n                     */\n        \n                    /** Used as the `TypeError` message for "Functions" methods. */\n                    var FUNC_ERROR_TEXT = \'Expected a function\';\n        \n                    /** Used to stand-in for `undefined` hash values. */\n                    var HASH_UNDEFINED = \'__lodash_hash_undefined__\';\n        \n                    /** `Object#toString` result references. */\n                    var funcTag = \'[object Function]\',\n                        genTag = \'[object GeneratorFunction]\';\n        \n                    /**\n                     * Used to match `RegExp`\n                     * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).\n                     */\n                    var reRegExpChar = /[\\\\^$.*+?()[\\]{}|]/g;\n        \n                    /** Used to detect host constructors (Safari). */\n                    var reIsHostCtor = /^\\[object .+?Constructor\\]$/;\n        \n                    /** Detect free variable `global` from Node.js. */\n                    var freeGlobal = typeof global == \'object\' && global && global.Object === Object && global;\n        \n                    /** Detect free variable `self`. */\n                    var freeSelf = typeof self == \'object\' && self && self.Object === Object && self;\n        \n                    /** Used as a reference to the global object. */\n                    var root = freeGlobal || freeSelf || Function(\'return this\')();\n        \n                    /**\n                     * Gets the value at `key` of `object`.\n                     *\n                     * @private\n                     * @param {Object} [object] The object to query.\n                     * @param {string} key The key of the property to get.\n                     * @returns {*} Returns the property value.\n                     */\n                    function getValue(object, key) {\n                        return object == null ? undefined : object[key];\n                    }\n        \n                    /**\n                     * Checks if `value` is a host object in IE < 9.\n                     *\n                     * @private\n                     * @param {*} value The value to check.\n                     * @returns {boolean} Returns `true` if `value` is a host object, else `false`.\n                     */\n                    function isHostObject(value) {\n                        // Many host objects are `Object` objects that can coerce to strings\n                        // despite having improperly defined `toString` methods.\n                        var result = false;\n                        if (value != null && typeof value.toString != \'function\') {\n                            try {\n                                result = !!(value + \'\');\n                            } catch (e) { }\n                        }\n                        return result;\n                    }\n        \n                    /** Used for built-in method references. */\n                    var arrayProto = Array.prototype,\n                        funcProto = Function.prototype,\n                        objectProto = Object.prototype;\n        \n                    /** Used to detect overreaching core-js shims. */\n                    var coreJsData = root[\'__core-js_shared__\'];\n        \n                    /** Used to detect methods masquerading as native. */\n                    var maskSrcKey = (function () {\n                        var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || \'\');\n                        return uid ? (\'Symbol(src)_1.\' + uid) : \'\';\n                    }());\n        \n                    /** Used to resolve the decompiled source of functions. */\n                    var funcToString = funcProto.toString;\n        \n                    /** Used to check objects for own properties. */\n                    var hasOwnProperty = objectProto.hasOwnProperty;\n        \n                    /**\n                     * Used to resolve the\n                     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)\n                     * of values.\n                     */\n                    var objectToString = objectProto.toString;\n        \n                    /** Used to detect if a method is native. */\n                    var reIsNative = RegExp(\'^\' +\n                        funcToString.call(hasOwnProperty).replace(reRegExpChar, \'\\\\$&\')\n                            .replace(/hasOwnProperty|(function).*?(?=\\\\\\()| for .+?(?=\\\\\\])/g, \'$1.*?\') + \'$\'\n                    );\n        \n                    /** Built-in value references. */\n                    var splice = arrayProto.splice;\n        \n                    /* Built-in method references that are verified to be native. */\n                    var Map = getNative(root, \'Map\'),\n                        nativeCreate = getNative(Object, \'create\');\n        \n                    /**\n                     * Creates a hash object.\n                     *\n                     * @private\n                     * @constructor\n                     * @param {Array} [entries] The key-value pairs to cache.\n                     */\n                    function Hash(entries) {\n                        var index = -1,\n                            length = entries ? entries.length : 0;\n        \n                        this.clear();\n                        while (++index < length) {\n                            var entry = entries[index];\n                            this.set(entry[0], entry[1]);\n                        }\n                    }\n        \n                    /**\n                     * Removes all key-value entries from the hash.\n                     *\n                     * @private\n                     * @name clear\n                     * @memberOf Hash\n                     */\n                    function hashClear() {\n                        this.__data__ = nativeCreate ? nativeCreate(null) : {};\n                    }\n        \n                    /**\n                     * Removes `key` and its value from the hash.\n                     *\n                     * @private\n                     * @name delete\n                     * @memberOf Hash\n                     * @param {Object} hash The hash to modify.\n                     * @param {string} key The key of the value to remove.\n                     * @returns {boolean} Returns `true` if the entry was removed, else `false`.\n                     */\n                    function hashDelete(key) {\n                        return this.has(key) && delete this.__data__[key];\n                    }\n        \n                    /**\n                     * Gets the hash value for `key`.\n                     *\n                     * @private\n                     * @name get\n                     * @memberOf Hash\n                     * @param {string} key The key of the value to get.\n                     * @returns {*} Returns the entry value.\n                     */\n                    function hashGet(key) {\n                        var data = this.__data__;\n                        if (nativeCreate) {\n                            var result = data[key];\n                            return result === HASH_UNDEFINED ? undefined : result;\n                        }\n                        return hasOwnProperty.call(data, key) ? data[key] : undefined;\n                    }\n        \n                    /**\n                     * Checks if a hash value for `key` exists.\n                     *\n                     * @private\n                     * @name has\n                     * @memberOf Hash\n                     * @param {string} key The key of the entry to check.\n                     * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.\n                     */\n                    function hashHas(key) {\n                        var data = this.__data__;\n                        return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);\n                    }\n        \n                    /**\n                     * Sets the hash `key` to `value`.\n                     *\n                     * @private\n                     * @name set\n                     * @memberOf Hash\n                     * @param {string} key The key of the value to set.\n                     * @param {*} value The value to set.\n                     * @returns {Object} Returns the hash instance.\n                     */\n                    function hashSet(key, value) {\n                        var data = this.__data__;\n                        data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;\n                        return this;\n                    }\n        \n                    // Add methods to `Hash`.\n                    Hash.prototype.clear = hashClear;\n                    Hash.prototype[\'delete\'] = hashDelete;\n                    Hash.prototype.get = hashGet;\n                    Hash.prototype.has = hashHas;\n                    Hash.prototype.set = hashSet;\n        \n                    /**\n                     * Creates an list cache object.\n                     *\n                     * @private\n                     * @constructor\n                     * @param {Array} [entries] The key-value pairs to cache.\n                     */\n                    function ListCache(entries) {\n                        var index = -1,\n                            length = entries ? entries.length : 0;\n        \n                        this.clear();\n                        while (++index < length) {\n                            var entry = entries[index];\n                            this.set(entry[0], entry[1]);\n                        }\n                    }\n        \n                    /**\n                     * Removes all key-value entries from the list cache.\n                     *\n                     * @private\n                     * @name clear\n                     * @memberOf ListCache\n                     */\n                    function listCacheClear() {\n                        this.__data__ = [];\n                    }\n        \n                    /**\n                     * Removes `key` and its value from the list cache.\n                     *\n                     * @private\n                     * @name delete\n                     * @memberOf ListCache\n                     * @param {string} key The key of the value to remove.\n                     * @returns {boolean} Returns `true` if the entry was removed, else `false`.\n                     */\n                    function listCacheDelete(key) {\n                        var data = this.__data__,\n                            index = assocIndexOf(data, key);\n        \n                        if (index < 0) {\n                            return false;\n                        }\n                        var lastIndex = data.length - 1;\n                        if (index == lastIndex) {\n                            data.pop();\n                        } else {\n                            splice.call(data, index, 1);\n                        }\n                        return true;\n                    }\n        \n                    /**\n                     * Gets the list cache value for `key`.\n                     *\n                     * @private\n                     * @name get\n                     * @memberOf ListCache\n                     * @param {string} key The key of the value to get.\n                     * @returns {*} Returns the entry value.\n                     */\n                    function listCacheGet(key) {\n                        var data = this.__data__,\n                            index = assocIndexOf(data, key);\n        \n                        return index < 0 ? undefined : data[index][1];\n                    }\n        \n                    /**\n                     * Checks if a list cache value for `key` exists.\n                     *\n                     * @private\n                     * @name has\n                     * @memberOf ListCache\n                     * @param {string} key The key of the entry to check.\n                     * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.\n                     */\n                    function listCacheHas(key) {\n                        return assocIndexOf(this.__data__, key) > -1;\n                    }\n        \n                    /**\n                     * Sets the list cache `key` to `value`.\n                     *\n                     * @private\n                     * @name set\n                     * @memberOf ListCache\n                     * @param {string} key The key of the value to set.\n                     * @param {*} value The value to set.\n                     * @returns {Object} Returns the list cache instance.\n                     */\n                    function listCacheSet(key, value) {\n                        var data = this.__data__,\n                            index = assocIndexOf(data, key);\n        \n                        if (index < 0) {\n                            data.push([key, value]);\n                        } else {\n                            data[index][1] = value;\n                        }\n                        return this;\n                    }\n        \n                    // Add methods to `ListCache`.\n                    ListCache.prototype.clear = listCacheClear;\n                    ListCache.prototype[\'delete\'] = listCacheDelete;\n                    ListCache.prototype.get = listCacheGet;\n                    ListCache.prototype.has = listCacheHas;\n                    ListCache.prototype.set = listCacheSet;\n        \n                    /**\n                     * Creates a map cache object to store key-value pairs.\n                     *\n                     * @private\n                     * @constructor\n                     * @param {Array} [entries] The key-value pairs to cache.\n                     */\n                    function MapCache(entries) {\n                        var index = -1,\n                            length = entries ? entries.length : 0;\n        \n                        this.clear();\n                        while (++index < length) {\n                            var entry = entries[index];\n                            this.set(entry[0], entry[1]);\n                        }\n                    }\n        \n                    /**\n                     * Removes all key-value entries from the map.\n                     *\n                     * @private\n                     * @name clear\n                     * @memberOf MapCache\n                     */\n                    function mapCacheClear() {\n                        this.__data__ = {\n                            \'hash\': new Hash,\n                            \'map\': new (Map || ListCache),\n                            \'string\': new Hash\n                        };\n                    }\n        \n                    /**\n                     * Removes `key` and its value from the map.\n                     *\n                     * @private\n                     * @name delete\n                     * @memberOf MapCache\n                     * @param {string} key The key of the value to remove.\n                     * @returns {boolean} Returns `true` if the entry was removed, else `false`.\n                     */\n                    function mapCacheDelete(key) {\n                        return getMapData(this, key)[\'delete\'](key);\n                    }\n        \n                    /**\n                     * Gets the map value for `key`.\n                     *\n                     * @private\n                     * @name get\n                     * @memberOf MapCache\n                     * @param {string} key The key of the value to get.\n                     * @returns {*} Returns the entry value.\n                     */\n                    function mapCacheGet(key) {\n                        return getMapData(this, key).get(key);\n                    }\n        \n                    /**\n                     * Checks if a map value for `key` exists.\n                     *\n                     * @private\n                     * @name has\n                     * @memberOf MapCache\n                     * @param {string} key The key of the entry to check.\n                     * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.\n                     */\n                    function mapCacheHas(key) {\n                        return getMapData(this, key).has(key);\n                    }\n        \n                    /**\n                     * Sets the map `key` to `value`.\n                     *\n                     * @private\n                     * @name set\n                     * @memberOf MapCache\n                     * @param {string} key The key of the value to set.\n                     * @param {*} value The value to set.\n                     * @returns {Object} Returns the map cache instance.\n                     */\n                    function mapCacheSet(key, value) {\n                        getMapData(this, key).set(key, value);\n                        return this;\n                    }\n        \n                    // Add methods to `MapCache`.\n                    MapCache.prototype.clear = mapCacheClear;\n                    MapCache.prototype[\'delete\'] = mapCacheDelete;\n                    MapCache.prototype.get = mapCacheGet;\n                    MapCache.prototype.has = mapCacheHas;\n                    MapCache.prototype.set = mapCacheSet;\n        \n                    /**\n                     * Gets the index at which the `key` is found in `array` of key-value pairs.\n                     *\n                     * @private\n                     * @param {Array} array The array to inspect.\n                     * @param {*} key The key to search for.\n                     * @returns {number} Returns the index of the matched value, else `-1`.\n                     */\n                    function assocIndexOf(array, key) {\n                        var length = array.length;\n                        while (length--) {\n                            if (eq(array[length][0], key)) {\n                                return length;\n                            }\n                        }\n                        return -1;\n                    }\n        \n                    /**\n                     * The base implementation of `_.isNative` without bad shim checks.\n                     *\n                     * @private\n                     * @param {*} value The value to check.\n                     * @returns {boolean} Returns `true` if `value` is a native function,\n                     *  else `false`.\n                     */\n                    function baseIsNative(value) {\n                        if (!isObject(value) || isMasked(value)) {\n                            return false;\n                        }\n                        var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;\n                        return pattern.test(toSource(value));\n                    }\n        \n                    /**\n                     * Gets the data for `map`.\n                     *\n                     * @private\n                     * @param {Object} map The map to query.\n                     * @param {string} key The reference key.\n                     * @returns {*} Returns the map data.\n                     */\n                    function getMapData(map, key) {\n                        var data = map.__data__;\n                        return isKeyable(key)\n                            ? data[typeof key == \'string\' ? \'string\' : \'hash\']\n                            : data.map;\n                    }\n        \n                    /**\n                     * Gets the native function at `key` of `object`.\n                     *\n                     * @private\n                     * @param {Object} object The object to query.\n                     * @param {string} key The key of the method to get.\n                     * @returns {*} Returns the function if it\'s native, else `undefined`.\n                     */\n                    function getNative(object, key) {\n                        var value = getValue(object, key);\n                        return baseIsNative(value) ? value : undefined;\n                    }\n        \n                    /**\n                     * Checks if `value` is suitable for use as unique object key.\n                     *\n                     * @private\n                     * @param {*} value The value to check.\n                     * @returns {boolean} Returns `true` if `value` is suitable, else `false`.\n                     */\n                    function isKeyable(value) {\n                        var type = typeof value;\n                        return (type == \'string\' || type == \'number\' || type == \'symbol\' || type == \'boolean\')\n                            ? (value !== \'__proto__\')\n                            : (value === null);\n                    }\n        \n                    /**\n                     * Checks if `func` has its source masked.\n                     *\n                     * @private\n                     * @param {Function} func The function to check.\n                     * @returns {boolean} Returns `true` if `func` is masked, else `false`.\n                     */\n                    function isMasked(func) {\n                        return !!maskSrcKey && (maskSrcKey in func);\n                    }\n        \n                    /**\n                     * Converts `func` to its source code.\n                     *\n                     * @private\n                     * @param {Function} func The function to process.\n                     * @returns {string} Returns the source code.\n                     */\n                    function toSource(func) {\n                        if (func != null) {\n                            try {\n                                return funcToString.call(func);\n                            } catch (e) { }\n                            try {\n                                return (func + \'\');\n                            } catch (e) { }\n                        }\n                        return \'\';\n                    }\n        \n                    /**\n                     * Creates a function that memoizes the result of `func`. If `resolver` is\n                     * provided, it determines the cache key for storing the result based on the\n                     * arguments provided to the memoized function. By default, the first argument\n                     * provided to the memoized function is used as the map cache key. The `func`\n                     * is invoked with the `this` binding of the memoized function.\n                     *\n                     * **Note:** The cache is exposed as the `cache` property on the memoized\n                     * function. Its creation may be customized by replacing the `_.memoize.Cache`\n                     * constructor with one whose instances implement the\n                     * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)\n                     * method interface of `delete`, `get`, `has`, and `set`.\n                     *\n                     * @static\n                     * @memberOf _\n                     * @since 0.1.0\n                     * @category Function\n                     * @param {Function} func The function to have its output memoized.\n                     * @param {Function} [resolver] The function to resolve the cache key.\n                     * @returns {Function} Returns the new memoized function.\n                     * @example\n                     *\n                     * var object = { \'a\': 1, \'b\': 2 };\n                     * var other = { \'c\': 3, \'d\': 4 };\n                     *\n                     * var values = _.memoize(_.values);\n                     * values(object);\n                     * // => [1, 2]\n                     *\n                     * values(other);\n                     * // => [3, 4]\n                     *\n                     * object.a = 2;\n                     * values(object);\n                     * // => [1, 2]\n                     *\n                     * // Modify the result cache.\n                     * values.cache.set(object, [\'a\', \'b\']);\n                     * values(object);\n                     * // => [\'a\', \'b\']\n                     *\n                     * // Replace `_.memoize.Cache`.\n                     * _.memoize.Cache = WeakMap;\n                     */\n                    function memoize(func, resolver) {\n                        if (typeof func != \'function\' || (resolver && typeof resolver != \'function\')) {\n                            throw new TypeError(FUNC_ERROR_TEXT);\n                        }\n                        var memoized = function () {\n                            var args = arguments,\n                                key = resolver ? resolver.apply(this, args) : args[0],\n                                cache = memoized.cache;\n        \n                            if (cache.has(key)) {\n                                return cache.get(key);\n                            }\n                            var result = func.apply(this, args);\n                            memoized.cache = cache.set(key, result);\n                            return result;\n                        };\n                        memoized.cache = new (memoize.Cache || MapCache);\n                        return memoized;\n                    }\n        \n                    // Assign cache to `_.memoize`.\n                    memoize.Cache = MapCache;\n        \n                    /**\n                     * Performs a\n                     * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)\n                     * comparison between two values to determine if they are equivalent.\n                     *\n                     * @static\n                     * @memberOf _\n                     * @since 4.0.0\n                     * @category Lang\n                     * @param {*} value The value to compare.\n                     * @param {*} other The other value to compare.\n                     * @returns {boolean} Returns `true` if the values are equivalent, else `false`.\n                     * @example\n                     *\n                     * var object = { \'a\': 1 };\n                     * var other = { \'a\': 1 };\n                     *\n                     * _.eq(object, object);\n                     * // => true\n                     *\n                     * _.eq(object, other);\n                     * // => false\n                     *\n                     * _.eq(\'a\', \'a\');\n                     * // => true\n                     *\n                     * _.eq(\'a\', Object(\'a\'));\n                     * // => false\n                     *\n                     * _.eq(NaN, NaN);\n                     * // => true\n                     */\n                    function eq(value, other) {\n                        return value === other || (value !== value && other !== other);\n                    }\n        \n                    /**\n                     * Checks if `value` is classified as a `Function` object.\n                     *\n                     * @static\n                     * @memberOf _\n                     * @since 0.1.0\n                     * @category Lang\n                     * @param {*} value The value to check.\n                     * @returns {boolean} Returns `true` if `value` is a function, else `false`.\n                     * @example\n                     *\n                     * _.isFunction(_);\n                     * // => true\n                     *\n                     * _.isFunction(/abc/);\n                     * // => false\n                     */\n                    function isFunction(value) {\n                        // The use of `Object#toString` avoids issues with the `typeof` operator\n                        // in Safari 8-9 which returns \'object\' for typed array and other constructors.\n                        var tag = isObject(value) ? objectToString.call(value) : \'\';\n                        return tag == funcTag || tag == genTag;\n                    }\n        \n                    /**\n                     * Checks if `value` is the\n                     * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)\n                     * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String(\'\')`)\n                     *\n                     * @static\n                     * @memberOf _\n                     * @since 0.1.0\n                     * @category Lang\n                     * @param {*} value The value to check.\n                     * @returns {boolean} Returns `true` if `value` is an object, else `false`.\n                     * @example\n                     *\n                     * _.isObject({});\n                     * // => true\n                     *\n                     * _.isObject([1, 2, 3]);\n                     * // => true\n                     *\n                     * _.isObject(_.noop);\n                     * // => true\n                     *\n                     * _.isObject(null);\n                     * // => false\n                     */\n                    function isObject(value) {\n                        var type = typeof value;\n                        return !!value && (type == \'object\' || type == \'function\');\n                    }\n        \n                    module.exports = memoize;\n        \n                }).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})\n            }, {}], 3: [function (require, module, exports) {\n                "use strict";\n                var memoize = require("lodash.memoize");\n                var typedArrayUtils_1 = require("./typedArrayUtils");\n                var Value = (function () {\n                    function Value(bytes) {\n                        this.bytes = bytes;\n                    }\n                    Value.prototype.write = function (buf, pos) {\n                        buf.set(this.bytes, pos);\n                        return pos + this.bytes.length;\n                    };\n                    Value.prototype.countSize = function () {\n                        return this.bytes.length;\n                    };\n                    return Value;\n                }());\n                exports.Value = Value;\n                var Element = (function () {\n                    function Element(id, children, isSizeUnknown) {\n                        this.id = id;\n                        this.children = children;\n                        var bodySize = this.children.reduce(function (p, c) { return p + c.countSize(); }, 0);\n                        this.sizeMetaData = isSizeUnknown ?\n                            exports.UNKNOWN_SIZE :\n                            exports.vintEncode(typedArrayUtils_1.numberToByteArray(bodySize, exports.getEBMLByteLength(bodySize)));\n                        this.size = this.id.length + this.sizeMetaData.length + bodySize;\n                    }\n                    Element.prototype.write = function (buf, pos) {\n                        buf.set(this.id, pos);\n                        buf.set(this.sizeMetaData, pos + this.id.length);\n                        return this.children.reduce(function (p, c) { return c.write(buf, p); }, pos + this.id.length + this.sizeMetaData.length);\n                    };\n                    Element.prototype.countSize = function () {\n                        return this.size;\n                    };\n                    return Element;\n                }());\n                exports.Element = Element;\n                exports.bytes = memoize(function (data) {\n                    return new Value(data);\n                });\n                exports.number = memoize(function (num) {\n                    return exports.bytes(typedArrayUtils_1.numberToByteArray(num));\n                });\n                exports.vintEncodedNumber = memoize(function (num) {\n                    return exports.bytes(exports.vintEncode(typedArrayUtils_1.numberToByteArray(num, exports.getEBMLByteLength(num))));\n                });\n                exports.string = memoize(function (str) {\n                    return exports.bytes(typedArrayUtils_1.stringToByteArray(str));\n                });\n                exports.element = function (id, child) {\n                    return new Element(id, Array.isArray(child) ? child : [child], false);\n                };\n                exports.unknownSizeElement = function (id, child) {\n                    return new Element(id, Array.isArray(child) ? child : [child], true);\n                };\n                exports.build = function (v) {\n                    var b = new Uint8Array(v.countSize());\n                    v.write(b, 0);\n                    return b;\n                };\n                exports.getEBMLByteLength = function (num) {\n                    if (num < 0) {\n                        throw new Error("EBML.getEBMLByteLength: negative number not implemented");\n                    }\n                    else if (num < 0x7f) {\n                        return 1;\n                    }\n                    else if (num < 0x3fff) {\n                        return 2;\n                    }\n                    else if (num < 0x1fffff) {\n                        return 3;\n                    }\n                    else if (num < 0xfffffff) {\n                        return 4;\n                    }\n                    else if (num < 0x7ffffffff) {\n                        return 5;\n                    }\n                    else if (num < 0x3ffffffffff) {\n                        return 6;\n                    }\n                    else if (num < 0x1ffffffffffff) {\n                        return 7;\n                    }\n                    else if (num < 0x20000000000000) {\n                        return 8;\n                    }\n                    else if (num < 0xffffffffffffff) {\n                        throw new Error("EBMLgetEBMLByteLength: number exceeds Number.MAX_SAFE_INTEGER");\n                    }\n                    else {\n                        throw new Error("EBMLgetEBMLByteLength: data size must be less than or equal to " + (Math.pow(2, 56) - 2));\n                    }\n                };\n                exports.UNKNOWN_SIZE = new Uint8Array([0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);\n                exports.vintEncode = function (byteArray) {\n                    byteArray[0] = exports.getSizeMask(byteArray.length) | byteArray[0];\n                    return byteArray;\n                };\n                exports.getSizeMask = function (byteLength) {\n                    return 0x80 >> (byteLength - 1);\n                };\n        \n            }, { "./typedArrayUtils": 6, "lodash.memoize": 2 }], 4: [function (require, module, exports) {\n                "use strict";\n                /**\n                 * @see https://www.matroska.org/technical/specs/index.html\n                 */\n                exports.ID = {\n                    EBML: Uint8Array.of(0x1A, 0x45, 0xDF, 0xA3),\n                    EBMLVersion: Uint8Array.of(0x42, 0x86),\n                    EBMLReadVersion: Uint8Array.of(0x42, 0xF7),\n                    EBMLMaxIDLength: Uint8Array.of(0x42, 0xF2),\n                    EBMLMaxSizeLength: Uint8Array.of(0x42, 0xF3),\n                    DocType: Uint8Array.of(0x42, 0x82),\n                    DocTypeVersion: Uint8Array.of(0x42, 0x87),\n                    DocTypeReadVersion: Uint8Array.of(0x42, 0x85),\n                    Void: Uint8Array.of(0xEC),\n                    CRC32: Uint8Array.of(0xBF),\n                    Segment: Uint8Array.of(0x18, 0x53, 0x80, 0x67),\n                    SeekHead: Uint8Array.of(0x11, 0x4D, 0x9B, 0x74),\n                    Seek: Uint8Array.of(0x4D, 0xBB),\n                    SeekID: Uint8Array.of(0x53, 0xAB),\n                    SeekPosition: Uint8Array.of(0x53, 0xAC),\n                    Info: Uint8Array.of(0x15, 0x49, 0xA9, 0x66),\n                    SegmentUID: Uint8Array.of(0x73, 0xA4),\n                    SegmentFilename: Uint8Array.of(0x73, 0x84),\n                    PrevUID: Uint8Array.of(0x3C, 0xB9, 0x23),\n                    PrevFilename: Uint8Array.of(0x3C, 0x83, 0xAB),\n                    NextUID: Uint8Array.of(0x3E, 0xB9, 0x23),\n                    NextFilename: Uint8Array.of(0x3E, 0x83, 0xBB),\n                    SegmentFamily: Uint8Array.of(0x44, 0x44),\n                    ChapterTranslate: Uint8Array.of(0x69, 0x24),\n                    ChapterTranslateEditionUID: Uint8Array.of(0x69, 0xFC),\n                    ChapterTranslateCodec: Uint8Array.of(0x69, 0xBF),\n                    ChapterTranslateID: Uint8Array.of(0x69, 0xA5),\n                    TimecodeScale: Uint8Array.of(0x2A, 0xD7, 0xB1),\n                    Duration: Uint8Array.of(0x44, 0x89),\n                    DateUTC: Uint8Array.of(0x44, 0x61),\n                    Title: Uint8Array.of(0x7B, 0xA9),\n                    MuxingApp: Uint8Array.of(0x4D, 0x80),\n                    WritingApp: Uint8Array.of(0x57, 0x41),\n                    Cluster: Uint8Array.of(0x1F, 0x43, 0xB6, 0x75),\n                    Timecode: Uint8Array.of(0xE7),\n                    SilentTracks: Uint8Array.of(0x58, 0x54),\n                    SilentTrackNumber: Uint8Array.of(0x58, 0xD7),\n                    Position: Uint8Array.of(0xA7),\n                    PrevSize: Uint8Array.of(0xAB),\n                    SimpleBlock: Uint8Array.of(0xA3),\n                    BlockGroup: Uint8Array.of(0xA0),\n                    Block: Uint8Array.of(0xA1),\n                    BlockAdditions: Uint8Array.of(0x75, 0xA1),\n                    BlockMore: Uint8Array.of(0xA6),\n                    BlockAddID: Uint8Array.of(0xEE),\n                    BlockAdditional: Uint8Array.of(0xA5),\n                    BlockDuration: Uint8Array.of(0x9B),\n                    ReferencePriority: Uint8Array.of(0xFA),\n                    ReferenceBlock: Uint8Array.of(0xFB),\n                    CodecState: Uint8Array.of(0xA4),\n                    DiscardPadding: Uint8Array.of(0x75, 0xA2),\n                    Slices: Uint8Array.of(0x8E),\n                    TimeSlice: Uint8Array.of(0xE8),\n                    LaceNumber: Uint8Array.of(0xCC),\n                    Tracks: Uint8Array.of(0x16, 0x54, 0xAE, 0x6B),\n                    TrackEntry: Uint8Array.of(0xAE),\n                    TrackNumber: Uint8Array.of(0xD7),\n                    TrackUID: Uint8Array.of(0x73, 0xC5),\n                    TrackType: Uint8Array.of(0x83),\n                    FlagEnabled: Uint8Array.of(0xB9),\n                    FlagDefault: Uint8Array.of(0x88),\n                    FlagForced: Uint8Array.of(0x55, 0xAA),\n                    FlagLacing: Uint8Array.of(0x9C),\n                    MinCache: Uint8Array.of(0x6D, 0xE7),\n                    MaxCache: Uint8Array.of(0x6D, 0xF8),\n                    DefaultDuration: Uint8Array.of(0x23, 0xE3, 0x83),\n                    DefaultDecodedFieldDuration: Uint8Array.of(0x23, 0x4E, 0x7A),\n                    MaxBlockAdditionID: Uint8Array.of(0x55, 0xEE),\n                    Name: Uint8Array.of(0x53, 0x6E),\n                    Language: Uint8Array.of(0x22, 0xB5, 0x9C),\n                    CodecID: Uint8Array.of(0x86),\n                    CodecPrivate: Uint8Array.of(0x63, 0xA2),\n                    CodecName: Uint8Array.of(0x25, 0x86, 0x88),\n                    AttachmentLink: Uint8Array.of(0x74, 0x46),\n                    CodecDecodeAll: Uint8Array.of(0xAA),\n                    TrackOverlay: Uint8Array.of(0x6F, 0xAB),\n                    CodecDelay: Uint8Array.of(0x56, 0xAA),\n                    SeekPreRoll: Uint8Array.of(0x56, 0xBB),\n                    TrackTranslate: Uint8Array.of(0x66, 0x24),\n                    TrackTranslateEditionUID: Uint8Array.of(0x66, 0xFC),\n                    TrackTranslateCodec: Uint8Array.of(0x66, 0xBF),\n                    TrackTranslateTrackID: Uint8Array.of(0x66, 0xA5),\n                    Video: Uint8Array.of(0xE0),\n                    FlagInterlaced: Uint8Array.of(0x9A),\n                    FieldOrder: Uint8Array.of(0x9D),\n                    StereoMode: Uint8Array.of(0x53, 0xB8),\n                    AlphaMode: Uint8Array.of(0x53, 0xC0),\n                    PixelWidth: Uint8Array.of(0xB0),\n                    PixelHeight: Uint8Array.of(0xBA),\n                    PixelCropBottom: Uint8Array.of(0x54, 0xAA),\n                    PixelCropTop: Uint8Array.of(0x54, 0xBB),\n                    PixelCropLeft: Uint8Array.of(0x54, 0xCC),\n                    PixelCropRight: Uint8Array.of(0x54, 0xDD),\n                    DisplayWidth: Uint8Array.of(0x54, 0xB0),\n                    DisplayHeight: Uint8Array.of(0x54, 0xBA),\n                    DisplayUnit: Uint8Array.of(0x54, 0xB2),\n                    AspectRatioType: Uint8Array.of(0x54, 0xB3),\n                    ColourSpace: Uint8Array.of(0x2E, 0xB5, 0x24),\n                    Colour: Uint8Array.of(0x55, 0xB0),\n                    MatrixCoefficients: Uint8Array.of(0x55, 0xB1),\n                    BitsPerChannel: Uint8Array.of(0x55, 0xB2),\n                    ChromaSubsamplingHorz: Uint8Array.of(0x55, 0xB3),\n                    ChromaSubsamplingVert: Uint8Array.of(0x55, 0xB4),\n                    CbSubsamplingHorz: Uint8Array.of(0x55, 0xB5),\n                    CbSubsamplingVert: Uint8Array.of(0x55, 0xB6),\n                    ChromaSitingHorz: Uint8Array.of(0x55, 0xB7),\n                    ChromaSitingVert: Uint8Array.of(0x55, 0xB8),\n                    Range: Uint8Array.of(0x55, 0xB9),\n                    TransferCharacteristics: Uint8Array.of(0x55, 0xBA),\n                    Primaries: Uint8Array.of(0x55, 0xBB),\n                    MaxCLL: Uint8Array.of(0x55, 0xBC),\n                    MaxFALL: Uint8Array.of(0x55, 0xBD),\n                    MasteringMetadata: Uint8Array.of(0x55, 0xD0),\n                    PrimaryRChromaticityX: Uint8Array.of(0x55, 0xD1),\n                    PrimaryRChromaticityY: Uint8Array.of(0x55, 0xD2),\n                    PrimaryGChromaticityX: Uint8Array.of(0x55, 0xD3),\n                    PrimaryGChromaticityY: Uint8Array.of(0x55, 0xD4),\n                    PrimaryBChromaticityX: Uint8Array.of(0x55, 0xD5),\n                    PrimaryBChromaticityY: Uint8Array.of(0x55, 0xD6),\n                    WhitePointChromaticityX: Uint8Array.of(0x55, 0xD7),\n                    WhitePointChromaticityY: Uint8Array.of(0x55, 0xD8),\n                    LuminanceMax: Uint8Array.of(0x55, 0xD9),\n                    LuminanceMin: Uint8Array.of(0x55, 0xDA),\n                    Audio: Uint8Array.of(0xE1),\n                    SamplingFrequency: Uint8Array.of(0xB5),\n                    OutputSamplingFrequency: Uint8Array.of(0x78, 0xB5),\n                    Channels: Uint8Array.of(0x9F),\n                    BitDepth: Uint8Array.of(0x62, 0x64),\n                    TrackOperation: Uint8Array.of(0xE2),\n                    TrackCombinePlanes: Uint8Array.of(0xE3),\n                    TrackPlane: Uint8Array.of(0xE4),\n                    TrackPlaneUID: Uint8Array.of(0xE5),\n                    TrackPlaneType: Uint8Array.of(0xE6),\n                    TrackJoinBlocks: Uint8Array.of(0xE9),\n                    TrackJoinUID: Uint8Array.of(0xED),\n                    ContentEncodings: Uint8Array.of(0x6D, 0x80),\n                    ContentEncoding: Uint8Array.of(0x62, 0x40),\n                    ContentEncodingOrder: Uint8Array.of(0x50, 0x31),\n                    ContentEncodingScope: Uint8Array.of(0x50, 0x32),\n                    ContentEncodingType: Uint8Array.of(0x50, 0x33),\n                    ContentCompression: Uint8Array.of(0x50, 0x34),\n                    ContentCompAlgo: Uint8Array.of(0x42, 0x54),\n                    ContentCompSettings: Uint8Array.of(0x42, 0x55),\n                    ContentEncryption: Uint8Array.of(0x50, 0x35),\n                    ContentEncAlgo: Uint8Array.of(0x47, 0xE1),\n                    ContentEncKeyID: Uint8Array.of(0x47, 0xE2),\n                    ContentSignature: Uint8Array.of(0x47, 0xE3),\n                    ContentSigKeyID: Uint8Array.of(0x47, 0xE4),\n                    ContentSigAlgo: Uint8Array.of(0x47, 0xE5),\n                    ContentSigHashAlgo: Uint8Array.of(0x47, 0xE6),\n                    Cues: Uint8Array.of(0x1C, 0x53, 0xBB, 0x6B),\n                    CuePoint: Uint8Array.of(0xBB),\n                    CueTime: Uint8Array.of(0xB3),\n                    CueTrackPositions: Uint8Array.of(0xB7),\n                    CueTrack: Uint8Array.of(0xF7),\n                    CueClusterPosition: Uint8Array.of(0xF1),\n                    CueRelativePosition: Uint8Array.of(0xF0),\n                    CueDuration: Uint8Array.of(0xB2),\n                    CueBlockNumber: Uint8Array.of(0x53, 0x78),\n                    CueCodecState: Uint8Array.of(0xEA),\n                    CueReference: Uint8Array.of(0xDB),\n                    CueRefTime: Uint8Array.of(0x96),\n                    Attachments: Uint8Array.of(0x19, 0x41, 0xA4, 0x69),\n                    AttachedFile: Uint8Array.of(0x61, 0xA7),\n                    FileDescription: Uint8Array.of(0x46, 0x7E),\n                    FileName: Uint8Array.of(0x46, 0x6E),\n                    FileMimeType: Uint8Array.of(0x46, 0x60),\n                    FileData: Uint8Array.of(0x46, 0x5C),\n                    FileUID: Uint8Array.of(0x46, 0xAE),\n                    Chapters: Uint8Array.of(0x10, 0x43, 0xA7, 0x70),\n                    EditionEntry: Uint8Array.of(0x45, 0xB9),\n                    EditionUID: Uint8Array.of(0x45, 0xBC),\n                    EditionFlagHidden: Uint8Array.of(0x45, 0xBD),\n                    EditionFlagDefault: Uint8Array.of(0x45, 0xDB),\n                    EditionFlagOrdered: Uint8Array.of(0x45, 0xDD),\n                    ChapterAtom: Uint8Array.of(0xB6),\n                    ChapterUID: Uint8Array.of(0x73, 0xC4),\n                    ChapterStringUID: Uint8Array.of(0x56, 0x54),\n                    ChapterTimeStart: Uint8Array.of(0x91),\n                    ChapterTimeEnd: Uint8Array.of(0x92),\n                    ChapterFlagHidden: Uint8Array.of(0x98),\n                    ChapterFlagEnabled: Uint8Array.of(0x45, 0x98),\n                    ChapterSegmentUID: Uint8Array.of(0x6E, 0x67),\n                    ChapterSegmentEditionUID: Uint8Array.of(0x6E, 0xBC),\n                    ChapterPhysicalEquiv: Uint8Array.of(0x63, 0xC3),\n                    ChapterTrack: Uint8Array.of(0x8F),\n                    ChapterTrackNumber: Uint8Array.of(0x89),\n                    ChapterDisplay: Uint8Array.of(0x80),\n                    ChapString: Uint8Array.of(0x85),\n                    ChapLanguage: Uint8Array.of(0x43, 0x7C),\n                    ChapCountry: Uint8Array.of(0x43, 0x7E),\n                    ChapProcess: Uint8Array.of(0x69, 0x44),\n                    ChapProcessCodecID: Uint8Array.of(0x69, 0x55),\n                    ChapProcessPrivate: Uint8Array.of(0x45, 0x0D),\n                    ChapProcessCommand: Uint8Array.of(0x69, 0x11),\n                    ChapProcessTime: Uint8Array.of(0x69, 0x22),\n                    ChapProcessData: Uint8Array.of(0x69, 0x33),\n                    Tags: Uint8Array.of(0x12, 0x54, 0xC3, 0x67),\n                    Tag: Uint8Array.of(0x73, 0x73),\n                    Targets: Uint8Array.of(0x63, 0xC0),\n                    TargetTypeValue: Uint8Array.of(0x68, 0xCA),\n                    TargetType: Uint8Array.of(0x63, 0xCA),\n                    TagTrackUID: Uint8Array.of(0x63, 0xC5),\n                    TagEditionUID: Uint8Array.of(0x63, 0xC9),\n                    TagChapterUID: Uint8Array.of(0x63, 0xC4),\n                    TagAttachmentUID: Uint8Array.of(0x63, 0xC6),\n                    SimpleTag: Uint8Array.of(0x67, 0xC8),\n                    TagName: Uint8Array.of(0x45, 0xA3),\n                    TagLanguage: Uint8Array.of(0x44, 0x7A),\n                    TagDefault: Uint8Array.of(0x44, 0x84),\n                    TagString: Uint8Array.of(0x44, 0x87),\n                    TagBinary: Uint8Array.of(0x44, 0x85),\n                };\n        \n            }, {}], 5: [function (require, module, exports) {\n                "use strict";\n                function __export(m) {\n                    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];\n                }\n                __export(require("./ebml"));\n                __export(require("./id"));\n                __export(require("./typedArrayUtils"));\n        \n            }, { "./ebml": 3, "./id": 4, "./typedArrayUtils": 6 }], 6: [function (require, module, exports) {\n                "use strict";\n                var memoize = require("lodash.memoize");\n                exports.numberToByteArray = function (num, byteLength) {\n                    if (byteLength === void 0) byteLength = getNumberByteLength(num);\n                    var byteArray;\n                    if (byteLength == 1) {\n                        byteArray = new DataView(new ArrayBuffer(1));\n                        byteArray.setUint8(0, num);\n                    }\n                    else if (byteLength == 2) {\n                        byteArray = new DataView(new ArrayBuffer(2));\n                        byteArray.setUint16(0, num);\n                    }\n                    else if (byteLength == 3) {\n                        byteArray = new DataView(new ArrayBuffer(3));\n                        byteArray.setUint8(0, num >> 16);\n                        byteArray.setUint16(1, num & 0xffff);\n                    }\n                    else if (byteLength == 4) {\n                        byteArray = new DataView(new ArrayBuffer(4));\n                        byteArray.setUint32(0, num);\n                    }\n                    // 4GB (upper limit for int32) should be enough in most cases\n                    else if (/* byteLength == 5 && */num < 0xffffffff) {\n                        byteArray = new DataView(new ArrayBuffer(5));\n                        byteArray.setUint32(1, num);\n                    }\n                    // Naive emulations of int64 bitwise opreators\n                    else if (byteLength == 5) {\n                        byteArray = new DataView(new ArrayBuffer(5));\n                        byteArray.setUint8(0, num / 0x100000000 | 0);\n                        byteArray.setUint32(1, num % 0x100000000);\n                    }\n                    else if (byteLength == 6) {\n                        byteArray = new DataView(new ArrayBuffer(6));\n                        byteArray.setUint16(0, num / 0x100000000 | 0);\n                        byteArray.setUint32(2, num % 0x100000000);\n                    }\n                    else if (byteLength == 7) {\n                        byteArray = new DataView(new ArrayBuffer(7));\n                        byteArray.setUint8(0, num / 0x1000000000000 | 0);\n                        byteArray.setUint16(1, num / 0x100000000 & 0xffff);\n                        byteArray.setUint32(3, num % 0x100000000);\n                    }\n                    else if (byteLength == 8) {\n                        byteArray = new DataView(new ArrayBuffer(8));\n                        byteArray.setUint32(0, num / 0x100000000 | 0);\n                        byteArray.setUint32(4, num % 0x100000000);\n                    }\n                    else {\n                        throw new Error("EBML.typedArrayUtils.numberToByteArray: byte length must be less than or equal to 8");\n                    }\n                    return new Uint8Array(byteArray.buffer)\n                };\n                exports.stringToByteArray = memoize(function (str) {\n                    return Uint8Array.from(Array.from(str).map(function (_) { return _.codePointAt(0); }));\n                });\n                function getNumberByteLength(num) {\n                    if (num < 0) {\n                        throw new Error("EBML.typedArrayUtils.getNumberByteLength: negative number not implemented");\n                    }\n                    else if (num < 0x100) {\n                        return 1;\n                    }\n                    else if (num < 0x10000) {\n                        return 2;\n                    }\n                    else if (num < 0x1000000) {\n                        return 3;\n                    }\n                    else if (num < 0x100000000) {\n                        return 4;\n                    }\n                    else if (num < 0x10000000000) {\n                        return 5;\n                    }\n                    else if (num < 0x1000000000000) {\n                        return 6;\n                    }\n                    else if (num < 0x20000000000000) {\n                        return 7;\n                    }\n                    else {\n                        throw new Error("EBML.typedArrayUtils.getNumberByteLength: number exceeds Number.MAX_SAFE_INTEGER");\n                    }\n                }\n                exports.getNumberByteLength = getNumberByteLength;\n                exports.int16Bit = memoize(function (num) {\n                    var ab = new ArrayBuffer(2);\n                    new DataView(ab).setInt16(0, num);\n                    return new Uint8Array(ab);\n                });\n                exports.float32bit = memoize(function (num) {\n                    var ab = new ArrayBuffer(4);\n                    new DataView(ab).setFloat32(0, num);\n                    return new Uint8Array(ab);\n                });\n                exports.dumpBytes = function (b) {\n                    return Array.from(new Uint8Array(b)).map(function (_) { return "0x" + _.toString(16); }).join(", ");\n                };\n        \n            }, { "lodash.memoize": 2 }]\n        }, {}, [])(1);\n        \n        const MKV = class {\n            constructor(config) {\n                this.min = true;\n                this.onprogress = null;\n                Object.assign(this, config);\n                this.segmentUID = MKV.randomBytes(16);\n                this.trackUIDBase = Math.trunc(Math.random() * 2 ** 16);\n                this.trackMetadata = { h264: null, aac: null, ass: null };\n                this.duration = 0;\n                this.blocks = { h264: [], aac: [], ass: [] };\n            }\n        \n            static randomBytes(num) {\n                return Array.from(new Array(num), () => Math.trunc(Math.random() * 256));\n            }\n        \n            static textToMS(str) {\n                const [, h, mm, ss, ms10] = str.match(/(\\d+):(\\d+):(\\d+).(\\d+)/);\n                return h * 3600000 + mm * 60000 + ss * 1000 + ms10 * 10;\n            }\n        \n            static mimeToCodecID(str) {\n                switch (str) {\n                    case \'avc1.640029\':\n                        return \'V_MPEG4/ISO/AVC\';\n                    case \'mp4a.40.2\':\n                        return \'A_AAC\';\n                    default:\n                        throw new Error(`MKVRemuxer: unknown codec ${str}`);\n                }\n            }\n        \n            static uint8ArrayConcat(...array) {\n                // if (Array.isArray(array[0])) array = array[0];\n                if (array.length == 1) return array[0];\n                if (typeof Buffer != \'undefined\') return Buffer.concat(array);\n                const ret = new Uint8Array(array.reduce((i, j) => i.byteLength + j.byteLength));\n                let length = 0;\n                for (let e of array) {\n                    ret.set(e, length);\n                    length += e.byteLength;\n                }\n                return ret;\n            }\n        \n            addH264Metadata(h264) {\n                this.trackMetadata.h264 = {\n                    codecId: MKV.mimeToCodecID(h264.codec),\n                    codecPrivate: h264.avcc,\n                    defaultDuration: h264.refSampleDuration * 1000000,\n                    pixelWidth: h264.codecWidth,\n                    pixelHeight: h264.codecHeight,\n                    displayWidth: h264.presentWidth,\n                    displayHeight: h264.presentHeight\n                };\n                this.duration = Math.max(this.duration, h264.duration);\n            }\n        \n            addAACMetadata(aac) {\n                this.trackMetadata.aac = {\n                    codecId: MKV.mimeToCodecID(aac.originalCodec),\n                    codecPrivate: aac.configRaw,\n                    defaultDuration: aac.refSampleDuration * 1000000,\n                    samplingFrequence: aac.audioSampleRate,\n                    channels: aac.channelCount\n                };\n                this.duration = Math.max(this.duration, aac.duration);\n            }\n        \n            addASSMetadata(ass) {\n                this.trackMetadata.ass = {\n                    codecId: \'S_TEXT/ASS\',\n                    codecPrivate: new TextEncoder().encode(ass.header)\n                };\n            }\n        \n            addH264Stream(h264) {\n                this.blocks.h264 = this.blocks.h264.concat(h264.samples.map(e => ({\n                    track: 1,\n                    frame: MKV.uint8ArrayConcat(...e.units.map(i => i.data)),\n                    isKeyframe: e.isKeyframe,\n                    discardable: Boolean(e.refIdc),\n                    timestamp: e.pts,\n                    simple: true,\n                })));\n            }\n        \n            addAACStream(aac) {\n                this.blocks.aac = this.blocks.aac.concat(aac.samples.map(e => ({\n                    track: 2,\n                    frame: e.unit,\n                    timestamp: e.pts,\n                    simple: true,\n                })));\n            }\n        \n            addASSStream(ass) {\n                this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({\n                    track: 3,\n                    frame: new TextEncoder().encode(`${i},${e[\'Layer\'] || \'\'},${e[\'Style\'] || \'\'},${e[\'Name\'] || \'\'},${e[\'MarginL\'] || \'\'},${e[\'MarginR\'] || \'\'},${e[\'MarginV\'] || \'\'},${e[\'Effect\'] || \'\'},${e[\'Text\'] || \'\'}`),\n                    timestamp: MKV.textToMS(e[\'Start\']),\n                    duration: MKV.textToMS(e[\'End\']) - MKV.textToMS(e[\'Start\']),\n                })));\n            }\n        \n            build() {\n                return new Blob([\n                    this.buildHeader(),\n                    this.buildBody()\n                ]);\n            }\n        \n            buildHeader() {\n                return new Blob([EBML.build(EBML.element(EBML.ID.EBML, [\n                    EBML.element(EBML.ID.EBMLVersion, EBML.number(1)),\n                    EBML.element(EBML.ID.EBMLReadVersion, EBML.number(1)),\n                    EBML.element(EBML.ID.EBMLMaxIDLength, EBML.number(4)),\n                    EBML.element(EBML.ID.EBMLMaxSizeLength, EBML.number(8)),\n                    EBML.element(EBML.ID.DocType, EBML.string(\'matroska\')),\n                    EBML.element(EBML.ID.DocTypeVersion, EBML.number(4)),\n                    EBML.element(EBML.ID.DocTypeReadVersion, EBML.number(2)),\n                ]))]);\n            }\n        \n            buildBody() {\n                if (this.min) {\n                    return new Blob([EBML.build(EBML.element(EBML.ID.Segment, [\n                        this.getSegmentInfo(),\n                        this.getTracks(),\n                        ...this.getClusterArray()\n                    ]))]);\n                }\n                else {\n                    return new Blob([EBML.build(EBML.element(EBML.ID.Segment, [\n                        this.getSeekHead(),\n                        this.getVoid(4100),\n                        this.getSegmentInfo(),\n                        this.getTracks(),\n                        this.getVoid(1100),\n                        ...this.getClusterArray()\n                    ]))]);\n                }\n            }\n        \n            getSeekHead() {\n                return EBML.element(EBML.ID.SeekHead, [\n                    EBML.element(EBML.ID.Seek, [\n                        EBML.element(EBML.ID.SeekID, EBML.bytes(EBML.ID.Info)),\n                        EBML.element(EBML.ID.SeekPosition, EBML.number(4050))\n                    ]),\n                    EBML.element(EBML.ID.Seek, [\n                        EBML.element(EBML.ID.SeekID, EBML.bytes(EBML.ID.Tracks)),\n                        EBML.element(EBML.ID.SeekPosition, EBML.number(4200))\n                    ]),\n                ]);\n            }\n        \n            getVoid(length = 2000) {\n                return EBML.element(EBML.ID.Void, EBML.bytes(new Uint8Array(length)));\n            }\n        \n            getSegmentInfo() {\n                return EBML.element(EBML.ID.Info, [\n                    EBML.element(EBML.ID.TimecodeScale, EBML.number(1000000)),\n                    EBML.element(EBML.ID.MuxingApp, EBML.string(\'flv.js + assparser_qli5 -> simple-ebml-builder\')),\n                    EBML.element(EBML.ID.WritingApp, EBML.string(\'flvass2mkv.js by qli5\')),\n                    EBML.element(EBML.ID.Duration, EBML.float(this.duration)),\n                    EBML.element(EBML.ID.SegmentUID, EBML.bytes(this.segmentUID)),\n                ]);\n            }\n        \n            getTracks() {\n                return EBML.element(EBML.ID.Tracks, [\n                    this.getVideoTrackEntry(),\n                    this.getAudioTrackEntry(),\n                    this.getSubtitleTrackEntry()\n                ]);\n            }\n        \n            getVideoTrackEntry() {\n                return EBML.element(EBML.ID.TrackEntry, [\n                    EBML.element(EBML.ID.TrackNumber, EBML.number(1)),\n                    EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 1)),\n                    EBML.element(EBML.ID.TrackType, EBML.number(0x01)),\n                    EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),\n                    EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.h264.codecId)),\n                    EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.h264.codecPrivate)),\n                    EBML.element(EBML.ID.DefaultDuration, EBML.number(this.trackMetadata.h264.defaultDuration)),\n                    EBML.element(EBML.ID.Language, EBML.string(\'und\')),\n                    EBML.element(EBML.ID.Video, [\n                        EBML.element(EBML.ID.PixelWidth, EBML.number(this.trackMetadata.h264.pixelWidth)),\n                        EBML.element(EBML.ID.PixelHeight, EBML.number(this.trackMetadata.h264.pixelHeight)),\n                        EBML.element(EBML.ID.DisplayWidth, EBML.number(this.trackMetadata.h264.displayWidth)),\n                        EBML.element(EBML.ID.DisplayHeight, EBML.number(this.trackMetadata.h264.displayHeight)),\n                    ]),\n                ]);\n            }\n        \n            getAudioTrackEntry() {\n                return EBML.element(EBML.ID.TrackEntry, [\n                    EBML.element(EBML.ID.TrackNumber, EBML.number(2)),\n                    EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 2)),\n                    EBML.element(EBML.ID.TrackType, EBML.number(0x02)),\n                    EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),\n                    EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.aac.codecId)),\n                    EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.aac.codecPrivate)),\n                    EBML.element(EBML.ID.DefaultDuration, EBML.number(this.trackMetadata.aac.defaultDuration)),\n                    EBML.element(EBML.ID.Language, EBML.string(\'und\')),\n                    EBML.element(EBML.ID.Audio, [\n                        EBML.element(EBML.ID.SamplingFrequency, EBML.float(this.trackMetadata.aac.samplingFrequence)),\n                        EBML.element(EBML.ID.Channels, EBML.number(this.trackMetadata.aac.channels)),\n                    ]),\n                ]);\n            }\n        \n            getSubtitleTrackEntry() {\n                return EBML.element(EBML.ID.TrackEntry, [\n                    EBML.element(EBML.ID.TrackNumber, EBML.number(3)),\n                    EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3)),\n                    EBML.element(EBML.ID.TrackType, EBML.number(0x11)),\n                    EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),\n                    EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.ass.codecId)),\n                    EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.ass.codecPrivate)),\n                    EBML.element(EBML.ID.Language, EBML.string(\'und\')),\n                ]);\n            }\n        \n            getClusterArray() {\n                // H264 codecState\n                this.blocks.h264[0].simple = false;\n                this.blocks.h264[0].codecState = this.trackMetadata.h264.codecPrivate;\n        \n                let i = 0;\n                let j = 0;\n                let k = 0;\n                let clusterTimeCode = 0;\n                let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];\n                let ret = [clusterContent];\n                const progressThrottler = Math.pow(2, Math.floor(Math.log(this.blocks.h264.length >> 7) / Math.log(2))) - 1;\n                for (i = 0; i < this.blocks.h264.length; i++) {\n                    const e = this.blocks.h264[i];\n                    for (; j < this.blocks.aac.length; j++) {\n                        if (this.blocks.aac[j].timestamp < e.timestamp) {\n                            clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));\n                        }\n                        else {\n                            break;\n                        }\n                    }\n                    for (; k < this.blocks.ass.length; k++) {\n                        if (this.blocks.ass[k].timestamp < e.timestamp) {\n                            clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));\n                        }\n                        else {\n                            break;\n                        }\n                    }\n                    if (e.isKeyframe/*  || clusterContent.length > 72 */) {\n                        // start new cluster\n                        clusterTimeCode = e.timestamp;\n                        clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];\n                        ret.push(clusterContent);\n                    }\n                    clusterContent.push(this.getBlocks(e, clusterTimeCode));\n                    if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });\n                }\n                for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));\n                for (; k < this.blocks.ass.length; k++) clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));\n                if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });\n                if (ret[0].length == 1) ret.shift();\n                ret = ret.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));\n        \n                return ret;\n            }\n        \n            getBlocks(e, clusterTimeCode) {\n                if (e.simple) {\n                    return EBML.element(EBML.ID.SimpleBlock, [\n                        EBML.vintEncodedNumber(e.track),\n                        EBML.int16(e.timestamp - clusterTimeCode),\n                        EBML.bytes(e.isKeyframe ? [128] : [0]),\n                        EBML.bytes(e.frame)\n                    ]);\n                }\n                else {\n                    let blockGroupContent = [EBML.element(EBML.ID.Block, [\n                        EBML.vintEncodedNumber(e.track),\n                        EBML.int16(e.timestamp - clusterTimeCode),\n                        EBML.bytes([0]),\n                        EBML.bytes(e.frame)\n                    ])];\n                    if (typeof e.duration != \'undefined\') {\n                        blockGroupContent.push(EBML.element(EBML.ID.BlockDuration, EBML.number(e.duration)));\n                    }\n                    if (typeof e.codecState != \'undefined\') {\n                        blockGroupContent.push(EBML.element(EBML.ID.CodecState, EBML.bytes(e.codecState)));\n                    }\n                    return EBML.element(EBML.ID.BlockGroup, blockGroupContent);\n                }\n            }\n        };\n        \n        const FLVASS2MKV = class {\n            constructor(config = {}) {\n                this.onflvprogress = null;\n                this.onassprogress = null;\n                this.onurlrevokesafe = null;\n                this.onfileload = null;\n                this.onmkvprogress = null;\n                this.onload = null;\n                Object.assign(this, config);\n                this.mkvConfig = { onprogress: this.onmkvprogress };\n                Object.assign(this.mkvConfig, config.mkvConfig);\n            }\n        \n            /**\n             * Demux FLV into H264 + AAC stream and ASS into line stream; then\n             * remux them into a MKV file.\n             * @param {Blob|string|ArrayBuffer} flv \n             * @param {Blob|string|ArrayBuffer} ass \n             */\n            async build(flv = \'./gen_case.flv\', ass = \'./gen_case.ass\') {\n                // load flv and ass as arraybuffer\n                await Promise.all([\n                    new Promise((r, j) => {\n                        if (flv instanceof Blob) {\n                            const e = new FileReader();\n                            e.onprogress = this.onflvprogress;\n                            e.onload = () => r(flv = e.result);\n                            e.onerror = j;\n                            e.readAsArrayBuffer(flv);\n                        }\n                        else if (typeof flv == \'string\') {\n                            const e = new XMLHttpRequest();\n                            e.responseType = \'arraybuffer\';\n                            e.onprogress = this.onflvprogress;\n                            e.onload = () => r(flv = e.response);\n                            e.onerror = j;\n                            e.open(\'get\', flv);\n                            e.send();\n                            flv = 2; // onurlrevokesafe\n                        }\n                        else if (flv instanceof ArrayBuffer) {\n                            r(flv);\n                        }\n                        else {\n                            j(new TypeError(\'flvass2mkv: flv {Blob|string|ArrayBuffer}\'));\n                        }\n                        if (typeof ass != \'string\' && this.onurlrevokesafe) this.onurlrevokesafe();\n                    }),\n                    new Promise((r, j) => {\n                        if (ass instanceof Blob) {\n                            const e = new FileReader();\n                            e.onprogress = this.onflvprogress;\n                            e.onload = () => r(ass = e.result);\n                            e.onerror = j;\n                            e.readAsArrayBuffer(ass);\n                        }\n                        else if (typeof ass == \'string\') {\n                            const e = new XMLHttpRequest();\n                            e.responseType = \'arraybuffer\';\n                            e.onprogress = this.onflvprogress;\n                            e.onload = () => r(ass = e.response);\n                            e.onerror = j;\n                            e.open(\'get\', ass);\n                            e.send();\n                            ass = 2; // onurlrevokesafe\n                        }\n                        else if (ass instanceof ArrayBuffer) {\n                            r(ass);\n                        }\n                        else {\n                            j(new TypeError(\'flvass2mkv: ass {Blob|string|ArrayBuffer}\'));\n                        }\n                        if (typeof flv != \'string\' && this.onurlrevokesafe) this.onurlrevokesafe();\n                    }),\n                ]);\n                if (this.onfileload) this.onfileload();\n        \n                const mkv = new MKV(this.mkvConfig);\n        \n                const assParser = new ASS();\n                ass = assParser.parseFile(ass);\n                mkv.addASSMetadata(ass);\n                mkv.addASSStream(ass);\n        \n                const flvProbeData = FLVDemuxer.probe(flv);\n                const flvDemuxer = new FLVDemuxer(flvProbeData);\n                let mediaInfo = null;\n                let h264 = null;\n                let aac = null;\n                flvDemuxer.onDataAvailable = (...array) => {\n                    array.forEach(e => {\n                        if (e.type == \'video\') h264 = e;\n                        else if (e.type == \'audio\') aac = e;\n                        else throw new Error(`MKVRemuxer: unrecoginzed data type ${e.type}`);\n                    });\n                };\n                flvDemuxer.onMediaInfo = i => mediaInfo = i;\n                flvDemuxer.onTrackMetadata = (i, e) => {\n                    if (i == \'video\') mkv.addH264Metadata(e);\n                    else if (i == \'audio\') mkv.addAACMetadata(e);\n                    else throw new Error(`MKVRemuxer: unrecoginzed metadata type ${i}`);\n                };\n                flvDemuxer.onError = e => { throw new Error(e); };\n                const finalOffset = flvDemuxer.parseChunks(flv, flvProbeData.dataOffset);\n                if (finalOffset != flv.byteLength) throw new Error(\'FLVDemuxer: unexpected EOF\');\n                mkv.addH264Stream(h264);\n                mkv.addAACStream(aac);\n        \n                const ret = mkv.build();\n                if (this.onload) this.onload(ret);\n                return ret;\n            }\n        };\n        \n        // if nodejs then test\n        if (typeof require == \'function\') {\n            (async () => {\n                const fs = require(\'fs\');\n                const assFile = fs.readFileSync(\'gen_case.ass\').buffer;\n                const flvFile = fs.readFileSync(\'large_case.flv\').buffer;\n                fs.writeFileSync(\'out.mkv\', await new FLVASS2MKV({ onmkvprogress: console.log.bind(console) }).build(flvFile, assFile));\n            })();\n        }\n        </script>\n        <script>\n        const fileProgress = document.getElementById(\'fileProgress\');\n        const mkvProgress = document.getElementById(\'mkvProgress\');\n        const a = document.getElementById(\'a\');\n\n        top.exec = async option => {\n            const defaultOption = {\n                onflvprogress: ({ loaded, total }) => {\n                    fileProgress.value = loaded;\n                    fileProgress.max = total;\n                },\n                onfileload: () => {\n                    console.timeEnd(\'file\');\n                    console.time(\'flvass2mkv\');\n                },\n                onmkvprogress: ({ loaded, total }) => {\n                    mkvProgress.value = loaded;\n                    mkvProgress.max = total;\n                },\n                name: \'merged.mkv\',\n            };\n            option = Object.assign(defaultOption, option);\n            a.download = a.textContent = option.name;\n            console.time(\'file\');\n            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);\n            console.timeEnd(\'flvass2mkv\');\n            a.href = URL.createObjectURL(mkv);\n        }\n        </script>\n        ');
+
+                // 3. Invoke exec
+                if (!(this.option instanceof Object)) this.option = null;
+                this.playerWin.exec(Object.assign({}, this.option, { flv: flv, ass: ass, name: name }));
+                URL.revokeObjectURL(flv);
+                URL.revokeObjectURL(ass);
+
+                // 4. Free parent window
+                // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) 
+                top.location = 'about:blank';
+            }
+        }]);
+
+        return MKVTransmuxer;
+    }();
+
     var BiliMonkey = function () {
         function BiliMonkey(playerWin) {
             var _this13 = this;
@@ -1716,10 +1787,9 @@ new Promise(function (resolve) {
             this.flvsBlob = [];
 
             this.defaultFormatPromise = null;
-            this.assAsyncScript = BiliMonkey.loadASSScript();
             this.queryInfoMutex = new Mutex();
             this.queryInfoMutex.lockAndAwait(function () {
-                return _this13.getPlayer();
+                return _this13.getPlayerButtons();
             });
             this.queryInfoMutex.lockAndAwait(function () {
                 return _this13.getAvailableFormatName();
@@ -1804,7 +1874,7 @@ new Promise(function (resolve) {
         }, {
             key: 'execOptions',
             value: function () {
-                var _ref21 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
+                var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee18() {
                     return regeneratorRuntime.wrap(function _callee18$(_context19) {
                         while (1) {
                             switch (_context19.prev = _context19.next) {
@@ -1839,7 +1909,7 @@ new Promise(function (resolve) {
                 }));
 
                 function execOptions() {
-                    return _ref21.apply(this, arguments);
+                    return _ref22.apply(this, arguments);
                 }
 
                 return execOptions;
@@ -1847,7 +1917,7 @@ new Promise(function (resolve) {
         }, {
             key: 'sniffDefaultFormat',
             value: function () {
-                var _ref22 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
+                var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee19() {
                     var _this15 = this;
 
                     var jq, _ajax;
@@ -1885,7 +1955,7 @@ new Promise(function (resolve) {
                                             if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                                 if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                             };
-                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                                 clearTimeout(timeout);
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 var _success = a.success;
@@ -1929,7 +1999,7 @@ new Promise(function (resolve) {
                 }));
 
                 function sniffDefaultFormat() {
-                    return _ref22.apply(this, arguments);
+                    return _ref23.apply(this, arguments);
                 }
 
                 return sniffDefaultFormat;
@@ -1937,7 +2007,7 @@ new Promise(function (resolve) {
         }, {
             key: 'getBackgroundFormat',
             value: function () {
-                var _ref23 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(format) {
+                var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee20(format) {
                     var src, _pendingFormat, jq, _ajax, pendingFormat, self;
 
                     return regeneratorRuntime.wrap(function _callee20$(_context21) {
@@ -1971,7 +2041,7 @@ new Promise(function (resolve) {
                                         if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                             if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                         };
-                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                             self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                             var _success = a.success;
                                             a.success = function (res) {
@@ -1999,8 +2069,8 @@ new Promise(function (resolve) {
                     }, _callee20, this);
                 }));
 
-                function getBackgroundFormat(_x27) {
-                    return _ref23.apply(this, arguments);
+                function getBackgroundFormat(_x28) {
+                    return _ref24.apply(this, arguments);
                 }
 
                 return getBackgroundFormat;
@@ -2008,7 +2078,7 @@ new Promise(function (resolve) {
         }, {
             key: 'getCurrentFormat',
             value: function () {
-                var _ref24 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(format) {
+                var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee21(format) {
                     var _this16 = this;
 
                     var jq, _ajax, _setItem, siblingFormat, fakedRes, pendingFormat, self, blockedRequest, siblingOK;
@@ -2030,7 +2100,7 @@ new Promise(function (resolve) {
                                             if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                                 if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                             };
-                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                                 // Send back a fake response to enable the change-format button.
                                                 self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                                 a.success(fakedRes);
@@ -2065,7 +2135,7 @@ new Promise(function (resolve) {
                                         if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                             if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                         };
-                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                             var _success = a.success;
                                             a.success = function (res) {
                                                 if (self.proxy && res.format == 'flv') {
@@ -2095,8 +2165,8 @@ new Promise(function (resolve) {
                     }, _callee21, this);
                 }));
 
-                function getCurrentFormat(_x28) {
-                    return _ref24.apply(this, arguments);
+                function getCurrentFormat(_x29) {
+                    return _ref25.apply(this, arguments);
                 }
 
                 return getCurrentFormat;
@@ -2104,7 +2174,7 @@ new Promise(function (resolve) {
         }, {
             key: 'getNonCurrentFormat',
             value: function () {
-                var _ref25 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
+                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee22(format) {
                     var _this17 = this;
 
                     var jq, _ajax, _setItem, pendingFormat, self;
@@ -2123,7 +2193,7 @@ new Promise(function (resolve) {
                                         if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                             if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                         };
-                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                        if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                             self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
                                             var _success = a.success;
                                             _success({});
@@ -2148,8 +2218,8 @@ new Promise(function (resolve) {
                     }, _callee22, this);
                 }));
 
-                function getNonCurrentFormat(_x29) {
-                    return _ref25.apply(this, arguments);
+                function getNonCurrentFormat(_x30) {
+                    return _ref26.apply(this, arguments);
                 }
 
                 return getNonCurrentFormat;
@@ -2157,7 +2227,7 @@ new Promise(function (resolve) {
         }, {
             key: 'getASS',
             value: function () {
-                var _ref26 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(clickableFormat) {
+                var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee24(clickableFormat) {
                     var _this18 = this;
 
                     return regeneratorRuntime.wrap(function _callee24$(_context25) {
@@ -2173,14 +2243,20 @@ new Promise(function (resolve) {
 
                                 case 2:
                                     this.ass = new Promise(function () {
-                                        var _ref27 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(resolve) {
-                                            var _ref28, _ref29, _ref29$, fetchDanmaku, generateASS, setPosition, cid;
+                                        var _ref28 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee23(resolve) {
+                                            var _ref29, fetchDanmaku, generateASS, setPosition;
 
                                             return regeneratorRuntime.wrap(function _callee23$(_context24) {
                                                 while (1) {
                                                     switch (_context24.prev = _context24.next) {
                                                         case 0:
-                                                            if (!_this18.cid) _this18.cid = new Promise(function (resolve) {
+                                                            if (_this18.cid) {
+                                                                _context24.next = 4;
+                                                                break;
+                                                            }
+
+                                                            _context24.next = 3;
+                                                            return new Promise(function (resolve) {
                                                                 if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
                                                                 var jq = _this18.playerWin.jQuery;
                                                                 var _ajax = jq.ajax;
@@ -2192,7 +2268,7 @@ new Promise(function (resolve) {
                                                                     if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                                                         if (typeof a === 'string') c.url = a; a = c; c = undefined;
                                                                     };
-                                                                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
+                                                                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                                                                         resolve(self.cid = a.url.match(/cid=\d+/)[0].slice(4));
                                                                         var _success = a.success;
                                                                         _success({});
@@ -2208,20 +2284,15 @@ new Promise(function (resolve) {
                                                                 };
                                                                 _this18.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="' + BiliMonkey.formatToValue(clickableFormat) + '"]').click();
                                                             });
-                                                            _context24.next = 3;
-                                                            return Promise.all([_this18.assAsyncScript, _this18.cid]);
 
                                                         case 3:
-                                                            _ref28 = _context24.sent;
-                                                            _ref29 = _slicedToArray(_ref28, 2);
-                                                            _ref29$ = _ref29[0];
-                                                            fetchDanmaku = _ref29$.fetchDanmaku;
-                                                            generateASS = _ref29$.generateASS;
-                                                            setPosition = _ref29$.setPosition;
-                                                            cid = _ref29[1];
+                                                            _this18.cid = _context24.sent;
+
+                                                        case 4:
+                                                            _ref29 = new ASSDownloader(), fetchDanmaku = _ref29.fetchDanmaku, generateASS = _ref29.generateASS, setPosition = _ref29.setPosition;
 
 
-                                                            fetchDanmaku(cid, function (danmaku) {
+                                                            fetchDanmaku(_this18.cid, function (danmaku) {
                                                                 if (_this18.blocker) {
                                                                     if (_this18.playerWin.localStorage.bilibili_player_settings) {
                                                                         var regexps = JSON.parse(_this18.playerWin.localStorage.bilibili_player_settings).block.list.map(function (e) {
@@ -2244,7 +2315,7 @@ new Promise(function (resolve) {
                                                                 resolve(_this18.ass = top.URL.createObjectURL(blob));
                                                             });
 
-                                                        case 11:
+                                                        case 6:
                                                         case 'end':
                                                             return _context24.stop();
                                                     }
@@ -2252,8 +2323,8 @@ new Promise(function (resolve) {
                                             }, _callee23, _this18);
                                         }));
 
-                                        return function (_x31) {
-                                            return _ref27.apply(this, arguments);
+                                        return function (_x32) {
+                                            return _ref28.apply(this, arguments);
                                         };
                                     }());
                                     return _context25.abrupt('return', this.ass);
@@ -2266,8 +2337,8 @@ new Promise(function (resolve) {
                     }, _callee24, this);
                 }));
 
-                function getASS(_x30) {
-                    return _ref26.apply(this, arguments);
+                function getASS(_x31) {
+                    return _ref27.apply(this, arguments);
                 }
 
                 return getASS;
@@ -2367,14 +2438,14 @@ new Promise(function (resolve) {
                     }, _callee26, this);
                 }));
 
-                function queryInfo(_x32) {
+                function queryInfo(_x33) {
                     return _ref30.apply(this, arguments);
                 }
 
                 return queryInfo;
             }()
         }, {
-            key: 'getPlayer',
+            key: 'getPlayerButtons',
             value: function () {
                 var _ref32 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee27() {
                     var _this20 = this;
@@ -2409,11 +2480,11 @@ new Promise(function (resolve) {
                     }, _callee27, this);
                 }));
 
-                function getPlayer() {
+                function getPlayerButtons() {
                     return _ref32.apply(this, arguments);
                 }
 
-                return getPlayer;
+                return getPlayerButtons;
             }()
         }, {
             key: 'hangPlayer',
@@ -2427,61 +2498,59 @@ new Promise(function (resolve) {
                         while (1) {
                             switch (_context30.prev = _context30.next) {
                                 case 0:
-                                    _context30.next = 2;
-                                    return this.getPlayer();
-
-                                case 2:
                                     fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
                                     jq = this.playerWin.jQuery;
                                     _ajax = jq.ajax;
                                     _setItem = this.playerWin.localStorage.setItem;
-                                    return _context30.abrupt('return', new Promise(function () {
-                                        var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(resolve) {
-                                            var blockerTimeout, button;
-                                            return regeneratorRuntime.wrap(function _callee28$(_context29) {
-                                                while (1) {
-                                                    switch (_context29.prev = _context29.next) {
-                                                        case 0:
-                                                            blockerTimeout = void 0;
+                                    return _context30.abrupt('return', this.queryInfoMutex.lockAndAwait(function () {
+                                        return new Promise(function () {
+                                            var _ref34 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(resolve) {
+                                                var blockerTimeout, button;
+                                                return regeneratorRuntime.wrap(function _callee28$(_context29) {
+                                                    while (1) {
+                                                        switch (_context29.prev = _context29.next) {
+                                                            case 0:
+                                                                blockerTimeout = void 0;
 
-                                                            jq.ajax = function (a, c) {
-                                                                if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
-                                                                    if (typeof a === 'string') c.url = a; a = c; c = undefined;
+                                                                jq.ajax = function (a, c) {
+                                                                    if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
+                                                                        if (typeof a === 'string') c.url = a; a = c; c = undefined;
+                                                                    };
+                                                                    if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                                                                        clearTimeout(blockerTimeout);
+                                                                        a.success(fakedRes);
+                                                                        blockerTimeout = setTimeout(function () {
+                                                                            jq.ajax = _ajax;
+                                                                            resolve();
+                                                                        }, 2500);
+                                                                    } else {
+                                                                        return _ajax.call(jq, a, c);
+                                                                    }
                                                                 };
-                                                                if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/playurl?')) {
-                                                                    clearTimeout(blockerTimeout);
-                                                                    a.success(fakedRes);
-                                                                    blockerTimeout = setTimeout(function () {
-                                                                        jq.ajax = _ajax;
-                                                                        resolve();
-                                                                    }, 2500);
-                                                                } else {
-                                                                    return _ajax.call(jq, a, c);
-                                                                }
-                                                            };
-                                                            _this21.playerWin.localStorage.setItem = function () {
-                                                                return _this21.playerWin.localStorage.setItem = _setItem;
-                                                            };
-                                                            button = Array.from(_this21.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).find(function (e) {
-                                                                return !e.getAttribute('data-selected') && !e.children.length;
-                                                            });
+                                                                _this21.playerWin.localStorage.setItem = function () {
+                                                                    return _this21.playerWin.localStorage.setItem = _setItem;
+                                                                };
+                                                                button = Array.from(_this21.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).find(function (e) {
+                                                                    return !e.getAttribute('data-selected') && !e.children.length;
+                                                                });
 
-                                                            button.click();
+                                                                button.click();
 
-                                                        case 5:
-                                                        case 'end':
-                                                            return _context29.stop();
+                                                            case 5:
+                                                            case 'end':
+                                                                return _context29.stop();
+                                                        }
                                                     }
-                                                }
-                                            }, _callee28, _this21);
-                                        }));
+                                                }, _callee28, _this21);
+                                            }));
 
-                                        return function (_x33) {
-                                            return _ref34.apply(this, arguments);
-                                        };
-                                    }()));
+                                            return function (_x34) {
+                                                return _ref34.apply(this, arguments);
+                                            };
+                                        }());
+                                    }));
 
-                                case 7:
+                                case 5:
                                 case 'end':
                                     return _context30.stop();
                             }
@@ -2545,7 +2614,7 @@ new Promise(function (resolve) {
                     }, _callee30, this);
                 }));
 
-                function loadFLVFromCache(_x34) {
+                function loadFLVFromCache(_x35) {
                     return _ref35.apply(this, arguments);
                 }
 
@@ -2603,7 +2672,7 @@ new Promise(function (resolve) {
                     }, _callee31, this);
                 }));
 
-                function loadPartialFLVFromCache(_x35) {
+                function loadPartialFLVFromCache(_x36) {
                     return _ref36.apply(this, arguments);
                 }
 
@@ -2690,7 +2759,7 @@ new Promise(function (resolve) {
                     }, _callee33, this);
                 }));
 
-                function saveFLVToCache(_x36, _x37) {
+                function saveFLVToCache(_x37, _x38) {
                     return _ref38.apply(this, arguments);
                 }
 
@@ -2734,7 +2803,7 @@ new Promise(function (resolve) {
                     }, _callee34, this);
                 }));
 
-                function savePartialFLVToCache(_x38, _x39) {
+                function savePartialFLVToCache(_x39, _x40) {
                     return _ref39.apply(this, arguments);
                 }
 
@@ -2778,7 +2847,7 @@ new Promise(function (resolve) {
                     }, _callee35, this);
                 }));
 
-                function cleanPartialFLVInCache(_x40) {
+                function cleanPartialFLVInCache(_x41) {
                     return _ref40.apply(this, arguments);
                 }
 
@@ -2892,7 +2961,7 @@ new Promise(function (resolve) {
                     }, _callee37, this);
                 }));
 
-                function getFLV(_x41, _x42) {
+                function getFLV(_x42, _x43) {
                     return _ref41.apply(this, arguments);
                 }
 
@@ -2921,7 +2990,7 @@ new Promise(function (resolve) {
                     }, _callee38, this);
                 }));
 
-                function abortFLV(_x43) {
+                function abortFLV(_x44) {
                     return _ref44.apply(this, arguments);
                 }
 
@@ -2958,7 +3027,7 @@ new Promise(function (resolve) {
                     }, _callee39, this);
                 }));
 
-                function getAllFLVs(_x44) {
+                function getAllFLVs(_x45) {
                     return _ref45.apply(this, arguments);
                 }
 
@@ -3083,15 +3152,14 @@ new Promise(function (resolve) {
                                     return this.loadAllFLVFromCache();
 
                                 case 3:
-                                    resProxy = {};
+                                    resProxy = Object.assign({}, res);
 
-                                    Object.assign(resProxy, res);
                                     for (i = 0; i < this.flvsBlob.length; i++) {
                                         if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
                                     }
                                     return _context42.abrupt('return', onsuccess(resProxy));
 
-                                case 7:
+                                case 6:
                                 case 'end':
                                     return _context42.stop();
                             }
@@ -3099,7 +3167,7 @@ new Promise(function (resolve) {
                     }, _callee41, this);
                 }));
 
-                function setupProxy(_x45, _x46) {
+                function setupProxy(_x46, _x47) {
                     return _ref47.apply(this, arguments);
                 }
 
@@ -3152,71 +3220,26 @@ new Promise(function (resolve) {
                 }
             }
         }, {
-            key: 'loadASSScript',
-            value: function () {
-                var _ref48 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42() {
-                    var src = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'https://tiansh.github.io/us-danmaku/bilibili/bilibili_ASS_Danmaku_Downloader.user.js';
-                    var script, head, foot;
+            key: '_UNIT_TEST',
+            value: function _UNIT_TEST() {
+                var _this24 = this;
+
+                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee42() {
+                    var playerWin;
                     return regeneratorRuntime.wrap(function _callee42$(_context43) {
                         while (1) {
                             switch (_context43.prev = _context43.next) {
                                 case 0:
                                     _context43.next = 2;
-                                    return new Promise(function (resolve, reject) {
-                                        var req = new XMLHttpRequest();
-                                        req.onload = function () {
-                                            return resolve(req.responseText);
-                                        };
-                                        req.onerror = reject;
-                                        req.open('get', src);
-                                        req.send();
-                                    });
-
-                                case 2:
-                                    script = _context43.sent;
-
-                                    script = script.slice(0, script.indexOf('var init = function ()'));
-                                    head = '\n        (function () {\n        ';
-                                    foot = '\n            fetchXML = function (cid, callback) {\n                var oReq = new XMLHttpRequest();\n                oReq.open(\'GET\', \'https://comment.bilibili.com/{{cid}}.xml\'.replace(\'{{cid}}\', cid));\n                oReq.onload = function () {\n                    var content = oReq.responseText.replace(/(?:[\0-\b\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, "");\n                    callback(content);\n                };\n                oReq.send();\n            };\n            initFont();\n            return { fetchDanmaku: fetchDanmaku, generateASS: generateASS, setPosition: setPosition };\n        })()\n        ';
-
-                                    script = '' + head + script + foot;
-                                    return _context43.abrupt('return', top.eval(script));
-
-                                case 8:
-                                case 'end':
-                                    return _context43.stop();
-                            }
-                        }
-                    }, _callee42, this);
-                }));
-
-                function loadASSScript() {
-                    return _ref48.apply(this, arguments);
-                }
-
-                return loadASSScript;
-            }()
-        }, {
-            key: '_UNIT_TEST',
-            value: function _UNIT_TEST() {
-                var _this24 = this;
-
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
-                    var playerWin;
-                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
-                        while (1) {
-                            switch (_context44.prev = _context44.next) {
-                                case 0:
-                                    _context44.next = 2;
                                     return BiliUserJS.getPlayerWin();
 
                                 case 2:
-                                    playerWin = _context44.sent;
+                                    playerWin = _context43.sent;
 
                                     window.m = new BiliMonkey(playerWin);
 
                                     console.warn('sniffDefaultFormat test');
-                                    _context44.next = 7;
+                                    _context43.next = 7;
                                     return m.sniffDefaultFormat();
 
                                 case 7:
@@ -3227,31 +3250,31 @@ new Promise(function (resolve) {
                                     console.log(m.queryInfo('mp4'));
 
                                     console.warn('getNonCurrentFormat test');
-                                    _context44.t0 = console;
-                                    _context44.next = 15;
+                                    _context43.t0 = console;
+                                    _context43.next = 15;
                                     return m.queryInfo('mp4');
 
                                 case 15:
-                                    _context44.t1 = _context44.sent;
+                                    _context43.t1 = _context43.sent;
 
-                                    _context44.t0.log.call(_context44.t0, _context44.t1);
+                                    _context43.t0.log.call(_context43.t0, _context43.t1);
 
                                     console.warn('getCurrentFormat test');
-                                    _context44.t2 = console;
-                                    _context44.next = 21;
+                                    _context43.t2 = console;
+                                    _context43.next = 21;
                                     return m.queryInfo('flv');
 
                                 case 21:
-                                    _context44.t3 = _context44.sent;
+                                    _context43.t3 = _context43.sent;
 
-                                    _context44.t2.log.call(_context44.t2, _context44.t3);
+                                    _context43.t2.log.call(_context43.t2, _context43.t3);
 
                                 case 23:
                                 case 'end':
-                                    return _context44.stop();
+                                    return _context43.stop();
                             }
                         }
-                    }, _callee43, _this24);
+                    }, _callee42, _this24);
                 }))();
             }
         }]);
@@ -3298,7 +3321,7 @@ new Promise(function (resolve) {
             this.getStorage = option.getStorage;
             this.hintInfo = hintInfo;
             this.series = [];
-            this.userdata = null;
+            this.userdata = { oped: {} };
         }
 
         _createClass(BiliPolyfill, [{
@@ -3307,8 +3330,8 @@ new Promise(function (resolve) {
                 this.setStorage('biliPolyfill', JSON.stringify(this.userdata));
             }
         }, {
-            key: 'retriveUserdata',
-            value: function retriveUserdata() {
+            key: 'retrieveUserdata',
+            value: function retrieveUserdata() {
                 try {
                     this.userdata = this.getStorage('biliPolyfill');
                     if (this.userdata.length > 1073741824) top.alert('BiliPolyfill脚本数据已经快满了，在播放器上右键->BiliPolyfill->片头片尾->检视数据，删掉一些吧。');
@@ -3321,97 +3344,81 @@ new Promise(function (resolve) {
         }, {
             key: 'setFunctions',
             value: function () {
-                var _ref50 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
+                var _ref49 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee43() {
                     var _this25 = this;
 
-                    var _ref51 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                        _ref51$videoRefresh = _ref51.videoRefresh,
-                        videoRefresh = _ref51$videoRefresh === undefined ? false : _ref51$videoRefresh;
+                    var _ref50 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                        _ref50$videoRefresh = _ref50.videoRefresh,
+                        videoRefresh = _ref50$videoRefresh === undefined ? false : _ref50$videoRefresh;
 
-                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
+                    return regeneratorRuntime.wrap(function _callee43$(_context44) {
                         while (1) {
-                            switch (_context45.prev = _context45.next) {
+                            switch (_context44.prev = _context44.next) {
                                 case 0:
+                                    _context44.next = 2;
+                                    return this.getPlayerVideo();
+
+                                case 2:
+                                    this.video = _context44.sent;
+
                                     if (this.option.betabeta) {
-                                        _context45.next = 5;
+                                        _context44.next = 5;
                                         break;
                                     }
 
-                                    _context45.next = 3;
-                                    return this.getPlayerVideo();
-
-                                case 3:
-                                    this.userdata = { oped: {} };
-                                    return _context45.abrupt('return');
+                                    return _context44.abrupt('return', this.getPlayerMenu());
 
                                 case 5:
+
+                                    // 3. Set up functions that are page static
                                     if (!videoRefresh) {
-                                        _context45.next = 14;
-                                        break;
+                                        this.retrieveUserdata();
+                                        if (this.option.badgeWatchLater) this.badgeWatchLater();
+                                        if (this.option.scroll) this.scrollToPlayer();
+                                        if (this.option.recommend) this.showRecommendTab();
+                                        if (this.option.autoResume) this.autoResume();
+                                        if (this.option.autoPlay) this.autoPlay();
+                                        if (this.option.autoWideScreen) this.autoWideScreen();
+                                        if (this.option.autoFullScreen) this.autoFullScreen();
+                                        if (this.option.focus) this.focusOnPlayer();
+                                        if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
+                                        if (this.option.series) this.inferNextInSeries();
+                                        this.playerWin.addEventListener('beforeunload', function () {
+                                            return _this25.saveUserdata();
+                                        });
                                     }
 
-                                    this.video = this.playerWin.document.getElementsByTagName('video')[0];
-
-                                    if (this.video) {
-                                        _context45.next = 9;
-                                        break;
-                                    }
-
-                                    return _context45.abrupt('return');
-
-                                case 9:
-                                    if (this.option.dblclick) this.dblclickFullScreen();
-                                    if (this.option.electric) this.reallocateElectricPanel();
-                                    if (this.option.oped) this.skipOPED();
-                                    this.video.addEventListener('emptied', function () {
-                                        return _this25.setFunctions({ videoRefresh: true });
-                                    });
-                                    return _context45.abrupt('return');
-
-                                case 14:
-                                    _context45.next = 16;
-                                    return this.getPlayerVideo();
-
-                                case 16:
-                                    this.video = _context45.sent;
-
-                                    this.retriveUserdata();
-                                    if (this.option.badgeWatchLater) this.badgeWatchLater();
-                                    if (this.option.dblclick) this.dblclickFullScreen();
-                                    if (this.option.scroll) this.scrollToPlayer();
-                                    if (this.option.recommend) this.showRecommendTab();
-                                    if (this.option.electric) this.reallocateElectricPanel();
+                                    // 4. Set up functions that are binded to the video DOM
                                     if (this.option.lift) this.liftBottomDanmuku();
-                                    if (this.option.autoResume) this.autoResume();
-                                    if (this.option.autoPlay) this.autoPlay();
-                                    if (this.option.autoWideScreen) this.autoWideScreen();
-                                    if (this.option.autoFullScreen) this.autoFullScreen();
+                                    if (this.option.dblclick) this.dblclickFullScreen();
+                                    if (this.option.electric) this.reallocateElectricPanel();
                                     if (this.option.oped) this.skipOPED();
-                                    if (this.option.focus) this.focusOnPlayer();
-                                    if (this.option.menuFocus) this.menuFocusOnPlayer();
-                                    if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
-                                    this.playerWin.addEventListener('beforeunload', function () {
-                                        return _this25.saveUserdata();
-                                    });
                                     this.video.addEventListener('emptied', function () {
                                         return _this25.setFunctions({ videoRefresh: true });
                                     });
-                                    // beta
+
+                                    // 5. Set up functions that require everything to be ready
+                                    _context44.next = 13;
+                                    return this.getPlayerMenu();
+
+                                case 13:
+                                    if (this.option.menuFocus) this.menuFocusOnPlayer();
+
+                                    // 6. Set up experimental functions
                                     if (this.option.speech) top.document.body.addEventListener('click', function (e) {
                                         return e.detail > 2 && _this25.speechRecognition();
                                     });
-                                    if (this.option.series) this.inferNextInSeries();
 
-                                case 36:
+                                case 15:
                                 case 'end':
-                                    return _context45.stop();
+                                    return _context44.stop();
                             }
                         }
-                    }, _callee44, this);
+                    }, _callee43, this);
                 }));
 
                 function setFunctions() {
-                    return _ref50.apply(this, arguments);
+                    return _ref49.apply(this, arguments);
                 }
 
                 return setFunctions;
@@ -3419,24 +3426,24 @@ new Promise(function (resolve) {
         }, {
             key: 'inferNextInSeries',
             value: function () {
-                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                var _ref51 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee44() {
                     var title, epNumberText, seriesTitle, ep, mid, vlist;
-                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
+                    return regeneratorRuntime.wrap(function _callee44$(_context45) {
                         while (1) {
-                            switch (_context46.prev = _context46.next) {
+                            switch (_context45.prev = _context45.next) {
                                 case 0:
-                                    title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
+                                    title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
 
                                     // 1. Find series name
 
                                     epNumberText = title.match(/\d+/g);
 
                                     if (epNumberText) {
-                                        _context46.next = 4;
+                                        _context45.next = 4;
                                         break;
                                     }
 
-                                    return _context46.abrupt('return', this.series = []);
+                                    return _context45.abrupt('return', this.series = []);
 
                                 case 4:
                                     epNumberText = epNumberText.pop();
@@ -3453,15 +3460,15 @@ new Promise(function (resolve) {
                                     mid = top.document.getElementById('r-info-rank');
 
                                     if (mid) {
-                                        _context46.next = 12;
+                                        _context45.next = 12;
                                         break;
                                     }
 
-                                    return _context46.abrupt('return', this.series = []);
+                                    return _context45.abrupt('return', this.series = []);
 
                                 case 12:
                                     mid = mid.children[0].href.match(/\d+/)[0];
-                                    _context46.next = 15;
+                                    _context45.next = 15;
                                     return Promise.all([title].concat(_toConsumableArray(ep)).map(function (keyword) {
                                         return new Promise(function (resolve, reject) {
                                             var req = new XMLHttpRequest();
@@ -3476,7 +3483,7 @@ new Promise(function (resolve) {
                                     }));
 
                                 case 15:
-                                    vlist = _context46.sent;
+                                    vlist = _context45.sent;
 
 
                                     vlist[0] = [vlist[0].find(function (e) {
@@ -3484,11 +3491,11 @@ new Promise(function (resolve) {
                                     })];
 
                                     if (vlist[0][0]) {
-                                        _context46.next = 20;
+                                        _context45.next = 20;
                                         break;
                                     }
 
-                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context46.abrupt('return', this.series = []);
+                                    console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space'); return _context45.abrupt('return', this.series = []);
 
                                 case 20:
                                     this.series = [vlist[1].find(function (e) {
@@ -3503,18 +3510,18 @@ new Promise(function (resolve) {
                                         return e.created > vlist[0][0].created;
                                     }) || null;
 
-                                    return _context46.abrupt('return', this.series);
+                                    return _context45.abrupt('return', this.series);
 
                                 case 24:
                                 case 'end':
-                                    return _context46.stop();
+                                    return _context45.stop();
                             }
                         }
-                    }, _callee45, this);
+                    }, _callee44, this);
                 }));
 
                 function inferNextInSeries() {
-                    return _ref52.apply(this, arguments);
+                    return _ref51.apply(this, arguments);
                 }
 
                 return inferNextInSeries;
@@ -3571,7 +3578,12 @@ new Promise(function (resolve) {
         }, {
             key: 'getCoverImage',
             value: function getCoverImage() {
-                if (top.document.querySelector('.cover_image')) return top.document.querySelector('.cover_image').src; else if (top.document.querySelector('div.v1-bangumi-info-img > a > img')) return top.document.querySelector('div.v1-bangumi-info-img > a > img').src.slice(0, top.document.querySelector('div.v1-bangumi-info-img > a > img').src.indexOf('.jpg') + 4); else if (top.document.querySelector('[data-state-play="true"]  img')) return top.document.querySelector('[data-state-play="true"]  img').src.slice(0, top.document.querySelector('[data-state-play="true"]  img').src.indexOf('.jpg') + 4); else return null;
+                var ret = top.document.querySelector('.cover_image') || top.document.querySelector('div.info-cover > a > img') || top.document.querySelector('[data-state-play="true"]  img');
+                if (!ret) return null;
+
+                ret = ret.src;
+                ret = ret.slice(0, ret.indexOf('.jpg') + 4);
+                return ret;
             }
         }, {
             key: 'reallocateElectricPanel',
@@ -3678,7 +3690,7 @@ new Promise(function (resolve) {
         }, {
             key: 'getCollectionId',
             value: function getCollectionId() {
-                return (top.location.pathname.match(/av\d+/) || top.location.pathname.match(/anime\/\d+/) || top.location.hash.match(/av\d+/))[0];
+                return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
             }
         }, {
             key: 'markOPPosition',
@@ -3779,20 +3791,8 @@ new Promise(function (resolve) {
             value: function speechRecognition() {
                 var _this33 = this;
 
-                var r = void 0,
-                    g = void 0;
-                try {
-                    r = SpeechRecognition;
-                    g = SpeechGrammarList;
-                } catch (e) {
-                    try {
-                        r = webkitSpeechRecognition;
-                        g = webkitSpeechGrammarList;
-                    } catch (e) { }
-                }
-                var SpeechRecognition = r,
-                    SpeechGrammarList = g;
-
+                var SpeechRecognition = top.SpeechRecognition || top.webkitSpeechRecognition;
+                var SpeechGrammarList = top.SpeechGrammarList || top.webkitSpeechGrammarList;
                 alert('Yahaha! You found me!\nBiliTwin支持的语音命令: 播放 暂停 全屏 关闭 加速 减速 下一集\nChrome may support Cantonese or Hakka as well. See BiliPolyfill::speechRecognition.');
                 if (!SpeechRecognition || !SpeechGrammarList) alert('浏览器太旧啦~彩蛋没法运行~');
                 var player = ['播放', '暂停', '全屏', '关闭', '加速', '减速', '下一集'];
@@ -3841,8 +3841,8 @@ new Promise(function (resolve) {
                             _this33.hintInfo('BiliPolyfill: \u8BED\u97F3:"' + transcript + '"\uFF1F');
                             break;
                     }
-                    console && console.log(e.results);
-                    console && console.log('transcript:' + transcript + ' confidence:' + e.results[0][0].confidence);
+                    (typeof console === 'undefined' ? 'undefined' : _typeof(console)) == "object" && console.log(e.results);
+                    (typeof console === 'undefined' ? 'undefined' : _typeof(console)) == "object" && console.log('transcript:' + transcript + ' confidence:' + e.results[0][0].confidence);
                 };
             }
         }, {
@@ -3865,22 +3865,22 @@ new Promise(function (resolve) {
         }, {
             key: 'getPlayerVideo',
             value: function () {
-                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+                var _ref52 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
                     var _this34 = this;
 
-                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
+                    return regeneratorRuntime.wrap(function _callee45$(_context46) {
                         while (1) {
-                            switch (_context47.prev = _context47.next) {
+                            switch (_context46.prev = _context46.next) {
                                 case 0:
                                     if (!this.playerWin.document.getElementsByTagName('video').length) {
-                                        _context47.next = 4;
+                                        _context46.next = 4;
                                         break;
                                     }
 
-                                    return _context47.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
+                                    return _context46.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
 
                                 case 4:
-                                    return _context47.abrupt('return', new Promise(function (resolve) {
+                                    return _context46.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (_this34.playerWin.document.getElementsByTagName('video').length) {
                                                 observer.disconnect();
@@ -3892,57 +3892,173 @@ new Promise(function (resolve) {
 
                                 case 5:
                                 case 'end':
+                                    return _context46.stop();
+                            }
+                        }
+                    }, _callee45, this);
+                }));
+
+                function getPlayerVideo() {
+                    return _ref52.apply(this, arguments);
+                }
+
+                return getPlayerVideo;
+            }()
+        }, {
+            key: 'getPlayerMenu',
+            value: function () {
+                var _ref53 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee46() {
+                    var _this35 = this;
+
+                    return regeneratorRuntime.wrap(function _callee46$(_context47) {
+                        while (1) {
+                            switch (_context47.prev = _context47.next) {
+                                case 0:
+                                    if (!this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
+                                        _context47.next = 4;
+                                        break;
+                                    }
+
+                                    return _context47.abrupt('return', this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0]);
+
+                                case 4:
+                                    return _context47.abrupt('return', new Promise(function (resolve) {
+                                        var observer = new MutationObserver(function () {
+                                            if (_this35.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
+                                                observer.disconnect();
+                                                resolve(_this35.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0]);
+                                            }
+                                        });
+                                        observer.observe(_this35.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+                                    }));
+
+                                case 5:
+                                case 'end':
                                     return _context47.stop();
                             }
                         }
                     }, _callee46, this);
                 }));
 
-                function getPlayerVideo() {
+                function getPlayerMenu() {
                     return _ref53.apply(this, arguments);
                 }
 
-                return getPlayerVideo;
+                return getPlayerMenu;
             }()
         }], [{
             key: 'openMinimizedPlayer',
-            value: function openMinimizedPlayer() {
-                var _this35 = this;
-
-                var option = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { cid: top.cid, aid: '' };
-
-                if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
-                if (!option.cid) throw 'player init: cid missing';
-                if (!option.aid) option.aid = '';
-                var h = top.open('//www.bilibili.com/blackboard/html5player.html?cid=' + option.cid + '&aid=' + option.aid + '&crossDomain=' + (top.document.domain != 'www.bilibili.com' ? 'true' : ''), undefined, ' ');
-
-                _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
-                    var div, i;
+            value: function () {
+                var _ref54 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee47() {
+                    var option = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { cid: top.cid, aid: top.aid, playerWin: top };
+                    var h, res, div, i;
                     return regeneratorRuntime.wrap(function _callee47$(_context48) {
                         while (1) {
                             switch (_context48.prev = _context48.next) {
                                 case 0:
-                                    _context48.next = 2;
+                                    if (option) {
+                                        _context48.next = 2;
+                                        break;
+                                    }
+
+                                    throw 'usage: openMinimizedPlayer({cid[, aid]})';
+
+                                case 2:
+                                    if (option.cid) {
+                                        _context48.next = 4;
+                                        break;
+                                    }
+
+                                    throw 'player init: cid missing';
+
+                                case 4:
+                                    if (!option.aid) option.aid = top.aid;
+                                    if (!option.playerWin) option.playerWin = top;
+
+                                    h = top.open('//www.bilibili.com/blackboard/html5player.html?cid=' + option.cid + '&aid=' + option.aid + '&crossDomain=' + (top.document.domain != 'www.bilibili.com' ? 'true' : ''), undefined, ' ');
+                                    _context48.t0 = top.location.href.includes('bangumi');
+
+                                    if (!_context48.t0) {
+                                        _context48.next = 12;
+                                        break;
+                                    }
+
+                                    _context48.next = 11;
                                     return new Promise(function (resolve) {
+                                        var jq = option.playerWin.jQuery;
+                                        var _ajax = jq.ajax;
+
+                                        jq.ajax = function (a, c) {
+                                            if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
+                                                if (typeof a === 'string') c.url = a; a = c; c = undefined;
+                                            };
+                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                                                a.success = resolve;
+                                                jq.ajax = _ajax;
+                                            }
+                                            return _ajax.call(jq, a, c);
+                                        };
+                                        option.playerWin.player.reloadAccess();
+                                    });
+
+                                case 11:
+                                    _context48.t0 = _context48.sent;
+
+                                case 12:
+                                    res = _context48.t0;
+                                    _context48.next = 15;
+                                    return new Promise(function (resolve) {
+                                        var i = setInterval(function () {
+                                            return h.document.getElementById('bilibiliPlayer') && resolve();
+                                        }, 500);
                                         h.addEventListener('load', resolve);
                                         setTimeout(function () {
+                                            clearInterval(i);
                                             h.removeEventListener('load', resolve);
                                             resolve();
                                         }, 6000);
                                     });
 
-                                case 2:
+                                case 15:
                                     div = h.document.getElementById('bilibiliPlayer');
 
                                     if (div) {
-                                        _context48.next = 6;
+                                        _context48.next = 19;
                                         break;
                                     }
 
-                                    console.warn('openMinimizedPlayer: fullscreen timeout'); return _context48.abrupt('return');
+                                    console.warn('openMinimizedPlayer: document load timeout'); return _context48.abrupt('return');
 
-                                case 6:
-                                    _context48.next = 8;
+                                case 19:
+                                    if (!res) {
+                                        _context48.next = 22;
+                                        break;
+                                    }
+
+                                    _context48.next = 22;
+                                    return new Promise(function (resolve) {
+                                        var jq = h.jQuery;
+                                        var _ajax = jq.ajax;
+
+                                        jq.ajax = function (a, c) {
+                                            if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
+                                                if (typeof a === 'string') c.url = a; a = c; c = undefined;
+                                            };
+                                            if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                                                a.success(res);
+                                                jq.ajax = _ajax;
+                                                resolve();
+                                            } else {
+                                                return _ajax.call(jq, a, c);
+                                            }
+                                        };
+                                        h.player = new h.bilibiliPlayer({ cid: option.cid, aid: option.aid });
+                                        // h.eval(`player = new bilibiliPlayer({ cid: ${option.cid}, aid: ${option.aid} })`);
+                                        // console.log(`player = new bilibiliPlayer({ cid: ${option.cid}, aid: ${option.aid} })`);
+                                    });
+
+                                case 22:
+                                    _context48.next = 24;
                                     return new Promise(function (resolve) {
                                         if (h.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve(); else {
                                             var observer = new MutationObserver(function () {
@@ -3955,7 +4071,7 @@ new Promise(function (resolve) {
                                         }
                                     });
 
-                                case 8:
+                                case 24:
                                     i = [div.webkitRequestFullscreen, div.mozRequestFullScreen, div.msRequestFullscreen, div.requestFullscreen];
 
                                     div.webkitRequestFullscreen = div.mozRequestFullScreen = div.msRequestFullscreen = div.requestFullscreen = function () { };
@@ -3965,14 +4081,20 @@ new Promise(function (resolve) {
                                     div.msRequestFullscreen = i[2];
                                     div.requestFullscreen = i[3];
 
-                                case 15:
+                                case 31:
                                 case 'end':
                                     return _context48.stop();
                             }
                         }
-                    }, _callee47, _this35);
-                }))();
-            }
+                    }, _callee47, this);
+                }));
+
+                function openMinimizedPlayer() {
+                    return _ref54.apply(this, arguments);
+                }
+
+                return openMinimizedPlayer;
+            }()
         }, {
             key: 'parseHref',
             value: function parseHref() {
@@ -4078,7 +4200,7 @@ new Promise(function (resolve) {
                                     _context50.next = 3;
                                     return new Promise(function (resolve) {
                                         var h = function h() {
-                                            resolve();
+                                            resolve(location.href);
                                             window.removeEventListener('hashchange', h);
                                         };
                                         window.addEventListener('hashchange', h);
@@ -4099,7 +4221,7 @@ new Promise(function (resolve) {
                                     return new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
                                             if (document.getElementById('bofqi')) {
-                                                resolve();
+                                                resolve(document.getElementById('bofqi'));
                                                 observer.disconnect();
                                             }
                                         });
@@ -4107,30 +4229,36 @@ new Promise(function (resolve) {
                                     });
 
                                 case 7:
-                                    if (!(location.host == 'bangumi.bilibili.com')) {
-                                        _context50.next = 19;
+                                    if (!document.getElementById('bilibiliPlayer')) {
+                                        _context50.next = 11;
                                         break;
                                     }
 
+                                    return _context50.abrupt('return', window);
+
+                                case 11:
                                     if (!document.querySelector('#bofqi > iframe')) {
-                                        _context50.next = 12;
+                                        _context50.next = 15;
                                         break;
                                     }
 
                                     return _context50.abrupt('return', BiliUserJS.getIframeWin());
 
-                                case 12:
+                                case 15:
                                     if (!document.querySelector('#bofqi > object')) {
-                                        _context50.next = 16;
+                                        _context50.next = 19;
                                         break;
                                     }
 
                                     throw 'Need H5 Player';
 
-                                case 16:
+                                case 19:
                                     return _context50.abrupt('return', new Promise(function (resolve) {
                                         var observer = new MutationObserver(function () {
-                                            if (document.querySelector('#bofqi > iframe')) {
+                                            if (document.getElementById('bilibiliPlayer')) {
+                                                observer.disconnect();
+                                                resolve(window);
+                                            } else if (document.querySelector('#bofqi > iframe')) {
                                                 observer.disconnect();
                                                 resolve(BiliUserJS.getIframeWin());
                                             } else if (document.querySelector('#bofqi > object')) {
@@ -4141,41 +4269,7 @@ new Promise(function (resolve) {
                                         observer.observe(document.getElementById('bofqi'), { childList: true });
                                     }));
 
-                                case 17:
-                                    _context50.next = 28;
-                                    break;
-
-                                case 19:
-                                    if (!document.getElementById('bilibiliPlayer')) {
-                                        _context50.next = 23;
-                                        break;
-                                    }
-
-                                    return _context50.abrupt('return', window);
-
-                                case 23:
-                                    if (!document.querySelector('#bofqi > object')) {
-                                        _context50.next = 27;
-                                        break;
-                                    }
-
-                                    throw 'Need H5 Player';
-
-                                case 27:
-                                    return _context50.abrupt('return', new Promise(function (resolve) {
-                                        var observer = new MutationObserver(function () {
-                                            if (document.getElementById('bilibiliPlayer')) {
-                                                observer.disconnect();
-                                                resolve(window);
-                                            } else if (document.querySelector('#bofqi > object')) {
-                                                observer.disconnect();
-                                                throw 'Need H5 Player';
-                                            }
-                                        });
-                                        observer.observe(document.getElementById('bofqi'), { childList: true });
-                                    }));
-
-                                case 28:
+                                case 20:
                                 case 'end':
                                     return _context50.stop();
                             }
@@ -4210,8 +4304,8 @@ new Promise(function (resolve) {
             value: function titleAppend(monkey) {
                 var _this37 = this;
 
-                var h = document.querySelector('div.viewbox div.info') || document.querySelector('div.video-top-info div.video-info-module');
-                var tminfo = document.querySelector('div.tminfo');
+                var h = document.querySelector('div.viewbox div.info') || document.querySelector('div.bangumi-header div.header-info') || document.querySelector('div.video-info-module');
+                var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
                 var div = document.createElement('div');
                 var flvA = document.createElement('a');
                 var mp4A = document.createElement('a');
@@ -4302,12 +4396,9 @@ new Promise(function (resolve) {
                 div.appendChild(document.createTextNode(' '));
                 div.appendChild(assA);
                 div.className = 'bilitwin';
-                div.style.zIndex = '1';
-                div.style.paddingTop = '4px';
-                div.style.width = '32%';
                 div.style.float = 'left';
-                tminfo.style.float = 'left';
-                tminfo.style.width = '68%';
+                tminfo.style.float = 'none';
+                tminfo.style.marginLeft = '185px';
                 h.insertBefore(div, tminfo);
                 return { flvA: flvA, mp4A: mp4A, assA: assA };
             }
@@ -4342,7 +4433,7 @@ new Promise(function (resolve) {
                 tr.insertCell(0).innerHTML = '<a>全部复制到剪贴板</a>';
                 tr.insertCell(1).innerHTML = '<a>缓存全部+自动合并</a>';
                 tr.insertCell(2).innerHTML = '<progress value="0" max="' + (flvs.length + 1) + '">\u8FDB\u5EA6\u6761</progress>';
-                if (top.location.origin == 'bangumi.bilibili.com') {
+                if (top.location.href.includes('bangumi')) {
                     tr.children[0].children[0].onclick = function () {
                         return UI.copyToClipboard(flvs.join('\n'));
                     };
@@ -4477,7 +4568,7 @@ new Promise(function (resolve) {
             key: 'downloadAllFLVs',
             value: function () {
                 var _ref61 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54(a, monkey, table) {
-                    var i, bar, _i2, blobs, mergedFLV, url, outputName;
+                    var i, bar, _i2, blobs, mergedFLV, ass, url, outputName;
 
                     return regeneratorRuntime.wrap(function _callee54$(_context55) {
                         while (1) {
@@ -4517,25 +4608,23 @@ new Promise(function (resolve) {
 
                                 case 15:
                                     mergedFLV = _context55.sent;
+                                    _context55.next = 18;
+                                    return monkey.ass;
+
+                                case 18:
+                                    ass = _context55.sent;
                                     url = URL.createObjectURL(mergedFLV);
-                                    outputName = document.getElementsByClassName('v-title')[0].textContent.trim();
+                                    outputName = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.trim();
 
 
                                     bar.value++;
-                                    _context55.t0 = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="';
-                                    _context55.next = 22;
-                                    return monkey.ass;
-
-                                case 22:
-                                    _context55.t1 = _context55.sent;
-                                    _context55.t2 = _context55.t0 + _context55.t1;
-                                    _context55.t3 = _context55.t2 + '" download="';
-                                    _context55.t4 = outputName;
-                                    _context55.t5 = _context55.t3 + _context55.t4;
-                                    table.insertRow(0).innerHTML = _context55.t5 + '.ass">\u5F39\u5E55ASS</a> \n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
+                                    table.insertRow(0).innerHTML = '\n        <td colspan="3" style="border: 1px solid black">\n            <a href="' + url + '" download="' + outputName + '.flv">\u4FDD\u5B58\u5408\u5E76\u540EFLV</a> \n            <a href="' + ass + '" download="' + outputName + '.ass">\u5F39\u5E55ASS</a> \n            <a>\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)</a>\n            \u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~\n        </td>\n        ';
+                                    table.rows[0].cells[0].children[2].onclick = function () {
+                                        return new MKVTransmuxer().exec(url, ass, outputName + '.mkv');
+                                    };
                                     return _context55.abrupt('return', url);
 
-                                case 29:
+                                case 25:
                                 case 'end':
                                     return _context55.stop();
                             }
@@ -4912,7 +5001,7 @@ new Promise(function (resolve) {
                 };
                 ul.children[7].onclick = function () {
                     BiliPolyfill.clearAllUserdata(playerWin);
-                    polyfill.retriveUserdata();
+                    polyfill.retrieveUserdata();
                 };
 
                 li.onmouseenter = function () {
@@ -5038,7 +5127,7 @@ new Promise(function (resolve) {
                 var description = [['betabeta', '增强组件总开关 <---------更加懒得测试了，反正以后B站也会自己提供这些功能。也许吧。'], //betabeta
                 ['badgeWatchLater', '稍后再看添加数字角标'], ['dblclick', '双击全屏'], ['scroll', '自动滚动到播放器'], ['recommend', '弹幕列表换成相关视频'], ['electric', '整合充电榜与换P倒计时'],
                 //['electricSkippable', '跳过充电榜'],
-                ['lift', '自动防挡字幕'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放'], ['autoWideScreen', '自动宽屏'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['focus', '自动聚焦到播放器'], ['menuFocus', '关闭菜单后聚焦到播放器'], ['limitedKeydown', '首次回车键可全屏自动播放'], ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别'], ['series', '(测)尝试自动找上下集']];
+                ['lift', '自动防挡字幕'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放'], ['autoWideScreen', '自动宽屏'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['focus', '自动聚焦到播放器'], ['menuFocus', '关闭菜单后聚焦到播放器'], ['limitedKeydown', '首次回车键可全屏自动播放'], ['series', '尝试自动找上下集'], ['speech', '(测)(需墙外)任意三击鼠标左键开启语音识别']];
 
                 var table = document.createElement('table');
                 table.style.width = '100%';
@@ -5276,7 +5365,7 @@ new Promise(function (resolve) {
                         series: true,
                         betabeta: false
                     };
-                    return Object.assign({}, defaultOption, rawOption, top.debugOption);
+                    return Object.assign({}, defaultOption, rawOption, debugOption);
                 }
             }
         }, {
@@ -5296,7 +5385,7 @@ new Promise(function (resolve) {
             key: 'firefoxClearance',
             value: function firefoxClearance() {
                 if (navigator.userAgent.includes('Firefox')) {
-                    top.debugOption.proxy = false;
+                    debugOption.proxy = false;
                     if (!window.navigator.temporaryStorage && !window.navigator.mozTemporaryStorage) window.navigator.temporaryStorage = {
                         queryUsageAndQuota: function queryUsageAndQuota(func) {
                             return func(-1048576, 10484711424);
@@ -5338,26 +5427,15 @@ new Promise(function (resolve) {
                 }
             }
         }, {
-            key: 'watchLaterClearnce',
-            value: function watchLaterClearnce() {
-                if (location.pathname == '/watchlater/') {
-                    var style = document.createElement('style');
-                    style.type = 'text/css';
-                    style.rel = 'stylesheet';
-                    style.textContent = '\n                .bilitwin a {\n                    cursor: pointer;\n                    color: #00a1d6;\n                }\n\n                div.video-top-info > div.video-info-module > div.info.bilitwin {\n                    padding-top: 5px;\n                    float: left;\n                }\n                ';
-                    document.head.appendChild(style);
-                }
-            }
-        }, {
-            key: 'menuStyleFix',
-            value: function menuStyleFix(playerWin) {
-                if (playerWin.document.getElementById('bilitwinMenuStyleFix')) return;
+            key: 'styleClearance',
+            value: function styleClearance() {
+                var ret = '\n        .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {\n            background: rgba(255,255,255,.12);\n            transition: all .3s ease-in-out;\n            cursor: pointer;\n        }\n        ';
+                if (!top.location.href.includes('www.bilibili.com/video/av')) ret += '\n        .bilitwin a {\n            cursor: pointer;\n            color: #00a1d6;\n        }\n\n        .bilitwin a:hover {\n            color: #f25d8e;\n        }\n\n        .bilitwin button {\n            color: #fff;\n            cursor: pointer;\n            text-align: center;\n            border-radius: 4px;\n            background-color: #00a1d6;\n            vertical-align: middle;\n            border: 1px solid #00a1d6;\n            transition: .1s;\n            transition-property: background-color,border,color;\n            user-select: none;\n        }\n\n        .bilitwin button:hover {\n            background-color: #00b5e5;\n            border-color: #00b5e5;\n        }\n\n        .bilitwin progress {\n            -webkit-appearance: progress;\n        }\n        ';
                 var style = document.createElement('style');
                 style.type = 'text/css';
                 style.rel = 'stylesheet';
-                style.id = 'bilitwinMenuStyleFix';
-                style.textContent = '\n            .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {\n                background: rgba(255,255,255,.12);\n                transition: all .3s ease-in-out;\n                cursor: pointer;\n            }\n            ';
-                playerWin.document.head.appendChild(style);
+                style.textContent = ret;
+                document.head.appendChild(style);
             }
         }, {
             key: 'cleanUp',
@@ -5481,7 +5559,6 @@ new Promise(function (resolve) {
 
                                     // 3. menu
                                     UI.menuAppend(playerWin, { monkey: monkey, monkeyTitle: monkeyTitle, polyfill: polyfill, displayPolyfillDataDiv: displayPolyfillDataDiv, optionDiv: optionDiv });
-                                    UI.menuStyleFix(playerWin);
 
                                     // 4. refresh
 
@@ -5500,20 +5577,20 @@ new Promise(function (resolve) {
                                     });
 
                                     // 5. debug
-                                    if (top.debugOption && top.debugOption.debug && top.console) top.console.clear();
-                                    if (top.debugOption && top.debugOption.debug) {
+                                    if (debugOption.debug && top.console) top.console.clear();
+                                    if (debugOption.debug) {
                                         ;
 
                                         _ref78 = [monkey, polyfill];
                                         (top.unsafeWindow || top).m = _ref78[0];
                                         (top.unsafeWindow || top).p = _ref78[1];
-                                    } _context66.next = 35;
+                                    } _context66.next = 34;
                                     return cidRefresh;
 
-                                case 35:
+                                case 34:
                                     UI.cleanUp();
 
-                                case 36:
+                                case 35:
                                 case 'end':
                                     return _context66.stop();
                             }
@@ -5545,7 +5622,7 @@ new Promise(function (resolve) {
                                 case 2:
                                     UI.outdatedEngineClearance();
                                     UI.firefoxClearance();
-                                    UI.watchLaterClearnce();
+                                    UI.styleClearance();
 
                                 case 5:
                                     if (!1) {
