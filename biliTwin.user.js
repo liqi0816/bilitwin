@@ -6710,8 +6710,10 @@ class UI extends BiliUserJS {
             checkbox.checked = option[d[0]];
             checkbox.onchange = () => { option[d[0]] = checkbox.checked; UI.saveOption(option); };
             let td = table.insertRow(-1).insertCell(0);
-            td.appendChild(checkbox);
-            td.appendChild(document.createTextNode(d[1]));
+            let label = document.createElement('label');
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(d[1]));
+            td.appendChild(label);
         }
 
         return table;
@@ -6751,8 +6753,10 @@ class UI extends BiliUserJS {
             checkbox.checked = option[d[0]];
             checkbox.onchange = () => { option[d[0]] = checkbox.checked; UI.saveOption(option); };
             let td = table.insertRow(-1).insertCell(0);
-            td.appendChild(checkbox);
-            td.appendChild(document.createTextNode(d[1]));
+            let label = document.createElement('label');
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(d[1]));
+            td.appendChild(label);
         }
 
         return table;
