@@ -5750,7 +5750,11 @@ class BiliPolyfill {
         if (!ret) return null;
 
         ret = ret.src;
-        ret = ret.slice(0, ret.indexOf('.jpg') + 4);
+        let i;
+        i = ret.indexOf('.jpg');
+        if (i != -1) ret = ret.slice(0, i + 4);
+        i = ret.indexOf('.png');
+        if (i != -1) ret = ret.slice(0, i + 4);
         return ret;
     }
 
