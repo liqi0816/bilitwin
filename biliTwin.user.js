@@ -5558,6 +5558,146 @@ class BiliMonkey {
         return onsuccess(resProxy);
     }
 
+    static async getAllPageDefaultFormats(playerWin = top) {
+        const jq = playerWin.jQuery;
+        const _ajax = jq.ajax;
+
+        const queryInfoMutex = new Mutex();
+        const { fetchDanmaku, generateASS, setPosition } = new ASSDownloader();
+        const list = await new Promise(resolve => {
+            const i = setInterval(() => {
+                const ret = playerWin.player.getPlaylist();
+                if (ret) {
+                    clearInterval(i);
+                    resolve(ret);
+                }
+            }, 500);
+        });
+        const index = list.reduce((acc, cur) => { acc[cur.cid] = cur; return acc }, {});
+        const end = list[list.length - 1].cid.toString();
+        const ret = [];
+        jq.ajax = function (a, c) {
+            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
+            if (a.url.includes('comment.bilibili.com') || a.url.includes('interface.bilibili.com/player?') || a.url.includes('api.bilibili.com/x/player/playurl/token')) return _ajax.call(jq, a, c);
+            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                (async () => {
+                    a.success = undefined;
+                    let cid = a.url.match(/cid=\d+/)[0].slice(4);
+                    const [danmuku, res] = await Promise.all([
+                        new Promise(resolve => {
+                            fetchDanmaku(cid, danmaku => {
+                                let ass = generateASS(setPosition(danmaku), {
+                                    'title': document.title,
+                                    'ori': location.href,
+                                });
+                                // I would assume most users are using Windows
+                                let blob = new Blob(['\ufeff' + ass], { type: 'application/octet-stream' });
+                                resolve(playerWin.URL.createObjectURL(blob));
+                            });
+                        }),
+                        _ajax.call(jq, a, c)
+                    ]);
+                    ret.push({
+                        durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
+                        danmuku,
+                        name: index[cid].part || index[cid].index,
+                        outputName: res.durl[0].url.match(/\d+-\d+(?:-\d+)?(?=\.flv)/) ?
+                            res.durl[0].url.match(/\d+-\d+(?:-\d+)?(?=\.flv)/)[0].replace(/(?<=\d+)-\d+(?=(?:-\d+)?\.flv)/, '')
+                            : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
+                                res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)
+                                : cid,
+                        cid,
+                        res,
+                    });
+                    queryInfoMutex.unlock();
+                })();
+            }
+            return _ajax.call(jq, { url: '//0.0.0.0' });
+        };
+
+        await queryInfoMutex.lock();
+        playerWin.player.next(1);
+        while (1) {
+            await queryInfoMutex.lock();
+            if (ret[ret.length - 1].cid == end) break;
+            playerWin.player.next();
+        }
+
+        let table = [`
+        <style>
+            table {
+                width: 100%;
+                table-layout: fixed;
+            }
+        
+            td {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                text-align: center;
+            }
+        </style>
+        `,
+            `
+        <h1>(测试) 批量抓取</h1>
+        <ul>
+            <li>
+                <p>只抓取默认清晰度</p>
+            </li>
+            <li>
+                <p>复制链接地址无效，请左键单击/右键另存为/右键调用下载工具</p>
+                <p><em>开发者：需要校验referrer和user agent</em></p>
+            </li>
+            <li>
+                <p>flv合并 <a href='http://www.flvcd.com/teacher2.htm'>硕鼠</a></p>
+                <p>批量合并对单标签页负荷太大</p>
+                <p><em>开发者：可以用webworker，但是我没需求，又懒</em></p>
+            </li>
+        </ul>
+        `,
+            `
+        <table onclick="function(e) {e.stopPropagation(); }">
+            <tbody>
+                <tr>
+                    <th style="width: 10em;">标题</th>
+                    <th>视频(flv/mp4) <a download="bilitwin.ef2" href=${typeof UI == 'function' && typeof UI.exportIDM == 'function' && playerWin.URL.createObjectURL(new Blob([UI.exportIDM([].concat.apply([], ret.map(e => e.durl)), top.location.origin)]))}>批量导出IDM</a></th>
+                    <th>弹幕(ass)</th>
+                </tr>
+        `];
+        for (let i of ret) {
+            table.push(`
+                <tr>
+                    <td>
+                        ${i.name}
+                    </td>
+                    <td>
+                        <a href="${i.durl[0]}" download referrerpolicy="origin">${i.durl[0]}</a>
+                    </td>
+                    <td>
+                        <a href="${i.danmuku}" download="${i.outputName}.ass" referrerpolicy="origin">${i.danmuku}</a>
+                    </td>
+                </tr>`);
+            for (let j of i.durl.slice(1)) {
+                table.push(`
+                <tr>
+                    <td>
+                    </td>
+                    <td>
+                        <a href="${j}" download referrerpolicy="origin">${j}</a>
+                    </td>
+                    <td>
+                    </td>
+                </tr>`);
+            }
+        }
+        table.push(`
+            </tbody>
+        </table>
+        `);
+        playerWin.document.write(table.join(''));
+        return ret;
+    }
+
     static formatToValue(format) {
         switch (format) {
             case 'flv_p60': return '116';
@@ -6550,6 +6690,11 @@ class UI extends BiliUserJS {
                 </li>
                 <li class="context-menu-function">
                     <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> (测)批量下载
+                    </a>
+                </li>
+                <li class="context-menu-function">
+                    <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)载入缓存FLV
                     </a>
                 </li>
@@ -6576,7 +6721,8 @@ class UI extends BiliUserJS {
         ul.children[1].onclick = async () => { if (monkeyTitle.mp4A.onmouseover) await monkeyTitle.mp4A.onmouseover(); monkeyTitle.mp4A.click(); };
         ul.children[2].onclick = async () => { if (monkeyTitle.assA.onmouseover) await monkeyTitle.assA.onmouseover(); monkeyTitle.assA.click(); };
         ul.children[3].onclick = () => { optionDiv.style.display = 'block'; };
-        ul.children[4].onclick = async () => {
+        ul.children[4].onclick = async () => { await BiliMonkey.getAllPageDefaultFormats(playerWin) };
+        ul.children[5].onclick = async () => {
             monkey.proxy = true;
             monkey.flvs = null;
             UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
@@ -6585,9 +6731,9 @@ class UI extends BiliUserJS {
             await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
             return monkey.queryInfo('flv');
         };
-        ul.children[5].onclick = () => { top.location.reload(true); };
-        ul.children[6].onclick = () => { playerWin.dispatchEvent(new Event('unload')); };
-        ul.children[7].onclick = () => { playerWin.player && playerWin.player.destroy() };
+        ul.children[6].onclick = () => { top.location.reload(true); };
+        ul.children[7].onclick = () => { playerWin.dispatchEvent(new Event('unload')); };
+        ul.children[8].onclick = () => { playerWin.player && playerWin.player.destroy() };
         return li;
     }
 
