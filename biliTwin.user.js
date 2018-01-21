@@ -5445,36 +5445,36 @@ class BiliMonkey {
         this.flvsBlob[index] = (async () => {
             let cache = await this.loadFLVFromCache(index);
             if (cache) return this.flvsBlob[index] = cache;
-            let partialCache = await this.loadPartialFLVFromCache(index);
+            let partialFLVFromCache = await this.loadPartialFLVFromCache(index);
 
             let burl = this.flvs[index];
-            if (partialCache) burl += `&bstart=${partialCache.size}`;
+            if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
             let opt = {
                 fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
-                cacheLoaded: partialCache ? partialCache.size : 0,
-                headers: partialCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialCache.size}-` } : undefined
+                cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
             };
             opt.onprogress = progressHandler;
             opt.onerror = opt.onabort = ({ target, type }) => {
-                let pBlob = target.getPartialBlob();
-                if (partialCache) pBlob = new Blob([partialCache, pBlob]);
-                this.savePartialFLVToCache(index, pBlob);
+                let partialFLV = target.getPartialBlob();
+                if (partialFLVFromCache) partialFLV = new Blob([partialFLVFromCache, partialFLV]);
+                this.savePartialFLVToCache(index, partialFLV);
             }
 
             let fch = new DetailedFetchBlob(burl, opt);
             this.flvsDetailedFetch[index] = fch;
-            let fullResponse = await fch.getBlob();
+            let fullFLV = await fch.getBlob();
             this.flvsDetailedFetch[index] = undefined;
-            if (partialCache) {
-                fullResponse = new Blob([partialCache, fullResponse]);
+            if (partialFLVFromCache) {
+                fullFLV = new Blob([partialFLVFromCache, fullFLV]);
                 this.cleanPartialFLVInCache(index);
             }
-            this.saveFLVToCache(index, fullResponse);
-            return (this.flvsBlob[index] = fullResponse);
+            this.saveFLVToCache(index, fullFLV);
+            return (this.flvsBlob[index] = fullFLV);
         })();
         return this.flvsBlob[index];
     }
