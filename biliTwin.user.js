@@ -357,7 +357,7 @@ class FLV {
         // Blobs can be swapped to disk, while Arraybuffers can not.
         // This is a RAM saving workaround. Somewhat.
         if (blobs.length < 1) throw 'Usage: FLV.mergeBlobs([blobs])';
-        let resultParts = [];
+        let ret = [];
         let basetimestamp = [0, 0];
         let lasttimestamp = [0, 0];
         let duration = 0.0;
@@ -377,29 +377,31 @@ class FLV {
                 fr.onerror = reject;
             });
 
+            let modifiedMediaTags = [];
             for (let tag of flv.tags) {
                 if (tag.tagType == 0x12 && !foundDuration) {
                     duration += tag.getDuration();
                     foundDuration = 1;
                     if (blob == blobs[0]) {
-                        resultParts.push(new Blob([flv.header, flv.firstPreviousTagSize]));
+                        ret.push(flv.header, flv.firstPreviousTagSize);
                         ({ duration, durationDataView } = tag.getDurationAndView());
                         tag.stripKeyframesScriptData();
-                        resultParts.push(new Blob([tag.tagHeader]));
-                        resultParts.push(tag.tagData);
-                        resultParts.push(new Blob([tag.previousSize]));
+                        ret.push(tag.tagHeader);
+                        ret.push(tag.tagData);
+                        ret.push(tag.previousSize);
                     }
                 }
                 else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
                     lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
                     tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
-                    resultParts.push(new Blob([tag.tagHeader, tag.tagData, tag.previousSize]));
+                    modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
                 }
             }
+            ret.push(new Blob(modifiedMediaTags));
         }
         durationDataView.setFloat64(0, duration);
 
-        return new Blob(resultParts);
+        return new Blob(ret);
     }
 }
 
