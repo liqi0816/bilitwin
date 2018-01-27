@@ -4545,13 +4545,14 @@ class MKVTransmuxer {
             }
         
             static mimeToCodecID(str) {
-                switch (str) {
-                    case 'avc1.640029':
-                        return 'V_MPEG4/ISO/AVC';
-                    case 'mp4a.40.2':
-                        return 'A_AAC';
-                    default:
-                        throw new Error(\`MKVRemuxer: unknown codec \${str}\`);
+                if (str.startsWith('avc1')) {
+                    return 'V_MPEG4/ISO/AVC';
+                }
+                else if (str.startsWith('mp4a')) {
+                    return 'A_AAC';
+                }
+                else {
+                    throw new Error(\`MKVRemuxer: unknown codec \${str}\`);
                 }
             }
         
