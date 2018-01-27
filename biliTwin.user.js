@@ -5675,7 +5675,7 @@ class BiliPolyfill {
     }
 
     async inferNextInSeries() {
-        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
+        let title = top.document.getElementsByTagName('h1')[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -6358,7 +6358,7 @@ class UI extends BiliUserJS {
         let mergedFLV = await FLV.mergeBlobs(blobs);
         let ass = await monkey.ass;
         let url = URL.createObjectURL(mergedFLV);
-        let outputName = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.trim();
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
         bar.value++;
         table.insertRow(0).innerHTML = `
