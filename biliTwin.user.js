@@ -6218,8 +6218,7 @@ class BiliUserJS {
 class UI extends BiliUserJS {
     // Title Append
     static titleAppend(monkey) {
-        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.bangumi-header div.header-info') || document.querySelector('div.video-info-module');
-        let tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
         let div = document.createElement('div');
         let flvA = document.createElement('a');
         let mp4A = document.createElement('a');
@@ -6264,7 +6263,7 @@ class UI extends BiliUserJS {
         div.style.float = 'left';
         tminfo.style.float = 'none';
         tminfo.style.marginLeft = '185px';
-        h.insertBefore(div, tminfo);
+        tminfo.parentElement.insertBefore(div, tminfo);
         return { flvA, mp4A, assA };
     }
 
@@ -6991,7 +6990,7 @@ class UI extends BiliUserJS {
             cursor: pointer;
         }
         `;
-        if (!top.location.href.includes('www.bilibili.com/video/av')) ret += `
+        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;
