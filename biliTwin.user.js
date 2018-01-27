@@ -3300,7 +3300,7 @@ class MKVTransmuxer {
              * @returns {Object} - object from sections
              */
             static extractSections(str) {
-                const regex = /\\[(.*)\\]/g;
+                const regex = /^\\[(.*)\\]\$/mg;
                 let match;
                 let matchArr = [];
                 while ((match = regex.exec(str)) !== null) {
