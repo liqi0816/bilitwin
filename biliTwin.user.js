@@ -5137,7 +5137,12 @@ class BiliMonkey {
                                 self.resolveFormat(res, format);
                                 break;
                         }
-                        _success(res);
+                        if (self.proxy && res.format.includes('flv')) {
+                            self.setupProxy(res, _success);
+                        }
+                        else {
+                            _success(res);
+                        }
                         resolve(res);
                     };
                     jq.ajax = _ajax;
@@ -5222,7 +5227,7 @@ class BiliMonkey {
             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                 let _success = a.success;
                 a.success = res => {
-                    if (self.proxy && res.format == 'flv') {
+                    if (self.proxy && res.format.includes('flv')) {
                         self.resolveFormat(res, format);
                         self.setupProxy(res, _success);
                     }
