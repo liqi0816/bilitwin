@@ -6252,6 +6252,7 @@ class UI extends BiliUserJS {
             if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
             else assA.download = monkey.cid + '.ass';
         };
+        div.addEventListener('click', e => e.stopPropagation());
 
         flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '15px';
         div.appendChild(flvA);
@@ -6857,6 +6858,7 @@ class UI extends BiliUserJS {
         div.style.boxShadow = 'rgba(0, 0, 0, 0.6) 1px 1px 40px 0px';
         div.style.display = 'none';
         div.className = 'bilitwin';
+        div.addEventListener('click', e => e.stopPropagation());
         return div;
     }
 
