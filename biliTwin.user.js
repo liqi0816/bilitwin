@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.11
+// @version     1.12
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -357,7 +357,7 @@ class FLV {
         // Blobs can be swapped to disk, while Arraybuffers can not.
         // This is a RAM saving workaround. Somewhat.
         if (blobs.length < 1) throw 'Usage: FLV.mergeBlobs([blobs])';
-        let resultParts = [];
+        let ret = [];
         let basetimestamp = [0, 0];
         let lasttimestamp = [0, 0];
         let duration = 0.0;
@@ -377,29 +377,31 @@ class FLV {
                 fr.onerror = reject;
             });
 
+            let modifiedMediaTags = [];
             for (let tag of flv.tags) {
                 if (tag.tagType == 0x12 && !foundDuration) {
                     duration += tag.getDuration();
                     foundDuration = 1;
                     if (blob == blobs[0]) {
-                        resultParts.push(new Blob([flv.header, flv.firstPreviousTagSize]));
+                        ret.push(flv.header, flv.firstPreviousTagSize);
                         ({ duration, durationDataView } = tag.getDurationAndView());
                         tag.stripKeyframesScriptData();
-                        resultParts.push(new Blob([tag.tagHeader]));
-                        resultParts.push(tag.tagData);
-                        resultParts.push(new Blob([tag.previousSize]));
+                        ret.push(tag.tagHeader);
+                        ret.push(tag.tagData);
+                        ret.push(tag.previousSize);
                     }
                 }
                 else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
                     lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
                     tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
-                    resultParts.push(new Blob([tag.tagHeader, tag.tagData, tag.previousSize]));
+                    modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
                 }
             }
+            ret.push(new Blob(modifiedMediaTags));
         }
         durationDataView.setFloat64(0, duration);
 
-        return new Blob(resultParts);
+        return new Blob(ret);
     }
 }
 
@@ -3298,7 +3300,7 @@ class MKVTransmuxer {
              * @returns {Object} - object from sections
              */
             static extractSections(str) {
-                const regex = /\\[(.*)\\]/g;
+                const regex = /^\\[(.*)\\]\$/mg;
                 let match;
                 let matchArr = [];
                 while ((match = regex.exec(str)) !== null) {
@@ -4543,13 +4545,14 @@ class MKVTransmuxer {
             }
         
             static mimeToCodecID(str) {
-                switch (str) {
-                    case 'avc1.640029':
-                        return 'V_MPEG4/ISO/AVC';
-                    case 'mp4a.40.2':
-                        return 'A_AAC';
-                    default:
-                        throw new Error(\`MKVRemuxer: unknown codec \${str}\`);
+                if (str.startsWith('avc1')) {
+                    return 'V_MPEG4/ISO/AVC';
+                }
+                else if (str.startsWith('mp4a')) {
+                    return 'A_AAC';
+                }
+                else {
+                    throw new Error(\`MKVRemuxer: unknown codec \${str}\`);
                 }
             }
         
@@ -5134,7 +5137,12 @@ class BiliMonkey {
                                 self.resolveFormat(res, format);
                                 break;
                         }
-                        _success(res);
+                        if (self.proxy && res.format.includes('flv')) {
+                            self.setupProxy(res, _success);
+                        }
+                        else {
+                            _success(res);
+                        }
                         resolve(res);
                     };
                     jq.ajax = _ajax;
@@ -5219,7 +5227,7 @@ class BiliMonkey {
             if (a.url.includes('interface.bilibili.com/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
                 let _success = a.success;
                 a.success = res => {
-                    if (self.proxy && res.format == 'flv') {
+                    if (self.proxy && res.format.includes('flv')) {
                         self.resolveFormat(res, format);
                         self.setupProxy(res, _success);
                     }
@@ -5445,36 +5453,36 @@ class BiliMonkey {
         this.flvsBlob[index] = (async () => {
             let cache = await this.loadFLVFromCache(index);
             if (cache) return this.flvsBlob[index] = cache;
-            let partialCache = await this.loadPartialFLVFromCache(index);
+            let partialFLVFromCache = await this.loadPartialFLVFromCache(index);
 
             let burl = this.flvs[index];
-            if (partialCache) burl += `&bstart=${partialCache.size}`;
+            if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
             let opt = {
                 fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
-                cacheLoaded: partialCache ? partialCache.size : 0,
-                headers: partialCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialCache.size}-` } : undefined
+                cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
             };
             opt.onprogress = progressHandler;
             opt.onerror = opt.onabort = ({ target, type }) => {
-                let pBlob = target.getPartialBlob();
-                if (partialCache) pBlob = new Blob([partialCache, pBlob]);
-                this.savePartialFLVToCache(index, pBlob);
+                let partialFLV = target.getPartialBlob();
+                if (partialFLVFromCache) partialFLV = new Blob([partialFLVFromCache, partialFLV]);
+                this.savePartialFLVToCache(index, partialFLV);
             }
 
             let fch = new DetailedFetchBlob(burl, opt);
             this.flvsDetailedFetch[index] = fch;
-            let fullResponse = await fch.getBlob();
+            let fullFLV = await fch.getBlob();
             this.flvsDetailedFetch[index] = undefined;
-            if (partialCache) {
-                fullResponse = new Blob([partialCache, fullResponse]);
+            if (partialFLVFromCache) {
+                fullFLV = new Blob([partialFLVFromCache, fullFLV]);
                 this.cleanPartialFLVInCache(index);
             }
-            this.saveFLVToCache(index, fullResponse);
-            return (this.flvsBlob[index] = fullResponse);
+            this.saveFLVToCache(index, fullFLV);
+            return (this.flvsBlob[index] = fullFLV);
         })();
         return this.flvsBlob[index];
     }
@@ -5667,7 +5675,7 @@ class BiliPolyfill {
     }
 
     async inferNextInSeries() {
-        let title = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.replace(/\(\d+\)$/, '').trim();
+        let title = top.document.getElementsByTagName('h1')[0].textContent.replace(/\(\d+\)$/, '').trim();
 
         // 1. Find series name
         let epNumberText = title.match(/\d+/g);
@@ -5746,11 +5754,18 @@ class BiliPolyfill {
     }
 
     getCoverImage() {
-        let ret = top.document.querySelector('.cover_image') || top.document.querySelector('div.info-cover > a > img') || top.document.querySelector('[data-state-play="true"]  img');
+        let ret = top.document.querySelector('.cover_image')
+            || top.document.querySelector('div.info-cover > a > img')
+            || top.document.querySelector('[data-state-play="true"]  img')
+            || top.document.querySelector('script[type="application/ld+json"]');
         if (!ret) return null;
 
-        ret = ret.src;
-        ret = ret.slice(0, ret.indexOf('.jpg') + 4);
+        ret = ret.src || JSON.parse(ret.textContent).images[0];
+        let i;
+        i = ret.indexOf('.jpg');
+        if (i != -1) ret = ret.slice(0, i + 4);
+        i = ret.indexOf('.png');
+        if (i != -1) ret = ret.slice(0, i + 4);
         return ret;
     }
 
@@ -6206,8 +6221,7 @@ class BiliUserJS {
 class UI extends BiliUserJS {
     // Title Append
     static titleAppend(monkey) {
-        let h = document.querySelector('div.viewbox div.info') || document.querySelector('div.bangumi-header div.header-info') || document.querySelector('div.video-info-module');
-        let tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
         let div = document.createElement('div');
         let flvA = document.createElement('a');
         let mp4A = document.createElement('a');
@@ -6241,6 +6255,7 @@ class UI extends BiliUserJS {
             if (monkey.mp4 && monkey.mp4.match) assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
             else assA.download = monkey.cid + '.ass';
         };
+        div.addEventListener('click', e => e.stopPropagation());
 
         flvA.style.fontSize = mp4A.style.fontSize = assA.style.fontSize = '15px';
         div.appendChild(flvA);
@@ -6252,7 +6267,7 @@ class UI extends BiliUserJS {
         div.style.float = 'left';
         tminfo.style.float = 'none';
         tminfo.style.marginLeft = '185px';
-        h.insertBefore(div, tminfo);
+        tminfo.parentElement.insertBefore(div, tminfo);
         return { flvA, mp4A, assA };
     }
 
@@ -6346,7 +6361,7 @@ class UI extends BiliUserJS {
         let mergedFLV = await FLV.mergeBlobs(blobs);
         let ass = await monkey.ass;
         let url = URL.createObjectURL(mergedFLV);
-        let outputName = (top.document.getElementsByClassName('v-title')[0] || top.document.getElementsByClassName('header-info')[0] || top.document.getElementsByClassName('video-info-module')[0]).children[0].textContent.trim();
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
         bar.value++;
         table.insertRow(0).innerHTML = `
@@ -6710,8 +6725,10 @@ class UI extends BiliUserJS {
             checkbox.checked = option[d[0]];
             checkbox.onchange = () => { option[d[0]] = checkbox.checked; UI.saveOption(option); };
             let td = table.insertRow(-1).insertCell(0);
-            td.appendChild(checkbox);
-            td.appendChild(document.createTextNode(d[1]));
+            let label = document.createElement('label');
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(d[1]));
+            td.appendChild(label);
         }
 
         return table;
@@ -6751,8 +6768,10 @@ class UI extends BiliUserJS {
             checkbox.checked = option[d[0]];
             checkbox.onchange = () => { option[d[0]] = checkbox.checked; UI.saveOption(option); };
             let td = table.insertRow(-1).insertCell(0);
-            td.appendChild(checkbox);
-            td.appendChild(document.createTextNode(d[1]));
+            let label = document.createElement('label');
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(d[1]));
+            td.appendChild(label);
         }
 
         return table;
@@ -6842,6 +6861,7 @@ class UI extends BiliUserJS {
         div.style.boxShadow = 'rgba(0, 0, 0, 0.6) 1px 1px 40px 0px';
         div.style.display = 'none';
         div.className = 'bilitwin';
+        div.addEventListener('click', e => e.stopPropagation());
         return div;
     }
 
@@ -6975,7 +6995,7 @@ class UI extends BiliUserJS {
             cursor: pointer;
         }
         `;
-        if (!top.location.href.includes('www.bilibili.com/video/av')) ret += `
+        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;
