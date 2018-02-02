@@ -5754,10 +5754,13 @@ class BiliPolyfill {
     }
 
     getCoverImage() {
-        let ret = top.document.querySelector('.cover_image') || top.document.querySelector('div.info-cover > a > img') || top.document.querySelector('[data-state-play="true"]  img');
+        let ret = top.document.querySelector('.cover_image')
+            || top.document.querySelector('div.info-cover > a > img')
+            || top.document.querySelector('[data-state-play="true"]  img')
+            || top.document.querySelector('script[type="application/ld+json"]');
         if (!ret) return null;
 
-        ret = ret.src;
+        ret = ret.src || JSON.parse(ret.textContent).images[0];
         let i;
         i = ret.indexOf('.jpg');
         if (i != -1) ret = ret.slice(0, i + 4);
