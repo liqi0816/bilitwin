@@ -5897,16 +5897,10 @@ class BiliPolyfill {
         return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
     }
 
-    markOPPosition() {
+    markOPEDPosition(index) {
         let collectionId = this.getCollectionId();
-        if (!(this.userdata.oped[collectionId] instanceof Array)) this.userdata.oped[collectionId] = [];
-        this.userdata.oped[collectionId][0] = this.video.currentTime;
-    }
-
-    markEDPostion() {
-        let collectionId = this.getCollectionId();
-        if (!(this.userdata.oped[collectionId] instanceof Array)) this.userdata.oped[collectionId] = [];
-        this.userdata.oped[collectionId][1] = (this.video.currentTime);
+        if (!Array.isArray(this.userdata.oped[collectionId])) this.userdata.oped[collectionId] = [];
+        this.userdata.oped[collectionId][index] = this.video.currentTime;
     }
 
     clearOPEDPosition() {
@@ -5916,21 +5910,59 @@ class BiliPolyfill {
 
     skipOPED() {
         let collectionId = this.getCollectionId();
-        if (!(this.userdata.oped[collectionId] instanceof Array)) return;
-        if (this.userdata.oped[collectionId][0]) {
-            if (this.video.currentTime < this.userdata.oped[collectionId][0]) {
-                this.video.currentTime = this.userdata.oped[collectionId][0];
-                this.hintInfo('BiliPolyfill: 已跳过片头');
-            }
-        }
-        if (this.userdata.oped[collectionId][1]) {
-            let edHandler = v => {
-                if (v.target.currentTime > this.userdata.oped[collectionId][1]) {
-                    v.target.removeEventListener('timeupdate', edHandler);
-                    v.target.dispatchEvent(new Event('ended'));
+        if (!Array.isArray(this.userdata.oped[collectionId]) || !this.userdata.oped[collectionId].length) return;
+
+        /**
+         * structure:
+         *   listen for time update -> || <- skip -> || <- remove event listenner
+         */
+        if (!this.userdata.oped[collectionId][0] && this.userdata.oped[collectionId][1]) {
+            let h = () => {
+                if (this.video.currentTime >= this.userdata.oped[collectionId][1] - 1) {
+                    this.video.removeEventListener('timeupdate', h);
+                }
+                else {
+                    this.video.currentTime = this.userdata.oped[collectionId][1];
+                    this.hintInfo('BiliPolyfill: 已跳过片头');
                 }
             }
-            this.video.addEventListener('timeupdate', edHandler);
+            this.video.addEventListener('timeupdate', h);
+        }
+        if (this.userdata.oped[collectionId][0] && this.userdata.oped[collectionId][1]) {
+            let h = () => {
+                if (this.video.currentTime >= this.userdata.oped[collectionId][1] - 1) {
+                    this.video.removeEventListener('timeupdate', h);
+                }
+                else if (this.video.currentTime > this.userdata.oped[collectionId][0]) {
+                    this.video.currentTime = this.userdata.oped[collectionId][1];
+                    this.hintInfo('BiliPolyfill: 已跳过片头');
+                }
+            }
+            this.video.addEventListener('timeupdate', h);
+        }
+        if (this.userdata.oped[collectionId][2] && !this.userdata.oped[collectionId][3]) {
+            let h = () => {
+                if (this.video.currentTime >= this.video.duration - 1) {
+                    this.video.removeEventListener('timeupdate', h);
+                }
+                else if (this.video.currentTime > this.userdata.oped[collectionId][2]) {
+                    this.video.currentTime = this.video.duration;
+                    this.hintInfo('BiliPolyfill: 已跳过片尾');
+                }
+            }
+            this.video.addEventListener('timeupdate', h);
+        }
+        if (this.userdata.oped[collectionId][2] && this.userdata.oped[collectionId][3]) {
+            let h = () => {
+                if (this.video.currentTime >= this.userdata.oped[collectionId][3] - 1) {
+                    this.video.removeEventListener('timeupdate', h);
+                }
+                else if (this.video.currentTime > this.userdata.oped[collectionId][2]) {
+                    this.video.currentTime = this.userdata.oped[collectionId][3];
+                    this.hintInfo('BiliPolyfill: 已跳过片尾');
+                }
+            }
+            this.video.addEventListener('timeupdate', h);
         }
     }
 
@@ -6605,12 +6637,22 @@ class UI extends BiliUserJS {
                     <ul>
                         <li class="context-menu-function">
                             <a class="context-menu-a">
-                                <span class="video-contextmenu-icon"></span> 标记片头:<span></span>
+                                <span class="video-contextmenu-icon"></span> 片头开始:<span></span>
                             </a>
                         </li>
                         <li class="context-menu-function">
                             <a class="context-menu-a">
-                                <span class="video-contextmenu-icon"></span> 标记片尾:<span></span>
+                                <span class="video-contextmenu-icon"></span> 片头结束:<span></span>
+                            </a>
+                        </li>
+                        <li class="context-menu-function">
+                            <a class="context-menu-a">
+                                <span class="video-contextmenu-icon"></span> 片尾开始:<span></span>
+                            </a>
+                        </li>
+                        <li class="context-menu-function">
+                            <a class="context-menu-a">
+                                <span class="video-contextmenu-icon"></span> 片尾结束:<span></span>
                             </a>
                         </li>
                         <li class="context-menu-function">
@@ -6620,7 +6662,7 @@ class UI extends BiliUserJS {
                         </li>
                         <li class="context-menu-function">
                             <a class="context-menu-a">
-                                <span class="video-contextmenu-icon"></span> 检视数据
+                                <span class="video-contextmenu-icon"></span> 检视数据/说明
                             </a>
                         </li>
                     </ul>
@@ -6675,10 +6717,12 @@ class UI extends BiliUserJS {
         ul.children[1].children[1].children[2].onclick = e => { polyfill.setVideoSpeed(e.target.getElementsByTagName('input')[0].value); };
         ul.children[1].children[1].children[2].getElementsByTagName('input')[0].onclick = e => e.stopPropagation();
 
-        ul.children[2].children[1].children[0].onclick = () => { polyfill.markOPPosition(); };
-        ul.children[2].children[1].children[1].onclick = () => { polyfill.markEDPostion(3); };
-        ul.children[2].children[1].children[2].onclick = () => { polyfill.clearOPEDPosition(); };
-        ul.children[2].children[1].children[3].onclick = () => { displayPolyfillDataDiv(polyfill); };
+        ul.children[2].children[1].children[0].onclick = () => { polyfill.markOPEDPosition(0); };
+        ul.children[2].children[1].children[1].onclick = () => { polyfill.markOPEDPosition(1); };
+        ul.children[2].children[1].children[2].onclick = () => { polyfill.markOPEDPosition(2); };
+        ul.children[2].children[1].children[3].onclick = () => { polyfill.markOPEDPosition(3); };
+        ul.children[2].children[1].children[4].onclick = () => { polyfill.clearOPEDPosition(); };
+        ul.children[2].children[1].children[5].onclick = () => { displayPolyfillDataDiv(polyfill); };
 
         ul.children[3].children[1].children[0].getElementsByTagName('a')[0].style.width = 'initial';
         ul.children[3].children[1].children[1].getElementsByTagName('a')[0].style.width = 'initial';
@@ -6698,6 +6742,8 @@ class UI extends BiliUserJS {
             let oped = polyfill.userdata.oped[polyfill.getCollectionId()] || [];
             ul.children[2].children[1].children[0].getElementsByTagName('span')[1].textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
             ul.children[2].children[1].children[1].getElementsByTagName('span')[1].textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
+            ul.children[2].children[1].children[2].getElementsByTagName('span')[1].textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无';
+            ul.children[2].children[1].children[3].getElementsByTagName('span')[1].textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无';
 
             ul.children[3].children[1].children[0].onclick = () => { if (polyfill.series[0]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank'); };
             ul.children[3].children[1].children[1].onclick = () => { if (polyfill.series[1]) top.window.open(`https://www.bilibili.com/video/av${polyfill.series[1].aid}`, '_blank'); };
@@ -6837,7 +6883,7 @@ class UI extends BiliUserJS {
         //div.appendChild(textareas[0]);
 
         p = document.createElement('p');
-        p.textContent = '这里是片头片尾。格式是，av号或番剧号:[片头,片尾]。null代表没有片头。';
+        p.textContent = '这里是片头片尾。格式是，av号或番剧号:[片头开始(默认=0),片头结束(默认=不跳),片尾开始(默认=不跳),片尾结束(默认=无穷大)]。可以任意填写null，脚本会自动采用默认值。';
         p.style.margin = '0.3em';
         div.appendChild(p);
         textareas[1].textContent = JSON.stringify(polyfill.userdata.oped).replace(/{/, '{\n').replace(/}/, '\n}').replace(/],/g, '],\n');
