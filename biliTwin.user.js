@@ -814,12 +814,23 @@ class ASSDownloader {
           'playResX': 560,           // 屏幕分辨率宽（像素）
           'playResY': 420,           // 屏幕分辨率高（像素）
           'fontlist': [              // 字形（会自动选择最前面一个可用的）
+            'SimHei',
+            '\\'Microsoft JhengHei\\'',
+            'SimSun',
+            'NSimSun',
+            'FangSong',
+            '\\'Microsoft YaHei\\'',
+            '\\'Microsoft Yahei UI Light\\'',
+            '\\'Noto Sans CJK SC Bold\\'',
+            '\\'Noto Sans CJK SC DemiLight\\'',
+            '\\'Noto Sans CJK SC Regular\\'',
             'Microsoft YaHei UI',
             'Microsoft YaHei',
             '文泉驿正黑',
             'STHeitiSC',
             '黑体',
           ],
+          'bold': 1,                 // 加粗（0/1）
           'font_size': 1.0,          // 字号（比例）
           'r2ltime': 8,              // 右到左弹幕持续时间（秒）
           'fixtime': 4,              // 固定弹幕持续时间（秒）
@@ -842,7 +853,7 @@ class ASSDownloader {
         
         // 将字典中的值填入字符串
         var fillStr = function (str) {
-          var dict = Array.apply(Array, arguments);
+          var dict = Array.apply(Array, arguments).slice(1);
           return str.replace(/{{([^}]+)}}/g, function (r, o) {
             var ret;
             dict.some(function (i) { return ret = i[o]; });
@@ -973,11 +984,11 @@ class ASSDownloader {
             );
           };
         }());
-        
+
         var generateASS = function (danmaku, info) {
           var assHeader = fillStr(
-            '[Script Info]\\nTitle: {{title}}\\nOriginal Script: \\u6839\\u636E {{ori}} \\u7684\\u5F39\\u5E55\\u4FE1\\u606F\\uFF0C\\u7531 https://github.com/tiansh/us-danmaku \\u751F\\u6210\\nScriptType: v4.00+\\nCollisions: Normal\\nPlayResX: {{playResX}}\\nPlayResY: {{playResY}}\\nTimer: 10.0000\\n\\n[V4+ Styles]\\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\\nStyle: Fix,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,1,0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\nStyle: R2L,{{font}},25,&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,1,0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\n\\n[Events]\\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\\n',
-            config, info, {'alpha': hexAlpha(config.opacity) }
+            '[Script Info]\\nTitle: {{title}}\\nOriginal Script: \\u6839\\u636E {{ori}} \\u7684\\u5F39\\u5E55\\u4FE1\\u606F\\uFF0C\\u7531 https://github.com/tiansh/us-danmaku \\u751F\\u6210\\nScriptType: v4.00+\\nCollisions: Normal\\nPlayResX: {{playResX}}\\nPlayResY: {{playResY}}\\nTimer: 10.0000\\n\\n[V4+ Styles]\\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\\nStyle: Fix,{{font}},{{font_size}},&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,{{bold}},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\nStyle: R2L,{{font}},{{font_size}},&H{{alpha}}FFFFFF,&H{{alpha}}FFFFFF,&H{{alpha}}000000,&H{{alpha}}000000,{{bold}},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0\\n\\n[Events]\\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\\n',
+            {'alpha': hexAlpha(config.opacity), 'font_size': 25 * config.font_size }, config, info
           );
           // 补齐数字开头的0
           var paddingNum = function (num, len) {
@@ -4994,7 +5005,7 @@ class MKVTransmuxer {
 }
 
 class BiliMonkey {
-    constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false }) {
+    constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false, font: false }) {
         this.playerWin = playerWin;
         this.protocol = playerWin.location.protocol;
         this.cid = null;
@@ -5017,6 +5028,7 @@ class BiliMonkey {
         this.partial = option.partial;
         this.proxy = option.proxy;
         this.blocker = option.blocker;
+        this.font = option.font;
         this.option = option;
         if (this.cache && (!(this.cache instanceof CacheDB))) this.cache = new CacheDB('biliMonkey', 'flv', 'name');
 
@@ -5314,21 +5326,26 @@ class BiliMonkey {
                 this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
                 this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(clickableFormat)}"]`).click();
             });
-            const { fetchDanmaku, generateASS, setPosition } = new ASSDownloader();
+            let bilibili_player_settings = this.playerWin.localStorage.bilibili_player_settings && JSON.parse(this.playerWin.localStorage.bilibili_player_settings);
+            let option = bilibili_player_settings && this.font && {
+                'fontlist': bilibili_player_settings.setting_config['fontfamily'] != 'custom' ? bilibili_player_settings.setting_config['fontfamily'].split(/, ?/) : bilibili_player_settings.setting_config['fontfamilycustom'].split(/, ?/),
+                'font_size': parseFloat(bilibili_player_settings.setting_config['fontsize']),
+                'opacity': parseFloat(bilibili_player_settings.setting_config['opacity']),
+                'bold': bilibili_player_settings.setting_config['bold'] ? 1 : 0,
+            } || undefined;
+            const { fetchDanmaku, generateASS, setPosition } = new ASSDownloader(option);
 
             fetchDanmaku(this.cid, danmaku => {
-                if (this.blocker) {
-                    if (this.playerWin.localStorage.bilibili_player_settings) {
-                        let regexps = JSON.parse(this.playerWin.localStorage.bilibili_player_settings).block.list.map(e => e.v).join('|');
+                if (bilibili_player_settings && this.blocker) {
+                    let regexps = bilibili_player_settings.block.list.map(e => e.v).join('|');
                         if (regexps) {
                             regexps = new RegExp(regexps);
                             danmaku = danmaku.filter(d => !regexps.test(d.text));
                         }
                     }
-                }
                 let ass = generateASS(setPosition(danmaku), {
-                    'title': document.title,
-                    'ori': location.href,
+                    'title': top.document.title,
+                    'ori': top.location.href,
                 });
                 // I would assume most users are using Windows
                 let blob = new Blob(['\ufeff' + ass], { type: 'application/octet-stream' });
@@ -6944,6 +6961,7 @@ class UI extends BiliUserJS {
             ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'],
             ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
         ];
 
         let table = document.createElement('table');
@@ -7161,6 +7179,7 @@ class UI extends BiliUserJS {
                 partial: true,
                 proxy: true,
                 blocker: true,
+                font: true,
                 badgeWatchLater: true,
                 dblclick: true,
                 scroll: true,
