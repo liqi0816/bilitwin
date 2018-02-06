@@ -6829,7 +6829,7 @@ class UI extends BiliUserJS {
             ['scroll', '自动滚动到播放器'],
             ['recommend', '弹幕列表换成相关视频'],
             ['electric', '整合充电榜与换P倒计时'],
-            //['electricSkippable', '跳过充电榜'],
+            ['electricSkippable', '跳过充电榜', 'disabled'],
             ['lift', '自动防挡字幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
@@ -6858,6 +6858,10 @@ class UI extends BiliUserJS {
             let label = document.createElement('label');
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(d[1]));
+            if (d[2] == 'disabled') {
+                checkbox.disabled = true;
+                label.style.textDecoration = 'line-through';
+            }
             td.appendChild(label);
         }
 
