@@ -5792,6 +5792,7 @@ class BiliPolyfill {
             electric: true,
             electricSkippable: false,
             lift: true,
+            autoDanmuOff: true,
             autoResume: true,
             autoPlay: false,
             autoWideScreen: false,
@@ -5844,6 +5845,7 @@ class BiliPolyfill {
             if (this.option.badgeWatchLater) this.badgeWatchLater();
             if (this.option.scroll) this.scrollToPlayer();
             if (this.option.recommend) this.showRecommendTab();
+            if (this.option.autoDanmuOff) this.autoDanmuOff();
             if (this.option.autoResume) this.autoResume();
             if (this.option.autoPlay) this.autoPlay();
             if (this.option.autoWideScreen) this.autoWideScreen();
@@ -6002,6 +6004,14 @@ class BiliPolyfill {
         // NO. NOBODY WILL NEED THIS。
         // Hint: https://github.com/jamiees2/ass-to-vtt
         throw 'Not implemented';
+    }
+    
+    autoDanmuOff() {
+        if (!this.playerWin.document.querySelector('#bilibiliPlayer video-state-danmaku-off')) {
+            setTimeout(() => {
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-danmaku').click();
+            }, 0);
+        }
     }
 
     autoResume() {
@@ -6995,6 +7005,7 @@ class UI extends BiliUserJS {
             ['electric', '整合充电榜与换P倒计时'],
             ['electricSkippable', '跳过充电榜', 'disabled'],
             ['lift', '自动防挡字幕'],
+            ['autoDanmuOff', '自动关闭弹幕'],
             ['autoResume', '自动跳转上次看到'],
             ['autoPlay', '自动播放'],
             ['autoWideScreen', '自动宽屏'],
@@ -7187,6 +7198,7 @@ class UI extends BiliUserJS {
                 electric: true,
                 electricSkippable: false,
                 lift: true,
+                autoDanmuOff: true,
                 autoResume: true,
                 autoPlay: false,
                 autoWideScreen: false,
