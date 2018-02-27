@@ -5430,7 +5430,7 @@ class BiliMonkey {
             };
             this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
             let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
-                .find(e => !e.getAttribute('data-selected') && !e.children.length);
+                .find(e => !e.getAttribute('data-selected') && e.children.length == 2);
             button.click();
         }));
     }
