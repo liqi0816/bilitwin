@@ -4571,7 +4571,7 @@ class MKVTransmuxer {
                 // if (Array.isArray(array[0])) array = array[0];
                 if (array.length == 1) return array[0];
                 if (typeof Buffer != 'undefined') return Buffer.concat(array);
-                const ret = new Uint8Array(array.reduce((i, j) => i.byteLength + j.byteLength));
+                const ret = new Uint8Array(array.reduce((i, j) => i + j.byteLength, 0));
                 let length = 0;
                 for (let e of array) {
                     ret.set(e, length);
@@ -4952,11 +4952,11 @@ class MKVTransmuxer {
         };
         
         // if nodejs then test
-        if (typeof require == 'function') {
+        if (typeof window == 'undefined') {
             (async () => {
                 const fs = require('fs');
                 const assFile = fs.readFileSync('gen_case.ass').buffer;
-                const flvFile = fs.readFileSync('large_case.flv').buffer;
+                const flvFile = fs.readFileSync('gen_case.flv').buffer;
                 fs.writeFileSync('out.mkv', await new FLVASS2MKV({ onmkvprogress: console.log.bind(console) }).build(flvFile, assFile));
             })();
         }
