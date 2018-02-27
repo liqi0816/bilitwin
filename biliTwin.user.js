@@ -6495,6 +6495,7 @@ class UI extends BiliUserJS {
         div.appendChild(assA);
         div.className = 'bilitwin';
         div.style.float = 'left';
+        div.style.clear = 'left';
         tminfo.style.float = 'none';
         tminfo.style.marginLeft = '185px';
         tminfo.parentElement.insertBefore(div, tminfo);
