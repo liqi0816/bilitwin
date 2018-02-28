@@ -5438,7 +5438,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -5447,7 +5447,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -5467,14 +5467,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -5482,7 +5482,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -5544,7 +5544,7 @@ class BiliMonkey {
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
         let promises = [];
         for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
             promises.push(this.cache.deleteData(name));
             promises.push(this.cache.deleteData('PC_' + name));
         }
@@ -5618,8 +5618,8 @@ class BiliMonkey {
                         durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
                         danmuku,
                         name: index[cid].part || index[cid].index,
-                        outputName: res.durl[0].url.match(/\d+-\d+(?:-\d+)?(?=\.flv)/) ?
-                            res.durl[0].url.match(/\d+-\d+(?:-\d+)?(?=\.flv)/)[0].replace(/(?<=\d+)-\d+(?=(?:-\d+)?\.flv)/, '')
+                        outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
+                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/, '')
                             : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
                                 res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)
                                 : cid,
@@ -6538,13 +6538,13 @@ class UI extends BiliUserJS {
         div.ondrop = async e => {
             UI.allowDrag(e);
             let files = Array.from(e.dataTransfer.files);
-            if (files.every(e => e.name.search(/\d+-\d+(?:-\d+)?\.flv/) != -1)) {
-                files.sort((a, b) => a.name.match(/\d+-(\d+)(?:-\d+)?\.flv/)[1] - b.name.match(/\d+-(\d+)(?:-\d+)?\.flv/)[1]);
+            if (files.every(e => e.name.search(/\d+-\d+(?:\d|-|hd)*\.flv/) != -1)) {
+                files.sort((a, b) => a.name.match(/\d+-(\d+)(?:\d|-|hd)*\.flv/)[1] - b.name.match(/\d+-(\d+)(?:\d|-|hd)*\.flv/)[1]);
             }
             for (let file of files) {
                 table.insertRow(-1).innerHTML = `<td colspan="3">${file.name}</td>`;
             }
-            let outputName = files[0].name.match(/\d+-\d+(?:-\d+)?\.flv/);
+            let outputName = files[0].name.match(/\d+-\d+(?:\d|-|hd)*\.flv/);
             if (outputName) outputName = outputName[0].replace(/-\d/, "");
             else outputName = 'merge_' + files[0].name;
             let url = await UI.mergeFLVFiles(files);
@@ -6637,7 +6637,7 @@ class UI extends BiliUserJS {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         a.href = url;
         return url;
     }
