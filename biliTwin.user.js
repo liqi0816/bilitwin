@@ -5438,7 +5438,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = (this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/) || [])[0];
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -5447,7 +5447,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/)[0];
+        let name = (this.flvs[index].match(/\d+-\d+(?:-\d+)?\.flv/) || [])[0];
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
