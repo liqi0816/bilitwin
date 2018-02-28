@@ -5005,7 +5005,7 @@ class MKVTransmuxer {
 }
 
 class BiliMonkey {
-    constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false, font: false }) {
+    constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false, font: false, cdn: false }) {
         this.playerWin = playerWin;
         this.protocol = playerWin.location.protocol;
         this.cid = null;
@@ -5029,6 +5029,7 @@ class BiliMonkey {
         this.proxy = option.proxy;
         this.blocker = option.blocker;
         this.font = option.font;
+        this.cdn = option.cdn;
         this.option = option;
         if (this.cache && (!(this.cache instanceof CacheDB))) this.cache = new CacheDB('biliMonkey', 'flv', 'name');
 
@@ -5093,14 +5094,18 @@ class BiliMonkey {
                     this.flvs = null;
                     throw `URL interface error: response is not ${shouldBe}`;
                 }
-                return this.flvs = this.flvs.resolve(res.durl.map(e => e.url.replace('http:', this.protocol)));
+                return this.flvs = this.flvs.resolve(res.durl.map(e =>
+                    (this.cdn && e.backup_url.find(i => i.includes(this.cdn)) || e.url).replace('http:', top.location.protocol)
+                ));
             case 'hdmp4':
             case 'mp4':
                 if (shouldBe && shouldBe != res.format) {
                     this.mp4 = null;
                     throw `URL interface error: response is not ${shouldBe}`;
                 }
-                return this.mp4 = this.mp4.resolve(res.durl[0].url.replace('http:', this.protocol));
+                return this.mp4 = this.mp4.resolve(
+                    (this.cdn && res.durl[0].backup_url.find(i => i.includes(this.cdn)) || res.durl[0].url).replace('http:', this.protocol)
+                );
             default:
                 throw `resolveFormat error: ${res.format} is a unrecognizable format`;
         }
@@ -5338,11 +5343,11 @@ class BiliMonkey {
             fetchDanmaku(this.cid, danmaku => {
                 if (bilibili_player_settings && this.blocker) {
                     let regexps = bilibili_player_settings.block.list.map(e => e.v).join('|');
-                        if (regexps) {
-                            regexps = new RegExp(regexps);
-                            danmaku = danmaku.filter(d => !regexps.test(d.text));
-                        }
+                    if (regexps) {
+                        regexps = new RegExp(regexps);
+                        danmaku = danmaku.filter(d => !regexps.test(d.text));
                     }
+                }
                 let ass = generateASS(setPosition(danmaku), {
                     'title': top.document.title,
                     'ori': top.location.href,
@@ -7315,6 +7320,10 @@ class UI extends BiliUserJS {
         let option = UI.getOption(playerWin);
         let optionDiv = UI.genOptionDiv(option);
         document.body.appendChild(optionDiv);
+        if (!option.cdn) {
+            option.cdn = top.prompt('What is your preferred CDN domain for BiliMonkey?\nThere exists a fallback; feel free to choose.', 'tx.acgvideo.com');
+            UI.saveOption(option);
+        }
 
         // 2. monkey and polyfill
         let monkeyTitle;
