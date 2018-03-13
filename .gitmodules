@@ -1,0 +1,4 @@
+[submodule "src/assconverter"]
+	path = src/assconverter
+	url = https://github.com/liqi0816/ass-danmaku.git
+	branch = bilitwin
