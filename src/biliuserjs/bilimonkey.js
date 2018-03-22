@@ -34,7 +34,7 @@ import ASSConverter from '../assconverter/interface';
 import Destroy from '../util/destroy';
 
 class BiliMonkey {
-    constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false, font: false }) {
+    constructor(playerWin, option = BiliMonkey.optionDefaults) {
         this.playerWin = playerWin;
         this.protocol = playerWin.location.protocol;
         this.cid = null;
@@ -701,6 +701,7 @@ class BiliMonkey {
     }
 
     static formatToValue(format) {
+        if (format == 'does_not_exist') throw `formatToValue: cannot lookup does_not_exist`;
         if (typeof BiliMonkey.formatToValue.dict == 'undefined') BiliMonkey.formatToValue.dict = {
             'flv_p60': '116',
             'flv720_p60': '74',
@@ -737,6 +738,42 @@ class BiliMonkey {
             '1': 'mp4',
         };
         return BiliMonkey.valueToFormat.dict[value] || null;
+    }
+
+    static get optionDescriptions() {
+        return [
+            // 1. automation
+            ['autoDefault', '尝试自动抓取：不会拖慢页面，抓取默认清晰度，但可能抓不到。'],
+            ['autoFLV', '强制自动抓取FLV：会拖慢页面，如果默认清晰度也是超清会更慢，但保证抓到。'],
+            ['autoMP4', '强制自动抓取MP4：会拖慢页面，如果默认清晰度也是高清会更慢，但保证抓到。'],
+
+            // 2. cache
+            ['cache', '关标签页不清缓存：保留完全下载好的分段到缓存，忘记另存为也没关系。'],
+            ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'],
+            ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
+
+            // 3. customizing
+            ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+        ];
+    }
+
+    static get optionDefaults() {
+        return {
+            // 1. automation
+            autoDefault: true,
+            autoFLV: false,
+            autoMP4: false,
+
+            // 2. cache
+            cache: true,
+            partial: true,
+            proxy: true,
+
+            // 3. customizing
+            blocker: true,
+            font: true,
+        }
     }
 
     static _UNIT_TEST() {

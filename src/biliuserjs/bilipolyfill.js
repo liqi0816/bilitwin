@@ -17,28 +17,7 @@ class BiliPolyfill {
      * Assumption: aid, cid, pageno does not change during lifecycle
      * Create a new BiliPolyfill if assumption breaks
      */
-    constructor(playerWin,
-        option = {
-            setStorage: (n, i) => playerWin.localStorage.setItem(n, i),
-            getStorage: n => playerWin.localStorage.getItem(n),
-            badgeWatchLater: true,
-            dblclick: true,
-            scroll: true,
-            recommend: true,
-            electric: true,
-            electricSkippable: false,
-            lift: true,
-            autoResume: true,
-            autoPlay: false,
-            autoWideScreen: false,
-            autoFullScreen: false,
-            oped: true,
-            focus: true,
-            menuFocus: true,
-            limitedKeydown: true,
-            speech: false,
-            series: true,
-        }, hintInfo = () => { }) {
+    constructor(playerWin, option = BiliPolyfill.optionDefaults, hintInfo = () => { }) {
         this.playerWin = playerWin;
         this.option = option;
         this.hintInfo = hintInfo;
@@ -305,7 +284,7 @@ class BiliPolyfill {
      */
     restorePreventShade() {
         // 1. restore option should be an array
-        if (!Array.isArray(this.userdata.restore.preventshade)) this.userdata.restore.preventshade = [];
+        if (!Array.isArray(this.userdata.restore.preventShade)) this.userdata.restore.preventShade = [];
 
         // 2. find corresponding option index
         const index = top.location.href.includes('bangumi') ? 0 : 1;
@@ -315,7 +294,7 @@ class BiliPolyfill {
 
         // 4. restore if true
         const input = this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
-        if (this.userdata.restore.preventshade[index] && !input.nextSibling.classList.contains('bpui-state-active')) {
+        if (this.userdata.restore.preventShade[index] && !input.nextSibling.classList.contains('bpui-state-active')) {
             input.click();
         }
 
@@ -324,7 +303,7 @@ class BiliPolyfill {
 
         // 6. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.preventshade[index] = input.nextSibling.classList.contains('bpui-state-active') || undefined;
+            this.userdata.restore.preventShade[index] = input.nextSibling.classList.contains('bpui-state-active') || undefined;
         });
     }
 
@@ -384,18 +363,29 @@ class BiliPolyfill {
             this.video.playbackRate = this.userdata.restore.speed[index];
         }
 
-        // 5. clean up setting panel
-        this.playerWin.document.getElementsByName('ctlbar_danmuku_close')[0].dispatchEvent(new Event('mouseleave'));
-
-        // 6. memorize option
-        this.destroy.addCallback( () => {
-            this.userdata.restore.preventshade[index] = input.nextSibling.classList.contains('bpui-state-active') || undefined;
+        // 4. memorize option
+        this.destroy.addCallback(() => {
+            this.userdata.restore.speed[index] = this.video.playbackRate;
         });
     }
 
     restoreWideScreen() {
-        if (this.playerWin.document.querySelector('#bilibiliPlayer i.icon-24wideoff'))
-            this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-widescreen').click();
+        // 1. restore option should be an array
+        if (!Array.isArray(this.userdata.restore.wideScreen)) this.userdata.restore.wideScreen = [];
+
+        // 2. find corresponding option index
+        const index = top.location.href.includes('bangumi') ? 0 : 1;
+
+        // 3. restore if different
+        const i = this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0];
+        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('icon-24wideon')) {
+            i.click();
+        }
+
+        // 4. memorize option
+        this.destroy.addCallback(() => {
+            this.userdata.restore.wideScreen[index] = i.classList.contains('icon-24wideon') || undefined;
+        });
     }
 
 
@@ -807,6 +797,72 @@ class BiliPolyfill {
         if (playerWin.GM_setValue) return GM_setValue('biliPolyfill', '');
         if (playerWin.GM.setValue) return GM.setValue('biliPolyfill', '');
         playerWin.localStorage.removeItem('biliPolyfill');
+    }
+
+    static get optionDescriptions() {
+        return [
+            ['betabeta', '增强组件总开关 <---------更加懒得测试了，反正以后B站也会自己提供这些功能。也许吧。'],
+
+            // 1. user interface
+            ['badgeWatchLater', '稍后再看添加数字角标'],
+            ['recommend', '弹幕列表换成相关视频'],
+            ['electric', '整合充电榜与换P倒计时'],
+            ['electricSkippable', '跳过充电榜', 'disabled'],
+
+            // 2. automation
+            ['scroll', '自动滚动到播放器'],
+            ['focus', '自动聚焦到播放器(新页面直接按空格会播放而不是向下滚动)'],
+            ['menuFocus', '关闭菜单后聚焦到播放器'],
+            ['restorePrevent', '记住防挡字幕'],
+            ['restoreDanmuku', '记住弹幕开关(顶端/底端/滚动/全部)'],
+            ['restoreSpeed', '记住播放速度'],
+            ['restoreWide', '记住宽屏'],
+            ['autoResume', '自动跳转上次看到'],
+            ['autoPlay', '自动播放'],
+            ['autoFullScreen', '自动全屏'],
+            ['oped', '标记后自动跳OP/ED'],
+            ['series', '尝试自动找上下集'],
+
+            // 3. interaction
+            ['limitedKeydown', '首次回车键可全屏自动播放'],
+            ['dblclick', '双击全屏'],
+
+            // 4. easter eggs
+            ['speech', '(彩蛋)(需墙外)任意三击鼠标左键开启语音识别'],
+        ];
+    }
+
+    static get optionDefaults() {
+        return {
+            betabeta: false,
+
+            // 1. user interface
+            badgeWatchLater: true,
+            recommend: true,
+            electric: true,
+            electricSkippable: false,
+
+            // 2. automation
+            scroll: true,
+            focus: true,
+            menuFocus: true,
+            restorePrevent: true,
+            restoreDanmuku: true,
+            restoreSpeed: true,
+            restoreWide: true,
+            autoResume: true,
+            autoPlay: false,
+            autoFullScreen: false,
+            oped: true,
+            series: true,
+
+            // 3. interaction
+            limitedKeydown: true,
+            dblclick: true,
+
+            // 4. easter eggs
+            speech: false,
+        }
     }
 
     static _UNIT_TEST() {
