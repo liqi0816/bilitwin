@@ -946,6 +946,38 @@ class UI extends BiliUserJS {
             await UI.start();
         }
     }
+
+    static get optionDescriptions() {
+        return [
+            // 1. automation
+            ['autoDanmaku', '下载视频也触发下载弹幕'],
+
+            // 2. user interface
+            ['title', '在视频标题旁添加链接'],
+            ['menu', '在视频菜单栏添加增强'],
+
+            // 3. download
+            ['aria2', '导出aria2'],
+            ['m3u8', '导出m3u8'],
+            ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板'],
+        ];
+    }
+
+    static get optionDefaults() {
+        return {
+            // 1. automation
+            autoDanmaku: false,
+
+            // 2. user interface
+            title: true,
+            menu: true,
+
+            // 3. download
+            aria2: false,
+            m3u8: false,
+            clipboard: false,
+        }
+    }
 }
 
 export default UI;

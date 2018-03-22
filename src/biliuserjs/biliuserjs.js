@@ -8,6 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+import AsyncContainer from '../util/async-container';
+
 /**
  * Provides common util for all bilibili user scripts
  */
@@ -76,6 +78,30 @@ class BiliUserJS {
                 observer.observe(document.getElementById('bofqi'), { childList: true });
             })
         }
+    }
+
+    static async getCidRefreshPromise(playerWin) {
+        const cidRefresh = new AsyncContainer();
+
+        // 1. no active video element in document => cid refresh
+        const h = () => {
+            const video = playerWin.document.getElementsByTagName('video')[0];
+
+            // 1.1 just a dom refresh => bind listenner
+            if (video) {
+                video.addEventListener('emptied', h);
+            }
+
+            // 1.2 otherwise => cid refresh
+            else {
+                setTimeout(() => cidRefresh.resolve(), 0);
+            }
+        }
+
+        // 2. playerWin unload => cid refresh
+        playerWin.addEventListener('unload', () => setTimeout(() => cidRefresh.resolve(), 0));
+
+        return cidRefresh;
     }
 }
 

@@ -62,10 +62,10 @@ class BiliPolyfill {
             this.retrieveUserdata();
             if (this.option.badgeWatchLater) this.badgeWatchLater();
             if (this.option.scroll) this.scrollToPlayer();
-            if (this.option.recommend) this.showRecommendTab();
 
             if (this.option.series) this.inferNextInSeries();
 
+            if (this.option.recommend) this.showRecommendTab();
             if (this.option.autoResume) this.autoResume();
             if (this.option.autoPlay) this.autoPlay();
             if (this.option.autoWideScreen) this.autoWideScreen();
@@ -179,6 +179,7 @@ class BiliPolyfill {
                     div.textContent = li.children[1].children[0].children.length;
                 }
                 li.appendChild(div);
+                this.destroy.addCallback(div.remove());
             }
         });
         observer.observe(li.children[1].children[0], { childList: true });
