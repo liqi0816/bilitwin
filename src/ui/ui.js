@@ -916,9 +916,26 @@ class UI extends BiliUserJS {
         if (debugOption.debug) ([(top.unsafeWindow || top).m, (top.unsafeWindow || top).p] = [monkey, polyfill]);
 
         await cidRefresh;
+        monkey.destroy();
+        polyfill.destroy();
         UI.cleanUp();
     }
 
+    /***
+     * userscripts may change states within the following scopes:
+     * 1. page scope
+     * 2. aid scope
+     * 3. cid scope
+     * 4. video dom scope
+     * 
+     * BiliMonkey => cid scope
+     *            => page scope (fetch hook)
+     * 
+     * BiliPolyfill => video dom scope
+     *              => cid scope
+     *              => aid scope
+     *              => page scope
+     */
     static async init() {
         if (!document.body) return;
         UI.outdatedEngineClearance();

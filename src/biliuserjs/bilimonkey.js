@@ -31,6 +31,7 @@ import CacheDB from '../util/cache-db';
 import DetailedFetchBlob from '../util/detailed-fetch-blob';
 import Mutex from '../util/mutex';
 import ASSConverter from '../assconverter/interface';
+import Destroy from '../util/destroy';
 
 class BiliMonkey {
     constructor(playerWin, option = { cache: null, partial: false, proxy: false, blocker: false, font: false }) {
@@ -68,6 +69,8 @@ class BiliMonkey {
         this.queryInfoMutex = new Mutex();
         this.queryInfoMutex.lockAndAwait(() => this.getPlayerButtons());
         this.queryInfoMutex.lockAndAwait(() => this.getAvailableFormatName());
+
+        this.destroy = new Destroy();
     }
 
     /***
@@ -613,6 +616,7 @@ class BiliMonkey {
             init.headers.set('Range', `bytes=${input.slice(bstart + 8)}-`);
             return _fetch(input.slice(0, bstart), init)
         }
+        this.destroy.addCallback(() => this.playerWin.fetch = _fetch);
 
         await this.loadAllFLVFromCache();
         let resProxy = Object.assign({}, res);
