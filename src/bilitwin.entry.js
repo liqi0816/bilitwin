@@ -13,6 +13,33 @@ import BiliMonkey from './biliuserjs/bilimonkey';
 import BiliPolyfill from './biliuserjs/bilipolyfill';
 
 class BiliTwin extends BiliUserJS {
+    static async sendToAria2RPC(urls, referrer, target = 'http://127.0.0.1:6800/jsonrpc') {
+        // 1. prepare body
+        const h = 'referer';
+        const body = JSON.stringify(urls.map((url, id) => ({
+            id,
+            jsonrpc: 2,
+            method: "aria2.addUri",
+            params: [
+                [url],
+                { [h]: referrer }
+            ]
+        })));
 
+        // 2. send to jsonrpc target
+        const method = 'POST';
+        while (1) {
+            try {
+                return fetch(target, { method, body }).then(e => e.json());
+            }
+            catch (e) {
+                target = top.prompt('Aria2 connection failed. Please provide a valid server address:', target);
+                if (!target) return null;
+            }
+        }
+    }
+
+    static exportAria2(urls, referrer) {
+        return urls.map(e => `${e}\r\n  referer=${referrer}\r\n`).join('');
+    }
 }
-

@@ -603,7 +603,7 @@ class BiliMonkey {
     }
 
     async setupProxy(res, onsuccess) {
-        let _fetch = this.playerWin.fetch;
+        const _fetch = this.playerWin.fetch;
         this.playerWin.fetch = function (input, init) {
             if (!input.slice || input.slice(0, 5) != 'blob:') {
                 return _fetch(input, init);

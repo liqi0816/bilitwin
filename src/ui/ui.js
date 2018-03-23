@@ -692,7 +692,7 @@ class UI extends BiliUserJS {
     }
 
     static copyToClipboard(text) {
-        let textarea = document.createElement('textarea');
+        const textarea = document.createElement('textarea');
         document.body.appendChild(textarea);
         textarea.value = text;
         textarea.select();
@@ -700,8 +700,8 @@ class UI extends BiliUserJS {
         document.body.removeChild(textarea);
     }
 
-    static exportIDM(url, referrer) {
-        return url.map(e => `<\r\n${e}\r\nreferer: ${referrer}\r\n>\r\n`).join('');
+    static exportIDM(urls, referrer) {
+        return urls.map(e => `<\r\n${e}\r\nreferer: ${referrer}\r\n>\r\n`).join('');
     }
 
     static allowDrag(e) {
@@ -958,7 +958,8 @@ class UI extends BiliUserJS {
 
             // 3. download
             ['aria2', '导出aria2'],
-            ['m3u8', '导出m3u8'],
+            ['aria2RPC', '发送到aria2 RPC'],
+            ['m3u8', '(限VLC兼容播放器)导出m3u8'],
             ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板'],
         ];
     }
