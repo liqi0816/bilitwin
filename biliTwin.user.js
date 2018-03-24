@@ -5110,7 +5110,8 @@ class BiliMonkey {
         if (!Array.isArray(accept_quality)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
         accept_quality = accept_quality.map(e => e.toString());
 
-        if (accept_quality.includes('80')) this.flvFormatName = 'flv';
+        if (accept_quality.includes('112')) this.flvFormatName = 'hdflv2';
+        else if (accept_quality.includes('80')) this.flvFormatName = 'flv';
         else if (accept_quality.includes('64')) this.flvFormatName = 'flv720';
         else if (accept_quality.includes('32')) this.flvFormatName = 'flv480';
         else if (accept_quality.includes('15')) this.flvFormatName = 'flv320';
