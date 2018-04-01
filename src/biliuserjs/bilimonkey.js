@@ -697,7 +697,12 @@ class BiliMonkey {
                         danmuku,
                         name: index[cid].part || index[cid].index,
                         outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
-                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/, '')
+                            /***
+                             * see #28
+                             * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
+                             * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
+                             */
+                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '')
                             : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
                                 res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
                                 : cid,
