@@ -74,11 +74,19 @@ class UI {
         }
 
         .bilitwin progress {
-            -webkit-appearance: progress;
+            -webkit-appearance: progress-bar;
+            -moz-appearance: progress-bar;
+            appearance: progress-bar;
+        }
+
+        .bilitwin input[type="checkbox" i] {
+            -webkit-appearance: checkbox;
+            -moz-appearance: checkbox;
+            appearance: checkbox;
         }
         `;
 
-        const style = <style type="text/css" rel="stylesheet">{ret}</style>;
+        const style = <style type="text/css">{ret}</style>;
         document.head.append(style);
 
         return this.dom.style = style;

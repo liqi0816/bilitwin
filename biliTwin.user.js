@@ -7479,13 +7479,20 @@ class UI {
         }
 
         .bilitwin progress {
-            -webkit-appearance: progress;
+            -webkit-appearance: progress-bar;
+            -moz-appearance: progress-bar;
+            appearance: progress-bar;
+        }
+
+        .bilitwin input[type="checkbox" i] {
+            -webkit-appearance: checkbox;
+            -moz-appearance: checkbox;
+            appearance: checkbox;
         }
         `;
 
         const style = document.createElement('style');
         style.type = 'text/css';
-        style.setAttribute('rel', 'stylesheet');
         style.textContent = ret;
         document.head.append(style);
 
