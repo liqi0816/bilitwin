@@ -1,0 +1,12 @@
+# node
+node_modules/
+
+# samples
+samples/
+
+# build
+/index.js
+/index.js.map
+/interface.js
+/interface.js.map
+/embedded.html

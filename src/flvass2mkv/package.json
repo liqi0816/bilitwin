@@ -1,0 +1,35 @@
+{
+  "name": "flvass2mkv",
+  "version": "0.0.1",
+  "description": "flv + ass => mkv",
+  "repository": {
+    "private": true
+  },
+  "author": "qli5",
+  "license": "MPL-2.0",
+  "main": "index.js",
+  "dependencies": {
+    "ebml": "^2.2.1",
+    "ebml-block": "^1.1.1",
+    "lodash-es": "^4.17.5"
+  },
+  "devDependencies": {
+    "flv.js": "^1.4.1",
+    "gulp": "^3.9.1",
+    "gulp-inline": "^0.1.3",
+    "gulp-rename": "^1.2.2",
+    "gulp-replace": "^0.6.1",
+    "rollup": "^0.57.1",
+    "rollup-plugin-node-resolve": "^3.0.3",
+    "rollup-pluginutils": "^2.0.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "engines": {
+    "node": "^8.10.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "install": "gulp"
+  }
+}

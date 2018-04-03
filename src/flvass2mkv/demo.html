@@ -1,0 +1,50 @@
+<html>
+
+<body>
+    <p>
+        加载文件…… loading files...
+        <progress value="0" max="100" id="fileProgress"></progress>
+    </p>
+    <p>
+        构建mkv…… building mkv...
+        <progress value="0" max="100" id="mkvProgress"></progress>
+    </p>
+    <p>
+        <a id="a" download="merged.mkv">merged.mkv</a>
+    </p>
+    <footer>
+        author qli5 &lt;goodlq11[at](163|gmail).com&gt;
+    </footer>
+    <script src="./index.js"></script>
+    <script>
+        const fileProgress = document.getElementById('fileProgress');
+        const mkvProgress = document.getElementById('mkvProgress');
+        const a = document.getElementById('a');
+        window.exec = async option => {
+            const defaultOption = {
+                onflvprogress: ({ loaded, total }) => {
+                    fileProgress.value = loaded;
+                    fileProgress.max = total;
+                },
+                onfileload: () => {
+                    console.timeEnd('file');
+                    console.time('flvass2mkv');
+                },
+                onmkvprogress: ({ loaded, total }) => {
+                    mkvProgress.value = loaded;
+                    mkvProgress.max = total;
+                },
+                name: 'merged.mkv',
+            };
+            option = Object.assign(defaultOption, option);
+            a.download = a.textContent = option.name;
+            console.time('file');
+            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);
+            console.timeEnd('flvass2mkv');
+            return a.href = URL.createObjectURL(mkv);
+        };
+        window.exec();
+    </script>
+</body>
+
+</html>
