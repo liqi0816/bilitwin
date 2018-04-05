@@ -195,8 +195,8 @@ class FirefoxCacheDB {
         return new Response(data).body;
     }
 
-    async createReadStream(name) {
-        return this.getReadStream(name);
+    get createReadStream() {
+        return this.getReadStream;
     }
 
     static parseParameter(...args) {
@@ -257,3 +257,5 @@ class FirefoxCacheDB {
         }
     }
 }
+
+export default FirefoxCacheDB;
