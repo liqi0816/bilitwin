@@ -95,7 +95,7 @@ class HookedFunction extends Function {
                 post.push(e);
             }
             else {
-                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of type ${typeof e}`);
+                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of class ${e.constructor.name}`);
             }
         };
 

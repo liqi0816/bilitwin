@@ -350,7 +350,7 @@ class BiliMonkey {
 
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
-        this.ass = new Promise(async resolve => {
+        this.ass = (async () => {
             // 1. cid
             if (!this.cid) this.cid = await new Promise((resolve, reject) => {
                 clickableFormat = this.fallbackFormatName || clickableFormat;
@@ -400,10 +400,10 @@ class BiliMonkey {
             } || undefined;
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
+            return this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
-            )));
-        });
+            ));
+        })();
         return this.ass;
     }
 
@@ -464,7 +464,7 @@ class BiliMonkey {
         const _ajax = jq.ajax;
         const _setItem = this.playerWin.localStorage.setItem;
 
-        return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
+        return this.queryInfoMutex.lockAndAwait(() => new Promise(resolve => {
             let blockerTimeout;
             jq.ajax = function (a, c) {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
