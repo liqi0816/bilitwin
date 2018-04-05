@@ -10,19 +10,19 @@
 
 class StreamMonitor extends EventTarget {
     constructor({
-        onend,
-        oninputerror,
-        onoutputerror,
-        onerror,
-        onprogress,
-        onabort,
-        throttle,
-        delay,
-        loaded,
-        total,
-        preventClose,
-        preventAbort,
-        preventCancel,
+        onend = null,
+        oninputerror = null,
+        onoutputerror = null,
+        onerror = null,
+        onprogress = null,
+        onabort = null,
+        throttle = 0,
+        delay = 0,
+        loaded = 0,
+        total = 0,
+        preventClose = false,
+        preventAbort = false,
+        preventCancel = false,
     } = {}) {
         // 1. super
         super();
@@ -40,7 +40,7 @@ class StreamMonitor extends EventTarget {
             },
 
             async write(chunk, inputController) {
-                return await monitor.outputController.enqueue(chunk);
+                return monitor.buffer.push(chunk);
             },
 
             async close(inputController) {
@@ -49,6 +49,7 @@ class StreamMonitor extends EventTarget {
             },
 
             async abort(reason) {
+                if (monitor.intendedAbort) return;
                 monitor.dispatchEvent(new Event('inputerror'));
                 if (typeofmonitor.oninputerror === 'function') monitor.oninputerror();
                 monitor.dispatchEvent(new Event('error'));
@@ -64,7 +65,7 @@ class StreamMonitor extends EventTarget {
             },
 
             async pull(outputController) {
-
+                return monitor.buffer.shift();
             },
 
             async cancel(e) {
@@ -85,7 +86,8 @@ class StreamMonitor extends EventTarget {
         this.dispatchEvent(new Event('abort', { reason }));
         if (typeof monitor.onabort === 'function') monitor.onabort();
         this.intendedAbort = true;
-        this.readable.abort();
+        this.writable.abort();
+        this.readable.cancel();
     }
 
     get cancel() {
