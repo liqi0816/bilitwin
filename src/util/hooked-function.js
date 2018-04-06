@@ -12,6 +12,24 @@
  * A util to hook a function
  */
 class HookedFunction extends Function {
+    /**
+     * Create a hooked function. Parameter patterns:
+     * 
+     * `(raw?, ...others)`
+     * 
+     * where `others` can be
+     * 
+     * `[...pre-hooks], [...post-hooks]`
+     * 
+     * `[...post-hooks]`
+     * 
+     * `...post-hooks`
+     * 
+     * `{raw?:{function}, pre?:{(function|function[])}, post?:{(function|function[])}}`
+     * 
+     * @param {...(function|function[]|InitDict)} init
+     * @returns {function} the wrapped function
+     */
     constructor(...init) {
         // 1. init parameter
         const { raw, pre, post } = HookedFunction.parseParameter(...init);
@@ -19,6 +37,9 @@ class HookedFunction extends Function {
         // 2. build bundle
         const self = function (...args) {
             const { raw, pre, post } = self;
+            /**
+             * @type {Context}
+             */
             const context = { args, target: raw, ret: undefined, hook: self };
             pre.forEach(e => e.call(this, context));
             if (context.target) context.ret = context.target.apply(this, context.args);
@@ -26,11 +47,20 @@ class HookedFunction extends Function {
             return context.ret;
         };
         Object.setPrototypeOf(self, HookedFunction.prototype);
+        /**
+         * @type {function} the raw function
+         */
         self.raw = raw;
+        /**
+         * @type {function[]} the pre-hook list
+         */
         self.pre = pre;
+        /**
+         * @type {function[]} the post-hook list
+         */
         self.post = post;
 
-        // 3. cheat babel - it complains about missing super(), even if it is actual valid 
+        // 3. cheat babel - it complains about missing super(), even if it is actually valid 
         try {
             return self;
         } catch (e) {
@@ -39,30 +69,55 @@ class HookedFunction extends Function {
         }
     }
 
+    /**
+     * Add functions to pre-hook list
+     * @param {...Hook} func functions to add
+     */
     addPre(...func) {
         this.pre.push(...func);
     }
 
+    /**
+     * Add functions to post-hook list
+     * @param {...Hook} func functions to add
+     */
     addPost(...func) {
         this.post.push(...func);
     }
 
-    addCallback(...func) {
-        this.addPost(...func);
+    /**
+     * alias of addPre
+     */
+    get addCallback() {
+        return this.addPost;
     }
 
+    /**
+     * Remove a function from pre-hook list
+     * @param {Hook} func function to remove
+     */
     removePre(func) {
         this.pre = this.pre.filter(e => e != func);
     }
 
+    /**
+     * Remove a function from post-hook list
+     * @param {Hook} func function to remove
+     */
     removePost(func) {
         this.post = this.post.filter(e => e != func);
     }
 
-    removeCallback(func) {
-        this.removePost(func);
+    /**
+     * alias of removePost
+     */
+    get removeCallback() {
+        return this.removePost;
     }
 
+    /**
+     * @private
+     */
     static parseParameter(...init) {
         // 1. clone init
         init = init.slice();
@@ -95,13 +150,19 @@ class HookedFunction extends Function {
                 post.push(e);
             }
             else {
-                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of class ${e.constructor.name}`);
+                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of class ${e}`);
             }
         };
 
         return { raw, pre, post };
     }
 
+    /**
+     * Wrap a function if it has not been, or apply more hooks otherwise
+     * 
+     * @param {...(function|function[]|InitDict)} init 
+     * @returns {function} the wrapped function
+     */
     static hook(...init) {
         // 1. init parameter
         const { raw, pre, post } = HookedFunction.parseParameter(...init);
@@ -120,6 +181,13 @@ class HookedFunction extends Function {
         }
     }
 
+    /**
+     * Add debugger statement hook to a function
+     * 
+     * @param {function} raw function to debug.
+     * @param {boolean} [pre=true] add pre-hook. default true
+     * @param {boolean} [post=false] add post-hook. default false
+     */
     static hookDebugger(raw, pre = true, post = false) {
         // 1. init hook
         if (!HookedFunction.hookDebugger.hook) HookedFunction.hookDebugger.hook = function (ctx) { debugger };
@@ -148,3 +216,23 @@ class HookedFunction extends Function {
 }
 
 export default HookedFunction;
+
+/**
+ * @typedef {Object} InitDict
+ * @property {function} InitDict.raw
+ * @property {(Hook|Hook[])} InitDict.pre
+ * @property {(Hook|Hook[])} InitDict.post
+ */
+
+/**
+ * @typedef {Object} Context
+ * @property {...*} InitDict.args
+ * @property {function} InitDict.target
+ * @property {*} InitDict.ret  
+ * @property {HookedFunction} InitDict.hook
+ */
+
+/**
+ * @typedef {function} Hook
+ * @param {Context} ctx context
+ */

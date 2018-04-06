@@ -9,7 +9,7 @@
 */
 
 /**
- * Basically a Promise that exposes its resolve and reject callbacks
+ * Basically a deferred Promise with an explicit will-never-reture hint
  */
 class AsyncContainer {
     /***

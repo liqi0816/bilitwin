@@ -227,7 +227,7 @@ class ChromeCacheDB {
         }
 
         if (name && typeof name != 'string') {
-            throw new TypeError(`ChromeCacheDB: parameter name expect string but get ${name.constructor.name}`);
+            throw new TypeError(`ChromeCacheDB: parameter name expect string but get ${name}`);
         }
         return { name, data, offset, append, truncate };
     }
@@ -237,7 +237,7 @@ class ChromeCacheDB {
     }
 
     static async cloneBlob(file) {
-        if (!(file instanceof Blob)) throw new TypeError(`cloneBlob: parameter file expect Blob but get ${file.constructor.name}`);
+        if (!(file instanceof Blob)) throw new TypeError(`cloneBlob: parameter file expect Blob but get ${file}`);
         return new Response(file).blob();
     }
 

@@ -8,7 +8,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-class StreamMonitor extends EventTarget {
+import OnEventTarget from './on-event-target.js';
+
+class MonitorStream extends TransformStream {
     constructor({
         onend = null,
         oninputerror = null,
@@ -17,59 +19,68 @@ class StreamMonitor extends EventTarget {
         onprogress = null,
         onabort = null,
         throttle = 0,
-        delay = 0,
+        debounce = 0,
         loaded = 0,
         total = 0,
         preventClose = false,
-        preventAbort = false,
-        preventCancel = false,
     } = {}) {
         // 1. super
         super();
+        OnEventTarget.call(this);
 
-        // 2. persist this reference
-        const monitor = this;
+        // 2. save param
+        this.onend = onend;
+        this.oninputerror = oninputerror;
+        this.onoutputerror = onoutputerror;
+        this.onerror = onerror;
+        this.onprogress = onprogress;
+        this.onabort = onabort;
+        this.throttle = throttle;
+        this.debounce = debounce;
+        this.loaded = loaded;
+        this.total = total;
+        this.preventClose = preventClose;
 
-        // 3. states
-        monitor.intendedAbort = false;
+        // 3. intendedAbort
+        this.intendedAbort = false;
 
-        // 4. defint input writable stream
-        monitor.writable = new WritableStream({
-            start(inputController) {
-                monitor.inputController = inputController;
+        // 4. replace writable
+        const self = this;
+        const writer = this.writable.getWriter();
+        this.writable = new WritableStream({
+            async write(chunk) {
+                try {
+                    self.loaded += chunk.size;
+                    let event = new ProgressEvent('progress', { lengthComputable: self.total, loaded: self.loaded, total: self.total });
+                    self.dispatchEvent(event);
+                    if (typeof self.onprogress === 'function') self.onprogress(event);
+                    return await writer.write(chunk);
+                }
+                catch (e) {
+                    let event = null;
+                    event = new ProgressEvent('outputerror', { lengthComputable: self.total, loaded: self.loaded, total: self.total });
+                    self.dispatchEvent(event);
+                    if (typeof self.onoutputerror === 'function') self.onoutputerror(event);
+                    event = new ProgressEvent('error', { lengthComputable: self.total, loaded: self.loaded, total: self.total });
+                    self.dispatchEvent(event);
+                    if (typeof self.onerror === 'function') self.onerror(event);
+                    throw e;
+                }
             },
 
-            async write(chunk, inputController) {
-                return monitor.buffer.push(chunk);
-            },
-
-            async close(inputController) {
-                monitor.dispatchEvent(new Event('end'));
-                if (typeof monitor.onend === 'function') monitor.onend();
+            async close() {
+                if (!self.preventClose) writer.close();
+                self.dispatchEvent(new Event('end'));
+                if (typeof self.onend === 'function') self.onend();
             },
 
             async abort(reason) {
-                if (monitor.intendedAbort) return;
-                monitor.dispatchEvent(new Event('inputerror'));
-                if (typeofmonitor.oninputerror === 'function') monitor.oninputerror();
-                monitor.dispatchEvent(new Event('error'));
-                if (typeofmonitor.onerror === 'function') monitor.onerror();
-                monitor.readable.cancel();
-            }
-        });
-
-        // 5. defint output readable stream
-        monitor.readable = new ReadableStream({
-            start(outputController) {
-                monitor.outputController = outputController;
-            },
-
-            async pull(outputController) {
-                return monitor.buffer.shift();
-            },
-
-            async cancel(e) {
-
+                writer.abort();
+                if (self.intendedAbort) return;
+                self.dispatchEvent(new ProgressEvent('inputerror'));
+                if (typeof self.oninputerror === 'function') self.oninputerror();
+                self.dispatchEvent(new ProgressEvent('error'));
+                if (typeof self.onerror === 'function') self.onerror();
             }
         });
     }
@@ -92,11 +103,6 @@ class StreamMonitor extends EventTarget {
 
     get cancel() {
         return this.abort;
-    }
-
-    on(...args) {
-        this.addEventListener(...args);
-        return this;
     }
 }
 
