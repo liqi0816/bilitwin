@@ -8,7 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-// import OnEventTarget from './on-event-target.js';
+import OnEventTarget from './on-event-target.js';
 
 class MonitorStream extends TransformStream {
     constructor({
@@ -17,6 +17,7 @@ class MonitorStream extends TransformStream {
         throttle = 0,
         loaded = 0,
         total = 0,
+        lengthComputable = Boolean(total),
         progressInterval = 1000,
     } = {}) {
         let controller = null;
@@ -35,14 +36,15 @@ class MonitorStream extends TransformStream {
                     // drift = (expected chunk duration) - (actual chunk duration)
                     const drift = (1000 * chunk.length / this.throttle) - (now - last);
                     last = now;
-                    if (drift > 0) await new Promise(resolve => setTimeout(resolve, drift));
+                    if (drift > 0) await new Promise(resolve => setTimeout(resolve, 2 * drift));
                     this.loaded += chunk.length;
                     controller.enqueue(chunk);
                 } :
                 (chunk, controller) => {
-                    if (Date.now() - progressLast > this.progressInterval) {
+                    const now = Date.now();
+                    if (now - progressLast > this.progressInterval) {
                         this.dispatchEvent(this.getProgressEvent('progress'));
-                        progressLast = Date.now();
+                        progressLast = now;
                     }
                     this.loaded += chunk.length;
                     controller.enqueue(chunk);
@@ -57,8 +59,8 @@ class MonitorStream extends TransformStream {
         this.throttle = throttle;
         this.loaded = loaded;
         this.total = total;
+        this.lengthComputable = lengthComputable;
         this.progressInterval = progressInterval;
-
     }
 
     abort() {
@@ -67,7 +69,7 @@ class MonitorStream extends TransformStream {
     }
 
     getProgressEvent(type) {
-        const event = new ProgressEvent(type, { lengthComputable: this.total, loaded: this.loaded, total: this.total });
+        const event = new ProgressEvent(type, this);
         Object.defineProperty(event, 'target', {
             configurable: true,
             enumerable: true,
@@ -75,8 +77,24 @@ class MonitorStream extends TransformStream {
         })
         return event;
     }
+
+    static _UNIT_TEST() {
+        let reportLast = Date.now();
+        let loadedLast = 0;
+
+        let ms = new MonitorStream({
+            throttle: 200 * 1024,
+            onprogress: ({ loaded }) => {
+                const now = Date.now();
+                if (now - reportLast > 1000) {
+                    console.log(`speed: ${((loaded - loadedLast) * 1.024 / (now - reportLast)).toPrecision(2)}KB/s`);
+                    loadedLast = loaded;
+                    reportLast = now;
+                }
+            },
+        });
+        (await fetch("https://upos-hz-mirrorcos.acgvideo.com/upgcxcode/98/01/29180198/29180198-1-32.flv?um_deadline=1523116413&platform=pc&rate=333200&oi=2310923265&um_sign=67328dff935cfe3e275f5dbcdb2bfbe1&gen=playurl&os=cos&trid=a1a7d25f9dd24100a86cbf8fbb1e5a3d")).body.pipeThrough(ms).pipeTo(new WritableStream());
+    }
 }
 
-ms = new MonitorStream({ onprogress: console.log });
-(await fetch('http://speedtest.ftp.otenet.gr/files/test100Mb.db')).body.pipeThrough(ms).pipeTo(new WritableStream());
-// export default StreamMonitor;
+export default StreamMonitor;

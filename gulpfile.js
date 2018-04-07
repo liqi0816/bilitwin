@@ -51,7 +51,7 @@ gulp.task('biliTwin.user.js', ['./src/bilitwin.js'], () => {
 gulp.task('biliTwinBabelCompiled.user.js', ['biliTwin.user.js'], async () => new Promise((resolve, reject) => {
     babelCore.transformFile('biliTwin.user.js', {
         presets: ['env'],
-        plugins: [["babel-plugin-transform-builtin-extend", { globals: ["DataView"] }]]
+        plugins: [["babel-plugin-transform-builtin-extend", { globals: ['DataView', 'EventTarget', 'TransformStream'] }]]
     }, (err, { code }) => {
         if (err) return reject(err);
         fs.readFile('./src/bilitwin.meta.js', (err, file) => {

@@ -8,54 +8,62 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+import OnEventTarget from './on-event-target.js';
+
 /**
  * A more powerful fetch with
  *   1. onprogress handler
  *   2. partial response getter
  */
-class DetailedFetchBlob {
-    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror, fetch = init.fetch || top.fetch) {
+class DetailedFetchBlob extends OnEventTarget {
+    constructor(input, {
+        onprogress = null,
+        onabort = null,
+        onerror = null,
+        loaded = 0,
+        total = 0,
+        lengthComputable = Boolean(total),
+        fetch = top.fetch,
+        ...init
+    } = {}) {
         // Fire in the Fox fix
         if (this.firefoxConstructor(input, init, onprogress, onabort, onerror)) return;
         // Now I know why standardizing cancelable Promise is that difficult
         // PLEASE refactor me!
+        super(['progress', 'abort', 'error']);
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
-        this.abort = null;
-        this.loaded = init.cacheLoaded || 0;
-        this.total = init.cacheLoaded || 0;
-        this.lengthComputable = false;
+        this.loaded = loaded;
+        this.total = total;
+        this.lengthComputable = lengthComputable;
+
+        const controller = new AbortController();
+        const { signal } = controller;
+        this.abort = controller.abort.bind(controller);
+        signal.addEventListener('abort', () => this.dispatchEvent(new ProgressEvent('abort', this)));
+
         this.buffer = [];
-        this.blob = null;
-        this.reader = null;
-        this.blobPromise = fetch(input, init).then(res => {
-            if (this.reader == 'abort') return res.body.getReader().cancel().then(() => null);
-            if (!res.ok) throw `HTTP Error ${res.status}: ${res.statusText}`;
-            this.lengthComputable = res.headers.has('Content-Length');
-            this.total += parseInt(res.headers.get('Content-Length')) || Infinity;
-            if (this.lengthComputable) {
-                this.reader = res.body.getReader();
-                return this.blob = this.consume();
+        this.promise = (async () => {
+            try {
+                const { body, ok, status, statusText, headers } = fetch(input, { ...init, signal });
+                if (!ok) throw new DOMError(`HTTP Error ${status}: ${statusText}`);
+                this.lengthComputable = res.headers.has('Content-Length');
+                this.total += parseInt(res.headers.get('Content-Length')) || Infinity;
+                for await (const chunk of this.streamAsyncIterator(body)) {
+                    this.loaded += chunk.length;
+                    this.buffer.push(new Blob([chunk]));
+                    this.dispatchEvent(new ProgressEvent('progress', this))
+                };
+                this.blob = new Blob(this.buffer);
+                this.buffer = null;
+                return this.blob;
             }
-            else {
-                if (this.onprogress) this.onprogress(this.loaded, this.total, this.lengthComputable);
-                return this.blob = res.blob();
+            catch (e) {
+                this.dispatchEvent(new ProgressEvent('error', this));
+                throw e;
             }
-        });
-        this.blobPromise.then(() => this.abort = () => { });
-        this.blobPromise.catch(e => this.onerror({ target: this, type: e }));
-        this.promise = Promise.race([
-            this.blobPromise,
-            new Promise(resolve => this.abort = () => {
-                this.onabort({ target: this, type: 'abort' });
-                resolve('abort');
-                this.buffer = [];
-                this.blob = null;
-                if (this.reader) this.reader.cancel();
-                else this.reader = 'abort';
-            })
-        ]).then(s => s == 'abort' ? new Promise(() => { }) : s);
+        })();
         this.then = this.promise.then.bind(this.promise);
         this.catch = this.promise.catch.bind(this.promise);
     }
@@ -68,24 +76,8 @@ class DetailedFetchBlob {
         return this.promise;
     }
 
-    async pump() {
-        while (true) {
-            let { done, value } = await this.reader.read();
-            if (done) return this.loaded;
-            this.loaded += value.byteLength;
-            this.buffer.push(new Blob([value]));
-            if (this.onprogress) this.onprogress(this.loaded, this.total, this.lengthComputable);
-        }
-    }
-
-    async consume() {
-        await this.pump();
-        this.blob = new Blob(this.buffer);
-        this.buffer = null;
-        return this.blob;
-    }
-
     firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
+        super(['progress', 'abort', 'error']);
         if (!top.navigator.userAgent.includes('Firefox')) return false;
         this.onprogress = onprogress;
         this.onabort = onabort;
@@ -119,6 +111,16 @@ class DetailedFetchBlob {
         this.then = this.promise.then.bind(this.promise);
         this.catch = this.promise.catch.bind(this.promise);
         return true;
+    }
+
+    streamAsyncIterator(body) {
+        const reader = stream.getReader();
+        this.addEventListener('abort', reader.cancel.bind(reader));
+        return {
+            next: reader.read.bind(reader),
+            return: reader.cancel.bind(reader),
+            [Symbol.asyncIterator]() { return this },
+        };
     }
 }
 

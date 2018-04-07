@@ -6,8 +6,16 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * 
+ * The FLV merge utility is a Javascript translation of 
+ * https://github.com/grepmusic/flvmerge
+ * by grepmusic
 */
 
-import IDBCacheDB from './idb-cache-db';
+class FLVStream extends TransformStream {
+    constructor() {
+        super({
 
-export default IDBCacheDB;
+        });
+    }
+}

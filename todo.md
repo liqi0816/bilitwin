@@ -19,6 +19,7 @@
      pipeline: cachedb >> transform >> disk/temp
 
 4. remove Promise anti-pattern
+   *low priority*
 
    - [ ] deprecate AsyncContainer
    - [ ] deprecate Mutex

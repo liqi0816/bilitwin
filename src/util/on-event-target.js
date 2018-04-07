@@ -8,6 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+// import EventTarget from '../polyfill/event-target.js';
+
 /**
  * A wrapper of EventTarget interface in browsers.
  * 

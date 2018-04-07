@@ -32,7 +32,6 @@ import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
 import Mutex from '../util/mutex.js';
 import ASSConverter from '../assconverter/interface.js';
 import HookedFunction from '../util/hooked-function.js';
-import BiliUserJS from './biliuserjs.js';
 
 class BiliMonkey {
     constructor(playerWin, option = BiliMonkey.optionDefaults) {
@@ -62,7 +61,7 @@ class BiliMonkey {
         this.blocker = option.blocker;
         this.font = option.font;
         this.option = option;
-        if (this.cache && (!(this.cache instanceof CacheDB))) this.cache = new CacheDB('biliMonkey', 'flv', 'name');
+        if (this.cache && (!(this.cache instanceof CacheDB))) this.cache = new CacheDB('bili_monkey', 'flv');
 
         this.flvsDetailedFetch = [];
         this.flvsBlob = [];
@@ -520,7 +519,7 @@ class BiliMonkey {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
         let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        return this.cache.addData({ name, data: blob });
+        return this.cache.setData(new File([blob], name));
     }
 
     async savePartialFLVToCache(index, blob) {
@@ -528,7 +527,7 @@ class BiliMonkey {
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
         let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
         name = 'PC_' + name;
-        return this.cache.putData({ name, data: blob });
+        return this.cache.createData(new File([blob], name));
     }
 
     async cleanPartialFLVInCache(index) {
@@ -784,7 +783,12 @@ class BiliMonkey {
 
             // 3. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
-            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
+
+            // 4. bleeding-edge
+            ['chromeDB', '(Chrome限定)(webkit FS)直接写入硬盘：减少下载时的内存占用', CacheDB.name == 'ChromeCacheDB' ? undefined : 'disabled'],
+            ['streams', '(Chrome67+限定)(Streams API)使用流式传输：极大减少下载和合并时的内存占用', CacheDB.name == 'ChromeCacheDB' && typeof TransformStream == 'function' ? undefined : 'disabled'],
+            ['firefoxDB', '(Firefox限定)(idbmutable)直接写入硬盘：[in development]', CacheDB.name == 'FirefoxCacheDB' ? undefined : 'disabled'],
         ];
     }
 
@@ -803,12 +807,17 @@ class BiliMonkey {
             // 3. customizing
             blocker: true,
             font: true,
+
+            // 4. bleeding-edge
+            chromeDB: false,
+            streams: false,
+            firefoxDB: false,
         }
     }
 
     static _UNIT_TEST() {
         return (async () => {
-            let playerWin = await BiliUserJS.getPlayerWin();
+            const playerWin = window;
             window.m = new BiliMonkey(playerWin);
 
             console.warn('sniffDefaultFormat test');

@@ -28,9 +28,9 @@ class ChromeCacheDB {
      * 
      * @param {string} dbName database name
      * @param {string} storeName store name
-     * @param {boolean} [mutableBlob=false] allow mutable Blob
+     * @param {boolean} [option.mutableBlob=false] allow mutable Blob
      */
-    constructor(dbName, storeName, mutableBlob = false) {
+    constructor(dbName, storeName, { mutableBlob = false } = {}) {
         this.dbName = dbName;
         this.storeName = storeName;
         this.mutableBlob = mutableBlob;
