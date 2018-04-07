@@ -7,11 +7,11 @@
 
 2. detailed-fetch-blob
 
-   - [ ] ~~We now have AbortController in both Chrome and Firefox.~~
+   - [x] ~~We now have AbortController in both Chrome and Firefox.~~
      why not just the standard stream control(abort, cancel) ? 
 
-   - [ ] If we streamify cache-db, we can also streamify fetch.
-     pipeline: fetch >> flowmeter: {abort, end, error, progress, (throttle, delay)} >>  disk
+   - [x] If we streamify cache-db, we can also streamify fetch.
+     pipeline: fetch >> flowmeter: {abort, end, error, progress, (throttle)} >>  disk
 
 3. streamify flv merge
 

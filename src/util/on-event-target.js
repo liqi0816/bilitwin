@@ -9,58 +9,22 @@
 */
 
 /**
- * A wrapper of EventTarget interface in browsers
- * - wrap existing EventTarget (dom elements, ws, etc)
- * - on[name] handlers
- * - chainable `on` and `once` registration
- * - promisify one-time listeners
+ * A wrapper of EventTarget interface in browsers.
+ * 
+ * - create standalone EventTarget with `on[name]` handlers
+ * - promisify one-time listeners with error propagation
+ * - mix OnEventTarget features into another object
  */
 class OnEventTarget extends EventTarget {
     /**
      * Initialize an OnEventTarget object
      * 
-     * @param {(EventTarget|string[])} [init=] an existing `EventTarget` to
-     * wrap, or a list of names that you want to have on[name] handlers, or a
-     * falsy value to disable on[name] handlers.
-     * @param {boolean} option.deep go through the prototype chain of init.
-     * default `false`. 
+     * @param {string[]} [init=] (default undefined) a list of names that
+     * you want to have `on[name]` handlers, or a falsy value
      */
-    constructor(init, { deep = false } = {}) {
+    constructor(init) {
         super();
-        if (!init) {
-        }
-        else if (init instanceof EventTarget) {
-            if (!deep) {
-                for (const name of Object.getOwnPropertyNames(EventTarget.prototype)) {
-                    this[name] = init[name].bind(init);
-                }
-                for (const name of Object.getOwnPropertyNames(Object.getPrototypeOf(init))) {
-                    if (name.startsWith('on')) {
-                        Object.defineProperty(this, name, {
-                            configurable: true,
-                            enumerable: true,
-                            get: this.simpleGetter.bind(init, name),
-                            set: this.simpleSetter.bind(init, name),
-                        });
-                    }
-                }
-            }
-            else {
-                for (const name in EventTarget.prototype) {
-                    this[name] = init[name].bind(init);
-                }
-                for (const name in init) {
-                    if (name.startsWith('on')) {
-                        Object.defineProperty(this, name, {
-                            configurable: true,
-                            enumerable: true,
-                            get: this.simpleGetter.bind(init, name),
-                            set: this.simpleSetter.bind(init, name),
-                        });
-                    }
-                }
-            }
-        }
+        if (!init) return;
         else if (Array.isArray(init)) {
             const dict = new Map(init.map(name => [name, null]));
             for (const name of init) {
@@ -68,24 +32,58 @@ class OnEventTarget extends EventTarget {
                     configurable: true,
                     enumerable: true,
                     get: dict.get.bind(dict, name),
-                    set: this.onDictSetter.bind(this, name, dict),
+                    set: OnEventTarget.onDictSetter.bind(this, name, dict),
                 });
             }
         }
         else {
-            throw new TypeError(`OnEventTarget: constructor parameter expect falsy value or EventTarget or string[] but get ${init}`)
+            throw new TypeError(`OnEventTarget: constructor parameter expect falsy value or string[] but get ${init}`)
         }
     }
 
-    simpleGetter(name) {
+    /**
+     * Promisify a one-time event listener
+     * 
+     * @param {EventTarget} target event target
+     * @param {string} name name of event
+     * @param {string} [errorName='error'] (default 'error') name of error event
+     * @param {*} [bind=] (default Event) customized resolve value of Promise
+     * @returns {Promise<Event>} A Promise
+     */
+    static asyncOnce(target, name, errorName = 'error', bind) {
+        return new Promise((resolve, reject) => {
+            const once = { once: true };
+            const _resolve = e => {
+                resolve(bind || e);
+                if (errorName) target.removeEventListener(errorName, _reject);
+            };
+            const _reject = e => {
+                reject(e);
+                target.removeEventListener(name, _resolve);
+            };
+            target.addEventListener(name, resolve, once);
+            if (errorName) target.addEventListener(errorName, reject, once);
+        });
+    }
+
+    /**
+     * @private
+     */
+    static simpleGetter(name) {
         return this[name];
     }
 
-    simpleSetter(name, e) {
+    /**
+     * @private
+     */
+    static simpleSetter(name, e) {
         this[name] = e;
     }
 
-    onDictSetter(name, dict, e) {
+    /**
+     * @private
+     */
+    static onDictSetter(name, dict, e) {
         if (typeof e !== 'function') e = null;
         this.removeEventListener(name, dict.get(name));
         this.addEventListener(name, e);
@@ -93,46 +91,47 @@ class OnEventTarget extends EventTarget {
     }
 
     /**
-     * WARNING different from Node: duplicate registrations are ignored
+     * mix OnEventTarget features into target
      * 
-     * Adds a listener function to the end of the listeners array. No checks
-     * are made to see if the listener has already been added. If multiple
-     * identical listeners are registered on the same `EventTarget` with the
-     * same parameters, the duplicate instances are discarded. They do not
-     * cause the EventListener to be called twice, and they do not need to
-     * be removed manually with the `removeEventListener` method.
-     * 
-     * @param {(string|function|object)} args same args as addEventListener
-     * @returns {this} this, chainable
+     * @param {Object} target mixin target
+     * @param {string[]} [init=] a list of names that you want to have
+     * on[name] handlers, or a falsy value to disable on[name] handlers.
      */
-    on(...args) {
-        this.addEventListener(...args);
-        return this;
-    }
+    static mixin(target, init) {
+        // 1. init
+        if (!init) {
+            init = target;
+            target = this;
+        }
+        if (!target || target === OnEventTarget) {
+            throw new TypeError(`OnEventTarget.mixin: Invalid mixin target. Usage: .mixin.call(target, init) or .mixin(target, init)`);
+        }
 
-    /**
-     * Adds a one-time listener function. The next time the event is triggered, 
-     * this listener is removed and then invoked. Returns a reference to the
-     * EventTarget, so that calls can be chained.
-     * 
-     * @param {(string|function|object)} args same args as addEventListener
-     * @returns {this} this, chainable
-     */
-    once(...args) {
-        if (typeof args[2] === 'boolean') args[2] = { capture: args[2] };
-        if (!args[2] || typeof args[2] !== 'object') args[2] = {};
-        args[2].once = true;
-        this.addEventListener(...args);
-        return this;
-    }
+        // 2. mixin EventTarget
+        if (!(target instanceof EventTarget)) {
+            const e = new EventTarget();
+            for (const name of Object.keys(EventTarget.prototype)) {
+                target[name] = e[name].bind(e);
+            }
+        }
 
-    /**
-     * Promisify a one-time event listener function.
-     * @param {string} name The name of the event
-     * @returns {Promise<undefined>}
-     */
-    async asyncOnce(name) {
-        return new Promise(resolve => this.addEventListener(name, resolve, { once: true }));
+        // 3. mixin OnEventTarget constructor
+        if (!init) {
+        }
+        else if (Array.isArray(init)) {
+            const dict = new Map(init.map(name => [name, null]));
+            for (const name of init) {
+                Object.defineProperty(target, `on${name}`, {
+                    configurable: true,
+                    enumerable: true,
+                    get: dict.get.bind(dict, name),
+                    set: OnEventTarget.onDictSetter.bind(target, name, dict),
+                });
+            }
+        }
+        else {
+            throw new TypeError(`OnEventTarget.mixin: constructor parameter expect falsy value or string[] but get ${init}`)
+        }
     }
 }
 
