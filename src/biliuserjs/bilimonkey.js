@@ -559,7 +559,7 @@ class BiliMonkey {
                 headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
             };
             opt.onprogress = progressHandler;
-            opt.onerror = opt.onabort = ({ target, type }) => {
+            opt.onerror = ({ target, type }) => {
                 let partialFLV = target.getPartialBlob();
                 if (partialFLVFromCache) partialFLV = new Blob([partialFLVFromCache, partialFLV]);
                 this.savePartialFLVToCache(index, partialFLV);
@@ -786,9 +786,9 @@ class BiliMonkey {
             ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
 
             // 4. bleeding-edge
-            ['chromeDB', '(Chrome限定)(webkit FS)直接写入硬盘：减少下载时的内存占用', CacheDB.name == 'ChromeCacheDB' ? undefined : 'disabled'],
-            ['streams', '(Chrome67+限定)(Streams API)使用流式传输：极大减少下载和合并时的内存占用', CacheDB.name == 'ChromeCacheDB' && typeof TransformStream == 'function' ? undefined : 'disabled'],
-            ['firefoxDB', '(Firefox限定)(idbmutable)直接写入硬盘：[in development]', CacheDB.name == 'FirefoxCacheDB' ? undefined : 'disabled'],
+            ['chromeDB', '(Chrome限定)(webkit FS)直接写入硬盘：减少下载时的内存占用', CacheDB.ChromeCacheDB ? undefined : 'disabled'],
+            ['streams', '(Chrome67+限定)(Streams API)(需求webkit FS)使用流式传输：(☄◣ω◢)☄下载和保存时的内存占用减到几乎为0', CacheDB.ChromeCacheDB && typeof TransformStream == 'function' ? undefined : 'disabled'],
+            ['firefoxDB', '(Firefox限定)(idbmutable)直接写入硬盘：[in development]', CacheDB.FirefoxCacheDB ? undefined : 'disabled'],
         ];
     }
 
@@ -837,6 +837,18 @@ class BiliMonkey {
             //location.reload();
         })();
     }
+}
+
+class WebkitBiliMonkey extends BiliMonkey {
+    constructor(playerWin, option = BiliMonkey.optionDefaults) {
+        if (!CacheDB.ChromeCacheDB) throw new DOMException('WebkitBiliMonkey: this plantform does not support ChromeCacheDB', 'NotSupportedError');
+        super();
+        this.cache = option.cache;
+        if (this.cache && (!(this.cache instanceof CacheDB.ChromeCacheDB))) this.cache = new CacheDB.ChromeCacheDB('bili_monkey', 'flv', { mutableBlob: true });
+    }
+}
+
+class StreamBiliMonkey extends FSBiliMonkey {
 }
 
 export default BiliMonkey;

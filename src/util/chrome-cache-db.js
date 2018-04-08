@@ -111,6 +111,14 @@ class ChromeCacheDB {
         return new Promise(db.removeRecursively.bind(db));
     }
 
+    async renameData(name, newName) {
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: false }))
+            .catch(e => { if (e.name != 'NotFoundError') throw e; return null; });
+        if (!file) return null;
+        return new Promise(file.moveTo.bind(file, store, newName));
+    }
+
     async createWriter(...args) {
         const { name, offset, append } = ChromeCacheDB.parseParameter(...args);
         const store = await this.getStore();
