@@ -65,7 +65,7 @@ class MonitorStream extends TransformStream {
 
     abort() {
         this.dispatchEvent(this.getProgressEvent('abort'));
-        return this.controller.error('AbortError');
+        return this.controller.error(new DOMException('This pipeline is aborted by a MonitorStream', 'AbortError'));
     }
 
     getProgressEvent(type) {

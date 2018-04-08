@@ -551,6 +551,7 @@ class BiliMonkey {
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
                 loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
                 headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
             };
 
@@ -568,9 +569,9 @@ class BiliMonkey {
 
             if (partialCache) {
                 blob = new Blob([partialCache, blob]);
-                this.cleanPartialFLVInCache(url);
+                await this.cleanPartialFLVInCache(url);
             }
-            this.saveFLVToCache(url, blob);
+            await this.saveFLVToCache(url, blob);
             return this.flvsBlob[index] = blob;
         })();
         return this.flvsBlob[index];
@@ -854,7 +855,7 @@ class BiliMonkey {
 class WebkitBiliMonkey extends BiliMonkey {
     constructor(playerWin, option = BiliMonkey.optionDefaults) {
         if (!CacheDB.ChromeCacheDB) throw new DOMException('WebkitBiliMonkey: this plantform does not support ChromeCacheDB', 'NotSupportedError');
-        super();
+        super(playerWin, option);
         this.cache = option.cache;
         if (this.cache && (!(this.cache instanceof CacheDB.ChromeCacheDB))) this.cache = new CacheDB.ChromeCacheDB('bili_monkey', 'flv', { mutableBlob: true });
     }
@@ -896,6 +897,7 @@ class WebkitBiliMonkey extends BiliMonkey {
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
                 loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
                 headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
             };
 
@@ -912,9 +914,9 @@ class WebkitBiliMonkey extends BiliMonkey {
             this.flvsDetailedFetch[index] = undefined;
 
             if (partialCache) {
-                this.savePartialFLVToCache(url, blob, { append: true });
+                await this.savePartialFLVToCache(url, blob, { append: true });
             }
-            this.saveFLVToCache(url);
+            await this.saveFLVToCache(url);
             return this.flvsBlob[index] = await this.loadFLVFromCache(url);
         })();
         return this.flvsBlob[index];
@@ -934,36 +936,35 @@ class StreamBiliMonkey extends WebkitBiliMonkey {
             const partialCache = await this.loadPartialFLVFromCache(url);
             const option = {
                 onprogress,
-                onerror: ({ target }) => {
-                    let blob = target.getPartialBlob();
-                    if (partialCache) blob = new Blob([partialCache, blob]);
-                    this.savePartialFLVToCache(url, blob);
-                },
                 fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
                 loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
                 headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
             };
 
             let blob = null;
             try {
+                const { body, headers } = await this.playerWin.fetch(url, option);
+                option.total += parseInt(headers.get('Content-Length'));
                 this.flvsDetailedFetch[index] = new MinitorStream(option);
-                await (await this.playerWin.fetch(url, option)).body
+                await body
                     .pipeThrough(this.flvsDetailedFetch[index])
-                    .pipeTo(this.partialFLVStreamToCache(url));
+                    .pipeTo(await this.partialFLVStreamToCache(url));
             }
             catch (e) {
                 if (e.name == 'AbortError') throw e;
                 this.flvsDetailedFetch[index] = new MinitorStream(option);
                 await (await this.playerWin.fetch(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined })).body
                     .pipeThrough(this.flvsDetailedFetch[index])
-                    .pipeTo(this.partialFLVStreamToCache(url));
+                    .pipeTo(await this.partialFLVStreamToCache(url));
             }
 
-            this.saveFLVToCache(url);
+            await this.saveFLVToCache(url);
+            this.cache.getFileURL(BiliMonkey.extractFLVName(url)).then(console.log);
             return this.flvsBlob[index] = await this.loadFLVFromCache(url);
         })();
         return this.flvsBlob[index];
@@ -977,4 +978,14 @@ class StreamBiliMonkey extends WebkitBiliMonkey {
     }
 }
 
-export default BiliMonkey;
+export default class extends BiliMonkey {
+    constructor(playerWin, option = BiliMonkey.optionDefaults) {
+        if (option.chromeDB) {
+            if (option.streams) {
+                return new StreamBiliMonkey(playerWin, option);
+            }
+            return new WebkitBiliMonkey(playerWin, option);
+        }
+        return new BiliMonkey(playerWin, option);
+    }
+};

@@ -354,7 +354,7 @@ class UI {
 
     async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
         // 1. add beforeUnloadHandler
-        const handler = e => UI.beforeUnloadHandler(e);
+        const handler = this.option.streams ? null : e => UI.beforeUnloadHandler(e);
         window.addEventListener('beforeunload', handler);
 
         // 2. switch to cancel ui
@@ -701,14 +701,16 @@ class UI {
         </table>;
 
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => <tr>
-            <label>
+            <label style={{ textDecoration: disabled == 'disabled' ? 'line-through' : undefined }}>
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
                     onchange={e => {
                         twin.option[name] = e.target.checked;
                         twin.saveOption(twin.option);
-                    }} />
+                    }}
+                    disabled={disabled == 'disabled'}
+                />
                 {description}
             </label>
         </tr>));

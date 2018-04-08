@@ -2513,6 +2513,93 @@ class HookedFunction extends Function {
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+class MonitorStream extends TransformStream {
+    constructor({
+        onprogress = null,
+        onabort = null,
+        throttle = 0,
+        loaded = 0,
+        total = 0,
+        lengthComputable = Boolean(total),
+        progressInterval = 1000,
+    } = {}) {
+        let controller = null;
+        let progressLast = 0;
+        let last = 0;
+        super({
+            start: e => controller = e,
+
+            transform: throttle ?
+                async (chunk, controller) => {
+                    const now = Date.now();
+                    if (now - progressLast > this.progressInterval) {
+                        this.dispatchEvent(this.getProgressEvent('progress'));
+                        progressLast = now;
+                    }
+                    // drift = (expected chunk duration) - (actual chunk duration)
+                    const drift = (1000 * chunk.length / this.throttle) - (now - last);
+                    last = now;
+                    if (drift > 0) await new Promise(resolve => setTimeout(resolve, 2 * drift));
+                    this.loaded += chunk.length;
+                    controller.enqueue(chunk);
+                } :
+                (chunk, controller) => {
+                    const now = Date.now();
+                    if (now - progressLast > this.progressInterval) {
+                        this.dispatchEvent(this.getProgressEvent('progress'));
+                        progressLast = now;
+                    }
+                    this.loaded += chunk.length;
+                    controller.enqueue(chunk);
+                },
+        });
+
+        OnEventTarget.mixin(this, ['progress', 'abort']);
+        this.controller = controller;
+
+        this.onprogress = onprogress;
+        this.onabort = onabort;
+        this.throttle = throttle;
+        this.loaded = loaded;
+        this.total = total;
+        this.lengthComputable = lengthComputable;
+        this.progressInterval = progressInterval;
+    }
+
+    abort() {
+        this.dispatchEvent(this.getProgressEvent('abort'));
+        return this.controller.error(new DOMException('This pipeline is aborted by a MonitorStream', 'AbortError'));
+    }
+
+    getProgressEvent(type) {
+        const event = new ProgressEvent(type, this);
+        Object.defineProperty(event, 'target', {
+            configurable: true,
+            enumerable: true,
+            get: () => this,
+        });
+        return event;
+    }
+
+    static _UNIT_TEST(location = location) {
+        let reportLast = Date.now();
+        let loadedLast = 0;
+
+        let ms = new MonitorStream({
+            throttle: 200 * 1024,
+            onprogress: ({ loaded }) => {
+                const now = Date.now();
+                if (now - reportLast > 1000) {
+                    console.log(`speed: ${((loaded - loadedLast) * 1.024 / (now - reportLast)).toPrecision(2)}KB/s`);
+                    loadedLast = loaded;
+                    reportLast = now;
+                }
+            },
+        });
+        fetch(location).then(({ body }) => body.pipeThrough(ms).pipeTo(new WritableStream()));
+    }
+}
+
 /***
  * BiliMonkey
  * A bilibili user script
@@ -3051,6 +3138,7 @@ class BiliMonkey {
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
                 loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
                 headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
             };
 
@@ -3068,9 +3156,9 @@ class BiliMonkey {
 
             if (partialCache) {
                 blob = new Blob([partialCache, blob]);
-                this.cleanPartialFLVInCache(url);
+                await this.cleanPartialFLVInCache(url);
             }
-            this.saveFLVToCache(url, blob);
+            await this.saveFLVToCache(url, blob);
             return this.flvsBlob[index] = blob;
         })();
         return this.flvsBlob[index];
@@ -3347,6 +3435,142 @@ class BiliMonkey {
 
             //location.reload();
         })();
+    }
+}
+
+class WebkitBiliMonkey extends BiliMonkey {
+    constructor(playerWin, option = BiliMonkey.optionDefaults) {
+        if (!CacheDB$1.ChromeCacheDB) throw new DOMException('WebkitBiliMonkey: this plantform does not support ChromeCacheDB', 'NotSupportedError');
+        super(playerWin, option);
+        this.cache = option.cache;
+        if (this.cache && (!(this.cache instanceof CacheDB$1.ChromeCacheDB))) this.cache = new CacheDB$1.ChromeCacheDB('bili_monkey', 'flv', { mutableBlob: true });
+    }
+
+    async saveFLVToCache(url, blob) {
+        if (!this.cache) return null;
+        if (blob) throw new TypeError('WebkitBiliMonkey.prototype.saveFLVToCache: This function only renames existing partial download and requires no second parameter.');
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.renameData(`${name}.partial`, name);
+    }
+
+    async savePartialFLVToCache(url, blob, { append = true } = {}) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.setData(new File([blob], `${name}.partial`), { append });
+    }
+
+    async getFLV(index, onprogress) {
+        if (this.flvsBlob[index]) return this.flvsBlob[index];
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+
+        this.flvsBlob[index] = (async () => {
+            const url = this.flvs[index];
+            const cache = await this.loadFLVFromCache(url);
+            if (cache) return this.flvsBlob[index] = cache;
+
+            const partialCache = await this.loadPartialFLVFromCache(url);
+            const option = {
+                onprogress,
+                onerror: ({ target }) => {
+                    let blob = target.getPartialBlob();
+                    this.savePartialFLVToCache(url, blob, { append: true });
+                },
+                fetch: this.playerWin.fetch,
+                method: 'GET',
+                mode: 'cors',
+                cache: 'default',
+                referrerPolicy: 'no-referrer-when-downgrade',
+                loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
+                headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
+            };
+
+            let blob = null;
+            try {
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(url, option);
+                blob = await this.flvsDetailedFetch[index];
+            }
+            catch (e) {
+                if (e.name == 'AbortError') throw e;
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined });
+                blob = await this.flvsDetailedFetch[index];
+            }
+            this.flvsDetailedFetch[index] = undefined;
+
+            if (partialCache) {
+                await this.savePartialFLVToCache(url, blob, { append: true });
+            }
+            await this.saveFLVToCache(url);
+            return this.flvsBlob[index] = await this.loadFLVFromCache(url);
+        })();
+        return this.flvsBlob[index];
+    }
+}
+
+class StreamBiliMonkey extends WebkitBiliMonkey {
+    async getFLV(index, onprogress) {
+        if (this.flvsBlob[index]) return this.flvsBlob[index];
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+
+        this.flvsBlob[index] = (async () => {
+            const url = this.flvs[index];
+            const cache = await this.loadFLVFromCache(url);
+            if (cache) return this.flvsBlob[index] = cache;
+
+            const partialCache = await this.loadPartialFLVFromCache(url);
+            const option = {
+                onprogress,
+                fetch: this.playerWin.fetch,
+                method: 'GET',
+                mode: 'cors',
+                cache: 'default',
+                referrerPolicy: 'no-referrer-when-downgrade',
+                loaded: partialCache ? partialCache.size : 0,
+                total: partialCache ? partialCache.size : 0,
+                headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
+            };
+            try {
+                const { body, headers } = await this.playerWin.fetch(url, option);
+                option.total += parseInt(headers.get('Content-Length'));
+                this.flvsDetailedFetch[index] = new MonitorStream(option);
+                await body
+                    .pipeThrough(this.flvsDetailedFetch[index])
+                    .pipeTo(await this.partialFLVStreamToCache(url));
+            }
+            catch (e) {
+                if (e.name == 'AbortError') throw e;
+                this.flvsDetailedFetch[index] = new MonitorStream(option);
+                await (await this.playerWin.fetch(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined })).body
+                    .pipeThrough(this.flvsDetailedFetch[index])
+                    .pipeTo(await this.partialFLVStreamToCache(url));
+            }
+
+            await this.saveFLVToCache(url);
+            this.cache.getFileURL(BiliMonkey.extractFLVName(url)).then(console.log);
+            return this.flvsBlob[index] = await this.loadFLVFromCache(url);
+        })();
+        return this.flvsBlob[index];
+    }
+
+    async partialFLVStreamToCache(url, { append = true } = {}) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.createWriteStream(`${name}.partial`, { append });
+    }
+}
+
+class BiliMonkey$1 extends BiliMonkey {
+    constructor(playerWin, option = BiliMonkey.optionDefaults) {
+        if (option.chromeDB) {
+            if (option.streams) {
+                return new StreamBiliMonkey(playerWin, option);
+            }
+            return new WebkitBiliMonkey(playerWin, option);
+        }
+        return new BiliMonkey(playerWin, option);
     }
 }
 
@@ -8828,7 +9052,7 @@ class UI {
 
     async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
         // 1. add beforeUnloadHandler
-        const handler = e => UI.beforeUnloadHandler(e);
+        const handler = this.option.streams ? null : e => UI.beforeUnloadHandler(e);
         window.addEventListener('beforeunload', handler);
 
         // 2. switch to cancel ui
@@ -9495,6 +9719,7 @@ class UI {
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => {
             const tr1 = document.createElement('tr');
             const label = document.createElement('label');
+            label.style.textDecoration = disabled == 'disabled' ? 'line-through' : undefined;
             const input = document.createElement('input');
             input.type = 'checkbox';
             input.checked = twin.option[name];
@@ -9504,6 +9729,7 @@ class UI {
                 twin.saveOption(twin.option);
             };
 
+            input.disabled = disabled == 'disabled';
             label.append(input);
             label.append(description);
             tr1.append(label);
@@ -9909,7 +10135,7 @@ class BiliTwin extends BiliUserJS {
 
     constructor(option = {}, ui) {
         super();
-        this.BiliMonkey = BiliMonkey;
+        this.BiliMonkey = BiliMonkey$1;
         this.BiliPolyfill = BiliPolyfill;
         this.playerWin = null;
         this.monkey = null;
@@ -9935,7 +10161,7 @@ class BiliTwin extends BiliUserJS {
         }
 
         // 2. monkey and polyfill
-        this.monkey = new BiliMonkey(this.playerWin, this.option);
+        this.monkey = new BiliMonkey$1(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
         await Promise.all([this.monkey.execOptions(), this.polyfill.setFunctions()]);
 
@@ -9986,7 +10212,7 @@ class BiliTwin extends BiliUserJS {
             rawOption.getStorage = n => playerWin.localStorage.getItem(n);
             return Object.assign(
                 {},
-                BiliMonkey.optionDefaults,
+                BiliMonkey$1.optionDefaults,
                 BiliPolyfill.optionDefaults,
                 UI.optionDefaults,
                 rawOption,
