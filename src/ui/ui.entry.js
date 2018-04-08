@@ -369,13 +369,14 @@ class UI {
         // 3. try download
         let url;
         try {
-            url = await monkey.getFLV(index, (loaded, total) => {
+            url = await monkey.getFLV(index, ({ loaded, total }) => {
                 progress.value = loaded;
                 progress.max = total;
             });
             url = URL.createObjectURL(url);
             if (progress.value == 0) progress.value = progress.max = 1;
         } catch (e) {
+            if (e.name == 'AbortError') return null;
             a.onclick = null;
             window.removeEventListener('beforeunload', handler);
             a.textContent = '错误';

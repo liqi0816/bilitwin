@@ -78,7 +78,7 @@ class MonitorStream extends TransformStream {
         return event;
     }
 
-    static _UNIT_TEST() {
+    static _UNIT_TEST(location = location) {
         let reportLast = Date.now();
         let loadedLast = 0;
 
@@ -93,7 +93,7 @@ class MonitorStream extends TransformStream {
                 }
             },
         });
-        (await fetch("https://upos-hz-mirrorcos.acgvideo.com/upgcxcode/98/01/29180198/29180198-1-32.flv?um_deadline=1523116413&platform=pc&rate=333200&oi=2310923265&um_sign=67328dff935cfe3e275f5dbcdb2bfbe1&gen=playurl&os=cos&trid=a1a7d25f9dd24100a86cbf8fbb1e5a3d")).body.pipeThrough(ms).pipeTo(new WritableStream());
+        fetch(location).then(({ body }) => body.pipeThrough(ms).pipeTo(new WritableStream()));
     }
 }
 

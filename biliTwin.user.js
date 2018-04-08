@@ -83,7 +83,7 @@
 */
 
 /**
- * Basically a Promise that exposes its resolve and reject callbacks
+ * Basically a deferred Promise with an explicit will-never-reture hint
  */
 class AsyncContainer {
     /***
@@ -329,12 +329,11 @@ class BiliUserJS {
 /**
  * A promisified indexedDB with large file(>100MB) support
  */
-class CacheDB {
-    constructor(dbName = 'biliMonkey', osName = 'flv', keyPath = 'name', maxItemSize = 100 * 1024 * 1024) {
+class IDBCacheDB {
+    constructor(dbName, storeName = 'flv', { maxItemSize = 100 * 1024 * 1024 } = {}) {
         // Neither Chrome or Firefox can handle item size > 100M
         this.dbName = dbName;
-        this.osName = osName;
-        this.keyPath = keyPath;
+        this.storeName = storeName;
         this.maxItemSize = maxItemSize;
         this.db = null;
     }
@@ -345,8 +344,8 @@ class CacheDB {
             const openRequest = indexedDB.open(this.dbName);
             openRequest.onupgradeneeded = e => {
                 const db = e.target.result;
-                if (!db.objectStoreNames.contains(this.osName)) {
-                    db.createObjectStore(this.osName, { keyPath: this.keyPath });
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName, { keyPath: 'name' });
                 }
             };
             openRequest.onsuccess = e => {
@@ -357,21 +356,21 @@ class CacheDB {
         return this.db;
     }
 
-    async addData(item, name = item.name, data = item.data || item) {
-        if (!data instanceof Blob) throw 'CacheDB: data must be a Blob';
+    async createData(item, name = item.name) {
+        if (!item instanceof File) throw 'CacheDB: item must be a File';
         const itemChunks = [];
-        const numChunks = Math.ceil(data.size / this.maxItemSize);
+        const numChunks = Math.ceil(item.size / this.maxItemSize);
         for (let i = 0; i < numChunks; i++) {
             itemChunks.push({
                 name: `${name}/part_${i}`,
                 numChunks,
-                data: data.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
+                item: item.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
             });
         }
 
-        const reqCascade = new Promise(async (resolve, reject) => {
-            const db = await this.getDB();
-            const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
+        const db = await this.getDB();
+        const reqCascade = new Promise((resolve, reject) => {
+            const objectStore = db.transaction([this.storeName], 'readwrite').objectStore(this.storeName);
             const onsuccess = e => {
                 const chunk = itemChunks.pop();
                 if (!chunk) return resolve(e);
@@ -385,21 +384,21 @@ class CacheDB {
         return reqCascade;
     }
 
-    async putData(item, name = item.name, data = item.data || item) {
-        if (!data instanceof Blob) throw 'CacheDB: data must be a Blob';
+    async setData(item, name = item.name) {
+        if (!item instanceof File) throw 'CacheDB: item must be a File';
         const itemChunks = [];
-        const numChunks = Math.ceil(data.size / this.maxItemSize);
+        const numChunks = Math.ceil(item.size / this.maxItemSize);
         for (let i = 0; i < numChunks; i++) {
             itemChunks.push({
                 name: `${name}/part_${i}`,
                 numChunks,
-                data: data.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
+                item: item.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
             });
         }
 
-        const reqCascade = new Promise(async (resolve, reject) => {
-            const db = await this.getDB();
-            const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
+        const db = await this.getDB();
+        const reqCascade = new Promise((resolve, reject) => {
+            const objectStore = db.transaction([this.storeName], 'readwrite').objectStore(this.storeName);
             const onsuccess = e => {
                 const chunk = itemChunks.pop();
                 if (!chunk) return resolve(e);
@@ -414,10 +413,10 @@ class CacheDB {
     }
 
     async getData(name) {
-        const reqCascade = new Promise(async (resolve, reject) => {
+        const db = await this.getDB();
+        const reqCascade = new Promise((resolve, reject) => {
             const dataChunks = [];
-            const db = await this.getDB();
-            const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
+            const objectStore = db.transaction([this.storeName], 'readwrite').objectStore(this.storeName);
             const probe = objectStore.get(`${name}/part_0`);
             probe.onerror = reject;
             probe.onsuccess = e => {
@@ -429,7 +428,7 @@ class CacheDB {
 
                 // 3. Cascade on the remaining chunks
                 const onsuccess = e => {
-                    dataChunks.push(e.target.result.data);
+                    dataChunks.push(e.target.result.item);
                     if (dataChunks.length == numChunks) return resolve(dataChunks);
                     const req = objectStore.get(`${name}/part_${dataChunks.length}`);
                     req.onerror = reject;
@@ -441,14 +440,14 @@ class CacheDB {
 
         const dataChunks = await reqCascade;
 
-        return dataChunks ? { name, data: new Blob(dataChunks) } : null;
+        return dataChunks ? new File(dataChunks, name) : null;
     }
 
     async deleteData(name) {
         const reqCascade = new Promise(async (resolve, reject) => {
             let currentChunkNum = 0;
             const db = await this.getDB();
-            const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
+            const objectStore = db.transaction([this.storeName], 'readwrite').objectStore(this.storeName);
             const probe = objectStore.get(`${name}/part_0`);
             probe.onerror = reject;
             probe.onsuccess = e => {
@@ -473,12 +472,26 @@ class CacheDB {
         return reqCascade;
     }
 
+    async deleteAllData() {
+        const db = await this.getDB();
+        const objectStore = db.transaction([this.storeName], 'readwrite').objectStore(this.storeName);
+        const req = objectStore.clear();
+        return new Promise((resolve, reject) => {
+            req.onsuccess = resolve;
+            req.onerror = reject;
+        });
+    }
+
     async deleteEntireDB() {
         const req = indexedDB.deleteDatabase(this.dbName);
         return new Promise((resolve, reject) => {
             req.onsuccess = () => resolve(this.db = null);
             req.onerror = reject;
         });
+    }
+
+    static get isSupported() {
+        return typeof indexedDB == 'object';
     }
 
     static async _UNIT_TEST() {
@@ -501,118 +514,930 @@ class CacheDB {
 */
 
 /**
+ * A streamified + promisified cache database backed by webkit filesystem
+ */
+class ChromeCacheDB {
+    /**
+     * === NOTICE: Blobs may mutate! ===
+     * 
+     * In both Chrome and Firefox, instances of File are actually real-time
+     * references for better performance. The problem is that File extends Blob.
+     * While in most cases the user will not edit the file s/he is going to
+     * upload, there still exist some edge cases. Unfortunately, this library is
+     * very likely to be one.
+     * 
+     * To fix this "mutable Blob" problem, by default all get-* functions will
+     * return a snapshot instead of the real-time references. This may leads to
+     * more RAM consumption and/or more delay. If you are aware of this problem
+     * and decide to handle it yourself, please set mutableBlob to true.
+     * 
+     * @param {string} dbName database name
+     * @param {string} storeName store name
+     * @param {boolean} [option.mutableBlob=false] allow mutable Blob
+     */
+    constructor(dbName, storeName, { mutableBlob = false } = {}) {
+        this.dbName = dbName;
+        this.storeName = storeName;
+        this.mutableBlob = mutableBlob;
+        this.db = null;
+        this.store = null;
+    }
+
+    async getDB() {
+        if (this.db) return this.db;
+        else return this.db = (async () => {
+            const { root } = await new Promise((window.webkitRequestFileSystem || window.webkitRequestFileSystem).bind(window, 0, 0));
+            return this.db = await new Promise(root.getDirectory.bind(root, this.dbName, { create: true }));
+        })();
+    }
+
+    async getStore() {
+        if (this.store) return this.store;
+        else return this.store = (async () => {
+            const db = await this.getDB();
+            return this.store = await new Promise(db.getDirectory.bind(db, this.storeName, { create: true }));
+        })();
+    }
+
+    async createData(...args) {
+        const { name, data } = ChromeCacheDB.parseParameter(...args);
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: true, exclusive: true }));
+        const writer = await new Promise(file.createWriter.bind(file));
+        return new Promise((resolve, reject) => {
+            writer.onwriteend = resolve;
+            writer.onerror = reject;
+            writer.write(data);
+        });
+    }
+
+    async setData(...args) {
+        const { name, data, offset, append, truncate } = ChromeCacheDB.parseParameter(...args);
+        const writer = await this.createWriter({ name, offset, append });
+        return new Promise((resolve, reject) => {
+            writer.onwriteend = truncate ? () => {
+                writer.truncate(writer.position);
+                writer.onwriteend = resolve;
+            } : resolve;
+            writer.onerror = reject;
+            writer.write(data);
+        });
+    }
+
+    async appendData(...args) {
+        return this.setData(...args, { append: true });
+    }
+
+    async getData(name) {
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: false }))
+            .catch(e => { if (e.name != 'NotFoundError') throw e; return null; });
+        if (!file) return null;
+        const data = await new Promise(file.file.bind(file));
+        if (this.mutableBlob) return data;
+        return ChromeCacheDB.cloneBlob(data);
+    }
+
+    async deleteData(name) {
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: false }))
+            .catch(e => { if (e.name != 'NotFoundError') throw e; return null; });
+        if (!file) return null;
+        return new Promise(file.remove.bind(file));
+    }
+
+    async deleteAllData() {
+        const store = await this.getStore();
+        return new Promise(store.removeRecursively.bind(store));
+    }
+
+    async deleteEntireDB() {
+        const db = await this.getStore();
+        return new Promise(db.removeRecursively.bind(db));
+    }
+
+    async renameData(name, newName) {
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: false }))
+            .catch(e => { if (e.name != 'NotFoundError') throw e; return null; });
+        if (!file) return null;
+        return new Promise(file.moveTo.bind(file, store, newName));
+    }
+
+    async createWriter(...args) {
+        const { name, offset, append } = ChromeCacheDB.parseParameter(...args);
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: true, exclusive: false }));
+        const writer = await new Promise(file.createWriter.bind(file));
+        if (offset) writer.seek(offset);
+        if (append) writer.seek(writer.length);
+        return writer;
+    }
+
+    async createWriteSink(...args) {
+        const { name, offset, append, truncate } = ChromeCacheDB.parseParameter(...args);
+        const writer = await this.createWriter({ name, offset, append });
+        return {
+            write(data) {
+                return new Promise((resolve, reject) => {
+                    writer.onwriteend = resolve;
+                    writer.onerror = reject;
+                    writer.write(new Blob([data]));
+                });
+            },
+            close() {
+                if (truncate) {
+                    return new Promise((resolve, reject) => {
+                        writer.onwriteend = resolve;
+                        writer.onerror = reject;
+                        writer.truncate(writer.position);
+                    });
+                }
+            }
+        };
+    }
+
+    async createWriteStream(...args) {
+        return new WritableStream(await this.createWriteSink(...args));
+    }
+
+    async getFileURL(name) {
+        const store = await this.getStore();
+        const file = await new Promise(store.getFile.bind(store, name, { create: false }))
+            .catch(e => { if (e.name != 'NotFoundError') throw e; return null; });
+        if (!file) return null;
+        return file.toURL();
+    }
+
+    async getObjectURL(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return URL.createObjectURL(data);
+    }
+
+    async getText(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Promise((resolve, reject) => {
+            const e = new FileReader();
+            e.onload = () => resolve(e.result);
+            e.onerror = reject;
+            e.readAsText(data);
+        });
+    }
+
+    async getJSON(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Promise((resolve, reject) => {
+            const e = new FileReader();
+            e.onload = () => resolve(JSON.parse(e.result));
+            e.onerror = reject;
+            e.readAsText(data);
+        });
+    }
+
+    async getRespone(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Response(data);
+    }
+
+    async getReadStream(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Response(data).body;
+    }
+
+    get createReadStream() {
+        return this.getReadStream;
+    }
+
+    static parseParameter(...args) {
+        // 1. default
+        let name = null;
+        let data = null;
+        let offset = 0;
+        let append = false;
+        let truncate = false;
+
+        // 2. iterate through parameters
+        for (const e of args) {
+            if (!e) {
+                continue;
+            }
+            else if (typeof e == 'string') {
+                name = e;
+            }
+            else if (typeof e == 'object') {
+                if (typeof e.name == 'string') name = e.name;
+                if (typeof e.data != 'undefined') data = e.data instanceof Blob ? e.data : new Blob([e.data]);
+                if (typeof e.offset != 'undefined') offset = e.offset;
+                if (typeof e.append != 'undefined') append = e.append;
+                if (typeof e.truncate != 'undefined') truncate = e.truncate;
+                if (e instanceof Blob) data = e;
+            }
+        }
+
+        if (name && typeof name != 'string') {
+            throw new TypeError(`ChromeCacheDB: parameter name expect string but get ${name}`);
+        }
+        return { name, data, offset, append, truncate };
+    }
+
+    static get isSupported() {
+        return typeof webkitRequestFileSystem == 'function';
+    }
+
+    static async cloneBlob(file) {
+        if (!(file instanceof Blob)) throw new TypeError(`cloneBlob: parameter file expect Blob but get ${file}`);
+        return new Response(file).blob();
+    }
+
+    static async quota() {
+        if (navigator.storage) {
+            return navigator.storage.estimate();
+        }
+        else if (navigator.webkitTemporaryStorage) {
+            return new Promise(resolve => {
+                navigator.webkitTemporaryStorage.queryUsageAndQuota(([usage, quota]) => resolve({ usage, quota }));
+            })
+        }
+        else {
+            return { usage: -1, quota: -1 };
+        }
+    }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+/**
+ * A promisified cache database backed by firefox idbMutableFile
+ * 
+ * Firefox still do not have stream support by default. :(
+ */
+class FirefoxCacheDB {
+    /**
+     * === NOTICE: Blobs may mutate! ===
+     * 
+     * In both Chrome and Firefox, instances of File are actually real-time
+     * references for better performance. The problem is that File extends Blob.
+     * While in most cases the user will not edit the file s/he is going to
+     * upload, there still exist some edge cases. Unfortunately, this library is
+     * very likely to be one.
+     * 
+     * To fix this "mutable Blob" problem, by default all get-* functions will
+     * return a snapshot instead of the real-time references. This may leads to
+     * more RAM consumption and/or more delay. If you are aware of this problem
+     * and decide to handle it yourself, please set mutableBlob to true.
+     * 
+     * @param {string} dbName database name
+     * @param {string} storeName store name
+     * @param {boolean} [option.mutableBlob=false] allow mutable Blob
+     */
+    constructor(dbName, storeName, { mutableBlob = false } = {}) {
+        this.dbName = dbName;
+        this.storeName = storeName;
+        this.mutableBlob = mutableBlob;
+        this.db = null;
+        this.store = null;
+    }
+
+    async getDB() {
+        if (this.db) return this.db;
+        else return this.db = (async () => {
+            const req = indexedDB.open(this.dbName);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName, { keyPath: 'name' });
+                }
+            };
+            return this.db = await FirefoxCacheDB.promisifyRequest(req);
+        })();
+    }
+
+    async createData(...args) {
+        const { name, data } = FirefoxCacheDB.parseParameter(...args);
+        const db = await this.getDB();
+        const file = await FirefoxCacheDB.promisifyRequest(db.createMutableFile(name));
+        const store = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+        await FirefoxCacheDB.promisifyRequest(store.add(file));
+        const lockedFile = file.open('readwrite');
+        return await FirefoxCacheDB.promisifyRequest(lockedFile.write(data) || {});
+    }
+
+    async setData(...args) {
+        const { name, data, offset, append, truncate } = FirefoxCacheDB.parseParameter(...args);
+        const file = await this.createFileHandle(name);
+        const lockedFile = file.open('readwrite');
+        if (append) {
+            return await FirefoxCacheDB.promisifyRequest(lockedFile.append(data) || {});
+        }
+        else {
+            if (offset) lockedFile.location = offset;
+            const req = lockedFile.write(data) || {};
+            req.onsuccess = async () => {
+                if (truncate) return await FirefoxCacheDB.promisifyRequest(lockedFile.truncate(lockedFile.location));
+            };
+            return FirefoxCacheDB.promisifyRequest(req);
+        }
+    }
+
+    async appendData(...args) {
+        return this.setData(...args, { append: true });
+    }
+
+    async getData(name) {
+        const db = await this.getDB();
+        const store = db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
+        const file = await FirefoxCacheDB.promisifyRequest(store.get(name));
+        if (!file) return null;
+        const data = await FirefoxCacheDB.promisifyRequest(file.getFile());
+        if (this.mutableBlob) return data;
+        return FirefoxCacheDB.cloneBlob(data);
+    }
+
+    async deleteData(name) {
+        const db = await this.getDB();
+        const store = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+        return await FirefoxCacheDB.promisifyRequest(store.delete(name));
+    }
+
+    async deleteAllData() {
+        const db = await this.getDB();
+        const store = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+        return await FirefoxCacheDB.promisifyRequest(store.clear());
+    }
+
+    async deleteEntireDB() {
+        return await FirefoxCacheDB.promisifyRequest(indexedDB.deleteDatabase(this.dbName));
+    }
+
+    async createFileHandle(name) {
+        const db = await this.getDB();
+        const store = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+        const old = await FirefoxCacheDB.promisifyRequest(store.get(name));
+        const file = ((old instanceof IDBMutableFile) && old) || await FirefoxCacheDB.promisifyRequest(db.createMutableFile(name));
+        if (!old) {
+            const store = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
+            await FirefoxCacheDB.promisifyRequest(store.add(file));
+        }
+        return file;
+    }
+
+    async createWriteSink(...args) {
+        const { name, data, offset, append, truncate } = FirefoxCacheDB.parseParameter(...args);
+        const file = await this.createFileHandle(name);
+        let lockedFile = file.open('readwrite');
+        let lastOffset = 0;
+        if (offset) lastOffset = offset;
+        return ({
+            async write(data) {
+                if (!lockedFile.active) lockedFile = file.open('readwrite');
+                if (append) {
+                    return await FirefoxCacheDB.promisifyRequest(lockedFile.append(data) || {});
+                }
+                else {
+                    lockedFile.location = lastOffset;
+                    const result = await FirefoxCacheDB.promisifyRequest(lockedFile.write(data) || {});
+                    lastOffset = lockedFile.location;
+                    return result;
+                }
+            },
+            async close() {
+                if (truncate) {
+                    if (!lockedFile.active) lockedFile = file.open('readwrite');
+                    return await FirefoxCacheDB.promisifyRequest(lockedFile.truncate(lastOffset));
+                }
+            }
+        });
+    }
+
+    async createWriteStream(...args) {
+        return new WritableStream(await this.createWriteSink(...args));
+    }
+
+    async getObjectURL(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return URL.createObjectURL(data);
+    }
+
+    async getText(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Promise((resolve, reject) => {
+            const e = new FileReader();
+            e.onload = () => resolve(e.result);
+            e.onerror = reject;
+            e.readAsText(data);
+        });
+    }
+
+    async getJSON(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Promise((resolve, reject) => {
+            const e = new FileReader();
+            e.onload = () => resolve(JSON.parse(e.result));
+            e.onerror = reject;
+            e.readAsText(data);
+        });
+    }
+
+    async getRespone(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Response(data);
+    }
+
+    async getReadStream(name) {
+        const data = await this.getData(name);
+        if (!data) return null;
+        return new Response(data).body;
+    }
+
+    get createReadStream() {
+        return this.getReadStream;
+    }
+
+    static parseParameter(...args) {
+        // 1. default
+        let name = null;
+        let data = null;
+        let offset = 0;
+        let append = false;
+        let truncate = false;
+
+        // 2. iterate through parameters
+        for (const e of args) {
+            if (!e) {
+                continue;
+            }
+            else if (typeof e == 'string') {
+                name = e;
+            }
+            else if (typeof e == 'object') {
+                if (typeof e.name == 'string') name = e.name;
+                if (typeof e.data != 'undefined') data = e.data instanceof Blob ? e.data : new Blob([e.data]);
+                if (typeof e.offset != 'undefined') offset = e.offset;
+                if (typeof e.append != 'undefined') append = e.append;
+                if (typeof e.truncate != 'undefined') truncate = e.truncate;
+                if (e instanceof Blob) data = e;
+            }
+        }
+
+        if (name && typeof name != 'string') {
+            throw new TypeError(`ChromeCacheDB: parameter name expect string but get ${name}`);
+        }
+        return { name, data, offset, append, truncate };
+    }
+
+    static get isSupported() {
+        return typeof IDBMutableFile == 'function';
+    }
+
+    static async promisifyRequest(req) {
+        return new Promise((resolve, reject) => {
+            const onsuccess = req.onsuccess;
+            req.onsuccess = onsuccess ? (() => resolve(onsuccess.call(req, req.result))) : (() => resolve(req.result));
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    static async cloneBlob(file) {
+        if (!(file instanceof Blob)) throw new TypeError(`cloneBlob: parameter file expect Blob but get ${file}`);
+        return new Response(file).blob();
+    }
+
+    static async quota() {
+        if (navigator.storage) {
+            return navigator.storage.estimate();
+        }
+        else {
+            return { usage: -1, quota: -1 };
+        }
+    }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+class CacheDB$1 extends IDBCacheDB {
+    get addData() {
+        console.warn('CacheDB.prototype.addData is deprecated. Use .createData instead.');
+        return this.createData;
+    }
+
+    get putData() {
+        console.warn('CacheDB.prototype.putData is deprecated. Use .setData instead.');
+        return this.setData;
+    }
+}
+CacheDB$1.ChromeCacheDB = ChromeCacheDB.isSupported && ChromeCacheDB;
+CacheDB$1.FirefoxCacheDB = FirefoxCacheDB.isSupported && FirefoxCacheDB;
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+/**
+ * A wrapper of EventTarget interface in browsers.
+ * 
+ * - create standalone EventTarget with `on[name]` handlers
+ * - promisify one-time listeners with error propagation
+ * - mix OnEventTarget features into another object
+ */
+class OnEventTarget extends EventTarget {
+    /**
+     * Initialize an OnEventTarget object
+     * 
+     * @param {string[]} [init=] (default undefined) a list of names that
+     * you want to have `on[name]` handlers, or a falsy value
+     */
+    constructor(init) {
+        super();
+        if (!init) return;
+        else if (Array.isArray(init)) {
+            const dict = new Map(init.map(name => [name, null]));
+            for (const name of init) {
+                Object.defineProperty(this, `on${name}`, {
+                    configurable: true,
+                    enumerable: true,
+                    get: dict.get.bind(dict, name),
+                    set: OnEventTarget.onDictSetter.bind(this, name, dict),
+                });
+            }
+        }
+        else {
+            throw new TypeError(`OnEventTarget: constructor parameter expect falsy value or string[] but get ${init}`)
+        }
+    }
+
+    /**
+     * Promisify a one-time event listener
+     * 
+     * @param {EventTarget} target event target
+     * @param {string} name name of event
+     * @param {string} [errorName='error'] (default 'error') name of error event
+     * @param {*} [bind=] (default Event) customized resolve value of Promise
+     * @returns {Promise<Event>} A Promise
+     */
+    static asyncOnce(target, name, errorName = 'error', bind) {
+        return new Promise((resolve, reject) => {
+            const once = { once: true };
+            target.addEventListener(name, resolve, once);
+            if (errorName) target.addEventListener(errorName, reject, once);
+        });
+    }
+
+    /**
+     * @private
+     */
+    static simpleGetter(name) {
+        return this[name];
+    }
+
+    /**
+     * @private
+     */
+    static simpleSetter(name, e) {
+        this[name] = e;
+    }
+
+    /**
+     * @private
+     */
+    static onDictSetter(name, dict, e) {
+        if (typeof e !== 'function') e = null;
+        this.removeEventListener(name, dict.get(name));
+        this.addEventListener(name, e);
+        dict.set(name, e);
+    }
+
+    /**
+     * mix OnEventTarget features into target
+     * 
+     * @param {Object} target mixin target
+     * @param {string[]} [init=] a list of names that you want to have
+     * on[name] handlers, or a falsy value to disable on[name] handlers.
+     */
+    static mixin(target, init) {
+        // 1. init
+        if (!init) {
+            init = target;
+            target = this;
+        }
+        if (!target || target === OnEventTarget) {
+            throw new TypeError(`OnEventTarget.mixin: Invalid mixin target. Usage: .mixin.call(target, init) or .mixin(target, init)`);
+        }
+
+        // 2. mixin EventTarget
+        if (!(target instanceof EventTarget)) {
+            const e = new EventTarget();
+            for (const name of Object.keys(EventTarget.prototype)) {
+                target[name] = e[name].bind(e);
+            }
+        }
+
+        // 3. mixin OnEventTarget constructor
+        if (!init) {
+        }
+        else if (Array.isArray(init)) {
+            const dict = new Map(init.map(name => [name, null]));
+            for (const name of init) {
+                Object.defineProperty(target, `on${name}`, {
+                    configurable: true,
+                    enumerable: true,
+                    get: dict.get.bind(dict, name),
+                    set: OnEventTarget.onDictSetter.bind(target, name, dict),
+                });
+            }
+        }
+        else {
+            throw new TypeError(`OnEventTarget.mixin: constructor parameter expect falsy value or string[] but get ${init}`)
+        }
+    }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+class BaseDetailedFetchBlob extends OnEventTarget {
+    constructor({ }, {
+        onprogress = null,
+        onabort = null,
+        onerror = null,
+        loaded = 0,
+        total = 0,
+        lengthComputable = Boolean(total),
+    } = {}) {
+        super(['progress', 'abort', 'error']);
+        this.onprogress = onprogress;
+        this.onabort = onabort;
+        this.onerror = onerror;
+
+        this.loaded = loaded;
+        this.total = total;
+        this.lengthComputable = lengthComputable;
+
+        this.error = null;
+        this.buffer = [];
+        this.blob = null;
+    }
+
+    getPartialBlob() {
+        return this.blob || new Blob(this.buffer);
+    }
+
+    async getBlob() {
+        return this;
+    }
+
+    abort() { }
+    then() { }
+    catch() { }
+    finally() { }
+    static get isSupported() { }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+try {
+    new EventTarget();
+} catch (e) {
+}
+
+const _AbortController = typeof AbortController === 'function' && AbortController || class {
+    constructor() {
+        this.signal = new EventTarget();
+        this.signal.aborted = false;
+
+        let onabort = null;
+        Object.defineProperty(this.signal, 'onabort', {
+            configurable: true,
+            enumerable: true,
+            get: () => onabort,
+            set: e => {
+                if (typeof e !== 'function') e = null;
+                this.removeEventListener('abort', onabort);
+                this.addEventListener('abort', e);
+                onabort = e;
+            },
+        });
+    }
+
+    abort() {
+        this.signal.dispatchEvent(new Event('abort'));
+        this.signal.aborted = true;
+    }
+};
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+class StreamDetailedFetchBlob extends BaseDetailedFetchBlob {
+    constructor(input, {
+        onprogress,
+        onabort,
+        onerror,
+        loaded,
+        total,
+        lengthComputable,
+        fetch = top.fetch,
+        ...init
+    } = {}) {
+        super(input, { onprogress, onabort, onerror, loaded, total, lengthComputable });
+
+        const controller = new _AbortController();
+        this.abort = this.abort.bind(this, controller);
+
+        const promise = (async () => {
+            try {
+                const { body, ok, status, statusText, headers } = await fetch(input, { ...init, signal: controller.signal });
+                if (!ok) throw new DOMException(`${status}: ${statusText}`, 'HTTPError');
+                this.lengthComputable = headers.has('Content-Length');
+                this.total += parseInt(headers.get('Content-Length')) || Infinity;
+                let last = Date.now();
+                for await (const chunk of this.iteratorify(body)) {
+                    this.loaded += chunk.length;
+                    this.buffer.push(new Blob([chunk]));
+                    if (Date.now() - last > 500) {
+                        this.dispatchEvent(new ProgressEvent('progress', this));
+                        last = Date.now();
+                    }
+                }                if (this.error) throw this.error;
+                return this.blob = new Blob(this.buffer);
+            }
+            catch (e) {
+                if (!this.error) this.error = e;
+                this.dispatchEvent(new ErrorEvent('error', this));
+                throw this.error;
+            }
+            finally {
+                this.buffer = null;
+            }
+        })();
+        this.then = promise.then.bind(promise);
+        this.catch = promise.catch.bind(promise);
+        this.finally = promise.finally.bind(promise);
+    }
+
+    abort(controller) {
+        controller.abort();
+        this.error = new DOMException('DetailedFetchBlob was aborted', 'AbortError');
+        this.dispatchEvent(new ProgressEvent('abort', this));
+    }
+
+    iteratorify(body) {
+        const reader = body.getReader();
+        this.addEventListener('abort', reader.cancel.bind(reader, 'AbortError'));
+        return {
+            next: reader.read.bind(reader),
+            return: reader.cancel.bind(reader),
+            [Symbol.asyncIterator]() { return this },
+        };
+    }
+
+    static get isSupported() {
+        return typeof fetch === 'function' && typeof ReadableStream === 'function';
+    }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+/**
+ *  It has been two years. Firefox still do not have streams :(
+ */
+class FirefoxDetailedFetchBlob extends BaseDetailedFetchBlob {
+    constructor(input, {
+        onprogress,
+        onabort,
+        onerror,
+        loaded,
+        total,
+        lengthComputable,
+    } = {}) {
+        super(input, { onprogress, onabort, onerror, loaded, total, lengthComputable });
+
+        const promise = new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            this.abort = this.abort.bind(this, xhr);
+            xhr.responseType = 'moz-chunked-arraybuffer';
+            xhr.onloadstart = ({ total, lengthComputable }) => {
+                this.total += total;
+                this.lengthComputable = e.lengthComputable;
+            };
+            let last = Date.now();
+            xhr.onprogress = ({ loaded }) => {
+                this.loaded = loaded + xhr.onprogress.loaded;
+                this.buffer.push(new Blob([xhr.response]));
+                if (Date.now() - last > 500) {
+                    this.dispatchEvent(new ProgressEvent('progress', this));
+                    last = Date.now();
+                }
+            };
+            xhr.onprogress.loaded = this.loaded;
+            xhr.onload = () => {
+                this.blob = new Blob(this.buffer);
+                this.buffer = null;
+                resolve(this.blob);
+            };
+            xhr.onerror = () => {
+                this.error = new DOMException('firefoxDetailedFetchBlob', 'NetworkError');
+                this.dispatchEvent(new ErrorEvent('error', this));
+                reject(this.error);
+            };
+            xhr.open('get', input);
+            xhr.send();
+        });
+        this.then = promise.then.bind(promise);
+        this.catch = promise.catch.bind(promise);
+        this.finally = promise.finally.bind(promise);
+    }
+
+    abort(xhr) {
+        xhr.abort();
+        this.error = new DOMException('DetailedFetchBlob was aborted', 'AbortError');
+        this.dispatchEvent(new ProgressEvent('abort', this));
+        this.dispatchEvent(new ErrorEvent('error', this));
+        reject(this.error);
+    };
+
+    static get isSupported() {
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = 'moz-chunked-arraybuffer';
+        return xhr.responseType === 'moz-chunked-arraybuffer';
+    }
+}
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+/**
  * A more powerful fetch with
  *   1. onprogress handler
  *   2. partial response getter
  */
-class DetailedFetchBlob {
-    constructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror, fetch = init.fetch || top.fetch) {
-        // Fire in the Fox fix
-        if (this.firefoxConstructor(input, init, onprogress, onabort, onerror)) return;
-        // Now I know why standardizing cancelable Promise is that difficult
-        // PLEASE refactor me!
-        this.onprogress = onprogress;
-        this.onabort = onabort;
-        this.onerror = onerror;
-        this.abort = null;
-        this.loaded = init.cacheLoaded || 0;
-        this.total = init.cacheLoaded || 0;
-        this.lengthComputable = false;
-        this.buffer = [];
-        this.blob = null;
-        this.reader = null;
-        this.blobPromise = fetch(input, init).then(res => {
-            if (this.reader == 'abort') return res.body.getReader().cancel().then(() => null);
-            if (!res.ok) throw `HTTP Error ${res.status}: ${res.statusText}`;
-            this.lengthComputable = res.headers.has('Content-Length');
-            this.total += parseInt(res.headers.get('Content-Length')) || Infinity;
-            if (this.lengthComputable) {
-                this.reader = res.body.getReader();
-                return this.blob = this.consume();
-            }
-            else {
-                if (this.onprogress) this.onprogress(this.loaded, this.total, this.lengthComputable);
-                return this.blob = res.blob();
-            }
-        });
-        this.blobPromise.then(() => this.abort = () => { });
-        this.blobPromise.catch(e => this.onerror({ target: this, type: e }));
-        this.promise = Promise.race([
-            this.blobPromise,
-            new Promise(resolve => this.abort = () => {
-                this.onabort({ target: this, type: 'abort' });
-                resolve('abort');
-                this.buffer = [];
-                this.blob = null;
-                if (this.reader) this.reader.cancel();
-                else this.reader = 'abort';
-            })
-        ]).then(s => s == 'abort' ? new Promise(() => { }) : s);
-        this.then = this.promise.then.bind(this.promise);
-        this.catch = this.promise.catch.bind(this.promise);
-    }
-
-    getPartialBlob() {
-        return new Blob(this.buffer);
-    }
-
-    async getBlob() {
-        return this.promise;
-    }
-
-    async pump() {
-        while (true) {
-            let { done, value } = await this.reader.read();
-            if (done) return this.loaded;
-            this.loaded += value.byteLength;
-            this.buffer.push(new Blob([value]));
-            if (this.onprogress) this.onprogress(this.loaded, this.total, this.lengthComputable);
-        }
-    }
-
-    async consume() {
-        await this.pump();
-        this.blob = new Blob(this.buffer);
-        this.buffer = null;
-        return this.blob;
-    }
-
-    firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
-        if (!top.navigator.userAgent.includes('Firefox')) return false;
-        this.onprogress = onprogress;
-        this.onabort = onabort;
-        this.onerror = onerror;
-        this.abort = null;
-        this.loaded = init.cacheLoaded || 0;
-        this.total = init.cacheLoaded || 0;
-        this.lengthComputable = false;
-        this.buffer = [];
-        this.blob = null;
-        this.reader = undefined;
-        this.blobPromise = new Promise((resolve, reject) => {
-            let xhr = new XMLHttpRequest();
-            xhr.responseType = 'moz-chunked-arraybuffer';
-            xhr.onload = () => { resolve(this.blob = new Blob(this.buffer)); this.buffer = null; };
-            let cacheLoaded = this.loaded;
-            xhr.onprogress = e => {
-                this.loaded = e.loaded + cacheLoaded;
-                this.total = e.total + cacheLoaded;
-                this.lengthComputable = e.lengthComputable;
-                this.buffer.push(new Blob([xhr.response]));
-                if (this.onprogress) this.onprogress(this.loaded, this.total, this.lengthComputable);
-            };
-            xhr.onabort = e => this.onabort({ target: this, type: 'abort' });
-            xhr.onerror = e => { this.onerror({ target: this, type: e.type }); reject(e); };
-            this.abort = xhr.abort.bind(xhr);
-            xhr.open('get', input);
-            xhr.send();
-        });
-        this.promise = this.blobPromise;
-        this.then = this.promise.then.bind(this.promise);
-        this.catch = this.promise.catch.bind(this.promise);
-        return true;
-    }
-}
+const DetailedFetchBlob = StreamDetailedFetchBlob.isSupported ? StreamDetailedFetchBlob : FirefoxDetailedFetchBlob.isSupported ? FirefoxDetailedFetchBlob : null;
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -1456,6 +2281,24 @@ class ASSConverter {
  * A util to hook a function
  */
 class HookedFunction extends Function {
+    /**
+     * Create a hooked function. Parameter patterns:
+     * 
+     * `(raw?, ...others)`
+     * 
+     * where `others` can be
+     * 
+     * `[...pre-hooks], [...post-hooks]`
+     * 
+     * `[...post-hooks]`
+     * 
+     * `...post-hooks`
+     * 
+     * `{raw?:{function}, pre?:{(function|function[])}, post?:{(function|function[])}}`
+     * 
+     * @param {...(function|function[]|InitDict)} init
+     * @returns {function} the wrapped function
+     */
     constructor(...init) {
         // 1. init parameter
         const { raw, pre, post } = HookedFunction.parseParameter(...init);
@@ -1463,6 +2306,9 @@ class HookedFunction extends Function {
         // 2. build bundle
         const self = function (...args) {
             const { raw, pre, post } = self;
+            /**
+             * @type {Context}
+             */
             const context = { args, target: raw, ret: undefined, hook: self };
             pre.forEach(e => e.call(this, context));
             if (context.target) context.ret = context.target.apply(this, context.args);
@@ -1470,11 +2316,20 @@ class HookedFunction extends Function {
             return context.ret;
         };
         Object.setPrototypeOf(self, HookedFunction.prototype);
+        /**
+         * @type {function} the raw function
+         */
         self.raw = raw;
+        /**
+         * @type {function[]} the pre-hook list
+         */
         self.pre = pre;
+        /**
+         * @type {function[]} the post-hook list
+         */
         self.post = post;
 
-        // 3. cheat babel - it complains about missing super(), even if it is actual valid 
+        // 3. cheat babel - it complains about missing super(), even if it is actually valid 
         try {
             return self;
         } catch (e) {
@@ -1483,30 +2338,55 @@ class HookedFunction extends Function {
         }
     }
 
+    /**
+     * Add functions to pre-hook list
+     * @param {...Hook} func functions to add
+     */
     addPre(...func) {
         this.pre.push(...func);
     }
 
+    /**
+     * Add functions to post-hook list
+     * @param {...Hook} func functions to add
+     */
     addPost(...func) {
         this.post.push(...func);
     }
 
-    addCallback(...func) {
-        this.addPost(...func);
+    /**
+     * alias of addPre
+     */
+    get addCallback() {
+        return this.addPost;
     }
 
+    /**
+     * Remove a function from pre-hook list
+     * @param {Hook} func function to remove
+     */
     removePre(func) {
         this.pre = this.pre.filter(e => e != func);
     }
 
+    /**
+     * Remove a function from post-hook list
+     * @param {Hook} func function to remove
+     */
     removePost(func) {
         this.post = this.post.filter(e => e != func);
     }
 
-    removeCallback(func) {
-        this.removePost(func);
+    /**
+     * alias of removePost
+     */
+    get removeCallback() {
+        return this.removePost;
     }
 
+    /**
+     * @private
+     */
     static parseParameter(...init) {
         // 1. clone init
         init = init.slice();
@@ -1539,12 +2419,18 @@ class HookedFunction extends Function {
                 post.push(e);
             }
             else {
-                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of type ${typeof e}`);
+                throw new TypeError(`HookedFunction: cannot recognize paramter ${e} of class ${e}`);
             }
         }
         return { raw, pre, post };
     }
 
+    /**
+     * Wrap a function if it has not been, or apply more hooks otherwise
+     * 
+     * @param {...(function|function[]|InitDict)} init 
+     * @returns {function} the wrapped function
+     */
     static hook(...init) {
         // 1. init parameter
         const { raw, pre, post } = HookedFunction.parseParameter(...init);
@@ -1563,6 +2449,13 @@ class HookedFunction extends Function {
         }
     }
 
+    /**
+     * Add debugger statement hook to a function
+     * 
+     * @param {function} raw function to debug.
+     * @param {boolean} [pre=true] add pre-hook. default true
+     * @param {boolean} [post=false] add post-hook. default false
+     */
     static hookDebugger(raw, pre = true, post = false) {
         // 1. init hook
         if (!HookedFunction.hookDebugger.hook) HookedFunction.hookDebugger.hook = function (ctx) { debugger };
@@ -1589,6 +2482,36 @@ class HookedFunction extends Function {
         }
     }
 }
+
+/**
+ * @typedef {Object} InitDict
+ * @property {function} InitDict.raw
+ * @property {(Hook|Hook[])} InitDict.pre
+ * @property {(Hook|Hook[])} InitDict.post
+ */
+
+/**
+ * @typedef {Object} Context
+ * @property {...*} InitDict.args
+ * @property {function} InitDict.target
+ * @property {*} InitDict.ret  
+ * @property {HookedFunction} InitDict.hook
+ */
+
+/**
+ * @typedef {function} Hook
+ * @param {Context} ctx context
+ */
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
 
 /***
  * BiliMonkey
@@ -1646,7 +2569,7 @@ class BiliMonkey {
         this.blocker = option.blocker;
         this.font = option.font;
         this.option = option;
-        if (this.cache && (!(this.cache instanceof CacheDB))) this.cache = new CacheDB('biliMonkey', 'flv', 'name');
+        if (this.cache && (!(this.cache instanceof CacheDB$1))) this.cache = new CacheDB$1('bili_monkey', 'flv');
 
         this.flvsDetailedFetch = [];
         this.flvsBlob = [];
@@ -1929,7 +2852,7 @@ class BiliMonkey {
 
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
-        this.ass = new Promise(async resolve => {
+        this.ass = (async () => {
             // 1. cid
             if (!this.cid) this.cid = await new Promise((resolve, reject) => {
                 clickableFormat = this.fallbackFormatName || clickableFormat;
@@ -1978,10 +2901,10 @@ class BiliMonkey {
             } || undefined;
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
+            return this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
-            )));
-        });
+            ));
+        })();
         return this.ass;
     }
 
@@ -2042,7 +2965,7 @@ class BiliMonkey {
         const _ajax = jq.ajax;
         const _setItem = this.playerWin.localStorage.setItem;
 
-        return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
+        return this.queryInfoMutex.lockAndAwait(() => new Promise(resolve => {
             let blockerTimeout;
             jq.ajax = function (a, c) {
                 if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
@@ -2064,95 +2987,91 @@ class BiliMonkey {
         }));
     }
 
-    async loadFLVFromCache(index) {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        let item = await this.cache.getData(name);
-        if (!item) return;
-        return this.flvsBlob[index] = item.data;
+    async loadFLVFromCache(url) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.getData(name);
     }
 
-    async loadPartialFLVFromCache(index) {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        name = 'PC_' + name;
-        let item = await this.cache.getData(name);
-        if (!item) return;
-        return item.data;
+    async loadPartialFLVFromCache(url) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.getData(`${name}.partial`);
     }
 
     async loadAllFLVFromCache() {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-
-        let promises = [];
-        for (let i = 0; i < this.flvs.length; i++) promises.push(this.loadFLVFromCache(i));
-
-        return Promise.all(promises);
+        if (!this.cache) return null;
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+        return Promise.all(this.flvs.map(this.loadFLVFromCache.bind(this)));
     }
 
-    async saveFLVToCache(index, blob) {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        return this.cache.addData({ name, data: blob });
+    async saveFLVToCache(url, blob) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.setData(new File([blob], name));
     }
 
-    async savePartialFLVToCache(index, blob) {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        name = 'PC_' + name;
-        return this.cache.putData({ name, data: blob });
+    async savePartialFLVToCache(url, blob) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.createData(new File([blob], `${name}.partial`));
     }
 
-    async cleanPartialFLVInCache(index) {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        name = 'PC_' + name;
-        return this.cache.deleteData(name);
+    async cleanPartialFLVInCache(url) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.deleteData(`${name}.partial`);
     }
 
-    async getFLV(index, progressHandler) {
+    async getFLV(index, onprogress) {
         if (this.flvsBlob[index]) return this.flvsBlob[index];
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
 
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
         this.flvsBlob[index] = (async () => {
-            let cache = await this.loadFLVFromCache(index);
+            const url = this.flvs[index];
+            const cache = await this.loadFLVFromCache(url);
             if (cache) return this.flvsBlob[index] = cache;
-            let partialFLVFromCache = await this.loadPartialFLVFromCache(index);
 
-            let burl = this.flvs[index];
-            if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
-            let opt = {
+            const partialCache = await this.loadPartialFLVFromCache(url);
+            const option = {
+                onprogress,
+                onerror: ({ target }) => {
+                    let blob = target.getPartialBlob();
+                    if (partialCache) blob = new Blob([partialCache, blob]);
+                    this.savePartialFLVToCache(url, blob);
+                },
                 fetch: this.playerWin.fetch,
                 method: 'GET',
                 mode: 'cors',
                 cache: 'default',
                 referrerPolicy: 'no-referrer-when-downgrade',
-                cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
-                headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
-            };
-            opt.onprogress = progressHandler;
-            opt.onerror = opt.onabort = ({ target, type }) => {
-                let partialFLV = target.getPartialBlob();
-                if (partialFLVFromCache) partialFLV = new Blob([partialFLVFromCache, partialFLV]);
-                this.savePartialFLVToCache(index, partialFLV);
+                loaded: partialCache ? partialCache.size : 0,
+                headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
             };
 
-            let fch = new DetailedFetchBlob(burl, opt);
-            this.flvsDetailedFetch[index] = fch;
-            let fullFLV = await fch.getBlob();
-            this.flvsDetailedFetch[index] = undefined;
-            if (partialFLVFromCache) {
-                fullFLV = new Blob([partialFLVFromCache, fullFLV]);
-                this.cleanPartialFLVInCache(index);
+            let blob = null;
+            try {
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(url, option);
+                blob = await this.flvsDetailedFetch[index];
             }
-            this.saveFLVToCache(index, fullFLV);
-            return (this.flvsBlob[index] = fullFLV);
+            catch (e) {
+                if (e.name == 'AbortError') throw e;
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined });
+                blob = await this.flvsDetailedFetch[index];
+            }
+            this.flvsDetailedFetch[index] = undefined;
+
+            if (partialCache) {
+                blob = new Blob([partialCache, blob]);
+                this.cleanPartialFLVInCache(url);
+            }
+            this.saveFLVToCache(url, blob);
+            return this.flvsBlob[index] = blob;
         })();
         return this.flvsBlob[index];
     }
@@ -2161,51 +3080,30 @@ class BiliMonkey {
         if (this.flvsDetailedFetch[index]) return this.flvsDetailedFetch[index].abort();
     }
 
-    async getAllFLVs(progressHandler) {
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let promises = [];
-        for (let i = 0; i < this.flvs.length; i++) promises.push(this.getFLV(i, progressHandler));
-        return Promise.all(promises);
+    async getAllFLVs() {
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+        return Promise.all(Object.keys(this.flvs).map(this.getFLV.bind(this)));
     }
 
     async cleanAllFLVsInCache() {
-        if (!this.cache) return;
-        if (!this.flvs) throw 'BiliMonkey: info uninitialized';
+        if (!this.cache) return null;
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
 
-        let ret = [];
-        for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-            ret.push(await this.cache.deleteData(name));
-            ret.push(await this.cache.deleteData('PC_' + name));
-        }
-
-        return ret;
+        return Promise.all(this.flvs.map(url => {
+            const name = BiliMonkey.extractFLVName(url);
+            if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+            return Promise.all([this.cache.deleteData(name), this.cache.deleteData(`${name}.partial`)]);
+        }))
     }
 
     async setupProxy(res, onsuccess) {
-        if (!this.setupProxy._fetch) {
-            const _fetch = this.setupProxy._fetch = this.playerWin.fetch;
-            this.playerWin.fetch = function (input, init) {
-                if (!input.slice || input.slice(0, 5) != 'blob:') {
-                    return _fetch(input, init);
-                }
-                let bstart = input.indexOf('?bstart=');
-                if (bstart < 0) {
-                    return _fetch(input, init);
-                }
-                if (!init.headers instanceof Headers) init.headers = new Headers(init.headers || {});
-                init.headers.set('Range', `bytes=${input.slice(bstart + 8)}-`);
-                return _fetch(input.slice(0, bstart), init)
-            };
-            this.destroy.addCallback(() => this.playerWin.fetch = _fetch);
-        }
+        BiliMonkey.hookFetch(this.playerWin);
 
         await this.loadAllFLVFromCache();
-        let resProxy = Object.assign({}, res);
         for (let i = 0; i < this.flvsBlob.length; i++) {
-            if (this.flvsBlob[i]) resProxy.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
+            if (this.flvsBlob[i]) res.durl[i].url = this.playerWin.URL.createObjectURL(this.flvsBlob[i]);
         }
-        return onsuccess(resProxy);
+        return onsuccess(res);
     }
 
     static async fetchDanmaku(cid) {
@@ -2346,6 +3244,42 @@ class BiliMonkey {
         return BiliMonkey.valueToFormat.dict[value] || null;
     }
 
+    /**
+     * Extract valid flv filename from url
+     * 
+     * @param {string} url
+     */
+    static extractFLVName(url) {
+        const ret = url.match(/\d+-\d+(?:-(?:hd|\d)+)\.flv/);
+        return ret && ret[0];
+    }
+
+    /**
+     * Add a ws cdn `?bstart=` parser to `playerWin.fetch` if it
+     * does not already exist
+     * 
+     * @param {Window} playerWin 
+     */
+    static hookFetch(playerWin) {
+        if (!BiliMonkey.hookFetch.hook) BiliMonkey.hookFetch.hook = function ({ args }) {
+            if (args[0].startsWith && args[0].startsWith('blob:')) {
+                const partialCache = args[0].match(/\?bstart=(\d+)/);
+                if (partialCache) {
+                    args[0] = args[0].replace(partialCache[0], '');
+                    if (!args[1]) args[1] = {};
+                    args[1].headers = new Headers(args[1].headers);
+                    init.headers.set('Range', `bytes=${partialCache[1]}-`);
+                }
+            }
+        };
+
+        playerWin.fetch = HookedFunction.hook(playerWin.fetch);
+        if (!playerWin.fetch.pre.includes(BiliMonkey.hookFetch.hook)) {
+            playerWin.fetch.pre.push(BiliMonkey.hookFetch.hook);
+        }
+        return playerWin.fetch;
+    }
+
     static get optionDescriptions() {
         return [
             // 1. automation
@@ -2360,7 +3294,12 @@ class BiliMonkey {
 
             // 3. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
-            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
+
+            // 4. bleeding-edge
+            ['chromeDB', '(Chrome限定)(webkit FS)直接写入硬盘：减少下载时的内存占用', CacheDB$1.ChromeCacheDB ? undefined : 'disabled'],
+            ['streams', '(Chrome67+限定)(Streams API)(需求webkit FS)使用流式传输：(☄◣ω◢)☄下载和保存时的内存占用减到几乎为0', CacheDB$1.ChromeCacheDB && typeof TransformStream == 'function' ? undefined : 'disabled'],
+            ['firefoxDB', '(Firefox限定)(idbmutable)直接写入硬盘：[in development]', CacheDB$1.FirefoxCacheDB ? undefined : 'disabled'],
         ];
     }
 
@@ -2379,12 +3318,17 @@ class BiliMonkey {
             // 3. customizing
             blocker: true,
             font: true,
+
+            // 4. bleeding-edge
+            chromeDB: false,
+            streams: false,
+            firefoxDB: false,
         }
     }
 
     static _UNIT_TEST() {
         return (async () => {
-            let playerWin = await BiliUserJS.getPlayerWin();
+            const playerWin = window;
             window.m = new BiliMonkey(playerWin);
 
             console.warn('sniffDefaultFormat test');
@@ -7899,13 +8843,14 @@ class UI {
         // 3. try download
         let url;
         try {
-            url = await monkey.getFLV(index, (loaded, total) => {
+            url = await monkey.getFLV(index, ({ loaded, total }) => {
                 progress.value = loaded;
                 progress.max = total;
             });
             url = URL.createObjectURL(url);
             if (progress.value == 0) progress.value = progress.max = 1;
         } catch (e) {
+            if (e.name == 'AbortError') return null;
             a.onclick = null;
             window.removeEventListener('beforeunload', handler);
             a.textContent = '错误';

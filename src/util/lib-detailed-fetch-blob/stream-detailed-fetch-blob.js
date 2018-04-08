@@ -9,7 +9,7 @@
 */
 
 import BaseDetailedFetchBlob from './base-detailed-fetch-blob.js';
-import { AbortController } from '../polyfill/polyfill.js';
+import { AbortController } from '../../polyfill/polyfill.js';
 
 class StreamDetailedFetchBlob extends BaseDetailedFetchBlob {
     constructor(input, {
@@ -42,7 +42,7 @@ class StreamDetailedFetchBlob extends BaseDetailedFetchBlob {
                         last = Date.now();
                     }
                 };
-                if (this.error) throw e;
+                if (this.error) throw this.error;
                 return this.blob = new Blob(this.buffer);
             }
             catch (e) {

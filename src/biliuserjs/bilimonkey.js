@@ -560,6 +560,7 @@ class BiliMonkey {
                 blob = await this.flvsDetailedFetch[index];
             }
             catch (e) {
+                if (e.name == 'AbortError') throw e;
                 this.flvsDetailedFetch[index] = new DetailedFetchBlob(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined });
                 blob = await this.flvsDetailedFetch[index];
             }
@@ -581,7 +582,7 @@ class BiliMonkey {
 
     async getAllFLVs() {
         if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
-        return Promise.all(this.flvs.keys().map(this.getFLV.bind(this)));
+        return Promise.all(Object.keys(this.flvs).map(this.getFLV.bind(this)));
     }
 
     async cleanAllFLVsInCache() {
@@ -904,6 +905,7 @@ class WebkitBiliMonkey extends BiliMonkey {
                 blob = await this.flvsDetailedFetch[index];
             }
             catch (e) {
+                if (e.name == 'AbortError') throw e;
                 this.flvsDetailedFetch[index] = new DetailedFetchBlob(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined });
                 blob = await this.flvsDetailedFetch[index];
             }
@@ -954,6 +956,7 @@ class StreamBiliMonkey extends WebkitBiliMonkey {
                     .pipeTo(this.partialFLVStreamToCache(url));
             }
             catch (e) {
+                if (e.name == 'AbortError') throw e;
                 this.flvsDetailedFetch[index] = new MinitorStream(option);
                 await (await this.playerWin.fetch(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined })).body
                     .pipeThrough(this.flvsDetailedFetch[index])
