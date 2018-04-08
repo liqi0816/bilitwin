@@ -97,4 +97,4 @@ class MonitorStream extends TransformStream {
     }
 }
 
-export default StreamMonitor;
+export default MonitorStream;

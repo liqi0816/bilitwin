@@ -32,6 +32,7 @@ import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
 import Mutex from '../util/mutex.js';
 import ASSConverter from '../assconverter/interface.js';
 import HookedFunction from '../util/hooked-function.js';
+import MinitorStream from '../util/monitor-stream.js';
 
 class BiliMonkey {
     constructor(playerWin, option = BiliMonkey.optionDefaults) {
@@ -856,9 +857,121 @@ class WebkitBiliMonkey extends BiliMonkey {
         this.cache = option.cache;
         if (this.cache && (!(this.cache instanceof CacheDB.ChromeCacheDB))) this.cache = new CacheDB.ChromeCacheDB('bili_monkey', 'flv', { mutableBlob: true });
     }
+
+    async saveFLVToCache(url, blob) {
+        if (!this.cache) return null;
+        if (blob) throw new TypeError('WebkitBiliMonkey.prototype.saveFLVToCache: This function only renames existing partial download and requires no second parameter.');
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.renameData(`${name}.partial`, name);
+    }
+
+    async savePartialFLVToCache(url, blob, { append = true } = {}) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.setData(new File([blob], `${name}.partial`), { append });
+    }
+
+    async getFLV(index, onprogress) {
+        if (this.flvsBlob[index]) return this.flvsBlob[index];
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+
+        this.flvsBlob[index] = (async () => {
+            const url = this.flvs[index];
+            const cache = await this.loadFLVFromCache(url);
+            if (cache) return this.flvsBlob[index] = cache;
+
+            const partialCache = await this.loadPartialFLVFromCache(url);
+            const option = {
+                onprogress,
+                onerror: ({ target }) => {
+                    let blob = target.getPartialBlob();
+                    this.savePartialFLVToCache(url, blob, { append: true });
+                },
+                fetch: this.playerWin.fetch,
+                method: 'GET',
+                mode: 'cors',
+                cache: 'default',
+                referrerPolicy: 'no-referrer-when-downgrade',
+                loaded: partialCache ? partialCache.size : 0,
+                headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
+            };
+
+            let blob = null;
+            try {
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(url, option);
+                blob = await this.flvsDetailedFetch[index];
+            }
+            catch (e) {
+                this.flvsDetailedFetch[index] = new DetailedFetchBlob(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined });
+                blob = await this.flvsDetailedFetch[index];
+            }
+            this.flvsDetailedFetch[index] = undefined;
+
+            if (partialCache) {
+                this.savePartialFLVToCache(url, blob, { append: true });
+            }
+            this.saveFLVToCache(url);
+            return this.flvsBlob[index] = await this.loadFLVFromCache(url);
+        })();
+        return this.flvsBlob[index];
+    }
 }
 
 class StreamBiliMonkey extends WebkitBiliMonkey {
+    async getFLV(index, onprogress) {
+        if (this.flvsBlob[index]) return this.flvsBlob[index];
+        if (!this.flvs) throw new Error('BiliMonkey.prototype.getFLV: flvs addresses uninitialized');
+
+        this.flvsBlob[index] = (async () => {
+            const url = this.flvs[index];
+            const cache = await this.loadFLVFromCache(url);
+            if (cache) return this.flvsBlob[index] = cache;
+
+            const partialCache = await this.loadPartialFLVFromCache(url);
+            const option = {
+                onprogress,
+                onerror: ({ target }) => {
+                    let blob = target.getPartialBlob();
+                    if (partialCache) blob = new Blob([partialCache, blob]);
+                    this.savePartialFLVToCache(url, blob);
+                },
+                fetch: this.playerWin.fetch,
+                method: 'GET',
+                mode: 'cors',
+                cache: 'default',
+                referrerPolicy: 'no-referrer-when-downgrade',
+                loaded: partialCache ? partialCache.size : 0,
+                headers: partialCache ? { Range: `bytes=${partialCache.size}-` } : undefined,
+            };
+
+            let blob = null;
+            try {
+                this.flvsDetailedFetch[index] = new MinitorStream(option);
+                await (await this.playerWin.fetch(url, option)).body
+                    .pipeThrough(this.flvsDetailedFetch[index])
+                    .pipeTo(this.partialFLVStreamToCache(url));
+            }
+            catch (e) {
+                this.flvsDetailedFetch[index] = new MinitorStream(option);
+                await (await this.playerWin.fetch(`${url}&bstart=${partialCache.size}`, { ...option, headers: undefined })).body
+                    .pipeThrough(this.flvsDetailedFetch[index])
+                    .pipeTo(this.partialFLVStreamToCache(url));
+            }
+
+            this.saveFLVToCache(url);
+            return this.flvsBlob[index] = await this.loadFLVFromCache(url);
+        })();
+        return this.flvsBlob[index];
+    }
+
+    async partialFLVStreamToCache(url, { append = true } = {}) {
+        if (!this.cache) return null;
+        const name = BiliMonkey.extractFLVName(url);
+        if (!name) throw new Error(`BiliMonkey: extract flv name from ${url} failed.`);
+        return this.cache.createWriteStream(`${name}.partial`, { append });
+    }
 }
 
 export default BiliMonkey;

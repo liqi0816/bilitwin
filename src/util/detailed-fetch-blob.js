@@ -19,4 +19,3 @@ import FirefoxDetailedFetchBlob from './lib-detailed-fetch-blob/firefox-detailed
 const DetailedFetchBlob = StreamDetailedFetchBlob.isSupported ? StreamDetailedFetchBlob : FirefoxDetailedFetchBlob.isSupported ? FirefoxDetailedFetchBlob : null;
 
 export default DetailedFetchBlob;
-export default StreamDetailedFetchBlob;

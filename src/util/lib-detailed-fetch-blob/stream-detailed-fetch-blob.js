@@ -1,0 +1,83 @@
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+import BaseDetailedFetchBlob from './base-detailed-fetch-blob.js';
+import { AbortController } from '../polyfill/polyfill.js';
+
+class StreamDetailedFetchBlob extends BaseDetailedFetchBlob {
+    constructor(input, {
+        onprogress,
+        onabort,
+        onerror,
+        loaded,
+        total,
+        lengthComputable,
+        fetch = top.fetch,
+        ...init
+    } = {}) {
+        super(input, { onprogress, onabort, onerror, loaded, total, lengthComputable });
+
+        const controller = new AbortController();
+        this.abort = this.abort.bind(this, controller);
+
+        const promise = (async () => {
+            try {
+                const { body, ok, status, statusText, headers } = await fetch(input, { ...init, signal: controller.signal });
+                if (!ok) throw new DOMException(`${status}: ${statusText}`, 'HTTPError');
+                this.lengthComputable = headers.has('Content-Length');
+                this.total += parseInt(headers.get('Content-Length')) || Infinity;
+                let last = Date.now();
+                for await (const chunk of this.iteratorify(body)) {
+                    this.loaded += chunk.length;
+                    this.buffer.push(new Blob([chunk]));
+                    if (Date.now() - last > 500) {
+                        this.dispatchEvent(new ProgressEvent('progress', this));
+                        last = Date.now();
+                    }
+                };
+                if (this.error) throw e;
+                return this.blob = new Blob(this.buffer);
+            }
+            catch (e) {
+                if (!this.error) this.error = e;
+                this.dispatchEvent(new ErrorEvent('error', this));
+                throw this.error;
+            }
+            finally {
+                this.buffer = null;
+            }
+        })();
+        this.then = promise.then.bind(promise);
+        this.catch = promise.catch.bind(promise);
+        this.finally = promise.finally.bind(promise);
+    }
+
+    abort(controller) {
+        controller.abort();
+        this.error = new DOMException('DetailedFetchBlob was aborted', 'AbortError');
+        this.dispatchEvent(new ProgressEvent('abort', this));
+    }
+
+    iteratorify(body) {
+        const reader = body.getReader();
+        this.addEventListener('abort', reader.cancel.bind(reader, 'AbortError'));
+        return {
+            next: reader.read.bind(reader),
+            return: reader.cancel.bind(reader),
+            [Symbol.asyncIterator]() { return this },
+        };
+    }
+
+    static get isSupported() {
+        return typeof fetch === 'function' && typeof ReadableStream === 'function';
+    }
+}
+
+export default StreamDetailedFetchBlob;
