@@ -8,9 +8,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import IDBCacheDB from './idb-cache-db.js';
-import ChromeCacheDB from './chrome-cache-db.js';
-import FirefoxCacheDB from './firefox-cache-db.js';
+import IDBCacheDB from './lib-cache-db/idb-cache-db.js';
+import ChromeCacheDB from './lib-cache-db/chrome-cache-db.js';
+import FirefoxCacheDB from './lib-cache-db/firefox-cache-db.js';
 
 class CacheDB extends IDBCacheDB {
     get addData() {
@@ -23,7 +23,7 @@ class CacheDB extends IDBCacheDB {
         return this.setData;
     }
 }
-CacheDB.ChromeCacheDB = ChromeCacheDB.isSupported() && ChromeCacheDB;
-CacheDB.FirefoxCacheDB = FirefoxCacheDB.isSupported() && FirefoxCacheDB;
+CacheDB.ChromeCacheDB = ChromeCacheDB.isSupported && ChromeCacheDB;
+CacheDB.FirefoxCacheDB = FirefoxCacheDB.isSupported && FirefoxCacheDB;
 
 export default CacheDB;
