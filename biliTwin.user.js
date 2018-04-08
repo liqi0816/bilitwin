@@ -5572,7 +5572,7 @@ var FLVASS2MKV = (function () {
          * @returns {Array<Object>} - array of subtitle lines
          */
         static extractSubtitleLines(str) {
-            const lines = str.split('\\n');
+            const lines = str.split(/\\r\\n+/);
             if (lines[0] != '[Events]' && lines[0] != '[events]') throw new Error('ASSDemuxer: section is not [Events]');
             if (lines[1].indexOf('Format:') != 0 && lines[1].indexOf('format:') != 0) throw new Error('ASSDemuxer: cannot find Format definition in section [Events]');
 
