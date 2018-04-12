@@ -146,6 +146,55 @@ class FLV {
 
         return new Blob(ret);
     }
+
+    static async mergeBlobsToCacheDB(blobs, cache) {
+        if (blobs.length < 1) throw new TypeError(`FLV.mergeBlobsToCacheDB:`);
+        let ret = [];
+        let basetimestamp = [0, 0];
+        let lasttimestamp = [0, 0];
+        let duration = 0.0;
+        let durationDataView;
+
+        for (let blob of blobs) {
+            let bts = duration * 1000;
+            basetimestamp[0] = lasttimestamp[0];
+            basetimestamp[1] = lasttimestamp[1];
+            bts = Math.max(bts, basetimestamp[0], basetimestamp[1]);
+            let foundDuration = 0;
+
+            let flv = await new Promise((resolve, reject) => {
+                let fr = new FileReader();
+                fr.onload = () => resolve(new FLV(new TwentyFourDataView(fr.result)));
+                fr.readAsArrayBuffer(blob);
+                fr.onerror = reject;
+            });
+
+            let modifiedMediaTags = [];
+            for (let tag of flv.tags) {
+                if (tag.tagType == 0x12 && !foundDuration) {
+                    duration += tag.getDuration();
+                    foundDuration = 1;
+                    if (blob == blobs[0]) {
+                        ret.push(flv.header, flv.firstPreviousTagSize);
+                        ({ duration, durationDataView } = tag.getDurationAndView());
+                        tag.stripKeyframesScriptData();
+                        ret.push(tag.tagHeader);
+                        ret.push(tag.tagData);
+                        ret.push(tag.previousSize);
+                    }
+                }
+                else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
+                    lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
+                    tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
+                    modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
+                }
+            }
+            ret.push(new Blob(modifiedMediaTags));
+        }
+        durationDataView.setFloat64(0, duration);
+
+        return new Blob(ret);
+    }
 }
 
 export default FLV;

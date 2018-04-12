@@ -980,8 +980,8 @@ class StreamBiliMonkey extends WebkitBiliMonkey {
 
 export default class extends BiliMonkey {
     constructor(playerWin, option = BiliMonkey.optionDefaults) {
-        if (option.chromeDB) {
-            if (option.streams) {
+        if (option.chromeDB && CacheDB.ChromeCacheDB) {
+            if (option.streams && MonitorStream.isSupported) {
                 return new StreamBiliMonkey(playerWin, option);
             }
             return new WebkitBiliMonkey(playerWin, option);

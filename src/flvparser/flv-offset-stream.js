@@ -12,10 +12,22 @@
  * by grepmusic
 */
 
-class FLVStream extends TransformStream {
-    constructor() {
+class FLVOffsetStream extends TransformStream {
+    constructor({
+        offset = 0,
+    } = {}) {
         super({
+            transform: (chunk, controller) => {
 
+            }
         });
+    }
+
+    /**
+     * 
+     * @param {ReadableStream[]} streams flv ReadableStreams
+     */
+    static mergeStream(streams) {
+        
     }
 }

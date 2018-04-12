@@ -78,6 +78,10 @@ class MonitorStream extends TransformStream {
         return event;
     }
 
+    static get isSupported() {
+        return typeof 'TransformStream' === 'function';
+    }
+
     static _UNIT_TEST(location = location) {
         let reportLast = Date.now();
         let loadedLast = 0;
