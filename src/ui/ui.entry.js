@@ -192,10 +192,10 @@ class UI {
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
                 <td><a href={href}>FLV分段 {index + 1}</a></td>
-                <td><a onclick={e => this.downloadFLV({
+                <td><a onclick={({ target }) => this.downloadFLV({
                     monkey,
                     index,
-                    a: e.target,
+                    a: target,
                     progress: tr.children[2].children[0],
                 })}>缓存本段</a></td>
                 <td><progress value="0" max="100">进度条</progress></td>
@@ -235,8 +235,8 @@ class UI {
             ...flvTrs,
             <tr>
                 <td>{...[exporterA]}</td>
-                <td><a onclick={e => this.downloadAllFLVs({
-                    a: e.target,
+                <td><a onclick={({ target }) => this.downloadAllFLVs({
+                    a: target,
                     monkey, table
                 })}>缓存全部+自动合并</a></td>
                 <td><progress value="0" max={flvs.length + 1}>进度条</progress></td>
@@ -550,7 +550,7 @@ class UI {
                                 <span class="video-contextmenu-icon"></span> 3
                             </a>
                         </li>
-                        <li class="context-menu-function" onclick={e => polyfill.setVideoSpeed(e.children[0].children[1].value)}>
+                        <li class="context-menu-function" onclick={({ target }) => polyfill.setVideoSpeed(target.children[1].value)}>
                             <a class="context-menu-a">
                                 <span class="video-contextmenu-icon"></span> 点击确认
                                 <input
@@ -705,8 +705,8 @@ class UI {
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
-                    onchange={e => {
-                        twin.option[name] = e.target.checked;
+                    onchange={({ target }) => {
+                        twin.option[name] = target.checked;
                         twin.saveOption(twin.option);
                     }}
                     disabled={disabled == 'disabled'}
@@ -729,8 +729,8 @@ class UI {
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
-                    onchange={e => {
-                        twin.option[name] = e.target.checked;
+                    onchange={({ target }) => {
+                        twin.option[name] = target.checked;
                         twin.saveOption(twin.option);
                     }}
                     disabled={disabled == 'disabled'}
@@ -752,8 +752,8 @@ class UI {
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
-                    onchange={e => {
-                        twin.option[name] = e.target.checked;
+                    onchange={({ target }) => {
+                        twin.option[name] = target.checked;
                         twin.saveOption(twin.option);
                     }} />
                 {description}
@@ -786,20 +786,20 @@ class UI {
             textarea,
             <p style={{ margin: '0.3em' }}>当然可以直接清空啦。只删除其中的一些行的话，一定要记得删掉多余的逗号。</p>,
             <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={() => div.remove()}>关闭</button>,
-            <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={e => {
+            <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={({ target }) => {
                 if (!textarea.value) textarea.value = '{\n\n}';
                 textarea.value = textarea.value.replace(/,(\s|\n)*}/, '\n}').replace(/,(\s|\n),/g, ',\n').replace(/,(\s|\n)*]/g, ']');
                 const userdata = {};
                 try {
                     userdata.oped = JSON.parse(textarea.value);
                 } catch (e) { alert('片头片尾: ' + e); throw e; }
-                e.target.textContent = '格式没有问题！';
+                target.textContent = '格式没有问题！';
                 return userdata;
             }}>验证格式</button>,
-            <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={e => {
-                polyfill.userdata = e.target.previousElementSibling.onclick({ target: e.target.previousElementSibling });
+            <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={({ target }) => {
+                polyfill.userdata = target.previousElementSibling.onclick({ target: target.previousElementSibling });
                 polyfill.saveUserdata();
-                e.target.textContent = '保存成功';
+                target.textContent = '保存成功';
             }}>尝试保存</button>,
         );
 
