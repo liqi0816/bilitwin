@@ -24,7 +24,7 @@ try {
 
 const _AbortController = typeof AbortController === 'function' && AbortController || class {
     constructor() {
-        this.signal = new EventTarget();
+        this.signal = new _EventTarget();
         this.signal.aborted = false;
 
         let onabort = null;

@@ -8,9 +8,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import OnEventTarget from './on-event-target.js';
+import OnEventTargetFactory from './on-event-target.js';
 
-class MonitorStream extends TransformStream {
+class MonitorStream extends OnEventTargetFactory(['progress', 'abort']).mixin(TransformStream) {
     constructor({
         onprogress = null,
         onabort = null,
@@ -50,8 +50,6 @@ class MonitorStream extends TransformStream {
                     controller.enqueue(chunk);
                 },
         });
-
-        OnEventTarget.mixin(this, ['progress', 'abort']);
         this.controller = controller;
 
         this.onprogress = onprogress;

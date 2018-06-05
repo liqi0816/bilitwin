@@ -9,130 +9,130 @@
 */
 
 /**
- * A wrapper of EventTarget interface in browsers.
+ * Promisify a one-time event listener
  * 
- * - create standalone EventTarget with `on[name]` handlers
- * - promisify one-time listeners with error propagation
- * - mix OnEventTarget features into another object
+ * @param {EventTarget} target event target
+ * @param {string} name name of event
+ * @param {string} [errorName='error'] (default 'error') name of error event
+ * @param {*} [bind=] (default Event) customized resolve value of Promise
+ * @returns {Promise<Event>} a Promise that resolves when the specific event fires
  */
-class OnEventTarget extends EventTarget {
+const asyncOnce = function asyncOnce(target, name, errorName = 'error', bind) {
+    return new Promise((resolve, reject) => {
+        const once = { once: true };
+        const _resolve = e => {
+            resolve(bind || e);
+            if (errorName) target.removeEventListener(errorName, _reject);
+        };
+        const _reject = e => {
+            reject(e);
+            target.removeEventListener(name, _resolve);
+        };
+        target.addEventListener(name, resolve, once);
+        if (errorName) target.addEventListener(errorName, reject, once);
+    });
+};
+
+/**
+ * mix OnEventTarget features into a target class
+ * @param {Function} target the target class to mix
+ * @returns {Function} the mixed class
+ */
+const mixin = function mixin(target) {
+    // 1. extends EventTarget
     /**
-     * Initialize an OnEventTarget object
+     * A wrapper of the EventTarget interface in browsers.
      * 
-     * @param {string[]} [init=] (default undefined) a list of names that
-     * you want to have `on[name]` handlers, or a falsy value
+     * - create standalone EventTarget with `on[name]` handlers
+     * - promisify one-time listeners with error propagation
+     * - mix OnEventTarget functions into another object
      */
-    constructor(init) {
-        super();
-        if (!init) return;
-        else if (Array.isArray(init)) {
-            const dict = new Map(init.map(name => [name, null]));
-            for (const name of init) {
-                Object.defineProperty(this, `on${name}`, {
-                    configurable: true,
-                    enumerable: true,
-                    get: dict.get.bind(dict, name),
-                    set: OnEventTarget.onDictSetter.bind(this, name, dict),
-                });
+    const OnEventTarget = Object.keys(EventTarget.prototype).every(i => target.prototype[i]) ?
+        // 1.1 target implements EventTarget => reuse interface
+        class OnEventTarget extends target {
+        } :
+        // 1.2 target does not implement EventTarget => mock interface
+        class OnEventTarget extends target {
+            constructor(...args) {
+                super(...args);
+                const e = new EventTarget();
+                for (const name of Object.keys(EventTarget.prototype)) {
+                    this[name] = e[name].bind(e);
+                }
             }
-        }
-        else {
-            throw new TypeError(`OnEventTarget: constructor parameter expect falsy value or string[] but get ${init}`)
-        }
-    }
+        };
 
+    // 2. add util functions
+    OnEventTarget.asyncOnce = asyncOnce;
+    OnEventTarget.asyncOnce = asyncOnce;
+
+    // 3. add `on[name]` handlers
+    const prototype = Object.getOwnPropertyDescriptors(this.prototype);
+    prototype.constructor = {};
+    Object.defineProperties(OnEventTarget.prototype, prototype);
+
+    return OnEventTarget;
+}
+
+/**
+ * Create an OnEventTarget class with specific `on[name]` handlers
+ * 
+ * @param {string[]} [init=] (default undefined) a list of names that
+ * you want to have `on[name]` handlers, or a falsy value
+ */
+const OnEventTargetFactory = init => {
+    // 1. extends EventTarget
     /**
-     * Promisify a one-time event listener
+     * A wrapper of the EventTarget interface in browsers.
      * 
-     * @param {EventTarget} target event target
-     * @param {string} name name of event
-     * @param {string} [errorName='error'] (default 'error') name of error event
-     * @param {*} [bind=] (default Event) customized resolve value of Promise
-     * @returns {Promise<Event>} A Promise
+     * - create standalone EventTarget with `on[name]` handlers
+     * - promisify one-time listeners with error propagation
+     * - mix OnEventTarget functions into another object
      */
-    static asyncOnce(target, name, errorName = 'error', bind) {
-        return new Promise((resolve, reject) => {
-            const once = { once: true };
-            const _resolve = e => {
-                resolve(bind || e);
-                if (errorName) target.removeEventListener(errorName, _reject);
-            };
-            const _reject = e => {
-                reject(e);
-                target.removeEventListener(name, _resolve);
-            };
-            target.addEventListener(name, resolve, once);
-            if (errorName) target.addEventListener(errorName, reject, once);
-        });
+    class OnEventTarget extends EventTarget { };
+
+    // 2. add util functions
+    OnEventTarget.asyncOnce = asyncOnce;
+    OnEventTarget.mixin = mixin;
+
+    // 3. add `on[name]` handlers
+    if (!init) {
+    }
+    else if (Array.isArray(init)) {
+        for (const name of init) {
+            const i = Symbol(`on${name}`);
+            OnEventTarget.prototype[i] = null;
+            Object.defineProperty(OnEventTarget.prototype, `on${name}`, {
+                get() {
+                    return this[i];
+                },
+                set(e) {
+                    if (typeof e !== 'function') e = null;
+                    this.removeEventListener(name, this[i]);
+                    this.addEventListener(name, e);
+                    this[i] = e;
+                },
+            });
+        }
+    }
+    else {
+        throw new TypeError(`OnEventTargetFactory: parameter 0 expect falsy value or string[] but get ${init}`);
     }
 
-    /**
-     * @private
-     */
-    static simpleGetter(name) {
-        return this[name];
-    }
+    // 4. return new class
+    return OnEventTarget;
+};
 
-    /**
-     * @private
-     */
-    static simpleSetter(name, e) {
-        this[name] = e;
-    }
-
-    /**
-     * @private
-     */
-    static onDictSetter(name, dict, e) {
-        if (typeof e !== 'function') e = null;
-        this.removeEventListener(name, dict.get(name));
-        this.addEventListener(name, e);
-        dict.set(name, e);
-    }
-
-    /**
-     * mix OnEventTarget features into target
-     * 
-     * @param {Object} target mixin target
-     * @param {string[]} [init=] a list of names that you want to have
-     * on[name] handlers, or a falsy value to disable on[name] handlers.
-     */
-    static mixin(target, init) {
-        // 1. init
-        if (!init) {
-            init = target;
-            target = this;
-        }
-        if (!target || target === OnEventTarget) {
-            throw new TypeError(`OnEventTarget.mixin: Invalid mixin target. Usage: .mixin.call(target, init) or .mixin(target, init)`);
-        }
-
-        // 2. mixin EventTarget
-        if (!(target instanceof EventTarget)) {
-            const e = new EventTarget();
-            for (const name of Object.keys(EventTarget.prototype)) {
-                target[name] = e[name].bind(e);
-            }
-        }
-
-        // 3. mixin OnEventTarget constructor
-        if (!init) {
-        }
-        else if (Array.isArray(init)) {
-            const dict = new Map(init.map(name => [name, null]));
-            for (const name of init) {
-                Object.defineProperty(target, `on${name}`, {
-                    configurable: true,
-                    enumerable: true,
-                    get: dict.get.bind(dict, name),
-                    set: OnEventTarget.onDictSetter.bind(target, name, dict),
-                });
-            }
-        }
-        else {
-            throw new TypeError(`OnEventTarget.mixin: constructor parameter expect falsy value or string[] but get ${init}`)
-        }
+/**
+ * A sample usage of OnEventTarget.mixin
+ * Creates an array that fires 'push' event when push is called
+ */
+const PushEventArray = class PushEventArray extends OnEventTargetFactory(['push']).mixin(Array) {
+    push(...args) {
+        this.dispatchEvent(new CustomEvent('push', { detail: args }));
+        return super.push(...args);
     }
 }
 
-export default OnEventTarget;
+export { asyncOnce, mixin, OnEventTargetFactory, PushEventArray };
+export default OnEventTargetFactory;

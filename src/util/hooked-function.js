@@ -8,6 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+let flagSymbol, prototypeDescriptors, prototypeKeys, debuggerFunction;
+
 /**
  * A util to hook a function
  */
@@ -46,7 +48,7 @@ class HookedFunction extends Function {
             post.forEach(e => e.call(this, context));
             return context.ret;
         };
-        Object.setPrototypeOf(self, HookedFunction.prototype);
+        Object.defineProperties(self, prototypeDescriptors);
         /**
          * @type {function} the raw function
          */
@@ -157,6 +159,10 @@ class HookedFunction extends Function {
         return { raw, pre, post };
     }
 
+    static isHooked(raw) {
+        return raw[flagSymbol] || prototypeKeys.every(e => raw[e]);
+    }
+
     /**
      * Wrap a function if it has not been, or apply more hooks otherwise
      * 
@@ -169,7 +175,7 @@ class HookedFunction extends Function {
 
         // 2 wrap
         // 2.1 already wrapped => concat
-        if (raw instanceof HookedFunction) {
+        if (HookedFunction.isHooked(raw)) {
             raw.pre.push(...pre);
             raw.post.push(...post);
             return raw;
@@ -189,12 +195,9 @@ class HookedFunction extends Function {
      * @param {boolean} [post=false] add post-hook. default false
      */
     static hookDebugger(raw, pre = true, post = false) {
-        // 1. init hook
-        if (!HookedFunction.hookDebugger.hook) HookedFunction.hookDebugger.hook = function (ctx) { debugger };
-
         // 2 wrap
         // 2.1 already wrapped => concat
-        if (raw instanceof HookedFunction) {
+        if (HookedFunction.isHooked(raw)) {
             if (pre && !raw.pre.includes(HookedFunction.hookDebugger.hook)) {
                 raw.pre.push(HookedFunction.hookDebugger.hook);
             }
@@ -214,6 +217,11 @@ class HookedFunction extends Function {
         }
     }
 }
+
+HookedFunction.flagSymbol = flagSymbol = Symbol('HookedFunctionFlag');
+HookedFunction.prototypeDescriptors = prototypeDescriptors = Object.getOwnPropertyDescriptors(HookedFunction.prototype);
+HookedFunction.prototypeKeys = prototypeKeys = Object.keys(prototypeDescriptors);
+HookedFunction.debuggerFunction = debuggerFunction = function (ctx) { debugger };
 
 export default HookedFunction;
 

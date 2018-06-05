@@ -12,20 +12,19 @@
  * by grepmusic
 */
 
-class FLVOffsetStream extends TransformStream {
-    constructor({ offset = 0 } = {}) {
+/**
+ * A streamified flv parser
+ * IN: whole flv file piped to writeableStream
+ * Out: ...tag objects (script tag, audio tag and video tag) as readableStream
+ */
+class FLVStream extends TransformStream {
+    constructor() {
         super({
             transform: (chunk, controller) => {
-
+                if (chunk.length > this.
             }
         });
-    }
 
-    /**
-     * 
-     * @param {ReadableStream[]} streams flv ReadableStreams
-     */
-    static mergeStream(streams) {
-
+        this.buffer = new Uint8Array(9);
     }
 }

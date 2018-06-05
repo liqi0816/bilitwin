@@ -8,9 +8,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-import OnEventTarget from '../on-event-target.js';
+import OnEventTargetFactory from '../on-event-target.js';
 
-class BaseDetailedFetchBlob extends OnEventTarget {
+class BaseDetailedFetchBlob extends OnEventTargetFactory(['progress', 'abort', 'error']) {
     constructor({ }, {
         onprogress = null,
         onabort = null,
@@ -19,7 +19,7 @@ class BaseDetailedFetchBlob extends OnEventTarget {
         total = 0,
         lengthComputable = Boolean(total),
     } = {}) {
-        super(['progress', 'abort', 'error']);
+        super();
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
