@@ -10,13 +10,13 @@
 
 class TwentyFourDataView extends DataView {
     getUint24(byteOffset, littleEndian) {
-        if (littleEndian) throw 'littleEndian int24 not implemented';
+        if (littleEndian) throw new Error('littleEndian uint24 not yet implemented');
         return this.getUint32(byteOffset - 1) & 0x00FFFFFF;
     }
 
     setUint24(byteOffset, value, littleEndian) {
-        if (littleEndian) throw 'littleEndian int24 not implemented';
-        if (value > 0x00FFFFFF) throw 'setUint24: number out of range';
+        if (littleEndian) throw new Error('littleEndian uint24 not yet implemented');
+        if (value > 0x00FFFFFF) throw new RangeError(`setUint24: number should be in [0, 0x00FFFFFF] but get ${value}`);
         let msb = value >> 16;
         let lsb = value & 0xFFFF;
         this.setUint8(byteOffset, msb);

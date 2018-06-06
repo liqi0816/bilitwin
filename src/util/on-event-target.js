@@ -17,7 +17,7 @@
  * @param {*} [bind=] (default Event) customized resolve value of Promise
  * @returns {Promise<Event>} a Promise that resolves when the specific event fires
  */
-const asyncOnce = function asyncOnce(target, name, errorName = 'error', bind) {
+function asyncOnce(target, name, errorName = 'error', bind) {
     return new Promise((resolve, reject) => {
         const once = { once: true };
         const _resolve = e => {
@@ -38,7 +38,7 @@ const asyncOnce = function asyncOnce(target, name, errorName = 'error', bind) {
  * @param {Function} target the target class to mix
  * @returns {Function} the mixed class
  */
-const mixin = function mixin(target) {
+function mixin(target) {
     // 1. extends EventTarget
     /**
      * A wrapper of the EventTarget interface in browsers.

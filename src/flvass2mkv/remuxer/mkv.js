@@ -46,13 +46,13 @@ class MKV {
 
     static uint8ArrayConcat(...array) {
         // if (Array.isArray(array[0])) array = array[0];
-        if (array.length == 1) return array[0];
-        if (typeof Buffer != 'undefined') return Buffer.concat(array);
-        const ret = new Uint8Array(array.reduce((i, j) => i + j.byteLength, 0));
-        let length = 0;
-        for (let e of array) {
-            ret.set(e, length);
-            length += e.byteLength;
+        if (array.length === 1) return array[0];
+        if (typeof Buffer !== 'undefined') return Buffer.concat(array);
+        const ret = new Uint8Array(array.reduce((i, { byteLength }) => i + byteLength, 0));
+        let byteLength = 0;
+        for (const e of array) {
+            ret.set(e, byteLength);
+            byteLength += e.byteLength;
         }
         return ret;
     }

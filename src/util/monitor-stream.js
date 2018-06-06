@@ -77,10 +77,10 @@ class MonitorStream extends OnEventTargetFactory(['progress', 'abort']).mixin(Tr
     }
 
     static get isSupported() {
-        return typeof 'TransformStream' === 'function';
+        return typeof TransformStream === 'function';
     }
 
-    static _UNIT_TEST(location = location) {
+    static _UNIT_TEST(location = window.location) {
         let reportLast = Date.now();
         let loadedLast = 0;
 
