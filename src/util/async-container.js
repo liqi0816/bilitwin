@@ -31,7 +31,7 @@ class AsyncContainer {
         this.destroiedThen = this.hangPromise.then.bind(this.hangPromise);
 
         // 3. states
-        const state = 'pending';
+        this.state = 'pending';
         this.primaryPromise.then(() => this.state = 'fulfilled');
         this.primaryPromise.catch(() => this.state = 'rejected');
         this.hangPromise.then(() => this.state = 'hanged');

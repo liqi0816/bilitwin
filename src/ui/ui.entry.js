@@ -10,7 +10,6 @@
 
 import Exporter from './exporter.js';
 import HookedFunction from '../util/hooked-function.js';
-import FLV from '../flvparser/flv.js';
 import MKVTransmuxer from '../flvass2mkv/interface.js';
 
 class UI {

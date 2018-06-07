@@ -8,6 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+import { EventTarget } from '../polyfill/polyfill.js';
+
 /**
  * Promisify a one-time event listener
  * 

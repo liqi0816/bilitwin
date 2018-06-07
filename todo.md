@@ -1,3 +1,7 @@
+# EMERGENCY:
+
+- [ ] compatibility with player V0.10.0 
+
 # TO DO:
 
 1. cache-db

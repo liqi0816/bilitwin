@@ -176,6 +176,20 @@ class IDBCacheDB {
         return typeof indexedDB == 'object';
     }
 
+    static async quota() {
+        if (navigator.storage) {
+            return navigator.storage.estimate();
+        }
+        else if (navigator.webkitTemporaryStorage) {
+            return new Promise(resolve => {
+                navigator.webkitTemporaryStorage.queryUsageAndQuota(([usage, quota]) => resolve({ usage, quota }));
+            })
+        }
+        else {
+            return { usage: -1, quota: -1 };
+        }
+    }
+
     static async _UNIT_TEST() {
         let db = new CacheDB();
         console.warn('Storing 201MB...');
