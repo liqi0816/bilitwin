@@ -3,14 +3,20 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Page Title</title>
+    <title>Test Page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="module" src="./src/flvparser/flv-offset-stream.js"></script>
+    <style>
+        script {
+            display: block;
+            white-space: pre;
+            font-family: 'consolas', monospace;
+        }
+    </style>
 </head>
 
 <body>
-    <script style="display: block; white-space: pre; font-family: consolas;">
+    <script>
         class ConsoleSink extends WritableStream {
             constructor(console = window.console) {
                 super({ write: chunk => { console.log(chunk) } });
