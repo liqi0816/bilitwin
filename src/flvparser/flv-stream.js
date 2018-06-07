@@ -21,50 +21,68 @@ import FLVTag from './flv-tag.js';
  * Out: ...tag objects (script tag, audio tag and video tag) as readableStream
  */
 class FLVStream extends TransformStream {
-    constructor({ headerByteLength = 9 } = {}) {
+    constructor({ headerByteLength = 9 + 4 } = {}) {
         super({
             transform: (chunk, controller) => {
+                // 1. scan through chunk for tags
                 let next = chunk;
                 while (true) {
+                    // 2. find the size of all buffered data
                     const byteLength = this.bufferByteLength + next.byteLength;
+
+                    // 2. size of next tag unknown => try to find it
                     if (this.targetByteLength < 0) {
-                        this.buffer.push(next);
-                        this.bufferByteLength = byteLength;
-                        this.targetByteLength = this.probe();
-                        if (this.targetByteLength < 0) break;
+                        // 2.1 probe the incoming chunk for tag size
+                        this.targetByteLength = this.probe(next);
+
+                        // 2.2 still unknown => tag header incomplete => buffer it and break
+                        if (this.targetByteLength < 0) {
+                            this.buffer.push(next);
+                            this.bufferByteLength = byteLength;
+                            break;
+                        }
                     }
+
+                    // 3. buffered data < next tag => buffer it and break
                     if (byteLength < this.targetByteLength) {
                         this.buffer.push(next);
                         this.bufferByteLength = byteLength;
                         break;
                     }
+
+                    // 3. buffered data === next tag => output it and break
                     else if (byteLength === this.targetByteLength) {
                         this.buffer.push(next);
                         this.bufferByteLength = byteLength;
                         if (this.header) {
-                            controller.enqueue(this.wrapTag(this.concatBuffer()));
+                            controller.enqueue(this.wrapTag(this.concatBuffer().buffer));
                         }
                         else {
                             this.header = this.concatBuffer();
+                            this.readable.header = this.header;
                         }
                         this.buffer = [];
                         this.bufferByteLength = 0;
                         this.targetByteLength = -1;
                         break;
                     }
+
+                    // 3. buffered data > next tag => output next tag, continue on the rest of chunk
                     else {
-                        this.buffer.push(next.slice(0, this.targetByteLength - this.bufferByteLength));
+                        const remainderByteLength = this.targetByteLength - this.bufferByteLength;
+                        this.buffer.push(new Uint8Array(next.buffer, next.byteOffset, remainderByteLength));
                         this.bufferByteLength = this.targetByteLength;
                         if (this.header) {
-                            controller.enqueue(this.wrapTag(this.concatBuffer()));
+                            controller.enqueue(this.wrapTag(this.concatBuffer().buffer));
                         }
                         else {
                             this.header = this.concatBuffer();
+                            this.readable.header = this.header;
                         }
                         this.buffer = [];
                         this.bufferByteLength = 0;
                         this.targetByteLength = -1;
-                        next = next.slice(this.targetByteLength - this.bufferByteLength);
+                        next = new Uint8Array(next.buffer, next.byteOffset + remainderByteLength);
                     }
                 }
             }
@@ -73,26 +91,44 @@ class FLVStream extends TransformStream {
         this.bufferByteLength = 0;
         this.targetByteLength = headerByteLength;
         this.header = null;
+        this.readable.header = null;
     }
 
-    probe() {
+    probe(next) {
+        // 1. flv tag header: 
+        //        0       |      1 2 3
+        // tagType(uint8) | dataSize(uint24)
+        // => we need a 4-byte buffer
         let probeBuffer = new Uint8Array(4);
         let probeBufferByteLength = 0;
+
+        // 2. collect the first 4 bytes from buffer
         for (const chunk of this.buffer) {
             probeBuffer.set(chunk, probeBufferByteLength);
             probeBufferByteLength += chunk.byteLength;
-            if (probeBufferByteLength >= 4) break;
         }
+
+        // 3. collect the rest bytes from next chunk
+        probeBuffer.set(next.slice(0, 4 - probeBufferByteLength), probeBufferByteLength);
+        probeBufferByteLength += next.byteLength;
+
+        // 4. dataSize received => compute tagSize
         if (probeBufferByteLength >= 4) {
-            return new Uint32Array(probeBuffer)[0] & 0x00FFFFFF;
+            // tag = tagHeader(11) + tagData(tagHeader.getUint24(1), see comment 1) + previousSize(4)
+            return 11 + (new DataView(probeBuffer.buffer).getUint32(0) & 0x00FFFFFF) + 4;
         }
+
+        // 5. otherwise => still unknow
         else {
             return -1;
         }
     }
 
     concatBuffer() {
-        if (this.buffer.length === 1) return this.buffer[0];
+        // NOTE: please return a deep-clone for convience of garbage collection
+        // ArrayBuffer         ----+++++--- NOT collectable
+        // DataView/TypedArray     +++++    you cannot perform partial free
+        if (this.buffer.length === 1) return this.buffer[0].slice();
         if (typeof Buffer !== 'undefined') return Buffer.concat(this.buffer);
         const ret = new Uint8Array(this.bufferByteLength);
         let byteLength = 0;
@@ -104,6 +140,11 @@ class FLVStream extends TransformStream {
     }
 
     wrapTag(buffer) {
+        // if (ArrayBuffer.isView(buffer)) buffer = buffer.buffer;
         return new FLVTag(new TwentyFourDataView(buffer));
     }
 }
+
+export default FLVStream;
+
+window.FLVStream = FLVStream;

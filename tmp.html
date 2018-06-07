@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="module" src="./src/flvparser/flv-offset-stream.js"></script>
+</head>
+
+<body>
+    <script>
+        class ConsoleSink extends WritableStream {
+            constructor(console = window.console) {
+                super({ write: chunk => { console.log(chunk) } });
+            }
+        }
+
+        class BufferSink extends WritableStream {
+            constructor(buffer = []) {
+                super({ write: chunk => { this.buffer.push(chunk) } });
+                this.buffer = buffer;
+            }
+        }
+
+        async function test() {
+            window.bs = new BufferSink();
+            window.s = new FLVStream();
+            // window.os = new FLVOffsetStream({ transformScriptData: () => ({ timestampOffset: 50000 }) });
+            // return (await fetch('sample.flv')).body
+            //     .pipeThrough(window.s)
+            //     .pipeTo(window.bs);
+            // return (await fetch('sample.flv')).body
+            //     .pipeThrough(window.s)
+            //     .pipeThrough(window.os)
+            //     .pipeTo(window.bs);
+            const flvStreams = (await fetch('sample.flv')).body
+                .tee()
+                .map(e => e.pipeThrough(new FLVStream()));
+            return FLVOffsetStream.mergeStream(flvStreams)
+                .pipeTo(window.bs);
+        }
+    </script>
+</body>
+
+</html>

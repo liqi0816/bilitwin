@@ -38,43 +38,42 @@ class FLVTag {
     }
 
     stripKeyframesScriptData() {
-        let hasKeyframes = 'hasKeyframes\x01';
-        let keyframes = '\x00\x09keyframs\x03';
-        if (this.tagType != 0x12) throw 'can not strip non-scriptdata\'s keyframes';
+        if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
         let index;
-        index = this.tagData.indexOf(hasKeyframes);
-        if (index != -1) {
+        index = this.tagData.indexOf('hasKeyframes\x01');
+        if (index !== -1) {
             //0x0101 => 0x0100
             this.tagData.setUint8(index + hasKeyframes.length, 0x00);
         }
 
         // Well, I think it is unnecessary
-        /*index = this.tagData.indexOf(keyframes)
-        if (index != -1) {
+        /*
+        let keyframes = '\x00\x09keyframs\x03';
+        index = this.tagData.indexOf(keyframes)
+        if (index !== -1) {
             this.dataSize = index;
             this.tagHeader.setUint24(1, index);
             this.tagData = new TwentyFourDataView(this.tagData.buffer, this.tagData.byteOffset, index);
-        }*/
+        }
+        */
     }
 
     getDuration() {
-        if (this.tagType != 0x12) throw 'can not find non-scriptdata\'s duration';
+        if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
-        let duration = 'duration\x00';
-        let index = this.tagData.indexOf(duration);
-        if (index == -1) throw 'can not get flv meta duration';
+        let index = this.tagData.indexOf('duration\x00');
+        if (index === -1) throw new Error('getDurationAndView: cannot find duration metainfo section');
 
         index += 9;
         return this.tagData.getFloat64(index);
     }
 
     getDurationAndView() {
-        if (this.tagType != 0x12) throw 'can not find non-scriptdata\'s duration';
+        if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
-        let duration = 'duration\x00';
-        let index = this.tagData.indexOf(duration);
-        if (index == -1) throw 'can not get flv meta duration';
+        let index = this.tagData.indexOf('duration\x00');
+        if (index === -1) throw new Error('getDurationAndView: cannot find duration metainfo section');
 
         index += 9;
         return {
@@ -88,7 +87,7 @@ class FLVTag {
     }
 
     setCombinedTimestamp(timestamp) {
-        if (timestamp < 0) throw 'timestamp < 0';
+        if (timestamp < 0) throw new RangeError(`setCombinedTimestamp: parameter timestamp should be non-negative but get ${timestamp}`);
         this.tagHeader.setUint8(7, timestamp >> 24);
         this.tagHeader.setUint24(4, timestamp & 0x00FFFFFF);
     }

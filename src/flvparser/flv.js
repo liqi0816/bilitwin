@@ -20,7 +20,7 @@ import FLVTag from './flv-tag.js';
 */
 class FLV {
     constructor(dataView) {
-        if (dataView.indexOf('FLV', 0, 1) != 0) throw 'Invalid FLV header';
+        if (dataView.indexOf('FLV', 0, 1) !== 0) throw new TypeError(`FLV construtor: FLV header signature should be "FLV" but get ${dataView.getUint8(0)},${dataView.getUint8(1)},${dataView.getUint8(2)}`);
         this.header = new TwentyFourDataView(dataView.buffer, dataView.byteOffset, 9);
         this.firstPreviousTagSize = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + 9, 4);
 
@@ -29,12 +29,12 @@ class FLV {
         while (offset < dataView.byteLength) {
             let tag = new FLVTag(dataView, offset);
             // debug for scrpit data tag
-            // if (tag.tagType != 0x08 && tag.tagType != 0x09) 
+            // if (tag.tagType !== 0x08 && tag.tagType !== 0x09) 
             offset += 11 + tag.dataSize + 4;
             this.tags.push(tag);
         }
 
-        if (offset != dataView.byteLength) throw 'FLV unexpected end of file';
+        if (offset !== dataView.byteLength) throw new Error(`FLV construtor: final offset should equal dataView.byteLength but get offset ${offset} < byteLength ${dataView.byteLength}`);
     }
 
     get type() {
@@ -54,7 +54,7 @@ class FLV {
     }
 
     static merge(flvs) {
-        if (flvs.length < 1) throw 'Usage: FLV.merge([flvs])';
+        if (flvs.length < 1) throw new TypeError(`FLV.merge: parameter flvs expect FLV[] but get ${flvs}`);
         let blobParts = [];
         let basetimestamp = [0, 0];
         let lasttimestamp = [0, 0];
@@ -71,10 +71,10 @@ class FLV {
             bts = Math.max(bts, basetimestamp[0], basetimestamp[1]);
             let foundDuration = 0;
             for (let tag of flv.tags) {
-                if (tag.tagType == 0x12 && !foundDuration) {
+                if (tag.tagType === 0x12 && !foundDuration) {
                     duration += tag.getDuration();
                     foundDuration = 1;
-                    if (flv == flvs[0]) {
+                    if (flv === flvs[0]) {
                         ({ duration, durationDataView } = tag.getDurationAndView());
                         tag.stripKeyframesScriptData();
                         blobParts.push(tag.tagHeader);
@@ -82,7 +82,7 @@ class FLV {
                         blobParts.push(tag.previousSize);
                     }
                 }
-                else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
+                else if (tag.tagType === 0x08 || tag.tagType === 0x09) {
                     lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
                     tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
                     blobParts.push(tag.tagHeader);
@@ -99,7 +99,7 @@ class FLV {
     static async mergeBlobs(blobs) {
         // Blobs can be swapped to disk, while Arraybuffers can not.
         // This is a RAM saving workaround. Somewhat.
-        if (blobs.length < 1) throw 'Usage: FLV.mergeBlobs([blobs])';
+        if (blobs.length < 1) throw new TypeError(`FLV.mergeBlobs: parameter blobs expect Blob[] but get ${blobs}`);
         let ret = [];
         let basetimestamp = [0, 0];
         let lasttimestamp = [0, 0];
@@ -122,10 +122,10 @@ class FLV {
 
             let modifiedMediaTags = [];
             for (let tag of flv.tags) {
-                if (tag.tagType == 0x12 && !foundDuration) {
+                if (tag.tagType === 0x12 && !foundDuration) {
                     duration += tag.getDuration();
                     foundDuration = 1;
-                    if (blob == blobs[0]) {
+                    if (blob === blobs[0]) {
                         ret.push(flv.header, flv.firstPreviousTagSize);
                         ({ duration, durationDataView } = tag.getDurationAndView());
                         tag.stripKeyframesScriptData();
@@ -134,7 +134,7 @@ class FLV {
                         ret.push(tag.previousSize);
                     }
                 }
-                else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
+                else if (tag.tagType === 0x08 || tag.tagType === 0x09) {
                     lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
                     tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
                     modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
@@ -171,10 +171,10 @@ class FLV {
 
             let modifiedMediaTags = [];
             for (let tag of flv.tags) {
-                if (tag.tagType == 0x12 && !foundDuration) {
+                if (tag.tagType === 0x12 && !foundDuration) {
                     duration += tag.getDuration();
                     foundDuration = 1;
-                    if (blob == blobs[0]) {
+                    if (blob === blobs[0]) {
                         ret.push(flv.header, flv.firstPreviousTagSize);
                         ({ duration, durationDataView } = tag.getDurationAndView());
                         tag.stripKeyframesScriptData();
@@ -183,7 +183,7 @@ class FLV {
                         ret.push(tag.previousSize);
                     }
                 }
-                else if (tag.tagType == 0x08 || tag.tagType == 0x09) {
+                else if (tag.tagType === 0x08 || tag.tagType === 0x09) {
                     lasttimestamp[tag.tagType - 0x08] = bts + tag.getCombinedTimestamp();
                     tag.setCombinedTimestamp(lasttimestamp[tag.tagType - 0x08]);
                     modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
