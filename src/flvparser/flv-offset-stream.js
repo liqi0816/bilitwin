@@ -25,18 +25,18 @@ class FLVOffsetStream extends TransformStream {
                         controller.enqueue(tag.tagHeader);
                         controller.enqueue(tag.tagData);
                         controller.enqueue(tag.previousSize);
-                }
-                else {
+                    }
+                    else {
                         if (tag.tagType === 0x12) {
                             this.duration = tag.getDuration();
                             this.scriptData = tag;
-                                }
+                        }
                         if (!mediaTagsOnly) {
                             controller.enqueue(tag.tagHeader);
                             controller.enqueue(tag.tagData);
                             controller.enqueue(tag.previousSize);
-                            }
                         }
+                    }
                 } :
                 (tag, controller) => {
                     if (tag.tagType === 0x08 || tag.tagType === 0x09) {
@@ -48,11 +48,11 @@ class FLVOffsetStream extends TransformStream {
                         if (tag.tagType === 0x12) {
                             this.duration = tag.getDuration();
                             this.scriptData = tag;
-                    }
+                        }
                         if (!mediaTagsOnly) {
                             controller.enqueue(tag);
-                }
-            }
+                        }
+                    }
                 }
         });
 
@@ -83,12 +83,12 @@ class FLVOffsetStream extends TransformStream {
                     if (!scriptData) scriptData = value;
 
                     // 1.3 accumlate duration and compute offset
-                                const timestampOffset = duration;
+                    const timestampOffset = duration;
                     duration += value.getDuration();
 
                     // 1.4 create offset stream pipe
                     const flvOffsetStream = new FLVOffsetStream({ timestampOffset, outputBinary: true });
-                        flvOffsetStreams.push(flvOffsetStream);
+                    flvOffsetStreams.push(flvOffsetStream);
                     flvStream.pipeTo(flvOffsetStream.writable);
                 }
 
