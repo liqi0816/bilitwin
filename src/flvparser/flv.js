@@ -17,7 +17,7 @@ import FLVTag from './flv-tag.js';
 
 /** 
  * A simple flv parser
-*/
+ */
 class FLV {
     constructor(dataView) {
         if (dataView.indexOf('FLV', 0, 1) !== 0) throw new TypeError(`FLV construtor: FLV header signature should be "FLV" but get ${dataView.getUint8(0)},${dataView.getUint8(1)},${dataView.getUint8(2)}`);
