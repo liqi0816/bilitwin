@@ -15,7 +15,7 @@
 
 3. streamify flv merge
 
-   - [ ] Use a cache-db/tmp
+   - [x] Use a cache-db/tmp
      pipeline: cachedb >> transform >> disk/temp
 
 4. remove Promise anti-pattern

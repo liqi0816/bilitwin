@@ -83,7 +83,7 @@ class FLVOffsetStream extends TransformStream {
                     if (!scriptData) scriptData = value;
 
                     // 1.3 accumlate duration and compute offset
-                    const timestampOffset = duration;
+                    const timestampOffset = duration * 1000;
                     duration += value.getDuration();
 
                     // 1.4 create offset stream pipe
@@ -112,6 +112,7 @@ class FLVOffsetStream extends TransformStream {
                     for (const flvOffsetStream of flvOffsetStreams) {
                         await flvOffsetStream.readable.pipeTo(writable, { preventClose: true });
                     }
+                    writable.getWriter().close();
                 })();
             }
         });

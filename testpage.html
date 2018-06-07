@@ -47,6 +47,16 @@
             return FLVOffsetStream.mergeStream(flvStreams)
                 .pipeTo(window.bs);
         }
+
+        function downloadFIle(file = new File(window.bs.buffer, 'merged.flv')) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(file);
+            a.download = file.name
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(a.href);
+        }
     </script>
 </body>
 
