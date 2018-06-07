@@ -40,8 +40,8 @@ class FLVTag {
     stripKeyframesScriptData() {
         if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
-        let index;
-        index = this.tagData.indexOf('hasKeyframes\x01');
+        const hasKeyframes = 'hasKeyframes\x01';
+        const index = this.tagData.indexOf(hasKeyframes);
         if (index !== -1) {
             //0x0101 => 0x0100
             this.tagData.setUint8(index + hasKeyframes.length, 0x00);

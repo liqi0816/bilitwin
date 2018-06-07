@@ -7,7 +7,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  * 
- * The FLV merge utility is a Javascript translation of 
+ * The FLV merge utility is inspired by
  * https://github.com/grepmusic/flvmerge
  * by grepmusic
 */

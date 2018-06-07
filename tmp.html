@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <script>
+    <script style="display: block; white-space: pre; font-family: consolas;">
         class ConsoleSink extends WritableStream {
             constructor(console = window.console) {
                 super({ write: chunk => { console.log(chunk) } });
