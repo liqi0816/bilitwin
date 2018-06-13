@@ -49,7 +49,7 @@ function mixin(target) {
      * - promisify one-time listeners with error propagation
      * - mix OnEventTarget functions into another object
      */
-    const OnEventTarget = Object.keys(EventTarget.prototype).every(i => target.prototype[i]) ?
+    const OnEventTarget = target.prototype instanceof EventTarget || Object.keys(EventTarget.prototype).every(i => target.prototype[i]) ?
         // 1.1 target implements EventTarget => reuse interface
         class OnEventTarget extends target {
         } :
@@ -66,7 +66,8 @@ function mixin(target) {
 
     // 2. add util functions
     OnEventTarget.asyncOnce = asyncOnce;
-    OnEventTarget.asyncOnce = asyncOnce;
+    OnEventTarget.mixin = mixin;
+    Object.defineProperty(OnEventTarget, 'eventList', { value: this['eventList'] });
 
     // 3. add `on[name]` handlers
     const prototype = Object.getOwnPropertyDescriptors(this.prototype);
@@ -96,6 +97,7 @@ const OnEventTargetFactory = init => {
     // 2. add util functions
     OnEventTarget.asyncOnce = asyncOnce;
     OnEventTarget.mixin = mixin;
+    Object.defineProperty(OnEventTarget, 'eventList', { value: init });
 
     // 3. add `on[name]` handlers
     if (!init) {

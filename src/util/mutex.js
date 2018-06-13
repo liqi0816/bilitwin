@@ -44,15 +44,13 @@ class Mutex {
      */
     async lockAndAwait(promise) {
         await this.lock();
-        let ret;
         try {
             if (typeof promise == 'function') promise = promise();
-            ret = await promise;
+            return await promise;
         }
         finally {
             this.unlock();
         }
-        return ret;
     }
 
     static _UNIT_TEST() {

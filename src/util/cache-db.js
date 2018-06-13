@@ -12,18 +12,8 @@ import IDBCacheDB from './lib-cache-db/idb-cache-db.js';
 import ChromeCacheDB from './lib-cache-db/chrome-cache-db.js';
 import FirefoxCacheDB from './lib-cache-db/firefox-cache-db.js';
 
-class CacheDB extends IDBCacheDB {
-    get addData() {
-        console.warn('CacheDB.prototype.addData is deprecated. Use .createData instead.')
-        return this.createData;
-    }
-
-    get putData() {
-        console.warn('CacheDB.prototype.putData is deprecated. Use .setData instead.')
-        return this.setData;
-    }
-}
-CacheDB.ChromeCacheDB = ChromeCacheDB.isSupported && ChromeCacheDB;
-CacheDB.FirefoxCacheDB = FirefoxCacheDB.isSupported && FirefoxCacheDB;
-
-export default CacheDB;
+export default {
+    IDBCacheDB: IDBCacheDB.isSupported() && IDBCacheDB,
+    ChromeCacheDB: ChromeCacheDB.isSupported() && ChromeCacheDB,
+    FirefoxCacheDB: FirefoxCacheDB.isSupported() && FirefoxCacheDB,
+};
