@@ -12,8 +12,6 @@
  * by grepmusic
 */
 
-import FLVStream from './flv-stream.js';
-
 class FLVOffsetStream extends TransformStream {
     constructor({ timestampOffset = 0, mediaTagsOnly = true, outputBinary = false } = {}) {
         super({

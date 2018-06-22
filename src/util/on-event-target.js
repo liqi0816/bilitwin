@@ -23,7 +23,7 @@ function asyncOnce(target, name, errorName = 'error', bind) {
     return new Promise((resolve, reject) => {
         const once = { once: true };
         const _resolve = e => {
-            resolve(bind || e);
+            resolve(bind === undefined ? e : bind);
             if (errorName) target.removeEventListener(errorName, _reject);
         };
         const _reject = e => {
@@ -97,12 +97,13 @@ const OnEventTargetFactory = init => {
     // 2. add util functions
     OnEventTarget.asyncOnce = asyncOnce;
     OnEventTarget.mixin = mixin;
-    Object.defineProperty(OnEventTarget, 'eventList', { value: init });
 
     // 3. add `on[name]` handlers
     if (!init) {
+        Object.defineProperty(OnEventTarget, 'eventList', { value: [] });
     }
-    else if (Array.isArray(init)) {
+    else if (init[Symbol.iterator]) {
+        Object.defineProperty(OnEventTarget, 'eventList', { value: [...init] });
         for (const name of init) {
             const i = Symbol(`on${name}`);
             OnEventTarget.prototype[i] = null;

@@ -9,11 +9,44 @@
 */
 
 import AsyncContainer from '../util/async-container.js';
+import OnEventTargetFactory from '../util/on-event-target.js';
 
 /**
  * Provides common util for all bilibili user scripts
  */
-class BiliUserJS {
+class BiliUserJS extends OnEventTargetFactory(['videoload', 'videounload', 'cidload', 'aidload', 'pageload', 'pageunload']) {
+    constructor(playerWin = top) {
+        super();
+        this.playerWin = playerWin;
+        this.preventUnloadCount = 0;
+    }
+
+    observe(playerWin) {
+        if (playerWin) this.playerWin = playerWin;
+
+        const once = { once: true };
+
+        this.playerWin.document.addEventListener('DOMContentLoaded', this.dispatchEvent.bind(this, new CustomEvent('pageload')), once);
+
+        this.playerWin.addEventListener('unload', this.dispatchEvent.bind(this, new CustomEvent('pageunload')), once);
+
+
+    }
+
+    async preventUnloadAwait(promise, onbeforeunload) {
+        const listener = e => {
+            if (onbeforeunload) onbeforeunload();
+            return e.returnValue = true;
+        }
+        try {
+            this.playerWin.addEventListener('beforeunload', listener);
+            return await promise;
+        }
+        finally {
+            this.playerWin.removeEventListener('beforeunload', listener);
+        }
+    }
+
     static async getIframeWin() {
         if (document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
             return document.querySelector('#bofqi > iframe').contentWindow;

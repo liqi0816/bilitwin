@@ -2,6 +2,7 @@
 
 - [ ] decouple UI and Twin (remove cross reference!)
 - [ ] compatibility with player V0.10.0 
+- [ ] deprecate recommend
 
 # TO DO:
 

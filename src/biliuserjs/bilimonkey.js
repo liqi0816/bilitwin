@@ -160,7 +160,7 @@ class BiliMonkey {
     }
 
     getAvailableFormatName(accept_quality) {
-        if (!Array.isArray(accept_quality)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
+        if (!Array.isArray(accept_quality)) accept_quality = [...this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')].map(e => e.getAttribute('data-value'));
 
         const accept_format = accept_quality.map(e => BiliMonkey.valueToFormat(e));
 
@@ -481,7 +481,7 @@ class BiliMonkey {
                 }
             };
             this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-            let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
+            let button = [...this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')]
                 .find(e => !e.getAttribute('data-selected') && e.children.length == 2);
             button.click();
         }));

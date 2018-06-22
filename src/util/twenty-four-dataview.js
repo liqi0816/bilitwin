@@ -23,36 +23,21 @@ class TwentyFourDataView extends DataView {
         this.setUint16(byteOffset + 1, lsb);
     }
 
-    indexOf(search, startOffset = 0, endOffset = this.byteLength - search.length + 1) {
+    indexOfSubArray(search, startOffset = 0, endOffset = this.byteLength - search.length + 1) {
+        if (typeof search[0] !== 'number') search = new TextEncoder().encode(search);
         // I know it is NAIVE
-        if (search.charCodeAt) {
-            for (let i = startOffset; i < endOffset; i++) {
-                if (this.getUint8(i) != search.charCodeAt(0)) continue;
-                let found = 1;
-                for (let j = 0; j < search.length; j++) {
-                    if (this.getUint8(i + j) != search.charCodeAt(j)) {
-                        found = 0;
-                        break;
-                    }
+        for (let i = startOffset; i < endOffset; i++) {
+            if (this.getUint8(i) != search[0]) continue;
+            let found = 1;
+            for (let j = 0; j < search.length; j++) {
+                if (this.getUint8(i + j) != search[j]) {
+                    found = 0;
+                    break;
                 }
-                if (found) return i;
             }
-            return -1;
+            if (found) return i;
         }
-        else {
-            for (let i = startOffset; i < endOffset; i++) {
-                if (this.getUint8(i) != search[0]) continue;
-                let found = 1;
-                for (let j = 0; j < search.length; j++) {
-                    if (this.getUint8(i + j) != search[j]) {
-                        found = 0;
-                        break;
-                    }
-                }
-                if (found) return i;
-            }
-            return -1;
-        }
+        return -1;
     }
 }
 

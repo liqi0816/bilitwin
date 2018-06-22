@@ -30,7 +30,7 @@ class FirefoxDetailedFetchBlob extends BaseDetailedFetchBlob {
             xhr.responseType = 'moz-chunked-arraybuffer';
             xhr.onloadstart = ({ total, lengthComputable }) => {
                 this.total += total;
-                this.lengthComputable = e.lengthComputable;
+                this.lengthComputable = lengthComputable;
             }
             let last = Date.now();
             xhr.onprogress = ({ loaded }) => {

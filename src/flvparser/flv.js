@@ -20,7 +20,7 @@ import FLVTag from './flv-tag.js';
  */
 class FLV {
     constructor(dataView) {
-        if (dataView.indexOf('FLV', 0, 1) !== 0) throw new TypeError(`FLV construtor: FLV header signature should be "FLV" but get ${dataView.getUint8(0)},${dataView.getUint8(1)},${dataView.getUint8(2)}`);
+        if (dataView.indexOfSubArray('FLV', 0, 1) !== 0) throw new TypeError(`FLV construtor: FLV header signature should be "FLV" but get ${dataView.getUint8(0)},${dataView.getUint8(1)},${dataView.getUint8(2)}`);
         this.header = new TwentyFourDataView(dataView.buffer, dataView.byteOffset, 9);
         this.firstPreviousTagSize = new TwentyFourDataView(dataView.buffer, dataView.byteOffset + 9, 4);
 

@@ -23,8 +23,8 @@ class MKV {
         this.blocks = { h264: [], aac: [], ass: [] };
     }
 
-    static randomBytes(num) {
-        return Array.from(new Array(num), () => Math.trunc(Math.random() * 256));
+    static randomBytes(length) {
+        return Array.from({ length }, () => Math.trunc(Math.random() * 256));
     }
 
     static textToMS(str) {

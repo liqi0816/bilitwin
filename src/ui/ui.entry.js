@@ -256,7 +256,7 @@ class UI {
             UI.allowDrag(e);
 
             // 4.2 sort files if possible
-            const files = Array.from(e.dataTransfer.files);
+            const files = [...e.dataTransfer.files];
             if (files.every(e => e.name.search(/\d+-\d+(?:\d|-|hd)*\.flv/) != -1)) {
                 files.sort((a, b) => a.name.match(/\d+-(\d+)(?:\d|-|hd)*\.flv/)[1] - b.name.match(/\d+-(\d+)(?:\d|-|hd)*\.flv/)[1]);
             }

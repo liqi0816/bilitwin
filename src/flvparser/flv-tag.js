@@ -41,7 +41,7 @@ class FLVTag {
         if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
         const hasKeyframes = 'hasKeyframes\x01';
-        const index = this.tagData.indexOf(hasKeyframes);
+        const index = this.tagData.indexOfSubArray(hasKeyframes);
         if (index !== -1) {
             //0x0101 => 0x0100
             this.tagData.setUint8(index + hasKeyframes.length, 0x00);
@@ -50,7 +50,7 @@ class FLVTag {
         // Well, I think it is unnecessary
         /*
         let keyframes = '\x00\x09keyframs\x03';
-        index = this.tagData.indexOf(keyframes)
+        index = this.tagData.indexOfSubArray(keyframes)
         if (index !== -1) {
             this.dataSize = index;
             this.tagHeader.setUint24(1, index);
@@ -62,7 +62,7 @@ class FLVTag {
     getDuration() {
         if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
-        let index = this.tagData.indexOf('duration\x00');
+        let index = this.tagData.indexOfSubArray('duration\x00');
         if (index === -1) throw new Error('getDurationAndView: cannot find duration metainfo section');
 
         index += 9;
@@ -72,7 +72,7 @@ class FLVTag {
     getDurationAndView() {
         if (this.tagType !== 0x12) throw new TypeError(`getDurationAndView: this.tagType should be 0x12 (ScriptData type) but get ${this.tagType}`);
 
-        let index = this.tagData.indexOf('duration\x00');
+        let index = this.tagData.indexOfSubArray('duration\x00');
         if (index === -1) throw new Error('getDurationAndView: cannot find duration metainfo section');
 
         index += 9;
