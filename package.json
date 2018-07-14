@@ -1,40 +1,29 @@
 {
   "name": "bilitwin",
-  "version": "1.14.0",
-  "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
-  "main": "bilitwin.user.js",
-  "directories": {
-    "doc": "docs"
+  "version": "2.0.0-alpha0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/liqi0816/bilitwin.git"
-  },
-  "author": "qli5",
-  "license": "MPL-2.0",
-  "bugs": {
-    "url": "https://github.com/liqi0816/bilitwin/issues"
-  },
-  "homepage": "https://github.com/liqi0816/bilitwin#readme",
-  "engines": {
-    "node": "^8.10.0"
+  "dependencies": {
+    "vue": "^2.5.16",
+    "vue-class-component": "^6.0.0",
+    "vue-property-decorator": "^6.0.0",
+    "vue-template-compiler": "^2.5.16",
+    "vuex": "^3.0.1"
   },
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-plugin-transform-builtin-extend": "^1.1.2",
-    "babel-preset-env": "^1.6.1",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^7.0.1",
-    "gulp-concat": "^2.6.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-replace": "^0.6.1",
-    "gulp-sourcemaps": "^2.6.4",
-    "http-server": "^0.11.1",
-    "jsx-append-child": "https://api.github.com/repos/liqi0816/jsx-append-child/tarball/34ecc9f",
-    "rollup": "^0.57.1"
+    "@types/filesystem": "0.0.28",
+    "@vue/cli-plugin-babel": "^3.0.0-beta.15",
+    "@vue/cli-plugin-typescript": "^3.0.0-beta.15",
+    "@vue/cli-service": "^3.0.0-beta.15",
+    "http-server": "^0.11.1"
   },
-  "scripts": {
-    "install": "gulp",
-    "build": "gulp"
-  }
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8"
+  ]
 }
