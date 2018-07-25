@@ -7,26 +7,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-interface TransformStreamWithHeader {
-    readable: ReadableStream
-    writable: WritableStream
-}
-
-interface TransformStreamDefaultController {
-    desiredSize: number
-    enqueue(chunk: any): void
-    error(reason: any): void
-    terminate(): void
-}
-
-declare const TransformStream: {
-    prototype: TransformStreamWithHeader
-    new(transformer?: {
-        start?(controller: TransformStreamDefaultController): any
-        transform?(chunk: any, controller: TransformStreamDefaultController): any
-        flush?(controller: TransformStreamDefaultController): any
-    }, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy): TransformStreamWithHeader
-}
+import TransformStreamConstructor from '../../util/lib-util-streams/transformstream-types.js';
+declare const TransformStream: TransformStreamConstructor
 
 /**
  * A TransformStream to offset flv timestamps
@@ -39,7 +21,7 @@ class FLVOffsetStream extends TransformStream {
     duration: number
     scriptData: Uint8Array | null
 
-    constructor({ timestampOffset = 0, mediaTagsOnly = true, outputBinary = false } = {}, ...strategies: QueuingStrategy[]) {
+    constructor({ timestampOffset = 0, mediaTagsOnly = true, outputBinary = false } = {}, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy) {
         super({
             transform: outputBinary ?
                 (tag, controller) => {
@@ -78,7 +60,7 @@ class FLVOffsetStream extends TransformStream {
                         }
                     }
                 }
-        }, ...strategies);
+        }, writableStrategy, readableStrategy);
 
         this.timestampMax = 0;
         this.duration = 0;
@@ -91,7 +73,7 @@ class FLVOffsetStream extends TransformStream {
      * @param flvStreams flv tag ReadableStreams
      * @param strategies writableStrategy = {}, readableStrategy = {}
      */
-    static mergeStream(flvStreams: ReadableStream[], ...strategies: QueuingStrategy[]) {
+    static mergeStream(flvStreams: ReadableStream[], writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy) {
         const { readable, writable } = new TransformStream({
             start: async controller => {
                 let duration = 0;
@@ -142,7 +124,7 @@ class FLVOffsetStream extends TransformStream {
                     writable.getWriter().close();
                 })().catch(controller.error.bind(controller));
             }
-        }, ...strategies);
+        }, writableStrategy, readableStrategy);
 
         return readable;
     }

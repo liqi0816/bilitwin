@@ -8,31 +8,36 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import OnEventTargetFactory from './on-event-target.js';
+import { TransformStreamDefaultController, TransformStreamConstructor } from './lib-util-streams/transformstream-types.js';
+declare const TransformStream: TransformStreamConstructor
 
-interface TransformStream {
-    readable: ReadableStream
-    writeable: WritableStream
+export interface SimpleProgressEvent {
+    type: string
+    target: MonitorStream
+    loaded: number
+    total: number
+    lengthComputable: boolean
 }
 
-interface TransformStreamDefaultController {
-    desiredSize: number
-    enqueue(chunk: any): void
-    error(reason: any): void
-    terminate(): void
+export type EventMap = {
+    loadstart: SimpleProgressEvent
+    progress: SimpleProgressEvent
+    abort: SimpleProgressEvent
+    load: SimpleProgressEvent
 }
 
-declare const TransformStream: {
-    prototype: TransformStream
-    new(transformer?: {
-        start?(controller: TransformStreamDefaultController): any
-        transform?(chunk: any, controller: TransformStreamDefaultController): any
-        flush?(controller: TransformStreamDefaultController): any
-    }, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy): TransformStream
+export type OnEventMap = {
+    onloadstart: SimpleProgressEvent
+    onprogress: SimpleProgressEvent
+    onabort: SimpleProgressEvent
+    onload: SimpleProgressEvent
 }
 
-interface MonitorStreamInit {
-    onprogress?: MonitorStream['onprogress']
-    onabort?: MonitorStream['onabort']
+export interface MonitorStreamInit {
+    onloadstart?: MonitorStream["onloadstart"]
+    onprogress?: MonitorStream["onprogress"]
+    onabort?: MonitorStream["onabort"]
+    onload?: MonitorStream["onload"]
     throttle?: MonitorStream['throttle']
     loaded?: MonitorStream['loaded']
     total?: MonitorStream['total']
@@ -40,7 +45,7 @@ interface MonitorStreamInit {
     progressInterval?: MonitorStream['progressInterval']
 }
 
-class MonitorStream extends OnEventTargetFactory<{ progress: ProgressEvent, abort: ProgressEvent }, { onprogress: ProgressEvent, onabort: ProgressEvent }>(['progress', 'abort']).mixin(TransformStream) {
+class MonitorStream extends OnEventTargetFactory<EventMap, OnEventMap>(['loadstart', 'progress', 'abort', 'load']).mixin(TransformStream) {
     throttle: number
     loaded: number
     total: number
@@ -49,25 +54,29 @@ class MonitorStream extends OnEventTargetFactory<{ progress: ProgressEvent, abor
     controller: TransformStreamDefaultController
 
     constructor({
+        onloadstart = null,
         onprogress = null,
         onabort = null,
+        onload = null,
         throttle = 0,
         loaded = 0,
         total = Infinity,
         lengthComputable = false,
         progressInterval = 1000,
-    } = {} as MonitorStreamInit, ...strategies: QueuingStrategy[]) {
-        let controller = null as TransformStreamDefaultController | null;
+    } = {} as MonitorStreamInit, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy) {
+        let _controller = null as TransformStreamDefaultController | null;
         let progressLast = 0;
         let last = 0;
         super({
-            start: e => controller = e,
+            start: controller => {
+                _controller = controller;
+            },
 
             transform: throttle ?
                 async (chunk, controller) => {
                     const now = Date.now();
                     if (now - progressLast > this.progressInterval) {
-                        this.dispatchEvent(this.getProgressEvent('progress'));
+                        this.dispatchEvent({ type: 'progress', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable });
                         progressLast = now;
                     }
                     // drift = (expected chunk duration) - (actual chunk duration)
@@ -80,37 +89,45 @@ class MonitorStream extends OnEventTargetFactory<{ progress: ProgressEvent, abor
                 (chunk, controller) => {
                     const now = Date.now();
                     if (now - progressLast > this.progressInterval) {
-                        this.dispatchEvent(this.getProgressEvent('progress'));
+                        this.dispatchEvent({ type: 'progress', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable });
                         progressLast = now;
                     }
                     this.loaded += chunk.length;
                     controller.enqueue(chunk);
                 },
-        }, ...strategies);
-        this.controller = controller!;
 
+            flush: () => {
+                this.dispatchEvent({ type: 'load', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable });
+            },
+        }, writableStrategy, readableStrategy);
+        this.addEventListener('progress', () => this.dispatchEvent({ type: 'loadstart', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable }), { once: true });
+
+        this.onloadstart = onloadstart;
         this.onprogress = onprogress;
         this.onabort = onabort;
+        this.onload = onload;
+
         this.throttle = throttle;
         this.loaded = loaded;
         this.total = total;
         this.lengthComputable = lengthComputable;
         this.progressInterval = progressInterval;
+        this.controller = _controller!;
     }
 
     abort() {
-        this.dispatchEvent(this.getProgressEvent('abort'));
+        this.dispatchEvent({ type: 'abort', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable });
         return this.controller.error(new DOMException('This pipeline is aborted by a MonitorStream', 'AbortError'));
     }
 
     getProgressEvent(type: string) {
-        const event = new ProgressEvent(type, this);
-        Object.defineProperty(event, 'target', {
-            configurable: true,
-            enumerable: true,
-            get: () => this,
-        })
-        return event;
+        return {
+            type,
+            target: this,
+            loaded: this.loaded,
+            total: this.total,
+            lengthComputable: this.lengthComputable,
+        }
     }
 
     static get isSupported() {
@@ -118,7 +135,7 @@ class MonitorStream extends OnEventTargetFactory<{ progress: ProgressEvent, abor
     }
 }
 
-function _UNIT_TEST(location = window.location) {
+const _UNIT_TEST = (location = window.location) => {
     let reportLast = Date.now();
     let loadedLast = 0;
 
@@ -136,4 +153,5 @@ function _UNIT_TEST(location = window.location) {
     fetch(location as any as string).then(({ body }) => (body as any).pipeThrough(ms).pipeTo(new WritableStream()));
 }
 
+export { MonitorStream }
 export default MonitorStream;

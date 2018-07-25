@@ -9,7 +9,7 @@
 
 import CommonCachedStorage from './common-cached-storage.js';
 
-interface GreaseStorage {
+export interface GreaseStorage {
     setValue(name: string, item: string | number | boolean): Promise<void>
     getValue(name: string): Promise<string | number | boolean | undefined>
     getValue<T>(name: string, def: T): Promise<string | number | boolean | T>

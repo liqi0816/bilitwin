@@ -9,26 +9,16 @@
 
 import TwentyFourDataView from '../../util/twenty-four-dataview.js';
 import FLVTag from './flv-tag.js';
+import { Transformer } from '../../util/lib-util-streams/transformstream-types.js';
 
-interface TransformStreamWithHeader {
+export interface TransformStreamWithHeader {
     readable: ReadableStream & { header: Uint8Array | null }
     writable: WritableStream
 }
 
-interface TransformStreamDefaultController {
-    desiredSize: number
-    enqueue(chunk: any): void
-    error(reason: any): void
-    terminate(): void
-}
-
 declare const TransformStream: {
     prototype: TransformStreamWithHeader
-    new(transformer?: {
-        start?(controller: TransformStreamDefaultController): any
-        transform?(chunk: any, controller: TransformStreamDefaultController): any
-        flush?(controller: TransformStreamDefaultController): any
-    }, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy): TransformStreamWithHeader
+    new(transformer?: Transformer, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy): TransformStreamWithHeader
 }
 
 /**
@@ -42,7 +32,7 @@ class FLVStream extends TransformStream {
     targetByteLength: number
     header: Uint8Array | null
 
-    constructor({ headerByteLength = 9 + 4 } = {}, ...strategies: QueuingStrategy[]) {
+    constructor({ headerByteLength = 9 + 4 } = {}, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy) {
         super({
             transform: (chunk, controller) => {
                 // 1. scan through chunk for tags
@@ -107,7 +97,7 @@ class FLVStream extends TransformStream {
                     }
                 }
             }
-        }, ...strategies);
+        }, writableStrategy, readableStrategy);
         this.buffer = [];
         this.bufferByteLength = 0;
         this.targetByteLength = headerByteLength;

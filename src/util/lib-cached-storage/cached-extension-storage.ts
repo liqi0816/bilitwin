@@ -9,7 +9,7 @@
 
 import CommonCachedStorage from './common-cached-storage.js';
 
-interface StorageArea {
+export interface StorageArea {
     get(name?: string | string[] | { [name: string]: any }): Promise<{ [name: string]: any }>
     set(name: { [name: string]: any }): Promise<void>
     remove(name: string | string[] | { [name: string]: any }): Promise<void>

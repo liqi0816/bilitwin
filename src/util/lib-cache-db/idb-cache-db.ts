@@ -7,24 +7,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import CommonCacheDB from './common-cache-db';
+import CommonCacheDB, { StorageNavigator, FileLike } from './common-cache-db.js';
 import { ForceOverride } from '../common-types.js';
 
-interface ItemChunk {
+export interface ItemChunk {
     name: string
     numChunks: number
     item: Blob
 }
 
-type CacheDBItemIDBRequest<T = ItemChunk | undefined> = ForceOverride<IDBRequest, {
+export type CacheDBItemIDBRequest<T = ItemChunk | undefined> = ForceOverride<IDBRequest, {
     onsuccess: ((this: CacheDBItemIDBRequest<T>, ev: Event & { target: typeof this }) => void) | null
     result: T
 }>
 
-declare const navigator: Navigator & {
-    storage?: { estimate(): Promise<{ usage: number, quota: number }> }
-    webkitTemporaryStorage?: { queryUsageAndQuota(succb?: (usage: number, quota: number) => void, errcb?: (err: DOMException) => void): void }
-}
+declare const navigator: StorageNavigator
 
 /**
  * A promisified indexedDB with large file(>100MB) support
@@ -62,12 +59,12 @@ class IDBCacheDB implements CommonCacheDB {
     }
 
     async createData(item: Blob, name: string): Promise<Event>
-    async createData(item: Blob & { name: string }, name = item.name) {
+    async createData(item: FileLike, name = item.name) {
         const itemChunks = [] as ItemChunk[];
         const numChunks = Math.ceil(item.size / this.maxItemSize);
         for (let i = 0; i < numChunks; i++) {
             itemChunks.push({
-                name: `${name}/part_${i}`,
+                name: `${name}.part_${i}`,
                 numChunks,
                 item: item.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
             });
@@ -90,12 +87,12 @@ class IDBCacheDB implements CommonCacheDB {
     }
 
     async setData(item: Blob, name: string): Promise<Event>
-    async setData(item: Blob & { name: string }, name = item.name) {
+    async setData(item: FileLike, name = item.name) {
         const itemChunks = [] as ItemChunk[];
         const numChunks = Math.ceil(item.size / this.maxItemSize);
         for (let i = 0; i < numChunks; i++) {
             itemChunks.push({
-                name: `${name}/part_${i}`,
+                name: `${name}.part_${i}`,
                 numChunks,
                 item: item.slice(i * this.maxItemSize, (i + 1) * this.maxItemSize)
             });
@@ -122,7 +119,7 @@ class IDBCacheDB implements CommonCacheDB {
         const reqCascade = new Promise<Blob[] | null>((resolve, reject) => {
             const dataChunks = [] as Blob[];
             const objectStore = db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
-            const probe = objectStore.get(`${name}/part_0`) as CacheDBItemIDBRequest;
+            const probe = objectStore.get(`${name}.part_0`) as CacheDBItemIDBRequest;
             probe.onerror = reject;
             probe.onsuccess = e => {
                 // 1. Probe fails => key does not exist
@@ -135,7 +132,7 @@ class IDBCacheDB implements CommonCacheDB {
                 const onsuccess = ({ target: { result: { item } } }: { target: CacheDBItemIDBRequest<ItemChunk> }) => {
                     dataChunks.push(item);
                     if (dataChunks.length == numChunks) return resolve(dataChunks);
-                    const req = objectStore.get(`${name}/part_${dataChunks.length}`) as CacheDBItemIDBRequest<ItemChunk>;
+                    const req = objectStore.get(`${name}.part_${dataChunks.length}`) as CacheDBItemIDBRequest<ItemChunk>;
                     req.onerror = reject;
                     req.onsuccess = onsuccess;
                 };
@@ -148,12 +145,24 @@ class IDBCacheDB implements CommonCacheDB {
         return dataChunks ? new File(dataChunks, name) : null;
     }
 
+    async hasData(name: string) {
+        const db = await this.getDB();
+        return new Promise<boolean>((resolve, reject) => {
+            const objectStore = db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
+            const probe = objectStore.count(`${name}.part_0`) as CacheDBItemIDBRequest<number>;
+            probe.onerror = reject;
+            probe.onsuccess = e => {
+                resolve(Boolean(probe.result));
+            }
+        });
+    }
+
     async deleteData(name: string) {
         const db = await this.getDB();
         const reqCascade = new Promise<Event | null>((resolve, reject) => {
             let currentChunkNum = 0;
             const objectStore = db.transaction(this.storeName, 'readwrite').objectStore(this.storeName);
-            const probe = objectStore.get(`${name}/part_0`);
+            const probe = objectStore.get(`${name}.part_0`) as CacheDBItemIDBRequest;
             probe.onerror = reject;
             probe.onsuccess = e => {
                 // 1. Probe fails => key does not exist
@@ -164,11 +173,11 @@ class IDBCacheDB implements CommonCacheDB {
 
                 // 3. Cascade on the remaining chunks
                 const onsuccess = (e: Event = new Event('zerowrite')) => {
-                    const req = objectStore.delete(`${name}/part_${currentChunkNum}`);
+                    if (currentChunkNum === numChunks) return resolve(e);
+                    const req = objectStore.delete(`${name}.part_${currentChunkNum}`);
                     req.onerror = reject;
                     req.onsuccess = onsuccess;
                     currentChunkNum++;
-                    if (currentChunkNum == numChunks) return resolve(e);
                 };
                 onsuccess();
             }

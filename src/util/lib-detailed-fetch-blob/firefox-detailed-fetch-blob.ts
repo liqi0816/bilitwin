@@ -11,7 +11,7 @@ import { Constructor, ForceShim } from '../common-types.js';
 import { BaseDetailedFetchBlobInit } from './base-detailed-fetch-blob.js';
 import BaseDetailedFetchBlob from './base-detailed-fetch-blob.js';
 
-type MozXMLHttpRequest = ForceShim<XMLHttpRequest,
+export type MozXMLHttpRequest = ForceShim<XMLHttpRequest,
     { onloadstart: ((this: XMLHttpRequest, ev: ProgressEvent) => void) },
     { responseType: 'moz-chunked-arraybuffer' }>
 

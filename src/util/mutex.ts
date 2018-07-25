@@ -14,9 +14,11 @@ class Mutex {
     queueTail: Promise<void>
     resolveHead: () => void
 
+    static readonly INIT_QUEUE_TAIL = Promise.resolve()
+    static readonly INIT_RESOLVE_HEAD = () => { }
     constructor() {
-        this.queueTail = Promise.resolve();
-        this.resolveHead = null as any;
+        this.queueTail = Mutex.INIT_QUEUE_TAIL;
+        this.resolveHead = Mutex.INIT_RESOLVE_HEAD;
     }
 
     /** 
@@ -58,38 +60,38 @@ class Mutex {
             this.unlock();
         }
     }
-
-    static _UNIT_TEST() {
-        let m = new Mutex();
-        function sleep(time: number) {
-            return new Promise(r => setTimeout(r, time));
-        }
-        m.lockAndAwait(() => {
-            console.warn('Check message timestamps.');
-            console.warn('Bad:');
-            console.warn('1 1 1 1 1:5s');
-            console.warn(' 1 1 1 1 1:10s');
-            console.warn('Good:');
-            console.warn('1 1 1 1 1:5s');
-            console.warn('         1 1 1 1 1:10s');
-        });
-        m.lockAndAwait(async () => {
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-        });
-        m.lockAndAwait(async () => console.log('5s!'));
-        m.lockAndAwait(async () => {
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-            await sleep(1000);
-        });
-        m.lockAndAwait(async () => console.log('10s!'));
-    }
 }
+
+const _UNIT_TEST = () => {
+    let m = new Mutex();
+    function sleep(time: number) {
+        return new Promise(r => setTimeout(r, time));
+    }
+    m.lockAndAwait(() => {
+        console.warn('Check message timestamps.');
+        console.warn('Bad:');
+        console.warn('1 1 1 1 1:5s');
+        console.warn(' 1 1 1 1 1:10s');
+        console.warn('Good:');
+        console.warn('1 1 1 1 1:5s');
+        console.warn('         1 1 1 1 1:10s');
+    });
+    m.lockAndAwait(async () => {
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+    });
+    m.lockAndAwait(async () => console.log('5s!'));
+    m.lockAndAwait(async () => {
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+        await sleep(1000);
+    });
+    m.lockAndAwait(async () => console.log('10s!'));
+};
 
 export default Mutex;

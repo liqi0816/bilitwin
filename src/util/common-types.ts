@@ -10,30 +10,40 @@
 /**
  * Constructor type of T
  */
-interface Constructor<T = object> {
+export interface Constructor<T = object> {
     new(...args: any[]): T
     readonly prototype: T
 }
 
 /**
+ * Combined progress marking type of T
+ * 
+ * * null => uninitialized
+ * * async pending => someone is working on it
+ * * async resolve => someone just finished work
+ * * sync value => someone already finished work
+ */
+export type AsyncOrSyncOrNull<T> = Promise<T> | T | null
+
+/**
  * Override properties `Override` in `Original`
  * (example: { a: number } => { a: boolean })
  */
-type ForceOverride<Original, Override = {}> =
+export type ForceOverride<Original, Override = {}> =
     Pick<Original, Exclude<keyof Original, keyof Override>> & Override
 
 /**
  * Extend properties `Override` in `Original`
  * (example: { a: number } => { a: number | boolean })
  */
-type ForceExtend<Original, Extend = {}> =
+export type ForceExtend<Original, Extend = {}> =
     Pick<Original, Exclude<keyof Original, keyof Extend>>
     & Pick<Original | Extend, keyof Extend & keyof Original>
 
 /**
  * Combination of `ForceOverride` and `ForceExtend`
  */
-type ForceShim<Original, Override = {}, Extend = {}> =
+export type ForceShim<Original, Override = {}, Extend = {}> =
     Pick<Original, Exclude<keyof Original, keyof Extend | keyof Override>>
     & Pick<Original | Extend, keyof Extend & keyof Original>
     & Override
@@ -41,11 +51,27 @@ type ForceShim<Original, Override = {}, Extend = {}> =
 /**
  * From T omit a set of properties K
  */
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 
 /**
  * From a Constructor pick all static methods
  */
-type PickStatic<T extends Constructor> = Pick<T, Exclude<keyof T, 'prototype'>>
+export type PickStatic<T extends Constructor> = Pick<T, Exclude<keyof T, 'prototype'>>
 
-export { Constructor, ForceOverride, ForceExtend, ForceShim, PickStatic, Omit };
+/**
+ * Generate type EventMap source strings
+ */
+export const generateEventMapSourceString = (str: string) => {
+    const events = str.split('\n').filter(e => e).map(e => {
+        const trim = e.trim();
+        const indexOf = trim.indexOf(':');
+        return [trim.slice(0, indexOf).trim(), trim.slice(indexOf + 1).trim()];
+    })
+    return [
+        events.map(([type, event]) => `on${type}: ${event}`).join('\n'),
+        events.map(([type]) => `'${type}'`).join(', '),
+        events.map(([type]) => `on${type}: CLASS_NAME["on${type}"]`).join('\n'),
+        events.map(([type]) => `on${type} = null,`).join('\n'),
+        events.map(([type]) => `this.on${type} = on${type};`).join('\n'),
+    ].join('\n\n========\n\n');
+}

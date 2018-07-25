@@ -48,6 +48,7 @@ npm install
    // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
    // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
    // @grant       none
+   // @run-at      document-start
    // ==/UserScript==
 
    const port = 8081;

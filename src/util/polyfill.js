@@ -46,5 +46,8 @@ const _AbortController = typeof AbortController === 'function' && AbortControlle
     }
 };
 
+import E from './playground.js';
+const a = E.a
+
 export { _EventTarget as EventTarget, _AbortController as AbortController };
 export default { EventTarget: _EventTarget, AbortController: _AbortController };

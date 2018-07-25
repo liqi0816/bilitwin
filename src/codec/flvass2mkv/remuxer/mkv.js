@@ -24,7 +24,11 @@ class MKV {
     }
 
     static randomBytes(length) {
-        return Array.from({ length }, () => Math.trunc(Math.random() * 256));
+        const ret = new Array(length);
+        for (let i = 0; i < length; i++) {
+            ret[i] = Math.trunc(Math.random() * 256);
+        }
+        return ret;
     }
 
     static textToMS(str) {

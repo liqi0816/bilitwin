@@ -8,7 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-// @ts-ignore
+// @ts-ignore: this import statement will be handled by rollup
 import embeddedHTML from './embedded.html';
 
 declare const embeddedHTML: string

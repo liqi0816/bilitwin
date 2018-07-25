@@ -11,28 +11,28 @@ import { SimpleEvent, SimpleEventListener, SimpleEventMap, CommonEventTargetInte
 import { SimpleEventTarget, mixinCommonEventTarget, } from './simple-event-target.js';
 import { Constructor } from './common-types.js';
 
-interface OnSimpleEventMap {
+export interface OnSimpleEventMap {
     [onevent: string]: SimpleEvent
 }
 
-type OnSimpleEventListenerMap<OnEventMap = {}> = {
+export type OnSimpleEventListenerMap<OnEventMap = {}> = {
     [onevent in keyof OnEventMap]: SimpleEventListener<OnEventMap[onevent]> | null
 }
 
-type OnEventTargetInterface<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}>
+export type OnEventTargetInterface<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}>
     = SimpleEventTarget<EventMap> & OnSimpleEventListenerMap<OnEventMap>
 
-interface OnEventTargetConstructor<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}> extends Constructor<OnEventTargetInterface<EventMap, OnEventMap>> {
+export interface OnEventTargetConstructor<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}> extends Constructor<OnEventTargetInterface<EventMap, OnEventMap>> {
     readonly eventList: ReadonlyArray<string>
     asyncOnce(target: CommonEventTargetInterface, name: string, errorName?: string): Promise<SimpleEvent>
     asyncOnce<T>(target: CommonEventTargetInterface, name: string, errorName: string, bind: T): Promise<T>
     mixin<EventMap extends SimpleEventMap, OnEventMap extends OnSimpleEventMap, T extends Constructor>(this: OnEventTargetConstructor<EventMap, OnEventMap>, target: T): OnEventTargetMixinConstructor<EventMap, OnEventMap> & T
 }
 
-type OnEventTargetMixinInterface<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}>
+export type OnEventTargetMixinInterface<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}>
     = CommonEventTargetInterface<EventMap> & OnSimpleEventListenerMap<OnEventMap>
 
-interface OnEventTargetMixinConstructor<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}> extends Constructor<OnEventTargetMixinInterface<EventMap, OnEventMap>> {
+export interface OnEventTargetMixinConstructor<EventMap extends SimpleEventMap = SimpleEventMap, OnEventMap extends OnSimpleEventMap = {}> extends Constructor<OnEventTargetMixinInterface<EventMap, OnEventMap>> {
     asyncOnce(target: CommonEventTargetInterface, name: string, errorName?: string): Promise<SimpleEvent>
     asyncOnce<T>(target: CommonEventTargetInterface, name: string, errorName: string, bind: T): Promise<T>
 }
@@ -166,6 +166,5 @@ class PushEventArray<T> extends OnEventTargetFactory<{ push: SimpleEvent }, { on
     }
 }
 
-export { OnSimpleEventMap, OnSimpleEventListenerMap, OnEventTargetInterface, OnEventTargetConstructor, OnEventTargetMixinInterface, OnEventTargetMixinConstructor };
 export { asyncOnce, mixinOnEventTarget, OnEventTargetFactory, PushEventArray };
 export default OnEventTargetFactory;

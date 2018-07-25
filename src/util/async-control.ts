@@ -17,6 +17,12 @@ const sleep = (ms = 0) => {
 }
 
 /**
+ * Creates a Promise that resolves when the current macrotask queue has been
+ * emptied
+ */
+const yieldThread = () => new Promise<void>(setTimeout);
+
+/**
  * Creates a function that invokes `originalFunction`, with the `this` binding
  * and `arguments` of the created function, while there is no other pending 
  * excutions of `originalFunction`. Simultaneous calls to the created function
@@ -105,5 +111,5 @@ const queueAsync_UNIT_TEST = () => {
     console.warn('         1 1 1 1 1:10s');
 }
 
-export { sleep, debounceAsync, queueAsync };
-export default { sleep, debounceAsync, queueAsync };
+export { sleep, yieldThread, debounceAsync, queueAsync };
+export default { sleep, yieldThread, debounceAsync, queueAsync };

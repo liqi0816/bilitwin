@@ -7,18 +7,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/// <reference types="filesystem" />
+import { MutationInit, NamedMutationInit, NamedArrayBuffer } from './base-mutable-cache-db.js';
+import BaseMutableCacheDB from './base-mutable-cache-db.js';
+import WritableStreamConstructor from '../lib-util-streams/writablestream-types.js';
+import { StorageNavigator, FileLike } from './common-cache-db.js';
+
+declare const navigator: StorageNavigator
+declare const WritableStream: WritableStreamConstructor
 declare const requestFileSystem: typeof window.requestFileSystem
 declare const webkitRequestFileSystem: typeof window.webkitRequestFileSystem
-declare const navigator: Navigator & {
-    storage?: { estimate(): Promise<{ usage: number, quota: number }> }
-    webkitTemporaryStorage?: { queryUsageAndQuota(succb?: (usage: number, quota: number) => void, errcb?: (err: DOMException) => void): void }
-}
-declare const WritableStream: {
-    new(underlyingSink?: Partial<UnderlyingSink>, strategy?: QueuingStrategy): WritableStream;
-}
-import { MutationInit, NamedMutationInit } from './base-mutable-cache-db.js';
-import BaseMutableCacheDB from './base-mutable-cache-db.js';
 
 /**
  * A streamified + promisified cache database backed by webkit filesystem
@@ -69,7 +66,7 @@ class ChromeCacheDB extends BaseMutableCacheDB {
         })();
     }
 
-    async createData(item: (Blob | ArrayBuffer) & { name: string }): Promise<ProgressEvent>
+    async createData(item: FileLike | NamedArrayBuffer): Promise<ProgressEvent>
     async createData(item: Blob | ArrayBuffer, name: string): Promise<ProgressEvent>
     async createData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<ProgressEvent>
     async createData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | NamedMutationInit | undefined = item.name) {
@@ -86,7 +83,7 @@ class ChromeCacheDB extends BaseMutableCacheDB {
         });
     }
 
-    async setData(item: (Blob | ArrayBuffer) & { name: string }, options?: MutationInit): Promise<ProgressEvent>
+    async setData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<ProgressEvent>
     async setData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<ProgressEvent>
     async setData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<ProgressEvent>
     async setData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | MutationInit | undefined = item.name, options: MutationInit = typeof name == 'object' ? name : {}) {
@@ -105,7 +102,7 @@ class ChromeCacheDB extends BaseMutableCacheDB {
         });
     }
 
-    async appendData(item: (Blob | ArrayBuffer) & { name: string }, options?: MutationInit): Promise<ProgressEvent>
+    async appendData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<ProgressEvent>
     async appendData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<ProgressEvent>
     async appendData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<ProgressEvent>
     async appendData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | MutationInit | undefined = item.name, options: MutationInit = typeof name == 'object' ? name : {}) {
@@ -125,6 +122,18 @@ class ChromeCacheDB extends BaseMutableCacheDB {
         catch (e) {
             if (e.name !== 'NotFoundError') throw e;
             return null;
+        }
+    }
+
+    async hasData(name: string) {
+        const store = await this.getStore();
+        try {
+            const file = await new Promise<FileEntry>(store.getFile.bind(store, name, { create: false }));
+            return true;
+        }
+        catch (e) {
+            if (e.name !== 'NotFoundError') throw e;
+            return false;
         }
     }
 

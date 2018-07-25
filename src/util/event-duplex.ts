@@ -17,27 +17,27 @@ import { Constructor, PickStatic, Omit } from './common-types.js';
 
 const inputSocketSymbol = Symbol('inputSocket');
 
-interface EventDuplexInterface<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends SimpleEventTarget<OutputEventMap> {
+export interface EventDuplexInterface<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends SimpleEventTarget<OutputEventMap> {
     [inputSocketSymbol]: EventSocket<InputEventMap>
     pipeEventsThrough<T extends { [inputSocketSymbol]: { connect(upstream: CommonEventTargetInterface): void } }>(this: CommonEventTargetInterface, downstream: T): T
 }
 
-type EventDuplexConstructor = typeof EventDuplex
+export type EventDuplexConstructor = typeof EventDuplex
 
-interface EventDuplexMixinInterface<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends CommonEventTargetInterface<OutputEventMap> {
+export interface EventDuplexMixinInterface<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends CommonEventTargetInterface<OutputEventMap> {
     [inputSocketSymbol]: EventSocket<InputEventMap>
     pipeEventsThrough<T extends { [inputSocketSymbol]: { connect(upstream: CommonEventTargetInterface): void } }>(this: CommonEventTargetInterface, downstream: T): T
 }
 
-interface EventDuplexMixinConstructor<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends Constructor<EventDuplexMixinInterface<InputEventMap, OutputEventMap>> {
+export interface EventDuplexMixinConstructor<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> extends Constructor<EventDuplexMixinInterface<InputEventMap, OutputEventMap>> {
     pipeEventsThrough<T extends { [inputSocketSymbol]: { connect(upstream: CommonEventTargetInterface): void } }>(upstream: CommonEventTargetInterface, downstream: T): T
 }
 
-interface mixinWithEventMap<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> {
+export interface mixinWithEventMap<InputEventMap extends SimpleEventMap = SimpleEventMap, OutputEventMap extends SimpleEventMap = SimpleEventMap> {
     <T extends Constructor>(target: T): EventDuplexMixinConstructor<InputEventMap, OutputEventMap> & T
 }
 
-type OnEventDuplexInterface<
+export type OnEventDuplexInterface<
     InputEventMap extends SimpleEventMap = SimpleEventMap,
     OutputEventMap extends SimpleEventMap = SimpleEventMap,
     OutOnEventMap extends OnSimpleEventMap = {}>
@@ -46,7 +46,7 @@ type OnEventDuplexInterface<
         pipeEventsThrough<T extends { [inputSocketSymbol]: { connect(upstream: CommonEventTargetInterface): void } }>(this: CommonEventTargetInterface, downstream: T): T
     }
 
-interface OnEventDuplexConstructor<
+export interface OnEventDuplexConstructor<
     InputEventMap extends SimpleEventMap = SimpleEventMap,
     OutputEventMap extends SimpleEventMap = SimpleEventMap,
     OutOnEventMap extends OnSimpleEventMap = {}>
@@ -56,7 +56,7 @@ interface OnEventDuplexConstructor<
     mixin<T extends Constructor>(target: T): OnEventDuplexMixinConstructor<OutputEventMap, OutOnEventMap> & T
 }
 
-type OnEventDuplexMixinInterface<
+export type OnEventDuplexMixinInterface<
     InputEventMap extends SimpleEventMap = SimpleEventMap,
     OutputEventMap extends SimpleEventMap = SimpleEventMap,
     OutOnEventMap extends OnSimpleEventMap = {}>
@@ -65,7 +65,7 @@ type OnEventDuplexMixinInterface<
         pipeEventsThrough<T extends { [inputSocketSymbol]: { connect(upstream: CommonEventTargetInterface): void } }>(this: CommonEventTargetInterface, downstream: T): T
     }
 
-interface OnEventDuplexMixinConstructor<
+export interface OnEventDuplexMixinConstructor<
     InputEventMap extends SimpleEventMap = SimpleEventMap,
     OutputEventMap extends SimpleEventMap = SimpleEventMap,
     OutOnEventMap extends OnSimpleEventMap = {}>
@@ -143,11 +143,5 @@ function OnEventDuplexFactory<
     return OnEventDuplex as any as OnEventDuplexConstructor<InputEventMap, OutputEventMap, OutOnEventMap>;
 }
 
-export {
-    EventDuplexInterface, EventDuplexConstructor,
-    EventDuplexMixinInterface, EventDuplexMixinConstructor, mixinWithEventMap,
-    OnEventDuplexInterface, OnEventDuplexConstructor,
-    OnEventDuplexMixinInterface, OnEventDuplexMixinConstructor
-};
 export { inputSocketSymbol, pipeEventsThrough, mixinEventDuplex, EventDuplex, OnEventDuplexFactory };
 export default EventDuplex;

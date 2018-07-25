@@ -10,7 +10,7 @@
 import OnEventTargetFactory from '../on-event-target.js';
 import { SimpleEventListener } from '../simple-event-target.js';
 
-interface BaseDetailedFetchBlobInit {
+export interface BaseDetailedFetchBlobInit {
     onprogress?: BaseDetailedFetchBlob['onprogress']
     onabort?: BaseDetailedFetchBlob['onabort']
     onerror?: BaseDetailedFetchBlob['onerror']
@@ -75,5 +75,5 @@ abstract class BaseDetailedFetchBlob extends OnEventTargetFactory<
     static get isSupported() { return false }
 }
 
-export { BaseDetailedFetchBlobInit, BaseDetailedFetchBlob };
+export { BaseDetailedFetchBlob };
 export default BaseDetailedFetchBlob;

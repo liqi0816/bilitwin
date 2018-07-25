@@ -7,19 +7,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { MutationInit, NamedMutationInit } from './base-mutable-cache-db.js';
+import { MutationInit, NamedMutationInit, NamedArrayBuffer } from './base-mutable-cache-db.js';
 import { CommonEventTargetInterface } from '../simple-event-target.js';
 import BaseMutableCacheDB from './base-mutable-cache-db.js';
 import { Constructor } from '../common-types.js';
+import WritableStreamConstructor from '../lib-util-streams/writablestream-types.js';
+import { StorageNavigator, FileLike } from './common-cache-db.js';
 
-declare const navigator: Navigator & {
-    storage?: { estimate(): Promise<{ usage: number, quota: number }> }
-}
-declare const WritableStream: {
-    new(underlyingSink?: Partial<UnderlyingSink>, strategy?: QueuingStrategy): WritableStream
-}
+declare const navigator: StorageNavigator
+declare const WritableStream: WritableStreamConstructor
 
-interface LockedFile {
+export interface LockedFile {
     write(data: ArrayBuffer): IDBRequest
     append(data: ArrayBuffer): IDBRequest
     truncate(location?: number): IDBRequest
@@ -27,7 +25,7 @@ interface LockedFile {
     readonly active: boolean
 }
 
-interface IDBMutableFile extends CommonEventTargetInterface<{ abort: ProgressEvent, error: ProgressEvent }> {
+export interface IDBMutableFile extends CommonEventTargetInterface<{ abort: ProgressEvent, error: ProgressEvent }> {
     readonly name: string
     readonly type: string
     onabort: (this: IDBMutableFile, event: ProgressEvent) => void
@@ -37,7 +35,7 @@ interface IDBMutableFile extends CommonEventTargetInterface<{ abort: ProgressEve
 }
 declare const IDBMutableFile: Constructor<IDBMutableFile>
 
-interface MozIDBDatabase extends IDBDatabase {
+export interface MozIDBDatabase extends IDBDatabase {
     createMutableFile(name: string): IDBRequest
 }
 
@@ -88,7 +86,7 @@ class FirefoxCacheDB extends BaseMutableCacheDB {
         })();
     }
 
-    async createData(item: (Blob | ArrayBuffer) & { name: string }): Promise<void>
+    async createData(item: FileLike | NamedArrayBuffer): Promise<void>
     async createData(item: Blob | ArrayBuffer, name: string): Promise<void>
     async createData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<void>
     async createData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | NamedMutationInit | undefined = item.name) {
@@ -103,7 +101,7 @@ class FirefoxCacheDB extends BaseMutableCacheDB {
         return await FirefoxCacheDB.promisifyRequest(lockedFile.write(item));
     }
 
-    async setData(item: (Blob | ArrayBuffer) & { name: string }, options?: MutationInit): Promise<void>
+    async setData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<void>
     async setData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<void>
     async setData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<void>
     async setData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | MutationInit | undefined = item.name, options: MutationInit = typeof name == 'object' ? name : {}) {
@@ -128,10 +126,10 @@ class FirefoxCacheDB extends BaseMutableCacheDB {
         }
     }
 
-    async appendData(item: Blob & { name: string }, options?: MutationInit): Promise<void>
-    async appendData(item: Blob, name: string, options?: MutationInit): Promise<void>
-    async appendData(item: Blob, options: NamedMutationInit): Promise<void>
-    async appendData(item: Blob & { name?: string }, name: string | MutationInit | undefined = item.name, options: MutationInit = typeof name == 'object' ? name : {}) {
+    async appendData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<void>
+    async appendData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<void>
+    async appendData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<void>
+    async appendData(item: (Blob | ArrayBuffer) & { name?: string }, name: string | MutationInit | undefined = item.name, options: MutationInit = typeof name == 'object' ? name : {}) {
         name = typeof name === 'object' ? name.name : name;
         if (!name) throw new TypeError(`CommonCacheDB.prototype.appendData: cannot find name in parameters`);
         return this.setData(item, name, { ...options, append: true });
@@ -145,6 +143,12 @@ class FirefoxCacheDB extends BaseMutableCacheDB {
         const item = await FirefoxCacheDB.promisifyRequest(file.getFile()) as File;
         if (this.mutableBlob) return item;
         return FirefoxCacheDB.cloneBlob(item);
+    }
+
+    async hasData(name: string) {
+        const db = await this.getDB();
+        const store = db.transaction(this.storeName, 'readonly').objectStore(this.storeName);
+        return Boolean(await FirefoxCacheDB.promisifyRequest(store.count(name)));
     }
 
     async deleteData(name: string) {

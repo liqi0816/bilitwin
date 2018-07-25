@@ -7,16 +7,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import CommonCacheDB from './common-cache-db.js';
+import CommonCacheDB, { FileLike } from './common-cache-db.js';
 
-interface MutationInit {
+export interface MutationInit {
     name?: string
     offset?: number
     append?: boolean
     truncate?: boolean
 }
 
-interface NamedMutationInit extends MutationInit {
+export interface NamedMutationInit extends MutationInit {
+    name: string
+}
+
+export interface NamedArrayBuffer extends ArrayBuffer {
     name: string
 }
 
@@ -29,26 +33,28 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
         this.storeName = storeName;
     }
 
-    abstract async createData(item: (Blob | ArrayBuffer) & { name: string }): Promise<any>
+    abstract async createData(item: FileLike | NamedArrayBuffer): Promise<any>
     abstract async createData(item: Blob | ArrayBuffer, name: string): Promise<any>
     abstract async createData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<any>
 
-    abstract async setData(item: (Blob | ArrayBuffer) & { name: string }, options?: MutationInit): Promise<any>
+    abstract async setData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<any>
     abstract async setData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<any>
     abstract async setData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<any>
 
-    abstract async appendData(item: (Blob | ArrayBuffer) & { name: string }, options?: MutationInit): Promise<any>
+    abstract async appendData(item: FileLike | NamedArrayBuffer, options?: MutationInit): Promise<any>
     abstract async appendData(item: Blob | ArrayBuffer, name: string, options?: MutationInit): Promise<any>
     abstract async appendData(item: Blob | ArrayBuffer, options: NamedMutationInit): Promise<any>
 
     abstract async getData(name: string): Promise<File | null>
 
+    abstract async hasData(name: string): Promise<boolean>
+
     abstract async deleteData(name: string): Promise<any>
 
     abstract async renameData(name: string, newName: string): Promise<any>
 
-    abstract async createWriteStream(options: NamedMutationInit): Promise<WritableStream | null>
-    abstract async createWriteStream(name: string, options?: MutationInit): Promise<WritableStream | null>
+    abstract async createWriteStream(options: NamedMutationInit): Promise<WritableStream>
+    abstract async createWriteStream(name: string, options?: MutationInit): Promise<WritableStream>
 
     async createReadStream(name: string) {
         const data = await this.getData(name)
@@ -113,5 +119,5 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
     static async quota() { return { usage: -1, quota: -1 } }
 }
 
-export { MutationInit, NamedMutationInit, BaseMutableCacheDB };
+export { BaseMutableCacheDB }
 export default BaseMutableCacheDB;

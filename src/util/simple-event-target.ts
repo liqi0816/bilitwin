@@ -11,40 +11,40 @@ import { Constructor } from './common-types.js';
 
 const listenersDictSymbol = Symbol('listenersDict');
 
-interface SimpleEvent {
+export interface SimpleEvent {
     type: string
     [payload: string]: any
 }
 
-interface SimpleEventListener<EventType = SimpleEvent> {
+export interface SimpleEventListener<EventType = SimpleEvent> {
     (event: EventType): void
 }
 
-interface SimpleEventTargetListenersList<EventType = SimpleEvent> extends Set<SimpleEventListener<EventType>> {
+export interface SimpleEventTargetListenersList<EventType = SimpleEvent> extends Set<SimpleEventListener<EventType>> {
     onceListeners: Set<SimpleEventListener<EventType>>
 }
 
-interface SimpleEventMap {
+export interface SimpleEventMap {
     [type: string]: SimpleEvent
 }
 
-interface CommonEventTargetInterface<EventMap extends SimpleEventMap = SimpleEventMap> {
+export interface CommonEventTargetInterface<EventMap extends SimpleEventMap = SimpleEventMap> {
     addEventListener<Type extends string>(type: Type, listener: SimpleEventListener<EventMap[Type]> | null, options?: { once?: boolean }): void
     removeEventListener<Type extends string>(type: Type, listener: SimpleEventListener<EventMap[Type]> | null): void
     dispatchEvent(event: SimpleEvent): boolean
 }
 
-interface IndexedEventTargetInterface {
+export interface IndexedEventTargetInterface {
     [listenersDictSymbol]: {
         [type: string]: SimpleEventTargetListenersList
     }
 }
 
-interface mixinWithEventMap<EventMap extends SimpleEventMap = SimpleEventMap> {
+export interface mixinWithEventMap<EventMap extends SimpleEventMap = SimpleEventMap> {
     <T extends Constructor>(target: T): Constructor<CommonEventTargetInterface<EventMap>> & T
 }
 
-type SimpleEventTargetConstructor = typeof SimpleEventTarget
+export type SimpleEventTargetConstructor = typeof SimpleEventTarget
 
 const mixinCommonEventTarget = function mixinCommonEventTarget<T extends Constructor>(target: T) {
     const prototype = SimpleEventTarget.prototype;
@@ -109,8 +109,7 @@ class SimpleEventTarget<EventMap extends SimpleEventMap = SimpleEventMap> implem
             for (const listener of listenersList) {
                 // 3.1 create a separate error stack
                 // use Promise instead of try-catch to preserve pause on exception functionality
-                // use void to explictly free memory
-                void new Promise(() => listener.call(this, event));
+                new Promise(() => listener.call(this, event));
             }
 
             for (const listener of listenersList.onceListeners) {
@@ -191,9 +190,5 @@ class SimpleEventTarget<EventMap extends SimpleEventMap = SimpleEventMap> implem
     static mixin = mixinCommonEventTarget;
 }
 
-export {
-    SimpleEvent, SimpleEventListener, SimpleEventTargetListenersList, SimpleEventMap,
-    CommonEventTargetInterface, IndexedEventTargetInterface, mixinWithEventMap, SimpleEventTargetConstructor
-};
 export { SimpleEventTarget, mixinCommonEventTarget, listenersDictSymbol };
 export default SimpleEventTarget;

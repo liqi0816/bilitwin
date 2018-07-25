@@ -2,40 +2,27 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
+    "sourceMap": false,
+    "allowJs": true,
     "strict": true,
-    "jsx": "preserve",
+    "noImplicitReturns": true,
     "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "types": [
-      "node"
-    ],
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
     "lib": [
       "esnext",
       "dom",
       "dom.iterable",
       "scripthost"
     ],
-    "outDir": "./tsout",
-    "noImplicitAny": true,
-    "noImplicitReturns": true
+    "outDir": "./tsout"
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "src/**/*.js",
+    "src/**/*.vue"
   ],
   "exclude": [
     "node_modules"
