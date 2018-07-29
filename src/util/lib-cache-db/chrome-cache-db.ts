@@ -9,11 +9,9 @@
 
 import { MutationInit, NamedMutationInit, NamedArrayBuffer } from './base-mutable-cache-db.js';
 import BaseMutableCacheDB from './base-mutable-cache-db.js';
-import WritableStreamConstructor from '../lib-util-streams/writablestream-types.js';
-import { StorageNavigator, FileLike } from './common-cache-db.js';
+import WritableStream from '../lib-util-streams/writablestream-types.js';
+import { navigator, FileLike } from './common-cache-db.js';
 
-declare const navigator: StorageNavigator
-declare const WritableStream: WritableStreamConstructor
 declare const requestFileSystem: typeof window.requestFileSystem
 declare const webkitRequestFileSystem: typeof window.webkitRequestFileSystem
 

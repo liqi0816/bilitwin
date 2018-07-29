@@ -18,8 +18,9 @@ export interface UnderlyingSink {
     abort?: WritableStreamErrorCallback
 }
 
-export type WritableStreamConstructor = typeof WritableStream & {
+declare const WritableStream: BuiltinWritableStream & {
     new(underlyingSink?: UnderlyingSink, strategy?: QueuingStrategy): WritableStream;
 }
+export { WritableStream }
 
-export default WritableStreamConstructor;
+export default WritableStream;

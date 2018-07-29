@@ -7,8 +7,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { WritableStreamConstructor, UnderlyingSink } from './writablestream-types';
-declare const WritableStream: WritableStreamConstructor
+import WritableStream, { UnderlyingSink } from './writablestream-types';
 
 class ConsoleStream extends WritableStream {
     constructor({ start, write, close, abort } = {} as UnderlyingSink, strategy?: QueuingStrategy) {

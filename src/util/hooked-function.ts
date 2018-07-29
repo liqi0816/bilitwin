@@ -79,8 +79,8 @@ class HookedFunction<ArgType = any, RetType = any> extends Function {
             return context.ret;
         } as any as HookedFunction<ArgType, RetType>;
         self.raw = raw;
-        self.pre = new Set(pre as any);
-        self.post = new Set(post as any);
+        self.pre = new Set(pre!);
+        self.post = new Set(post!);
         self[flagSymbol] = true;
         self.constructor = HookedFunction;
 

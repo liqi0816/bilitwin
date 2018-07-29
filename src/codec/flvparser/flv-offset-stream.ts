@@ -7,8 +7,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import TransformStreamConstructor from '../../util/lib-util-streams/transformstream-types.js';
-declare const TransformStream: TransformStreamConstructor
+import TransformStream from '../../util/lib-util-streams/transformstream-types.js';
+import { ReadableStream } from '../../util/lib-util-streams/readablestream-types.js';
 
 /**
  * A TransformStream to offset flv timestamps
@@ -97,7 +97,7 @@ class FLVOffsetStream extends TransformStream {
                     // 1.4 create offset stream pipe
                     const flvOffsetStream = new FLVOffsetStream({ timestampOffset, outputBinary: true });
                     flvOffsetStreams.push(flvOffsetStream);
-                    (flvStream as any).pipeTo(flvOffsetStream.writable);
+                    (flvStream as ReadableStream).pipeTo(flvOffsetStream.writable);
                 }
 
                 // 2. output flv.header + flv.firstPreviousTagSize
@@ -119,7 +119,7 @@ class FLVOffsetStream extends TransformStream {
                 // BAD Programming. Error not propagated.
                 (async () => {
                     for (const flvOffsetStream of flvOffsetStreams) {
-                        await (flvOffsetStream.readable as any).pipeTo(writable, { preventClose: true });
+                        await (flvOffsetStream.readable as ReadableStream).pipeTo(writable, { preventClose: true });
                     }
                     writable.getWriter().close();
                 })().catch(controller.error.bind(controller));

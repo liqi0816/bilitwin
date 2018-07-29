@@ -1,0 +1,3 @@
+[submodule "src/codec/assconverter"]
+	path = src/codec/assconverter
+	url = https://github.com/liqi0816/ass-danmaku.git

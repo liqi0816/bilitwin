@@ -96,7 +96,7 @@ const mixinEventDuplex = function mixinEventDuplex<T extends Constructor>(target
             private [inputSocketSymbol] = new EventSocket()
             static pipeEventsThrough = pipeEventsThrough
         }
-        (EventDuplex.prototype as any).pipeEventsThrough = prototype.pipeEventsThrough;
+        (EventDuplex.prototype as EventDuplexInterface).pipeEventsThrough = prototype.pipeEventsThrough;
 
         return EventDuplex as Constructor<EventDuplexInterface> & T
     }
@@ -139,8 +139,8 @@ function OnEventDuplexFactory<
 
         static pipeEventsThrough = pipeEventsThrough
     }
-    (OnEventDuplex.prototype as any).pipeEventsThrough = EventDuplex.prototype.pipeEventsThrough;
-    return OnEventDuplex as any as OnEventDuplexConstructor<InputEventMap, OutputEventMap, OutOnEventMap>;
+    OnEventDuplex.prototype.pipeEventsThrough = EventDuplex.prototype.pipeEventsThrough;
+    return OnEventDuplex as OnEventDuplexConstructor<InputEventMap, OutputEventMap, OutOnEventMap>;
 }
 
 export { inputSocketSymbol, pipeEventsThrough, mixinEventDuplex, EventDuplex, OnEventDuplexFactory };

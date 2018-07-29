@@ -18,6 +18,7 @@ export type MozXMLHttpRequest = ForceShim<XMLHttpRequest,
 declare const window: Window & {
     XMLHttpRequest: Constructor<MozXMLHttpRequest> & typeof XMLHttpRequest
 }
+export { window }
 
 /**
  *  It has been two years. Firefox still do not have streams :(

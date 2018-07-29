@@ -17,6 +17,7 @@ export interface GreaseStorage {
     deleteValue(name: string): Promise<void>
 }
 declare const GM: GreaseStorage
+export { GM }
 
 class CachedGreaseStorage implements CommonCachedStorage {
     storage: GreaseStorage

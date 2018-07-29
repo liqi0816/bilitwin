@@ -13,8 +13,10 @@ Object.assign(window, {
 
 let u = new BiliUserJS();
 u.connect(top as PlayerWindow);
+
 var m = new BiliMonkey(u);
-m.sniffDefaultFormat();
+u.pipeEventsThrough(m);
+m.activate();
 
 //////////////////////////
 

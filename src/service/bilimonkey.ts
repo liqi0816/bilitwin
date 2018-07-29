@@ -7,13 +7,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SimpleEvent } from '../util/simple-event-target.js';
-import { SimpleCustomEvent, BiliUserJS, BiliUserJSReadyState } from './biliuserjs.js';
+import { SimpleCustomEvent } from '../util/simple-event-target.js';
+import { BiliUserJS, BiliUserJSReadyState } from './biliuserjs.js';
 import { OnEventDuplexFactory, inputSocketSymbol } from '../util/event-duplex.js';
 import { AsyncOrSyncOrNull } from '../util/common-types.js';
 import { sleep } from '../util/async-control.js';
 import BiliMonkeyFLVHandlerArray, { BiliMonkeyFLVHandler } from './bilimonkey-flv-handler.js';
 import { CommonCacheDB, ChromeCacheDB, IDBCacheDB } from '../util/cache-db.js';
+import BiliMonkeyASSHandler from './bilimonkey-ass-handler.js';
+import Mutex from '../util/mutex.js';
 
 export type BiliMonkeyInit = Partial<typeof BiliMonkey.OPTIONS_DEFAULT>
 
@@ -35,17 +37,50 @@ export const enum BiliMonkeyReadyState {
     closed,
 }
 
-class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<string> }, { close: SimpleEvent }, { onclose: SimpleEvent }>(['close']) {
+export type InEventMap = {
+    cidchange: SimpleCustomEvent<string>
+    videochange: SimpleCustomEvent<HTMLVideoElement>
+}
+
+export type EventMap = {
+    close: SimpleCustomEvent<BiliMonkey>
+    assloadstart: SimpleCustomEvent<BiliMonkeyASSHandler>
+    assload: SimpleCustomEvent<string>
+    mp4loadstart: SimpleCustomEvent<Promise<string>>
+    mp4load: SimpleCustomEvent<string>
+    mp4error: SimpleCustomEvent<Error>
+    flvsloadstart: SimpleCustomEvent<Promise<BiliMonkeyFLVHandlerArray>>
+    flvsload: SimpleCustomEvent<BiliMonkeyFLVHandlerArray>
+    flvserror: SimpleCustomEvent<Error>
+    availableformatload: SimpleCustomEvent<BiliMonkey>
+}
+
+export type OnEventMap = {
+    onclose: SimpleCustomEvent<BiliMonkey>
+    onassloadstart: SimpleCustomEvent<BiliMonkeyASSHandler>
+    onassload: SimpleCustomEvent<string>
+    onmp4loadstart: SimpleCustomEvent<Promise<string>>
+    onmp4load: SimpleCustomEvent<string>
+    onmp4error: SimpleCustomEvent<Error>
+    onflvsloadstart: SimpleCustomEvent<Promise<BiliMonkeyFLVHandlerArray>>
+    onflvsload: SimpleCustomEvent<BiliMonkeyFLVHandlerArray>
+    onflvserror: SimpleCustomEvent<Error>
+    onavailableformatload: SimpleCustomEvent<BiliMonkey>
+}
+
+class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(['close', 'assloadstart', 'assload', 'mp4loadstart', 'mp4load', 'mp4error', 'flvsloadstart', 'flvsload', 'flvserror', 'availableformatload']) {
     userjs: BiliUserJS
 
     flvs: AsyncOrSyncOrNull<BiliMonkeyFLVHandlerArray>
     mp4: AsyncOrSyncOrNull<string>
-    ass: AsyncOrSyncOrNull<File>
+    ass: BiliMonkeyASSHandler | null
 
     flvFormatName: string | null
     mp4FormatName: string | null
     fallbackFormatName: string | null
+    currentFormatName: string | null
 
+    queryInfoMutex: Mutex
     defaultFormatPromise: Promise<this | void> | null
     readyState: BiliMonkeyReadyState
 
@@ -86,18 +121,19 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         this.flvFormatName = null;
         this.mp4FormatName = null;
         this.fallbackFormatName = null;
+        this.currentFormatName = null;
 
+        this.queryInfoMutex = new Mutex();
         this.defaultFormatPromise = null;
         this.readyState = BiliMonkeyReadyState.inactive;
 
         this.options = {} as typeof BiliMonkey.OPTIONS_DEFAULT
         for (const e in BiliMonkey.OPTIONS_DEFAULT) {
-            type typeofe = keyof typeof BiliMonkey.OPTIONS_DEFAULT;
-            if (typeof options[e as typeofe] === 'undefined') {
-                this.options[e as typeofe] = BiliMonkey.OPTIONS_DEFAULT[e as typeofe];
+            if (typeof options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] === 'undefined') {
+                this.options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] = BiliMonkey.OPTIONS_DEFAULT[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT];
             }
             else {
-                this.options[e as typeofe] = Boolean(options[e as typeofe]);
+                this.options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] = Boolean(options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT]);
             }
         }
         if (options.cache) {
@@ -123,19 +159,132 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         if (userjs) this.userjs = userjs;
 
         this[inputSocketSymbol].addEventListener('cidchange', () => this.close());
-        if (this.options.autoDefault) await this.sniffDefaultFormat();
-        switch (this.userjs.readystate) {
-            case BiliUserJSReadyState.domcontentloading:
-        }
+
+        await this.userjs.domcontentloadPromise;
+        const autoDefault = this.options.autoDefault && this.sniffDefaultFormat();
+        this.resolveASS();
+        await this.userjs.controlloadPromise;
+        this.getAvailableFormatName();
+        this.refreshCurrentFormatName();
+        this[inputSocketSymbol].addEventListener('videochange', () => this.refreshCurrentFormatName());
+
+        await autoDefault;
+        if (this.options.autoFLV) await this.queryInfo('flv');
+        if (this.options.autoMP4) await this.queryInfo('mp4');
+
         return this;
     }
 
     close() {
-        this.dispatchEvent({ type: 'close' });
+        this.dispatchEvent({ type: 'close', detail: this });
         this[inputSocketSymbol].close();
         if (Array.isArray(this.flvs)) {
             this.flvs.destroyAll();
         }
+    }
+
+    async queryInfo(format: string) {
+        return this.queryInfoMutex.lockAndAwait(async () => {
+            if (format === 'ass') {
+                return this.ass!;
+            }
+            else if (format === this.flvFormatName && this.flvs) {
+                return this.flvs;
+            }
+            else if (format === this.mp4FormatName && this.mp4) {
+                return this.mp4;
+            }
+            else if (format === this.currentFormatName) {
+                return this.getCurrentFormat();
+            }
+            else {
+                return this.getNonCurrentFormat(format);
+            }
+        })
+    }
+
+    static readonly COMMENT_API_URL = '//comment.bilibili.com'
+    async resolveASS() {
+        this.ass = new BiliMonkeyASSHandler(`${BiliMonkey.COMMENT_API_URL}/${this.userjs.cid}.xml`);
+        this.dispatchEvent({ type: 'assloadstart', detail: this.ass });
+        const getDownloadURL = await this.ass.getDownloadURL();
+        this.dispatchEvent({ type: 'assload', detail: getDownloadURL });
+        return getDownloadURL;
+    }
+
+    async resolveFormat(response: BiliMonkeyPlayURLResponse | Promise<BiliMonkeyPlayURLResponse>, expectFormat?: string | null) {
+        const ret = (async () => {
+            // >>> await => yield to step 1 
+            // 2. wait for response
+            const { format, durl } = await response;
+
+            // 3. inconsistency with pre-allocated slot => throw error, clean slot
+            if (expectFormat && expectFormat !== format) {
+                const error = new TypeError(`BiliMonkey: expecting ${expectFormat} from interface, but get ${format}`);
+                if (BiliMonkey.MP4_FORMAT_SET.has(expectFormat)) {
+                    this.dispatchEvent({ type: 'mp4error', detail: error });
+                    this.mp4 = null;
+                }
+                if (BiliMonkey.FLV_FORMAT_SET.has(expectFormat)) {
+                    this.dispatchEvent({ type: 'flvserror', detail: error });
+                    this.flvs = null;
+                }
+                throw error;
+            }
+
+            // 4. parse response and store result
+            if (BiliMonkey.MP4_FORMAT_SET.has(format)) {
+                const mp4 = durl[0].url;
+                this.dispatchEvent({ type: 'mp4load', detail: mp4 });
+                return this.mp4 = mp4;
+            }
+            if (BiliMonkey.FLV_FORMAT_SET.has(format)) {
+                const flvs = new BiliMonkeyFLVHandlerArray(durl.length);
+                for (let i = 0; i < durl.length; i++) {
+                    flvs[i] = new BiliMonkeyFLVHandler(durl[i].url, { cacheDB: this.cacheDB, partial: this.options.partial });
+                }
+                this.dispatchEvent({ type: 'flvsload', detail: flvs });
+                return this.flvs = flvs;
+            }
+            throw new TypeError(`BiliMonkey: ${format} is unrecognizable`);
+        })();
+
+        // 1. expecting a specific format => pre-allocate slot
+        if (expectFormat) {
+            if (BiliMonkey.FLV_FORMAT_SET.has(expectFormat)) {
+                this.dispatchEvent({ type: 'flvsloadstart', detail: ret });
+                return this.flvs = ret as Promise<BiliMonkeyFLVHandlerArray>;
+            }
+            else if (BiliMonkey.MP4_FORMAT_SET.has(expectFormat)) {
+                this.dispatchEvent({ type: 'mp4loadstart', detail: ret });
+                return this.mp4 = ret as Promise<string>;
+            }
+            else if (expectFormat === BiliMonkey.AUTO_FORMAT) {
+                expectFormat = undefined;
+                return ret;
+            }
+            else if (expectFormat === BiliMonkey.DOES_NOT_EXIST_FORMAT) {
+                throw new TypeError('BiliMonkey.resolveFormat: cannot resolve DOES_NOT_EXIST_FORMAT');
+            }
+        }
+        return ret;
+    }
+
+    getQualityMenuList() {
+        // 1 get quality menu
+        const menu = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-quality-menu')[0];
+        const children = menu.children;
+
+        // 2.1 initialized => return
+        if (children.length) return children;
+
+        // 2.2 not initialized => trigger initialization
+        menu.dispatchEvent(new Event('mouseover'));
+        menu.dispatchEvent(new Event('mouseout'));
+        if (children.length) return children;
+
+        // 3 still bad => exit
+        return null;
     }
 
     getAvailableFormatName(response?: BiliMonkeyPlayURLResponse) {
@@ -152,21 +301,9 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
             }
 
             // 2.2 extract from quality menu
-            extractMenu: {
-                const menu = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-quality-menu')[0];
-                const getElementsByTagName = menu.getElementsByTagName('li');
-
-                // 2.2.1 menu not initialized => trigger initialization
-                if (!getElementsByTagName.length) {
-                    menu.dispatchEvent(new Event('mouseover'));
-                    menu.dispatchEvent(new Event('mouseout'));
-
-                    // 2.2.3 still bad => exit
-                    if (!getElementsByTagName.length) break extractMenu;
-                }
-
-                // 2.2.2 extract from initialized menu
-                accept_quality = [...getElementsByTagName].map(e => e.getAttribute('data-value')!) as typeof accept_quality;
+            const menu = this.getQualityMenuList();
+            if (menu) {
+                accept_quality = [...menu].map(e => e.getAttribute('data-value')!) as typeof accept_quality;
                 break get_accept_quality;
             }
 
@@ -210,71 +347,6 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
 
         // 7. trigger listeners
         this.dispatchEvent({ type: 'availableformatload', detail: this });
-    }
-
-    async resolveFormat(response: BiliMonkeyPlayURLResponse | Promise<BiliMonkeyPlayURLResponse>, expectFormat?: string) {
-        const ret = (async () => {
-            // >>> await => yield to step 1 
-            // 2. wait for response
-            const { format, durl } = await response;
-
-            // 3. inconsistency with pre-allocated slot => throw error, clean slot
-            if (expectFormat && expectFormat !== format) {
-                const error = new TypeError(`BiliMonkey: expecting ${expectFormat} from interface, but get ${format}`);
-                if (BiliMonkey.MP4_FORMAT_SET.has(expectFormat)) {
-                    this.dispatchEvent({ type: 'mp4error', detail: error });
-                    this.mp4 = null;
-                }
-                if (BiliMonkey.FLV_FORMAT_SET.has(expectFormat)) {
-                    this.dispatchEvent({ type: 'flvserror', detail: error });
-                    this.flvs = null;
-                }
-                throw error;
-            }
-
-            // 4. parse response and store result
-            if (BiliMonkey.MP4_FORMAT_SET.has(format)) {
-                const mp4 = durl[0].url;
-                this.dispatchEvent({ type: 'mp4load', detail: mp4 });
-                return this.mp4 = mp4;
-            }
-            if (BiliMonkey.FLV_FORMAT_SET.has(format)) {
-                const flvs = new BiliMonkeyFLVHandlerArray(durl.length);
-                for (let i = 0; i < durl.length; i++) {
-                    flvs[i] = new BiliMonkeyFLVHandler(durl[i].url, { cacheDB: this.cacheDB, partial: this.options.partial });
-                }
-                this.dispatchEvent({ type: 'flvsload', detail: flvs });
-                return this.flvs = flvs;
-            }
-            throw new TypeError(`BiliMonkey: ${format} is unrecognizable`);
-        })();
-
-        // 1. expecting a specific format => pre-allocate slot
-        if (expectFormat) {
-            if (BiliMonkey.MP4_FORMAT_SET.has(expectFormat)) {
-                this.dispatchEvent({ type: 'mp4loadstart', detail: ret });
-                return this.mp4 = ret as Promise<string>;
-            }
-            if (BiliMonkey.FLV_FORMAT_SET.has(expectFormat)) {
-                this.dispatchEvent({ type: 'flvsloadstart', detail: ret });
-                return this.flvs = ret as Promise<BiliMonkeyFLVHandlerArray>;
-            }
-        }
-        return ret;
-    }
-
-    static executeAjaxSuccess(success: JQuery.AjaxSettings['success'], response: any) {
-        // 1. single function => execute
-        if (typeof success === 'function') {
-            success(response, undefined as any, undefined as any);
-        }
-
-        // 2. function[] => iterate and execute
-        else if (typeof success === 'object') {
-            for (const e of success) {
-                e(response, undefined as any, undefined as any);
-            }
-        }
     }
 
     static readonly HOOK_AJAX_TIMEOUT_DEFAULT = 5000
@@ -322,6 +394,20 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         }
     }
 
+    static executeAjaxSuccess(success: JQuery.AjaxSettings['success'], response: any) {
+        // 1. single function => execute
+        if (typeof success === 'function') {
+            success(response, undefined as any, undefined as any);
+        }
+
+        // 2. function[] => iterate and execute
+        else if (typeof success === 'object') {
+            for (const e of success) {
+                e(response, undefined as any, undefined as any);
+            }
+        }
+    }
+
     static readonly SNIFF_DEFAULT_FORMAT_TIMEOUT_DEFAULT = 5000
     async sniffDefaultFormat() {
         if (this.defaultFormatPromise) return this.defaultFormatPromise;
@@ -343,8 +429,9 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
                     }
 
                     // 1.2 try to hook jQuery.ajax
-                    if (this.userjs.readystate <= BiliUserJSReadyState.domcontentloading) {
-                        const ret = await this.hookAjaxPlayURLResponse(BiliMonkey.SNIFF_DEFAULT_FORMAT_TIMEOUT_DEFAULT);
+                    if (this.userjs.readyState <= BiliUserJSReadyState.domcontentloading) {
+                        const hook = this.hookAjaxPlayURLResponse(BiliMonkey.SNIFF_DEFAULT_FORMAT_TIMEOUT_DEFAULT);
+                        const ret = await hook;
                         if (ret) {
                             success = ret.success;
                             response = await ret.response;
@@ -376,6 +463,84 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         })();
     }
 
+    refreshCurrentFormatName() {
+        // 1. find menu list
+        const menu = this.getQualityMenuList();
+
+        // 2. extract format name
+        if (menu) {
+            for (const e of menu) {
+                if (e.getAttribute('data-selected')) {
+                    return this.currentFormatName = BiliMonkey.VALUE_TO_FORMAT[e.getAttribute('data-value')! as keyof typeof BiliMonkey.VALUE_TO_FORMAT]
+                }
+            }
+        }
+
+        // 3. extration fail => reset
+        return this.currentFormatName = null;
+    }
+
+    async getCurrentFormat() {
+        const hook = this.hookAjaxPlayURLResponse();
+        this.userjs.playerWin.player.reloadAccess();
+        const ret = await hook;
+        if (!ret) throw new Error('BiliMonkey.getCurrentFormat: hook failed');
+        return this.resolveFormat(ret.response, this.currentFormatName);
+    }
+
+    static readonly PLAY_URL_EMPTY_RESPONSE = {}
+    async getNonCurrentFormat(format: string) {
+        const hook = this.hookAjaxPlayURLResponse();
+        const menu = this.getQualityMenuList();
+        if (!menu) throw new Error('BiliMonkey.getNonCurrentFormat: cannnot find quality menu');
+
+        const value = BiliMonkey.FORMAT_TO_VALUE[format as keyof typeof BiliMonkey.FORMAT_TO_VALUE];
+        for (const e of menu) {
+            if (e.getAttribute('data-value') === value) {
+                (e as HTMLLIElement).click();
+                const ret = await hook;
+                if (!ret) throw new Error('BiliMonkey.getNonCurrentFormat: hook failed');
+                BiliMonkey.executeAjaxSuccess(ret.success, BiliMonkey.PLAY_URL_EMPTY_RESPONSE);
+                return this.resolveFormat(ret.response, this.currentFormatName);
+            }
+        }
+        throw new Error('BiliMonkey.getNonCurrentFormat: cannnot find target quality');
+    }
+
+    static readonly HANG_AJAX_TIMEOUT_DEFAULT = 5000
+    static readonly PLAY_URL_ERRONEOUS_RESPONSE = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '//0.0.0.0' }] }
+    async hangPlayer(timeout = BiliMonkey.HANG_AJAX_TIMEOUT_DEFAULT) {
+        const jQuery = this.userjs.playerWin.jQuery;
+        const { ajax } = jQuery;
+
+        // 1. hook jQuery.ajax
+        jQuery.ajax = function (settings?: string | JQuery.AjaxSettings, settings2?: JQuery.AjaxSettings) {
+            // 1.1 normalize parameters
+            if (typeof settings !== 'object') {
+                if (typeof settings2 !== 'object') settings2 = {};
+                settings2.url = settings;
+                settings = settings2;
+            }
+
+            // 1.2 api signature match => resolve response, remove hook
+            const { url } = settings;
+            if (url && (url.includes(BiliMonkey.MAIN_SITE_PLAYURL_API_SIGNATURE) || url.includes(BiliMonkey.BANGUMI_PLAYURL_API_SIGNATURE))) {
+                const { success } = settings;
+                BiliMonkey.executeAjaxSuccess(success, BiliMonkey.PLAY_URL_ERRONEOUS_RESPONSE);
+                return ajax('//0.0.0.0');
+            }
+
+            // 1.3 send ajax request
+            return ajax(settings);
+        }
+
+        // 2.1 timeout used => race
+        if (timeout) {
+            await sleep(timeout);
+            jQuery.ajax = ajax;
+        }
+    }
+
     async useCache(response: BiliMonkeyPlayURLResponse) {
         if (response.format === this.flvFormatName && Array.isArray(this.flvs) && this.cacheDB) {
             const cachedResponse = JSON.parse(JSON.stringify(response)) as BiliMonkeyPlayURLResponse;
@@ -395,6 +560,7 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
     static readonly FALLBACK_FORMAT_SET = new Set(['mp4', 'flv360'])
 
     static readonly DOES_NOT_EXIST_FORMAT = 'BiliMonkey.DOES_NOT_EXIST_FORMAT'
+    static readonly AUTO_FORMAT = 'BiliMonkey.AUTO_FORMAT'
     static readonly VALUE_TO_FORMAT = {
         '116': 'flv_p60',
         '74': 'flv720_p60',
@@ -413,7 +579,8 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         '2': 'hdmp4',
         '1': 'mp4',
 
-        [BiliMonkey.DOES_NOT_EXIST_FORMAT]: BiliMonkey.DOES_NOT_EXIST_FORMAT
+        '0': BiliMonkey.AUTO_FORMAT,
+        [BiliMonkey.DOES_NOT_EXIST_FORMAT]: BiliMonkey.DOES_NOT_EXIST_FORMAT,
     }
     static readonly FORMAT_TO_VALUE = {
         'flv_p60': '116',
@@ -428,7 +595,8 @@ class BiliMonkey extends OnEventDuplexFactory<{ cidchange: SimpleCustomEvent<str
         'hdmp4': '64', // data-value is still '64' instead of '48'.  '48',
         'mp4': '16',
 
-        [BiliMonkey.DOES_NOT_EXIST_FORMAT]: BiliMonkey.DOES_NOT_EXIST_FORMAT
+        [BiliMonkey.AUTO_FORMAT]: '0',
+        [BiliMonkey.DOES_NOT_EXIST_FORMAT]: BiliMonkey.DOES_NOT_EXIST_FORMAT,
     }
 }
 

@@ -7,9 +7,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { BuiltinReadableStream } from './builtin-namespace-wrapper.js';
 import { TransformStream } from './transformstream-types.js';
 import { WritableStream } from './writablestream-types.js';
-import { BuiltinReadableStream } from './builtin-namespace-wrapper.js';
 
 export interface PipeOptions {
     preventClose?: boolean
@@ -36,9 +36,10 @@ export interface UnderlyingSource {
     cancel?(reason: any): void
 }
 
-export interface ReadableStreamConstructor {
+declare const ReadableStream: {
     prototype: ReadableStream;
     new(source?: UnderlyingSource, strategy?: QueuingStrategy): ReadableStream;
 }
+export { ReadableStream }
 
-export default ReadableStreamConstructor
+export default ReadableStream

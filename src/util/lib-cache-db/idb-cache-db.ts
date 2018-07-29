@@ -7,7 +7,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import CommonCacheDB, { StorageNavigator, FileLike } from './common-cache-db.js';
+import CommonCacheDB, { navigator, FileLike } from './common-cache-db.js';
 import { ForceOverride } from '../common-types.js';
 
 export interface ItemChunk {
@@ -20,8 +20,6 @@ export type CacheDBItemIDBRequest<T = ItemChunk | undefined> = ForceOverride<IDB
     onsuccess: ((this: CacheDBItemIDBRequest<T>, ev: Event & { target: typeof this }) => void) | null
     result: T
 }>
-
-declare const navigator: StorageNavigator
 
 /**
  * A promisified indexedDB with large file(>100MB) support

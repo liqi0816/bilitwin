@@ -12,6 +12,9 @@ export interface StorageNavigator extends Navigator {
     webkitTemporaryStorage?: { queryUsageAndQuota(succb?: (usage: number, quota: number) => void, errcb?: (err: DOMException) => void): void }
 }
 
+declare const navigator: StorageNavigator
+export { navigator }
+
 export interface FileLike extends Blob {
     name: string
 }

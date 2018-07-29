@@ -11,9 +11,17 @@ import { Constructor } from './common-types.js';
 
 const listenersDictSymbol = Symbol('listenersDict');
 
-export interface SimpleEvent {
+export interface SimpleBareEvent {
     type: string
+}
+
+export interface SimpleEvent extends SimpleBareEvent {
     [payload: string]: any
+}
+
+export interface SimpleCustomEvent<T> extends SimpleEvent {
+    type: string
+    detail: T
 }
 
 export interface SimpleEventListener<EventType = SimpleEvent> {
@@ -54,9 +62,9 @@ const mixinCommonEventTarget = function mixinCommonEventTarget<T extends Constru
                 [type: string]: SimpleEventTargetListenersList
             } = {}
         }
-        (SimpleEventTarget.prototype as any).addEventListener = prototype.addEventListener;
-        (SimpleEventTarget.prototype as any).removeEventListener = prototype.removeEventListener;
-        (SimpleEventTarget.prototype as any).dispatchEvent = prototype.dispatchEvent;
+        (SimpleEventTarget.prototype as CommonEventTargetInterface).addEventListener = prototype.addEventListener;
+        (SimpleEventTarget.prototype as CommonEventTargetInterface).removeEventListener = prototype.removeEventListener;
+        (SimpleEventTarget.prototype as CommonEventTargetInterface).dispatchEvent = prototype.dispatchEvent;
 
         return SimpleEventTarget as Constructor<CommonEventTargetInterface> & T;
     }
@@ -104,21 +112,25 @@ class SimpleEventTarget<EventMap extends SimpleEventMap = SimpleEventMap> implem
         // 2. retreive listeners list of that type
         const listenersList = this[listenersDictSymbol][type];
 
-        // 3. iter through all listeners
+        // 3. listeners exist => trigger all listeners
         if (listenersList) {
+            // 3.1 iter through all listeners
             for (const listener of listenersList) {
-                // 3.1 create a separate error stack
+                // create a separate error stack
                 // use Promise instead of try-catch to preserve pause on exception functionality
                 new Promise(() => listener.call(this, event));
             }
 
-            for (const listener of listenersList.onceListeners) {
-                // 3.2 remove once listeners
-                listenersList.delete(listener);
-            }
+            // 3.2 once listeners exist => remove once listeners
+            if (listenersList.onceListeners.size) {
+                // 3.2.1 remove once listeners
+                for (const listener of listenersList.onceListeners) {
+                    listenersList.delete(listener);
+                }
 
-            // 3.3 empty once listener list
-            listenersList.onceListeners = new Set();
+                // 3.2.2 empty once listener list
+                listenersList.onceListeners = new Set();
+            }
         }
 
         return true;

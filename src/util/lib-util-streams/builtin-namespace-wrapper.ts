@@ -8,4 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export type BuiltinWritableStream = WritableStream
+export var BuiltinWritableStream: typeof WritableStream
 export type BuiltinReadableStream = ReadableStream
+export var BuiltinReadableStream: typeof WritableStream
+export type BuiltinTransformStream = {}
+export var BuiltinTransformStream: never

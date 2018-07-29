@@ -7,19 +7,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SimpleEvent } from '../util/simple-event-target.js';
+import { SimpleEvent, SimpleCustomEvent } from '../util/simple-event-target.js';
 import { OnEventDuplexFactory } from '../util/event-duplex.js';
 
-export interface SimpleCustomEvent<T> extends SimpleEvent {
-    type: string
-    detail: T
+declare const HTMLVideoElement: {
+    HAVE_NOTHING: 0
+    HAVE_METADATA: 1
+    HAVE_CURRENT_DATA: 2
+    HAVE_FUTURE_DATA: 3
+    HAVE_ENOUGH_DATA: 4
+
+    NETWORK_EMPTY: 0
+    NETWORK_IDLE: 1
+    NETWORK_LOADING: 2
+    NETWORK_NO_SOURCE: 3
 }
+export { HTMLVideoElement }
 
 export type PlayerWindow = Window & {
     aid: string
     cid: string
     pageno: number
-    jQuery: typeof jQuery
+    jQuery: typeof jQuery,
+    player: {
+        reloadAccess(): void
+        next(pageno: number): void
+    }
 }
 
 export type EventMap = {
@@ -28,11 +41,10 @@ export type EventMap = {
     domcontentload: SimpleCustomEvent<Document>
     bofqiload: SimpleCustomEvent<HTMLDivElement>
     playerchange: SimpleCustomEvent<HTMLDivElement>
-    controlcontainerload: SimpleCustomEvent<HTMLDivElement>
+    playertemplateload: SimpleCustomEvent<HTMLDivElement>
     controlload: SimpleCustomEvent<HTMLDivElement>
     menucontainerload: SimpleCustomEvent<HTMLDivElement>
-    menuchange: SimpleCustomEvent<HTMLUListElement>
-    videocontainerload: SimpleCustomEvent<HTMLDivElement>
+    menudisplay: SimpleCustomEvent<HTMLUListElement>
     videochange: SimpleCustomEvent<HTMLVideoElement>
     videocanplay: SimpleCustomEvent<HTMLVideoElement>
     videoemptied: SimpleCustomEvent<HTMLVideoElement>
@@ -47,11 +59,10 @@ export type OnEventMap = {
     ondomcontentload: SimpleCustomEvent<Document>
     onbofqiload: SimpleCustomEvent<HTMLDivElement>
     onplayerchange: SimpleCustomEvent<HTMLDivElement>
-    oncontrolcontainerload: SimpleCustomEvent<HTMLDivElement>
+    onplayertemplateload: SimpleCustomEvent<HTMLDivElement>
     oncontrolload: SimpleCustomEvent<HTMLDivElement>
     onmenucontainerload: SimpleCustomEvent<HTMLDivElement>
-    onmenuchange: SimpleCustomEvent<HTMLUListElement>
-    onvideocontainerload: SimpleCustomEvent<HTMLDivElement>
+    onmenudisplay: SimpleCustomEvent<HTMLUListElement>
     onvideochange: SimpleCustomEvent<HTMLVideoElement>
     onvideocanplay: SimpleCustomEvent<HTMLVideoElement>
     onvideoemptied: SimpleCustomEvent<HTMLVideoElement>
@@ -65,16 +76,17 @@ export const enum BiliUserJSReadyState {
     domcontentloading,
     domcontentloaded,
     bofqiloaded,
+    playertemplateloaded,
     controlloaded,
     videocanplay,
 }
 
 export type ObserversDict = { [Event in keyof EventMap]: MutationObserver };
 
-class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connect', 'disconnect', 'domcontentload',
-    'bofqiload', 'playerchange', 'controlcontainerload', 'controlload', 'menucontainerload', 'menuchange',
-    'videocontainerload', 'videochange', 'videocanplay', 'videoemptied', 'aidchange', 'cidchange', 'pagenochange']) {
-    readystate: BiliUserJSReadyState
+class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connect', 'disconnect',
+    'domcontentload', 'bofqiload', 'playerchange', 'playertemplateload', 'controlload', 'menucontainerload',
+    'menudisplay', 'videochange', 'videocanplay', 'videoemptied', 'aidchange', 'cidchange', 'pagenochange']) {
+    readyState: BiliUserJSReadyState
     playerWin: PlayerWindow
     observers: ObserversDict
 
@@ -89,7 +101,7 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
 
     constructor(playerWin = top as PlayerWindow) {
         super();
-        this.readystate = BiliUserJSReadyState.disconnected;
+        this.readyState = BiliUserJSReadyState.disconnected;
         this.playerWin = playerWin;
         this.observers = {} as ObserversDict;
 
@@ -102,12 +114,13 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
         this.cid = '';
         this.pageno = 0;
 
-        this.addEventListener('disconnect', () => this.readystate = BiliUserJSReadyState.disconnected, { once: true });
-        this.addEventListener('connect', () => this.readystate = BiliUserJSReadyState.domcontentloading, { once: true });
-        this.addEventListener('domcontentload', () => this.readystate = BiliUserJSReadyState.domcontentloaded, { once: true });
-        this.addEventListener('bofqiload', () => this.readystate = BiliUserJSReadyState.bofqiloaded, { once: true });
-        this.addEventListener('controlload', () => this.readystate = BiliUserJSReadyState.controlloaded, { once: true });
-        this.addEventListener('videocanplay', () => this.readystate = BiliUserJSReadyState.videocanplay, { once: true });
+        this.addEventListener('disconnect', () => this.readyState = BiliUserJSReadyState.disconnected, { once: true });
+        this.addEventListener('connect', () => this.readyState = BiliUserJSReadyState.domcontentloading, { once: true });
+        this.addEventListener('domcontentload', () => this.readyState = BiliUserJSReadyState.domcontentloaded, { once: true });
+        this.addEventListener('bofqiload', () => this.readyState = BiliUserJSReadyState.bofqiloaded, { once: true });
+        this.addEventListener('playertemplateload', () => this.readyState = BiliUserJSReadyState.playertemplateloaded, { once: true });
+        this.addEventListener('controlload', () => this.readyState = BiliUserJSReadyState.controlloaded, { once: true });
+        this.addEventListener('videocanplay', () => this.readyState = BiliUserJSReadyState.videocanplay, { once: true });
 
         this.addEventListener('disconnect', () => {
             for (const e of Object.values(this.observers)) {
@@ -167,41 +180,22 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
             this.observers.playerchange.observe(bofqi, { childList: true });
         });
 
-        // controlcontainerload
-        this.observers.controlcontainerload = new MutationObserver(() => {
-            const container = this.player!.getElementsByClassName('bilibili-player-video-control')[0];
+        // playertemplateload
+        this.observers.playertemplateload = new MutationObserver(() => {
+            const container = this.player!.getElementsByClassName('bilibili-player-video')[0];
             if (container) {
-                this.dispatchEvent({ type: 'controlcontainerload', detail: container });
-                this.observers.controlcontainerload.disconnect();
+                this.dispatchEvent({ type: 'playertemplateload', detail: this.player! });
+                this.observers.playertemplateload.disconnect();
             }
-        });
+        })
         this.addEventListener('playerchange', ({ detail: player }) => {
-            const container = this.player!.getElementsByClassName('bilibili-player-video-control')[0];
+            const container = this.player!.getElementsByClassName('bilibili-player-video')[0];
             if (container) {
-                this.dispatchEvent({ type: 'controlcontainerload', detail: container });
-                this.observers.controlcontainerload.disconnect();
+                this.dispatchEvent({ type: 'playertemplateload', detail: this.player! });
+                this.observers.playertemplateload.disconnect();
             }
             else {
-                this.observers.controlcontainerload.observe(player, { childList: true });
-            }
-        });
-
-        // controlload
-        this.observers.controlload = new MutationObserver(() => {
-            this.control = this.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLDivElement;
-            if (this.control) {
-                this.dispatchEvent({ type: 'controlload', detail: this.control });
-                this.observers.controlload.disconnect();
-            }
-        });
-        this.addEventListener('controlcontainerload', ({ detail: container }) => {
-            this.control = this.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLDivElement;
-            if (this.control) {
-                this.dispatchEvent({ type: 'controlload', detail: this.control });
-                this.observers.controlload.disconnect();
-            }
-            else {
-                this.observers.controlload.observe(container, { childList: true });
+                this.observers.playertemplateload.observe(player, { childList: true });
             }
         });
 
@@ -228,35 +222,36 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
             }
         });
 
-        // menuchange
-        this.observers.menuchange = new MutationObserver(() => {
+        // menudisplay
+        this.observers.menudisplay = new MutationObserver(() => {
             if (this.menu!.children.length) {
-                this.dispatchEvent({ type: 'menuchange', detail: this.menu });
+                this.dispatchEvent({ type: 'menudisplay', detail: this.menu });
             }
         });
         this.addEventListener('menucontainerload', ({ detail: menu }) => {
             if (this.menu!.children.length) {
-                this.dispatchEvent({ type: 'menuchange', detail: this.menu });
+                this.dispatchEvent({ type: 'menudisplay', detail: this.menu });
             }
-            this.observers.menuchange.observe(menu, { childList: true });
+            this.observers.menudisplay.observe(menu, { childList: true });
         });
 
-        // videocontainerload
-        this.observers.videocontainerload = new MutationObserver(() => {
-            const container = this.player!.getElementsByClassName('bilibili-player-video')[0];
-            if (container) {
-                this.dispatchEvent({ type: 'videocontainerload', detail: container });
-                this.observers.videocontainerload.disconnect();
+        // controlload
+        this.observers.controlload = new MutationObserver(() => {
+            this.control = this.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLDivElement;
+            if (this.control) {
+                this.dispatchEvent({ type: 'controlload', detail: this.control });
+                this.observers.controlload.disconnect();
             }
         });
-        this.addEventListener('playerchange', ({ detail: player }) => {
-            const container = this.player!.getElementsByClassName('bilibili-player-video')[0];
-            if (container) {
-                this.dispatchEvent({ type: 'videocontainerload', detail: container });
-                this.observers.videocontainerload.disconnect();
+        this.addEventListener('playertemplateload', ({ detail: player }) => {
+            this.control = this.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLDivElement;
+            if (this.control) {
+                this.dispatchEvent({ type: 'controlload', detail: this.control });
+                this.observers.controlload.disconnect();
             }
             else {
-                this.observers.videocontainerload.observe(player, { childList: true });
+                const container = this.player!.getElementsByClassName('bilibili-player-video-control')[0];
+                this.observers.controlload.observe(container, { childList: true });
             }
         });
 
@@ -268,39 +263,56 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
                 this.dispatchEvent({ type: 'videochange', detail: this.video });
             }
         });
-        this.addEventListener('videocontainerload', ({ detail: container }) => {
+        this.addEventListener('playertemplateload', ({ detail: player }) => {
             const video = this.player!.getElementsByTagName('video')[0];
             if (video && this.video !== video) {
                 this.video = video;
                 this.dispatchEvent({ type: 'videochange', detail: this.video });
             }
+            const container = player.getElementsByClassName('bilibili-player-video')[0];
             this.observers.videochange.observe(container, { childList: true });
         });
 
         // videocanplay
         const canplayObserver = () => {
-            if (this.video!.readyState < (HTMLVideoElement as any as { HAVE_FUTURE_DATA: number }).HAVE_FUTURE_DATA) {
+            if (this.video!.readyState >= HTMLVideoElement.HAVE_FUTURE_DATA) {
                 this.dispatchEvent({ type: 'videocanplay', detail: this.video });
             }
         };
         this.addEventListener('videochange', ({ detail: video }) => {
-            if (this.video!.readyState >= (HTMLVideoElement as any as { HAVE_FUTURE_DATA: number }).HAVE_FUTURE_DATA) {
+            if (this.video!.readyState >= HTMLVideoElement.HAVE_FUTURE_DATA) {
                 this.dispatchEvent({ type: 'videocanplay', detail: this.video });
             }
             else {
-                video.addEventListener('loadstart', canplayObserver, { once: true });
+                video.addEventListener('canplay', canplayObserver, { once: true });
             }
         });
-        this.addEventListener('disconnect', () => this.video && this.video.removeEventListener('loadstart', canplayObserver));
+        this.addEventListener('disconnect', () => this.video && this.video.removeEventListener('canplay', canplayObserver));
+
+        // videoended
+        const endedObserver = () => {
+            if (this.video!.ended) {
+                this.dispatchEvent({ type: 'videoended', detail: this.video });
+            }
+        };
+        this.addEventListener('videochange', ({ detail: video }) => {
+            if (this.video!.ended) {
+                this.dispatchEvent({ type: 'videoended', detail: this.video });
+            }
+            else {
+                video.addEventListener('ended', endedObserver, { once: true });
+            }
+        });
+        this.addEventListener('disconnect', () => this.video && this.video.removeEventListener('ended', endedObserver));
 
         // videoemptied
         const emptiedObserver = () => {
-            if (this.video!.networkState === (HTMLVideoElement as any as { NETWORK_EMPTY: number }).NETWORK_EMPTY) {
+            if (this.video!.networkState === HTMLVideoElement.NETWORK_EMPTY) {
                 this.dispatchEvent({ type: 'videoemptied', detail: this.video });
             }
         };
         this.addEventListener('videochange', ({ detail: video }) => {
-            if (this.video!.networkState === (HTMLVideoElement as any as { NETWORK_EMPTY: number }).NETWORK_EMPTY) {
+            if (this.video!.networkState === HTMLVideoElement.NETWORK_EMPTY) {
                 this.dispatchEvent({ type: 'videoemptied', detail: this.video });
             }
             else {
@@ -324,6 +336,9 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
             if (aid && this.aid !== aid) {
                 this.aid = aid;
                 this.dispatchEvent({ type: 'aidchange', detail: aid });
+            }
+            else {
+                this.addEventListener('domcontentload', aidObserver, { once: true });
             }
             playerWin.addEventListener('hashchange', aidObserver);
         });
@@ -380,13 +395,22 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
         }
     }
 
+    get controlloadPromise() {
+        if (this.control) {
+            return Promise.resolve({ type: 'consorlload', detail: this.control });
+        }
+        else {
+            return BiliUserJS.asyncOnce(this, 'consorlload');
+        }
+    }
+
     get videochangePromise() {
         return BiliUserJS.asyncOnce(this, 'videochange');
     }
 
     get videocanplayPromise() {
-        if (this.video!.readyState >= (HTMLVideoElement as any as { HAVE_FUTURE_DATA: number }).HAVE_FUTURE_DATA) {
-            return Promise.resolve();
+        if (this.video!.readyState >= HTMLVideoElement.HAVE_FUTURE_DATA) {
+            return Promise.resolve({ type: 'videoemptied', detail: this.video });
         }
         else {
             return BiliUserJS.asyncOnce(this, 'videocanplay');
@@ -394,8 +418,8 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
     }
 
     get videoemptiedPromise() {
-        if (this.video!.networkState === (HTMLVideoElement as any as { NETWORK_EMPTY: number }).NETWORK_EMPTY) {
-            return Promise.resolve();
+        if (this.video!.networkState === HTMLVideoElement.NETWORK_EMPTY) {
+            return Promise.resolve({ type: 'videoemptied', detail: this.video });
         }
         else {
             return BiliUserJS.asyncOnce(this, 'videoemptied');
@@ -412,22 +436,18 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
 
     get domcontentloadPromise() {
         if (this.playerWin.document.readyState != 'loading') {
-            return Promise.resolve();
+            return Promise.resolve({ type: 'videoemptied', detail: this.playerWin.document });
         }
         else {
             return BiliUserJS.asyncOnce(this, 'domcontentload');
         }
     }
 
-    dispatchEvent(e: any) {
-        debugger;
-        return super.dispatchEvent(e);
-    }
-
     static readonly DISCONNECTED = BiliUserJSReadyState.disconnected
-    static readonly DOM_LOADING = BiliUserJSReadyState.domcontentloading
+    static readonly DOM_CONTENT_LOADING = BiliUserJSReadyState.domcontentloading
     static readonly DOM_CONTENT_LOADED = BiliUserJSReadyState.domcontentloaded
     static readonly BOFQI_LOADED = BiliUserJSReadyState.bofqiloaded
+    static readonly PLAYER_TEMPLATE_LOADED = BiliUserJSReadyState.playertemplateloaded
     static readonly CONTROL_LOADED = BiliUserJSReadyState.controlloaded
     static readonly VIDEO_CAN_PLAY = BiliUserJSReadyState.videocanplay
 }

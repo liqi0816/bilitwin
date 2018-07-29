@@ -8,58 +8,55 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { BaseMutableCacheDB, CommonCacheDB } from '../util/cache-db.js';
-import { OnEventTargetFactory } from '../util/on-event-target.js';
+import { OnEventTargetFactory, asyncOnce } from '../util/on-event-target.js';
 import MonitorStream from '../util/monitor-stream.js';
 import { MemoryBlobStream } from '../util/lib-util-streams/memory-stream.js';
 import { ReadableStream } from '../util/lib-util-streams/readablestream-types.js';
+import { SimpleBareEvent } from '../util/simple-event-target.js';
 
 export type FetchFunctionType = typeof fetch
 
 export const enum BiliMonkeyFLVHandlerReadyState {
     initialized,
     partialloaded,
-    downloadinit,
-    downloadstart,
+    downloadinited,
+    downloadstarted,
     loaded,
 }
 
 export interface BiliMonkeyFLVHandlerInit {
     cacheDB?: CommonCacheDB | null
     partial?: boolean
-    protocol?: 'http:' | 'https:'
+    protocol?: 'http:' | 'https:' | ''
     fetch?: FetchFunctionType
 }
 
-export interface FLVHandlerEvent {
-    type: string
-}
-
 export type EventMap = {
-    loaded: FLVHandlerEvent
-    partialloaded: FLVHandlerEvent
-    saved: FLVHandlerEvent
-    partialsaved: FLVHandlerEvent
-    deleted: FLVHandlerEvent
-    partialdeleted: FLVHandlerEvent
-    downloadinit: FLVHandlerEvent
-    downloadstart: FLVHandlerEvent
-    partialupdated: FLVHandlerEvent
+    load: SimpleBareEvent
+    partialload: SimpleBareEvent
+    save: SimpleBareEvent
+    partialsave: SimpleBareEvent
+    delete: SimpleBareEvent
+    partialdelete: SimpleBareEvent
+    downloadinit: SimpleBareEvent
+    downloadstart: SimpleBareEvent
+    partialupdate: SimpleBareEvent
 }
 
 export type OnEventMap = {
-    onloaded: FLVHandlerEvent
-    onpartialloaded: FLVHandlerEvent
-    onsaved: FLVHandlerEvent
-    onpartialsaved: FLVHandlerEvent
-    ondeleted: FLVHandlerEvent
-    onpartialdeleted: FLVHandlerEvent
-    ondownloadinit: FLVHandlerEvent
-    ondownloadstart: FLVHandlerEvent
-    onpartialupdated: FLVHandlerEvent
+    onload: SimpleBareEvent
+    onpartialload: SimpleBareEvent
+    onsave: SimpleBareEvent
+    onpartialsave: SimpleBareEvent
+    ondelete: SimpleBareEvent
+    onpartialdelete: SimpleBareEvent
+    ondownloadinit: SimpleBareEvent
+    ondownloadstart: SimpleBareEvent
+    onpartialupdate: SimpleBareEvent
 }
 
 const CACHE_URL_SYMBOL = Symbol('blobURL');
-class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['loaded', 'partialloaded', 'saved', 'partialsaved', 'deleted', 'partialdeleted', 'downloadinit', 'downloadstart', 'partialupdated']) {
+class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['load', 'partialload', 'save', 'partialsave', 'delete', 'partialdelete', 'downloadinit', 'downloadstart', 'partialupdate']) {
     readonly url: string
     readonly filename: string
     readonly partialFileName: string | null
@@ -67,14 +64,15 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
     cache: File | null
     partial: File | null
     cacheDB: CommonCacheDB | null
-    [CACHE_URL_SYMBOL]?: string
+    [CACHE_URL_SYMBOL]: string | null
 
     downloader: MonitorStream | null
+    currentDownload: Promise<File> | null
     fetch: FetchFunctionType
     readyState: BiliMonkeyFLVHandlerReadyState
 
     static readonly PARTIAL_CACHE_EXTENSION = '.incomplete'
-    constructor(url: string, { cacheDB = null, partial = true, protocol = 'https:', fetch = top.fetch } = {} as BiliMonkeyFLVHandlerInit) {
+    constructor(url: string, { cacheDB = null, partial = true, protocol = '', fetch = top.fetch } = {} as BiliMonkeyFLVHandlerInit) {
         super();
 
         const indexOf = url.indexOf(':') + 1;
@@ -88,14 +86,16 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
         this.cache = null;
         this.partial = null;
         this.cacheDB = cacheDB;
+        this[CACHE_URL_SYMBOL] = null;
 
         this.downloader = null;
+        this.currentDownload = null;
         this.fetch = fetch;
         this.readyState = BiliMonkeyFLVHandlerReadyState.initialized;
-        this.addEventListener('partialloaded', () => this.readyState = BiliMonkeyFLVHandlerReadyState.partialloaded);
-        this.addEventListener('downloadinit', () => this.readyState = BiliMonkeyFLVHandlerReadyState.downloadinit);
-        this.addEventListener('downloadstart', () => this.readyState = BiliMonkeyFLVHandlerReadyState.downloadstart);
-        this.addEventListener('loaded', () => this.readyState = BiliMonkeyFLVHandlerReadyState.loaded);
+        this.addEventListener('partialload', () => this.readyState = BiliMonkeyFLVHandlerReadyState.partialloaded);
+        this.addEventListener('downloadinit', () => this.readyState = BiliMonkeyFLVHandlerReadyState.downloadinited);
+        this.addEventListener('downloadstart', () => this.readyState = BiliMonkeyFLVHandlerReadyState.downloadstarted);
+        this.addEventListener('load', () => this.readyState = BiliMonkeyFLVHandlerReadyState.loaded);
     }
 
     async getCache() {
@@ -106,21 +106,21 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
     async loadCache() {
         if (!this.cacheDB) return null;
         this.cache = await this.cacheDB.getData(this.filename);
-        this.dispatchEvent({ type: 'loaded' });
+        this.dispatchEvent({ type: 'load' });
         return this.cache;
     }
 
     async loadPartialCache() {
         if (!this.cacheDB || !this.partialFileName) return null;
         this.partial = await this.cacheDB.getData(this.partialFileName);
-        this.dispatchEvent({ type: 'partialloaded' });
+        this.dispatchEvent({ type: 'partialload' });
         return this.partial;
     }
 
     async saveCache() {
         if (!this.cacheDB || !this.cache) return null;
         await this.cacheDB.setData(this.cache);
-        this.dispatchEvent({ type: 'saved' });
+        this.dispatchEvent({ type: 'save' });
         await this.deletePartialCache();
         return this.cache;
     }
@@ -128,7 +128,7 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
     async savePartialCache() {
         if (!this.cacheDB || !this.partial) return null;
         await this.cacheDB.setData(this.partial);
-        this.dispatchEvent({ type: 'partialsaved' });
+        this.dispatchEvent({ type: 'partialsave' });
         return this.partial;
     }
 
@@ -136,7 +136,7 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
         this.cache = null;
         if (!this.cacheDB) return null;
         await Promise.all([this.cacheDB.deleteData(this.filename), this.deletePartialCache()]);
-        this.dispatchEvent({ type: 'deleted' });
+        this.dispatchEvent({ type: 'delete' });
         return null;
     }
 
@@ -144,7 +144,7 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
         this.partial = null;
         if (!this.cacheDB || !this.partialFileName) return null;
         await this.cacheDB.deleteData(this.partialFileName);
-        this.dispatchEvent({ type: 'partialdeleted' });
+        this.dispatchEvent({ type: 'partialdelete' });
         return null;
     }
 
@@ -167,58 +167,80 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
         }
 
         this.dispatchEvent({ type: 'downloadstart' });
-        return (body as any as ReadableStream).pipeThrough(downloader);
+        return (body as ReadableStream).pipeThrough(downloader);
+    }
+
+    async getDownload() {
+        if (this.currentDownload) {
+            return this.currentDownload;
+        }
+        else {
+            return this.download();
+        }
     }
 
     async download() {
-        this.downloader = new MonitorStream();
-        if (this.cacheDB instanceof BaseMutableCacheDB && this.partialFileName) {
-            const destination = await this.cacheDB.createWriteStream(this.partialFileName, { append: true });
-            const partial = await this.loadPartialCache();
-            if (partial) this.downloader.loaded = partial.size;
-
+        return this.currentDownload = (async () => {
+            this.downloader = new MonitorStream();
             try {
-                await (await this.createDownloadStream(this.downloader)).pipeTo(destination);
-                await this.cacheDB.renameData(this.partialFileName, this.filename);
-                await this.loadCache();
-            }
-            finally {
-                if (!this.cache) this.dispatchEvent({ type: 'partialupdated' });
-            }
-        }
-        else {
-            const destination = new MemoryBlobStream();
-            const partial = await this.loadPartialCache();
-            if (partial) {
-                this.downloader.loaded = partial.size;
-                destination.buffer.push(partial);
-            }
+                if (this.cacheDB instanceof BaseMutableCacheDB && this.partialFileName) {
+                    const destination = await this.cacheDB.createWriteStream(this.partialFileName, { append: true });
+                    const partial = await this.loadPartialCache();
+                    if (partial) this.downloader.loaded = partial.size;
 
-            try {
-                await (await this.createDownloadStream(this.downloader)).pipeTo(destination);
-                this.cache = new File(destination.buffer, this.filename);
-                this.dispatchEvent({ type: 'loaded' });
-                await this.saveCache();
-            }
-            finally {
-                if (!this.cache) {
-                    this.partial = new File(destination.buffer, this.filename);
-                    this.dispatchEvent({ type: 'partialupdated' });
-                    await this.savePartialCache();
+                    try {
+                        await (await this.createDownloadStream(this.downloader)).pipeTo(destination);
+                        await this.cacheDB.renameData(this.partialFileName, this.filename);
+                        await this.loadCache();
+                    }
+                    finally {
+                        if (!this.cache) this.dispatchEvent({ type: 'partialupdate' });
+                    }
+                }
+                else {
+                    const destination = new MemoryBlobStream();
+                    const partial = await this.loadPartialCache();
+                    if (partial) {
+                        this.downloader.loaded = partial.size;
+                        destination.buffer.push(partial);
+                    }
+
+                    try {
+                        await (await this.createDownloadStream(this.downloader)).pipeTo(destination);
+                        this.cache = new File(destination.buffer, this.filename);
+                        this.dispatchEvent({ type: 'load' });
+                        await this.saveCache();
+                    }
+                    finally {
+                        if (!this.cache) {
+                            this.partial = new File(destination.buffer, this.filename);
+                            this.dispatchEvent({ type: 'partialupdate' });
+                            await this.savePartialCache();
+                        }
+                    }
                 }
             }
-        }
-        return this.cache!;
+            finally {
+                this.currentDownload = null;
+            }
+            return this.cache!;
+        })();
     }
 
     get cacheURL() {
-        if (!this.cache) return null
+        if (!this.cache) return null;
         return this[CACHE_URL_SYMBOL] || (this[CACHE_URL_SYMBOL] = URL.createObjectURL(this.cache));
     }
 
     destroy() {
-        if (this[CACHE_URL_SYMBOL]) URL.revokeObjectURL(this[CACHE_URL_SYMBOL]!)
-        if (this.downloader) this.downloader.abort();
+        if (this[CACHE_URL_SYMBOL]) {
+            URL.revokeObjectURL(this[CACHE_URL_SYMBOL]!);
+            this[CACHE_URL_SYMBOL] = null;
+        }
+        if (this.downloader) {
+            this.downloader.abort();
+            this.downloader = null;
+        }
     }
 
     toString() {

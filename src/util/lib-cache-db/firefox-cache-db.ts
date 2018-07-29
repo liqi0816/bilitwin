@@ -11,11 +11,8 @@ import { MutationInit, NamedMutationInit, NamedArrayBuffer } from './base-mutabl
 import { CommonEventTargetInterface } from '../simple-event-target.js';
 import BaseMutableCacheDB from './base-mutable-cache-db.js';
 import { Constructor } from '../common-types.js';
-import WritableStreamConstructor from '../lib-util-streams/writablestream-types.js';
-import { StorageNavigator, FileLike } from './common-cache-db.js';
-
-declare const navigator: StorageNavigator
-declare const WritableStream: WritableStreamConstructor
+import WritableStream from '../lib-util-streams/writablestream-types.js';
+import { navigator, FileLike } from './common-cache-db.js';
 
 export interface LockedFile {
     write(data: ArrayBuffer): IDBRequest
@@ -34,6 +31,7 @@ export interface IDBMutableFile extends CommonEventTargetInterface<{ abort: Prog
     getFile(): IDBRequest
 }
 declare const IDBMutableFile: Constructor<IDBMutableFile>
+export { IDBMutableFile }
 
 export interface MozIDBDatabase extends IDBDatabase {
     createMutableFile(name: string): IDBRequest

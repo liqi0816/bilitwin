@@ -8,8 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import OnEventTargetFactory from './on-event-target.js';
-import { TransformStreamDefaultController, TransformStreamConstructor } from './lib-util-streams/transformstream-types.js';
-declare const TransformStream: TransformStreamConstructor
+import TransformStream, { TransformStreamDefaultController } from './lib-util-streams/transformstream-types.js';
 
 export interface SimpleProgressEvent {
     type: string
@@ -22,6 +21,7 @@ export interface SimpleProgressEvent {
 export type EventMap = {
     loadstart: SimpleProgressEvent
     progress: SimpleProgressEvent
+    // error: SimpleProgressEvent
     abort: SimpleProgressEvent
     load: SimpleProgressEvent
 }
@@ -29,6 +29,7 @@ export type EventMap = {
 export type OnEventMap = {
     onloadstart: SimpleProgressEvent
     onprogress: SimpleProgressEvent
+    // onerror: SimpleProgressEvent
     onabort: SimpleProgressEvent
     onload: SimpleProgressEvent
 }
@@ -45,7 +46,7 @@ export interface MonitorStreamInit {
     progressInterval?: MonitorStream['progressInterval']
 }
 
-class MonitorStream extends OnEventTargetFactory<EventMap, OnEventMap>(['loadstart', 'progress', 'abort', 'load']).mixin(TransformStream) {
+class MonitorStream extends OnEventTargetFactory<EventMap, OnEventMap>(['loadstart', 'progress', /* 'error', */ 'abort', 'load']).mixin(TransformStream) {
     throttle: number
     loaded: number
     total: number
@@ -113,6 +114,13 @@ class MonitorStream extends OnEventTargetFactory<EventMap, OnEventMap>(['loadsta
         this.lengthComputable = lengthComputable;
         this.progressInterval = progressInterval;
         this.controller = _controller!;
+
+        // const pipeTo = this.readable.pipeTo.bind(this.readable);
+        // this.readable.pipeTo = (...args: any[]) => {
+        //     const ret = pipeTo(...args) as Promise<void>;
+        //     ret.catch(error => this.dispatchEvent({ type: 'error', target: this, loaded: this.loaded, total: this.total, lengthComputable: this.lengthComputable, error }));
+        //     return ret;
+        // }
     }
 
     abort() {
@@ -150,7 +158,7 @@ const _UNIT_TEST = (location = window.location) => {
             }
         },
     });
-    fetch(location as any as string).then(({ body }) => (body as any).pipeThrough(ms).pipeTo(new WritableStream()));
+    fetch(location.href).then(({ body }) => (body as any).pipeThrough(ms).pipeTo(new WritableStream()));
 }
 
 export { MonitorStream }
