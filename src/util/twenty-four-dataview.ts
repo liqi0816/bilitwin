@@ -37,17 +37,16 @@ class TwentyFourDataView extends DataView {
 
     indexOfSubArray(search: string | ArrayLike<number>, startOffset = 0, endOffset = this.byteLength - search.length + 1) {
         if (typeof search[0] !== 'number') search = new TextEncoder().encode(search as string);
-        // I know it is NAIVE
-        for (let i = startOffset; i < endOffset; i++) {
-            if (this.getUint8(i) != search[0]) continue;
-            let found = 1;
+        const haystack = new Uint8Array(this.buffer, this.byteOffset, this.byteLength);
+
+        // naive but cache effective implementation
+        haystackLoop: for (let i = startOffset; i < endOffset; i++) {
             for (let j = 0; j < search.length; j++) {
-                if (this.getUint8(i + j) != search[j]) {
-                    found = 0;
-                    break;
+                if (haystack[i + j] !== search[j]) {
+                    continue haystackLoop;
                 }
             }
-            if (found) return i;
+            return i;
         }
         return -1;
     }

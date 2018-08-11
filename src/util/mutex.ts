@@ -95,3 +95,4 @@ const _UNIT_TEST = () => {
 };
 
 export default Mutex;
+export const sql = 1

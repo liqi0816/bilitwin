@@ -62,6 +62,7 @@ class StreamDetailedFetchBlob extends BaseDetailedFetchBlob {
         return {
             next: reader.read.bind(reader),
             return: reader.cancel.bind(reader),
+            throw: reader.cancel.bind(reader),
             [Symbol.asyncIterator]() { return this },
         };
     }

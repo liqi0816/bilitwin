@@ -119,7 +119,7 @@ class FLV {
 
             let flv = await new Promise<FLV>((resolve, reject) => {
                 let fr = new FileReader();
-                fr.onload = () => resolve(new FLV(new TwentyFourDataView(fr.result)));
+                fr.onload = () => resolve(new FLV(new TwentyFourDataView(fr.result as ArrayBuffer)));
                 fr.readAsArrayBuffer(blob);
                 fr.onerror = reject;
             });

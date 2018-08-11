@@ -8,7 +8,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export interface StorageNavigator extends Navigator {
-    storage?: { estimate(): Promise<{ usage: number, quota: number }> }
     webkitTemporaryStorage?: { queryUsageAndQuota(succb?: (usage: number, quota: number) => void, errcb?: (err: DOMException) => void): void }
 }
 

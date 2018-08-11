@@ -45,6 +45,7 @@ export type EventMap = {
     controlload: SimpleCustomEvent<HTMLDivElement>
     menucontainerload: SimpleCustomEvent<HTMLDivElement>
     menudisplay: SimpleCustomEvent<HTMLUListElement>
+    menuclose: SimpleCustomEvent<HTMLUListElement>
     videochange: SimpleCustomEvent<HTMLVideoElement>
     videocanplay: SimpleCustomEvent<HTMLVideoElement>
     videoemptied: SimpleCustomEvent<HTMLVideoElement>
@@ -63,6 +64,7 @@ export type OnEventMap = {
     oncontrolload: SimpleCustomEvent<HTMLDivElement>
     onmenucontainerload: SimpleCustomEvent<HTMLDivElement>
     onmenudisplay: SimpleCustomEvent<HTMLUListElement>
+    onmenuclose: SimpleCustomEvent<HTMLUListElement>
     onvideochange: SimpleCustomEvent<HTMLVideoElement>
     onvideocanplay: SimpleCustomEvent<HTMLVideoElement>
     onvideoemptied: SimpleCustomEvent<HTMLVideoElement>
@@ -83,9 +85,9 @@ export const enum BiliUserJSReadyState {
 
 export type ObserversDict = { [Event in keyof EventMap]: MutationObserver };
 
-class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connect', 'disconnect',
-    'domcontentload', 'bofqiload', 'playerchange', 'playertemplateload', 'controlload', 'menucontainerload',
-    'menudisplay', 'videochange', 'videocanplay', 'videoemptied', 'aidchange', 'cidchange', 'pagenochange']) {
+class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connect', 'disconnect', 'domcontentload',
+    'bofqiload', 'playerchange', 'playertemplateload', 'controlload', 'menucontainerload', 'menudisplay', 'menuclose',
+    'videochange', 'videocanplay', 'videoemptied', 'aidchange', 'cidchange', 'pagenochange']) {
     readyState: BiliUserJSReadyState
     playerWin: PlayerWindow
     observers: ObserversDict
@@ -98,6 +100,7 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
     aid: string
     cid: string
     pageno: number
+    subdomain: 'www' | 'bangumi'
 
     constructor(playerWin = top as PlayerWindow) {
         super();
@@ -113,6 +116,7 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
         this.aid = '';
         this.cid = '';
         this.pageno = 0;
+        this.subdomain = playerWin.location.href.includes('bangumi') ? 'bangumi' : 'www';
 
         this.addEventListener('disconnect', () => this.readyState = BiliUserJSReadyState.disconnected, { once: true });
         this.addEventListener('connect', () => this.readyState = BiliUserJSReadyState.domcontentloading, { once: true });
@@ -234,6 +238,23 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
             }
             this.observers.menudisplay.observe(menu, { childList: true });
         });
+
+        // menuclose
+        this.observers.menuclose = new MutationObserver(() => {
+            if (!this.menu!.children.length) {
+                this.dispatchEvent({ type: 'menuclose', detail: this.menu });
+                this.observers.menuclose.disconnect();
+            }
+        })
+        this.addEventListener('menudisplay', ({ detail: menu }) => {
+            if (!this.menu!.children.length) {
+                this.dispatchEvent({ type: 'menuclose', detail: this.menu });
+                this.observers.menuclose.disconnect();
+            }
+            else {
+                this.observers.menuclose.observe(menu, { childList: true });
+            }
+        })
 
         // controlload
         this.observers.controlload = new MutationObserver(() => {
@@ -358,6 +379,11 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
             this.pageno = this.playerWin.pageno | 0;
             this.dispatchEvent({ type: 'pagenochange', detail: this.pageno });
         });
+
+        // subdomain
+        this.addEventListener('connect', ({ detail: playerWin }) => {
+            this.subdomain = playerWin.location.href.includes('bangumi') ? 'bangumi' : 'www';
+        })
     }
 
     /**

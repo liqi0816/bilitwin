@@ -73,12 +73,12 @@ class CachedDOMStorage implements CommonCachedStorage {
     }
 
     entries() {
-        this.cache = { ...this.storage };
+        this.cache = { ...this.storage } as any as this['cache'];
         return Object.entries(this.cache) as Iterable<[string, string]>;
     }
 
     [Symbol.iterator]() {
-        return this.entries()[Symbol.iterator];
+        return this.entries()[Symbol.iterator]();
     }
 }
 

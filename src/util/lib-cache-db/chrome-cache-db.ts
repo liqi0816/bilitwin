@@ -221,7 +221,7 @@ class ChromeCacheDB extends BaseMutableCacheDB {
             return navigator.storage.estimate();
         }
         else if (navigator.webkitTemporaryStorage) {
-            return new Promise<{ usage: number, quota: number }>(resolve => {
+            return new Promise<StorageEstimate>(resolve => {
                 navigator.webkitTemporaryStorage!.queryUsageAndQuota((usage: number, quota: number) => resolve({ usage, quota }));
             })
         }

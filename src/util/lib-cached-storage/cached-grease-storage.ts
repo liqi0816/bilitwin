@@ -89,7 +89,7 @@ class CachedGreaseStorage implements CommonCachedStorage {
     }
 
     [Symbol.asyncIterator]() {
-        return this.entries()[Symbol.asyncIterator];
+        return this.entries()[Symbol.asyncIterator]();
     }
 }
 

@@ -47,7 +47,7 @@ export interface OnEventTargetMixinConstructor<EventMap extends SimpleEventMap =
  * @returns a Promise that resolves when the specific event fires
  */
 // typescript: #(duplicate method declaration) = 2 * 2
-function asyncOnce(target: CommonEventTargetInterface, name: string, errorName?: string): Promise<SimpleEvent>
+function asyncOnce<T extends SimpleEvent = SimpleEvent>(target: CommonEventTargetInterface, name: string, errorName?: string): Promise<T>
 function asyncOnce<T>(target: CommonEventTargetInterface, name: string, errorName: string, bind: T): Promise<T>
 function asyncOnce<T>(target: CommonEventTargetInterface, name: string, errorName: string = 'error', bind?: T) {
     return new Promise((resolve, reject) => {

@@ -57,6 +57,7 @@ class IDBCacheDB implements CommonCacheDB {
     }
 
     async createData(item: Blob, name: string): Promise<Event>
+    async createData(item: FileLike, name?: string): Promise<Event>
     async createData(item: FileLike, name = item.name) {
         const itemChunks = [] as ItemChunk[];
         const numChunks = Math.ceil(item.size / this.maxItemSize);
@@ -85,6 +86,7 @@ class IDBCacheDB implements CommonCacheDB {
     }
 
     async setData(item: Blob, name: string): Promise<Event>
+    async setData(item: FileLike, name?: string): Promise<Event>
     async setData(item: FileLike, name = item.name) {
         const itemChunks = [] as ItemChunk[];
         const numChunks = Math.ceil(item.size / this.maxItemSize);
@@ -211,7 +213,7 @@ class IDBCacheDB implements CommonCacheDB {
             return navigator.storage.estimate();
         }
         else if (navigator.webkitTemporaryStorage) {
-            return new Promise<{ usage: number, quota: number }>(resolve => {
+            return new Promise<StorageEstimate>(resolve => {
                 navigator.webkitTemporaryStorage!.queryUsageAndQuota((usage: number, quota: number) => resolve({ usage, quota }));
             })
         }

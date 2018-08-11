@@ -14,6 +14,7 @@ import BiliUserJS from './biliuserjs.js';
 import CommonCachedStorage from '../util/lib-cached-storage/common-cached-storage.js';
 import CachedDOMStorage from '../util/lib-cached-storage/cached-dom-storage.js';
 import { yieldThread, sleep } from '../util/async-control.js';
+import { asyncOnce } from '../util/on-event-target.js';
 
 export type BiliPolyfillInit = Partial<typeof BiliPolyfill.OPTIONS_DEFAULT>
 
@@ -21,6 +22,7 @@ export type InEventMap = {
     cidchange: SimpleCustomEvent<string>
     aidchange: SimpleCustomEvent<string>
     videochange: SimpleCustomEvent<HTMLVideoElement>
+    menuclose: SimpleCustomEvent<HTMLUListElement>
 }
 
 export interface OPEDData {
@@ -52,7 +54,7 @@ export interface UserData {
     }
 }
 
-class BiliPolyfill extends OnEventDuplexFactory() {
+class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     userjs: BiliUserJS
 
     options: typeof BiliPolyfill.OPTIONS_DEFAULT
@@ -154,6 +156,7 @@ class BiliPolyfill extends OnEventDuplexFactory() {
 
     }
 
+    // once
     async badgeWatchLater() {
         // 1. find watchlater button
         const li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
@@ -204,6 +207,7 @@ class BiliPolyfill extends OnEventDuplexFactory() {
         }
     }
 
+    // multiple-times
     squashElectric() {
         // 1. autopart !== 5 + 5 => exit
         const bilibili_player_settings = this.userjs.playerWin.localStorage.getItem('bilibili_player_settings');
@@ -240,64 +244,189 @@ class BiliPolyfill extends OnEventDuplexFactory() {
         });
     }
 
-    scroll() {
-        this[inputSocketSymbol].addEventListener('bofqiload', ({ detail: bofqi }) => {
-            if (top.scrollY < 200) bofqi.scrollIntoView();
+    // once
+    async scroll() {
+        const bofqi = this.userjs.bofqi || (await asyncOnce<SimpleCustomEvent<HTMLDivElement>>(this[inputSocketSymbol], 'bofqiload')).detail;
+        if (top.scrollY < 200) bofqi.scrollIntoView();
+    }
+
+    // once
+    focus() {
+        (this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0] as HTMLElement).click();
+    }
+
+    // multiple-times
+    menuFocus() {
+        this[inputSocketSymbol].addEventListener('menuclose', () => this.focus());
+    }
+
+    // once
+    restorePrevent() {
+        // 1. restore option
+        const preventShade = this.userdata!.restore.preventShade[this.userjs.subdomain];
+
+        // 2. MUST initialize setting panel before click
+        this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+
+        // 3. restore if true
+        const input = this.userjs.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
+        if (preventShade && !input.nextElementSibling!.classList.contains('bpui-state-active')) {
+            input.click();
+        }
+
+        // 4. clean up setting panel
+        this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+
+        // 5. memorize option
+        this.addEventListener('close', () => {
+            this.userdata!.restore.preventShade[this.userjs.subdomain] = !input.nextElementSibling!.classList.contains('bpui-state-active');
         });
     }
 
-    focus() {
-
-    }
-
-    menuFocus() {
-
-    }
-
-    restorePrevent() {
-
-    }
-
+    // once
     restoreDanmuku() {
+        // 1. restore option
+        const danmukuSwitch = this.userdata!.restore.danmukuSwitch[this.userjs.subdomain];
+        const danmukuTopSwitch = this.userdata!.restore.danmukuTopSwitch[this.userjs.subdomain];
+        const danmukuBottomSwitch = this.userdata!.restore.danmukuBottomSwitch[this.userjs.subdomain];
+        const danmukuScrollSwitch = this.userdata!.restore.danmukuScrollSwitch[this.userjs.subdomain];
 
+        // 2. MUST initialize setting panel before click
+        this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+
+        // 3. restore if true
+        // 3.1 danmukuSwitch
+        const danmukuSwitchDiv = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0] as HTMLElement;
+        if (danmukuSwitch && !danmukuSwitchDiv.classList.contains('video-state-danmaku-off')) {
+            danmukuSwitchDiv.click();
+        }
+
+        // 3.2 danmukuTopSwitch danmukuBottomSwitch danmukuScrollSwitch
+        const [danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuScrollSwitchDiv] = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children as any as Iterable<HTMLElement>;
+        if (danmukuTopSwitch && !danmukuTopSwitchDiv.classList.contains('disabled')) {
+            danmukuTopSwitchDiv.click();
+        }
+        if (danmukuBottomSwitch && !danmukuBottomSwitchDiv.classList.contains('disabled')) {
+            danmukuBottomSwitchDiv.click();
+        }
+        if (danmukuScrollSwitch && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
+            danmukuScrollSwitchDiv.click();
+        }
+
+        // 4. clean up setting panel
+        this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+
+        // 5. memorize option
+        this.addEventListener('close', () => {
+            this.userdata!.restore.danmukuSwitch[this.userjs.subdomain] = danmukuSwitchDiv.classList.contains('video-state-danmaku-off');
+            this.userdata!.restore.danmukuTopSwitch[this.userjs.subdomain] = danmukuTopSwitchDiv.classList.contains('disabled');
+            this.userdata!.restore.danmukuBottomSwitch[this.userjs.subdomain] = danmukuBottomSwitchDiv.classList.contains('disabled');
+            this.userdata!.restore.danmukuScrollSwitch[this.userjs.subdomain] = danmukuScrollSwitchDiv.classList.contains('disabled');
+        });
     }
 
+    // once
     restoreSpeed() {
+        // 1. restore option
+        const speed = this.userdata!.restore.speed[this.userjs.subdomain];
 
+        // 2. restore if different
+        if (speed && speed != this.userjs.video!.playbackRate) {
+            this.userjs.video!.playbackRate = speed;
+        }
+
+        // 3. memorize option
+        this.addEventListener('close', () => {
+            this.userdata!.restore.speed[this.userjs.subdomain] = this.userjs.video!.playbackRate;
+        });
     }
 
+    // once
     restoreWide() {
+        // 1. restore option
+        const wideScreen = this.userdata!.restore.wideScreen[this.userjs.subdomain];
 
+        // 2. restore if different
+        const i = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0] as HTMLElement;
+        if (wideScreen && !i.classList.contains('icon-24wideon')) {
+            i.click();
+        }
+
+        // 3. memorize option
+        this.addEventListener('close', () => {
+            this.userdata!.restore.wideScreen[this.userjs.subdomain] = i.classList.contains('icon-24wideon');
+        });
     }
 
-    autoResume() {
+    // once
+    async autoResume() {
+        const video = this.userjs.video || (await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this.userjs, 'videochange')).detail;
+        if (video.readyState < (HTMLVideoElement as any).HAVE_FUTURE_DATA) {
+            const h = () => {
+                // 2. parse resume popup
+                const span = this.userjs.player!.querySelector('div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+                if (!span) return;
+                const [min, sec] = span.textContent!.split(':');
+                if (!min || !sec) return;
 
+                // 3. parse last playback progress
+                const time = +min * 60 + +sec;
+
+                // 3.1 still far from end => reasonable to resume => click
+                if (time < video.duration - 10) {
+                    // 3.1.1 paused and not autoplay => should remain paused after jump => hook video.play
+                    if (video.paused && !video.autoplay) {
+                        video.play = async () => {
+                            await yieldThread();
+                            (this.userjs.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLElement).click();
+                            video.play = HTMLVideoElement.prototype.play;
+                        }
+                    }
+
+                    // 3.1.2 simple jump
+                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-jump')[0] as HTMLElement).click();
+                }
+
+                // 3.2 near end => silent popup
+                else {
+                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-close')[0] as HTMLElement).click();
+                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-bottom')[0].children[0] as HTMLElement).style.visibility = 'hidden';
+                }
+            }
+        }
     }
 
+    // once
     autoPlay() {
 
     }
 
+    // once
     autoFullScreen() {
 
     }
 
+    // multiple-times
     oped() {
 
     }
 
+    // multiple-times
     series() {
 
     }
 
+    // once
     keydownPlayFull() {
 
     }
 
+    // multiple-times
     dblclickFull() {
 
     }
 
+    // multiple-times
     speech() {
 
     }

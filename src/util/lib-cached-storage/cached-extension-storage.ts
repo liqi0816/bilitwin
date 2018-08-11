@@ -88,7 +88,7 @@ class CachedExtensionStorage implements CommonCachedStorage {
     }
 
     [Symbol.asyncIterator]() {
-        return this.entries()[Symbol.asyncIterator];
+        return this.entries()[Symbol.asyncIterator]();
     }
 }
 

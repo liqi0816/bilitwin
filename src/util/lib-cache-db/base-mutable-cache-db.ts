@@ -73,7 +73,7 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
         if (!data) return null;
         return new Promise<string>((resolve, reject) => {
             const e = new FileReader();
-            e.onload = () => resolve(e.result);
+            e.onload = () => resolve(e.result as string);
             e.onerror = reject;
             e.readAsText(data);
         });
@@ -84,7 +84,7 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
         if (!data) return null;
         return new Promise<T>((resolve, reject) => {
             const e = new FileReader();
-            e.onload = () => resolve(JSON.parse(e.result));
+            e.onload = () => resolve(JSON.parse(e.result as string));
             e.onerror = reject;
             e.readAsText(data);
         });
@@ -116,7 +116,7 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
         return ret;
     }
 
-    static async quota() { return { usage: -1, quota: -1 } }
+    static async quota() { return { usage: -1, quota: -1 } as StorageEstimate; }
 }
 
 export { BaseMutableCacheDB }

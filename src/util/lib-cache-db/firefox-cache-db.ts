@@ -242,7 +242,7 @@ class FirefoxCacheDB extends BaseMutableCacheDB {
     static async blobToArrayBuffer(item: Blob) {
         return new Promise<ArrayBuffer>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
+            reader.onload = () => resolve(reader.result as ArrayBuffer);
             reader.onerror = () => reject(reader.error);
         });
     }

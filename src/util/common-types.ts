@@ -54,12 +54,19 @@ export type ForceShim<Original, Override = {}, Extend = {}> =
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 
 /**
- * From a Constructor pick all static methods
+ * From constructor function pick all static methods
  */
 export type PickStatic<T extends Constructor> = Pick<T, Exclude<keyof T, 'prototype'>>
 
 /**
- * Generate type EventMap source strings
+ * From array or tuple type extract element type
+ */
+export type ValuesOfArray<T extends any[]> = T[number];
+
+/**
+ * Generate type annotations for `(On)?Event(Duplex|Target)` classes
+ * In: source string of EventMap
+ * Out: various annotations
  */
 export const generateEventMapSourceString = (str: string) => {
     const events = str.split('\n').filter(e => e).map(e => {

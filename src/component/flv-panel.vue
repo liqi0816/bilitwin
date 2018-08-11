@@ -34,6 +34,5 @@ import BlankPanelButton from "./base-panel-button.vue";
 export default {};
 </script>
 
-
 <style scoped>
 </style>
