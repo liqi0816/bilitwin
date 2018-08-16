@@ -13,6 +13,7 @@ import MonitorStream from '../util/monitor-stream.js';
 import { MemoryBlobStream } from '../util/lib-util-streams/memory-stream.js';
 import { ReadableStream } from '../util/lib-util-streams/readablestream-types.js';
 import { SimpleBareEvent } from '../util/simple-event-target.js';
+import { int } from '../util/type-conversion.macro.js';
 
 export type FetchFunctionType = typeof fetch
 
@@ -163,7 +164,7 @@ class BiliMonkeyFLVHandler extends OnEventTargetFactory<EventMap, OnEventMap>(['
         const total = headers.get('Content-Length');
         if (total) {
             downloader.lengthComputable = true;
-            downloader.total = downloader.loaded + (+total);
+            downloader.total = downloader.loaded + int(total);
         }
 
         this.dispatchEvent({ type: 'downloadstart' });

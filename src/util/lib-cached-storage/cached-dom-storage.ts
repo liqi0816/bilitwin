@@ -8,6 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import CommonCachedStorage from './common-cached-storage.js';
+import { str } from '../type-conversion.macro.js';
 
 class CachedDOMStorage implements CommonCachedStorage {
     storage: Storage
@@ -19,7 +20,7 @@ class CachedDOMStorage implements CommonCachedStorage {
     }
 
     setItem(name: string, item: string) {
-        const string = '' + item;
+        const string = str(item);
         this.cache[name] = string;
         return this.storage.setItem(name, string);
     }

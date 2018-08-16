@@ -61,7 +61,12 @@ export type PickStatic<T extends Constructor> = Pick<T, Exclude<keyof T, 'protot
 /**
  * From array or tuple type extract element type
  */
-export type ValuesOfArray<T extends any[]> = T[number];
+export type ValuesOfArray<TArray extends ArrayLike<any>> = TArray[number]
+
+/**
+ * From function extract arguments tuple type
+ */
+export type ArgumentsType<TFunction extends Function> = TFunction extends (...args: infer TArguments) => void ? TArguments : never
 
 /**
  * Generate type annotations for `(On)?Event(Duplex|Target)` classes

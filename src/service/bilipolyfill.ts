@@ -15,6 +15,7 @@ import CommonCachedStorage from '../util/lib-cached-storage/common-cached-storag
 import CachedDOMStorage from '../util/lib-cached-storage/cached-dom-storage.js';
 import { yieldThread, sleep } from '../util/async-control.js';
 import { asyncOnce } from '../util/on-event-target.js';
+import { int } from '../util/type-conversion.macro.js';
 
 export type BiliPolyfillInit = Partial<typeof BiliPolyfill.OPTIONS_DEFAULT>
 
@@ -370,7 +371,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
                 if (!min || !sec) return;
 
                 // 3. parse last playback progress
-                const time = +min * 60 + +sec;
+                const time = int(min) * 60 + int(sec);
 
                 // 3.1 still far from end => reasonable to resume => click
                 if (time < video.duration - 10) {

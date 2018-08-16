@@ -8,6 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import CommonCachedStorage from './common-cached-storage.js';
+import { str } from '../type-conversion.macro.js';
 
 export interface StorageArea {
     get(name?: string | string[] | { [name: string]: any }): Promise<{ [name: string]: any }>
@@ -26,7 +27,7 @@ class CachedExtensionStorage implements CommonCachedStorage {
     }
 
     async setItem(name: string, item: string) {
-        const string = '' + item;
+        const string = str(item);
         this.cache[name] = string;
         return await this.storage.set({ [name]: string });
     }

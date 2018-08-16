@@ -151,20 +151,29 @@ function OnEventTargetFactory<EventMap extends SimpleEventMap = SimpleEventMap, 
     return OnEventTarget as any as OnEventTargetConstructor<EventMap, OnEventMap>;
 }
 
-/**
- * A sample usage of OnEventTarget.mixin
- * Creates an array that fires 'push' event when push is called
- */
-class PushEventArray<T> extends OnEventTargetFactory<{ push: SimpleEvent }, { onpush: SimpleEvent }>(['push']).mixin(Array) {
+const __UNIT_TEST = () => {
     /**
-     * will fire CustomEvent<typeof args> when called
-     * @param args will be passed to super.push
+     * A sample usage of OnEventTarget.mixin
+     * Creates an array that fires 'push' event when push is called
      */
-    push(...args: T[]) {
-        this.dispatchEvent(new CustomEvent('push', { detail: args }));
-        return super.push(...args);
+    class PushEventArray<T> extends OnEventTargetFactory<{ push: CustomEvent }, { onpush: CustomEvent }>(['push']).mixin(Array) {
+        /**
+         * will fire CustomEvent<typeof args> when called
+         * @param args will be passed to super.push
+         */
+        push(...args: T[]) {
+            this.dispatchEvent(new CustomEvent('push', { detail: args }));
+            return super.push(...args);
+        }
     }
+
+    const array = new PushEventArray();
+    array.onpush = ({ detail }) => { console.log(detail) };
+    array.addEventListener('push', ({ detail }) => { console.warn(detail) });
+    array.push(1);
+
+    return PushEventArray;
 }
 
-export { asyncOnce, mixinOnEventTarget, OnEventTargetFactory, PushEventArray };
+export { asyncOnce, mixinOnEventTarget, OnEventTargetFactory };
 export default OnEventTargetFactory;

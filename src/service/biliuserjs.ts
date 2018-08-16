@@ -9,6 +9,7 @@
 
 import { SimpleEvent, SimpleCustomEvent } from '../util/simple-event-target.js';
 import { OnEventDuplexFactory } from '../util/event-duplex.js';
+import { int } from '../util/type-conversion.macro.js';
 
 declare const HTMLVideoElement: {
     HAVE_NOTHING: 0
@@ -376,7 +377,7 @@ class BiliUserJS extends OnEventDuplexFactory<{}, EventMap, OnEventMap>(['connec
 
         // pagenochange
         this.addEventListener('cidchange', () => {
-            this.pageno = this.playerWin.pageno | 0;
+            this.pageno = int(this.playerWin.pageno);
             this.dispatchEvent({ type: 'pagenochange', detail: this.pageno });
         });
 

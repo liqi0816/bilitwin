@@ -7,20 +7,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-let _EventTarget = EventTarget;
-try {
-    new EventTarget();
-} catch (e) {
-    _EventTarget = class {
-        constructor() {
-            const e = document.createDocumentFragment();
-            for (const name of Object.keys(EventTarget.prototype)) {
-                this[name] = e[name].bind(e);
-            }
-        }
-    }
-}
-
 const _AbortController = typeof AbortController === 'function' && AbortController || class {
     constructor() {
         this.signal = new _EventTarget();
@@ -46,8 +32,5 @@ const _AbortController = typeof AbortController === 'function' && AbortControlle
     }
 };
 
-import E from './playground.js';
-const a = E.a
-
-export { _EventTarget as EventTarget, _AbortController as AbortController };
-export default { EventTarget: _EventTarget, AbortController: _AbortController };
+export { _AbortController as AbortController };
+export default { AbortController: _AbortController };

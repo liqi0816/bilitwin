@@ -8,6 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import CommonCachedStorage from './common-cached-storage.js';
+import { str } from '../type-conversion.macro.js';
 
 export interface GreaseStorage {
     setValue(name: string, item: string | number | boolean): Promise<void>
@@ -29,7 +30,7 @@ class CachedGreaseStorage implements CommonCachedStorage {
     }
 
     async setItem(name: string, item: string) {
-        const string = '' + item;
+        const string = str(item);
         this.cache[name] = string;
         return await this.storage.setValue(name, string);
     }
