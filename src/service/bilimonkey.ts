@@ -16,6 +16,7 @@ import BiliMonkeyFLVHandlerArray, { BiliMonkeyFLVHandler } from './bilimonkey-fl
 import { CommonCacheDB, ChromeCacheDB, IDBCacheDB } from '../util/cache-db.js';
 import BiliMonkeyASSHandler from './bilimonkey-ass-handler.js';
 import Mutex from '../util/mutex.js';
+import { asyncOnce } from '../util/on-event-target.js';
 
 export type BiliMonkeyInit = Partial<typeof BiliMonkey.OPTIONS_DEFAULT>
 
@@ -78,7 +79,6 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
     flvFormatName: string | null
     mp4FormatName: string | null
     fallbackFormatName: string | null
-    currentFormatName: string | null
 
     queryInfoMutex: Mutex
     defaultFormatPromise: Promise<this | void> | null
@@ -121,7 +121,6 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
         this.flvFormatName = null;
         this.mp4FormatName = null;
         this.fallbackFormatName = null;
-        this.currentFormatName = null;
 
         this.queryInfoMutex = new Mutex();
         this.defaultFormatPromise = null;
@@ -160,13 +159,11 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
 
         this[inputSocketSymbol].addEventListener('cidchange', () => this.close());
 
-        await this.userjs.domcontentloadPromise;
+        if (this.userjs.readyState < BiliUserJSReadyState.domcontentloaded) await asyncOnce(this[inputSocketSymbol], 'domcontentload');
         const autoDefault = this.options.autoDefault && this.sniffDefaultFormat();
         this.resolveASS();
-        await this.userjs.controlloadPromise;
+        if (this.userjs.readyState < BiliUserJSReadyState.controlloaded) await asyncOnce(this[inputSocketSymbol], 'controlload');
         this.getAvailableFormatName();
-        this.refreshCurrentFormatName();
-        this[inputSocketSymbol].addEventListener('videochange', () => this.refreshCurrentFormatName());
 
         await autoDefault;
         if (this.options.autoFLV) await this.queryInfo('flv');
@@ -194,8 +191,8 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
             else if (format === this.mp4FormatName && this.mp4) {
                 return this.mp4;
             }
-            else if (format === this.currentFormatName) {
-                return this.getCurrentFormat();
+            else if (format === this.getCurrentFormatName()) {
+                return this.getCurrentFormat(format);
             }
             else {
                 return this.getNonCurrentFormat(format);
@@ -463,7 +460,7 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
         })();
     }
 
-    refreshCurrentFormatName() {
+    getCurrentFormatName() {
         // 1. find menu list
         const menu = this.getQualityMenuList();
 
@@ -471,37 +468,37 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
         if (menu) {
             for (const e of menu) {
                 if (e.getAttribute('data-selected')) {
-                    return this.currentFormatName = BiliMonkey.VALUE_TO_FORMAT[e.getAttribute('data-value')! as keyof typeof BiliMonkey.VALUE_TO_FORMAT]
+                    return BiliMonkey.VALUE_TO_FORMAT[e.getAttribute('data-value')! as keyof typeof BiliMonkey.VALUE_TO_FORMAT]
                 }
             }
         }
 
         // 3. extration fail => reset
-        return this.currentFormatName = null;
+        return null;
     }
 
-    async getCurrentFormat() {
+    async getCurrentFormat(format: string) {
         const hook = this.hookAjaxPlayURLResponse();
         this.userjs.playerWin.player.reloadAccess();
         const ret = await hook;
         if (!ret) throw new Error('BiliMonkey.getCurrentFormat: hook failed');
-        return this.resolveFormat(ret.response, this.currentFormatName);
+        return this.resolveFormat(ret.response, format);
     }
 
     static readonly PLAY_URL_EMPTY_RESPONSE = {}
     async getNonCurrentFormat(format: string) {
-        const hook = this.hookAjaxPlayURLResponse();
         const menu = this.getQualityMenuList();
         if (!menu) throw new Error('BiliMonkey.getNonCurrentFormat: cannnot find quality menu');
 
         const value = BiliMonkey.FORMAT_TO_VALUE[format as keyof typeof BiliMonkey.FORMAT_TO_VALUE];
         for (const e of menu) {
             if (e.getAttribute('data-value') === value) {
+                const hook = this.hookAjaxPlayURLResponse();
                 (e as HTMLLIElement).click();
                 const ret = await hook;
                 if (!ret) throw new Error('BiliMonkey.getNonCurrentFormat: hook failed');
                 BiliMonkey.executeAjaxSuccess(ret.success, BiliMonkey.PLAY_URL_EMPTY_RESPONSE);
-                return this.resolveFormat(ret.response, this.currentFormatName);
+                return this.resolveFormat(ret.response, format);
             }
         }
         throw new Error('BiliMonkey.getNonCurrentFormat: cannnot find target quality');

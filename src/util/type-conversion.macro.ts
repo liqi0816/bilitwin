@@ -11,8 +11,8 @@ export { tuple, float, int, str, bool }
 /*========== macro ==========*/
 
 // @ts-ignore
-import { createMacro } from 'babel-plugin-macros'
-if (typeof module === 'object') {
+if (typeof module === 'object' && typeof require === 'function') {
+    const { createMacro } = require('babel-plugin-macros');
     module.exports = createMacro(({ references: { tuple, float, int, str, bool }, babel: { types: t } }: any) => {
         if (tuple) {
             for (const { parentPath, parent } of tuple) {
@@ -67,4 +67,5 @@ if (typeof module === 'object') {
             }
         }
     });
+    exports = module.exports;
 }

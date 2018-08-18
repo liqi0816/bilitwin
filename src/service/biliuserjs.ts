@@ -7,7 +7,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SimpleEvent, SimpleCustomEvent } from '../util/simple-event-target.js';
+import { SimpleCustomEvent } from '../util/simple-event-target.js';
 import { OnEventDuplexFactory } from '../util/event-duplex.js';
 import { int } from '../util/type-conversion.macro.js';
 
@@ -23,7 +23,7 @@ declare const HTMLVideoElement: {
     NETWORK_LOADING: 2
     NETWORK_NO_SOURCE: 3
 }
-export { HTMLVideoElement }
+export { HTMLVideoElement, HTMLVideoElement as HTMLVideoElementEnum }
 
 export type PlayerWindow = Window & {
     aid: string
