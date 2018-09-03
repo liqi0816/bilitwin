@@ -10,12 +10,12 @@
 
 import { OnEventDuplexFactory, inputSocketSymbol } from "../util/event-duplex.js";
 import { SimpleCustomEvent } from '../util/simple-event-target.js';
-import BiliUserJS from './biliuserjs.js';
+import BiliUserJS, { HTMLVideoElementEnum } from './biliuserjs.js';
 import CommonCachedStorage from '../util/lib-cached-storage/common-cached-storage.js';
 import CachedDOMStorage from '../util/lib-cached-storage/cached-dom-storage.js';
 import { yieldThread, sleep } from '../util/async-control.js';
 import { asyncOnce } from '../util/on-event-target.js';
-import { int } from '../util/type-conversion.macro.js';
+import { int, str } from '../util/type-conversion.macro.js';
 
 export type BiliPolyfillInit = Partial<typeof BiliPolyfill.OPTIONS_DEFAULT>
 
@@ -54,6 +54,9 @@ export interface UserData {
         wideScreen: SubDomainSpecificSettings<boolean>
     }
 }
+
+class BiliPolyFillException extends Error { }
+BiliPolyFillException.prototype.name = 'BiliPolyfillException';
 
 class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     userjs: BiliUserJS
@@ -104,34 +107,34 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
                 this.options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT] = Boolean(options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT]);
             }
         }
-        if (options.storage) {
-            if (typeof options.storage === 'object') {
-                this.storage = options.storage;
-            }
-            else {
-                this.storage = new CachedDOMStorage();
-            }
-            this.userdata = this.storage.getJSON(BiliPolyfill.STORAGE_NAME_DEFAULT);
+        if (typeof options.storage === 'object') {
+            this.storage = options.storage;
+        }
+        else if (options.storage) {
+            this.storage = new CachedDOMStorage();
         }
         else {
             this.storage = null;
-            this.userdata = null;
         }
+        this.userdata = null;
     }
 
     static readonly USERDATA_SIZE_LIMIT = 1048576
     saveUserdata() {
+        if (!this.storage) throw new BiliPolyFillException(`BiliPolyfill.saveUserdata: storage ${this.storage} is falsy`);
         const string = JSON.stringify(this.userdata);
         if (string.length > BiliPolyfill.USERDATA_SIZE_LIMIT) throw new RangeError('BiliPolyfill.saveUserdata: userdata size exceed limit');
-        return this.storage!.setItem(BiliPolyfill.STORAGE_NAME_DEFAULT, string);
+        return this.storage.setItem(BiliPolyfill.STORAGE_NAME_DEFAULT, string);
     }
 
     async retrieveUserdata() {
         try {
-            const string = await this.storage!.getItem('biliPolyfill');
-            if (string) this.userdata = JSON.parse(string);
+            if (this.storage) {
+                const getItem = await this.storage.getItem('biliPolyfill');
+                if (getItem) this.userdata = JSON.parse(getItem);
+            }
         }
-        catch (e) { }
+        catch { }
 
         if (!this.userdata) this.userdata = {} as UserData;
         if (typeof this.userdata.oped !== 'object') this.userdata.oped = {};
@@ -149,6 +152,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
     async activate(userjs?: BiliUserJS) {
         if (userjs) this.userjs = userjs;
+        await this.retrieveUserdata();
 
         return this;
     }
@@ -161,7 +165,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     async badgeWatchLater() {
         // 1. find watchlater button
         const li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
-        if (!li) return;
+        if (!li) throw new BiliPolyFillException(`BiliPolyfill.badgeWatchLater: i_menu_watchLater_btn not found`);;
 
         // 2. initialize watchlater panel
         const hook = new Promise(resolve => new MutationObserver((mutations, observer) => {
@@ -173,7 +177,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
         // 3. exceptional watchlater panel structure => throw
         if (li.children[1].children[0].children[0].className !== 'm-w-loading') {
-            throw new Error('BiliPolyfill.badgeWatchLater: cannot find m-w-loading panel');
+            throw new BiliPolyFillException('BiliPolyfill.badgeWatchLater: cannot find m-w-loading panel');
         }
 
         // 4. hide watchlater panel
@@ -196,7 +200,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
                 div.textContent = '5+';
             }
             else {
-                div.textContent = String(li.children[1].children[0].children[0].children.length);
+                div.textContent = str(li.children[1].children[0].children[0].children.length);
             }
             li.children[0].appendChild(div);
             this.addEventListener('close', () => div.remove());
@@ -219,9 +223,10 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         this[inputSocketSymbol].addEventListener('videoended', async () => {
             // 2. wait for electric panel
             await yieldThread();
+            const player = this.userjs.player!;
 
             // 3. click skip
-            const electricPanel = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-electric-panel')[0] as HTMLElement;
+            const electricPanel = player.getElementsByClassName('bilibili-player-electric-panel')[0] as HTMLElement;
             if (!electricPanel) return;
             (electricPanel.children[2] as HTMLElement).click();
 
@@ -232,7 +237,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
             // 5. and perform a fake countdown
             for (let i = 5; i >= 0; i--) {
                 // 5.1 yield to next part hint
-                if (this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) electricPanel.style.zIndex = '';
+                if (player.getElementsByClassName('bilibili-player-video-toast-item-jump')[0]) electricPanel.style.zIndex = '';
 
                 // 5.2 countdown > 0 => update countdown textContent
                 electricPanel.children[2].children[0].textContent = `0${i}`;
@@ -252,8 +257,9 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     }
 
     // once
-    focus() {
-        (this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0] as HTMLElement).click();
+    async focus() {
+        const player = this.userjs.player || (await asyncOnce<SimpleCustomEvent<HTMLDivElement>>(this[inputSocketSymbol], 'playerchange')).detail;
+        (player.getElementsByClassName('bilibili-player-video-progress')[0] as HTMLElement).click();
     }
 
     // multiple-times
@@ -359,56 +365,113 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         });
     }
 
+    static AUTO_RESUME_TIMEOUT = 3000
     // once
     async autoResume() {
-        const video = this.userjs.video || (await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this.userjs, 'videochange')).detail;
-        if (video.readyState < (HTMLVideoElement as any).HAVE_FUTURE_DATA) {
-            const h = () => {
-                // 2. parse resume popup
-                const span = this.userjs.player!.querySelector('div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
-                if (!span) return;
-                const [min, sec] = span.textContent!.split(':');
-                if (!min || !sec) return;
+        // 1. get resume popup
+        if (!this.userjs.video || this.userjs.video.readyState < (HTMLVideoElement as any as typeof HTMLVideoElementEnum).HAVE_FUTURE_DATA) {
+            await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this[inputSocketSymbol], 'videocanplay');
+        }
+        const span = this.userjs.player!.querySelector('div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
+        if (!span) return;
 
-                // 3. parse last playback progress
-                const time = int(min) * 60 + int(sec);
+        // 2. parse resume popup
+        const [min, sec] = span.textContent!.split(':');
+        if (!min || !sec) throw new BiliPolyFillException(`BiliPolyfill.autoResume: cannot parse resume popup remaining time`);
 
-                // 3.1 still far from end => reasonable to resume => click
-                if (time < video.duration - 10) {
-                    // 3.1.1 paused and not autoplay => should remain paused after jump => hook video.play
-                    if (video.paused && !video.autoplay) {
-                        video.play = async () => {
-                            await yieldThread();
-                            (this.userjs.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLElement).click();
-                            video.play = HTMLVideoElement.prototype.play;
-                        }
-                    }
+        // 3. parse last playback progress
+        const time = int(min) * 60 + int(sec);
 
-                    // 3.1.2 simple jump
-                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-jump')[0] as HTMLElement).click();
-                }
-
-                // 3.2 near end => silent popup
-                else {
-                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-close')[0] as HTMLElement).click();
-                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-bottom')[0].children[0] as HTMLElement).style.visibility = 'hidden';
+        // 3.1 still far from end => reasonable to resume => click
+        const video = this.userjs.video!;
+        if (time < video.duration - 10) {
+            // 3.1.1 paused and not autoplay => should remain paused after jump => hook video.play
+            if (video.paused && !video.autoplay) {
+                video.play = async () => {
+                    await yieldThread();
+                    (this.userjs.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLElement).click();
+                    video.play = HTMLVideoElement.prototype.play;
                 }
             }
+
+            // 3.1.2 simple jump
+            (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-jump')[0] as HTMLElement).click();
+        }
+
+        // 3.2 near end => silent popup
+        else {
+            (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-item-close')[0] as HTMLElement).click();
+            (this.userjs.player!.getElementsByClassName('bilibili-player-video-toast-bottom')[0].children[0] as HTMLElement).style.visibility = 'hidden';
         }
     }
 
     // once
-    autoPlay() {
+    async autoPlay() {
+        // 1. get video
+        const video = this.userjs.video || (await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this[inputSocketSymbol], 'videochange')).detail;
 
+        // 2. set autoplay
+        video.autoplay = true;
+
+        // 3. mysteriously still paused => force play
+        await yieldThread();
+        if (video.paused) (this.userjs.player!.getElementsByClassName('bilibili-player-video-btn-start')[0] as HTMLElement).click();
     }
 
     // once
-    autoFullScreen() {
+    async  autoFullScreen() {
+        // 1. get player
+        const player = this.userjs.player || (await asyncOnce<SimpleCustomEvent<HTMLDivElement>>(this[inputSocketSymbol], 'playerchange')).detail;
 
+        // 2. set fullscreen
+        if (player.getElementsByClassName('div.video-state-fullscreen-off')[0]) {
+            (player.getElementsByClassName('bilibili-player-video-btn-fullscreen')[0] as HTMLElement).click();
+        }
     }
 
     // multiple-times
     oped() {
+        let collectionId: string;
+        getCollectionId: {
+            {
+                const e = top.location.pathname.match(/av\d+/);
+                if (e) {
+                    collectionId = e[0];
+                    break getCollectionId;
+                }
+            }
+
+            {
+                const e = top.location.pathname.match(/av\d+/);
+                if (e) {
+                    collectionId = e[0];
+                    break getCollectionId;
+                }
+            }
+
+            {
+                const e = this.userjs.playerWin.document.querySelector('div.bangumi-info a') as HTMLAnchorElement;
+                if (e) {
+                    collectionId = e.href;
+                    break getCollectionId;
+                }
+            }
+
+            throw new BiliPolyFillException('BiliPolyFill.oped: cannot get collection ID')
+        }
+
+        this[inputSocketSymbol].addEventListener('opstart', () => {
+
+        });
+        this[inputSocketSymbol].addEventListener('opstart', () => {
+
+        });
+        this[inputSocketSymbol].addEventListener('opstart', () => {
+
+        });
+        this[inputSocketSymbol].addEventListener('opstart', () => {
+
+        });
 
     }
 

@@ -14,7 +14,19 @@
 
 # 目前的状态
 
-util已经差不多了，codec直接用以前的，但是service的工作量还很大。
+下载组件已完工。万岁！
+
+功能增强组件(./service/bilipolyfill.ts)正在进行中。
+
+我本来是不看番剧的，但是最近居然也沉迷了，准备加一个没有灵魂的空降指挥部(./codec/audioskip)
+
+万岁！python证明了SVM可以用在空降指挥部上，接下来只剩下实现一个JavaScript版了！
+
+video.captureStream() -> web audio worklet -> svm web worker -> output
+
+数据集请见dataset.py
+
+模型请见svm.py （只有L63-L68 6行）
 
 # 目录结构
 

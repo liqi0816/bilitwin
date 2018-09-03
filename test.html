@@ -5,15 +5,14 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Unit Test Page</title>
-    <script type="module" src="tsout/util/event-duplex.js"></script>
+    <script type="module" src="./tsout/codec/audioskip/audioskip.js"></script>
 </head>
 
 <body>
-    <div></div>
-    <div></div>
-    <div></div>
-    <script> 
-        [div1, div2, div3] = document.getElementsByTagName('div')
+    <audio controls src="./samples/46285306-1-80.wav"></audio>
+    <script>
+        const audio = document.getElementsByTagName('audio')[0];
+        
     </script>
 </body>
 

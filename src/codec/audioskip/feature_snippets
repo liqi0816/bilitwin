@@ -1,0 +1,26 @@
+
+tonnetz = np.mean(librosa.feature.tonnetz(y=librosa.effects.harmonic(signal), sr=sample_rate).T, axis=0)
+features_names.extend(['tonnetz'] * len(tonnetz))
+
+chroma = np.mean(librosa.feature.chroma_stft(S=spectrogram_magnitude, sr=sample_rate).T, axis=0)
+features_names.extend(['chroma'] * len(chroma))
+
+zero_crossing_rate = np.mean(librosa.feature.zero_crossing_rate(signal).T, axis=0)
+features_names.extend(['zero_crossing_rate'] * len(zero_crossing_rate))
+
+y, sr = signal, sample_rate
+
+spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr).T, axis=0)
+features_names.extend(['spectral_rolloff'] * len(spectral_rolloff))
+
+spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=y).T, axis=0)
+features_names.extend(['spectral_flatness'] * len(spectral_flatness))
+
+spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr).T, axis=0)
+features_names.extend(['spectral_bandwidth'] * len(spectral_bandwidth))
+
+spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr).T, axis=0)
+features_names.extend(['spectral_centroid'] * len(spectral_centroid))
+
+rmse = np.mean(librosa.feature.rmse(y=y).T, axis=0)
+features_names.extend(['rmse'] * len(rmse))
