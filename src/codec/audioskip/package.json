@@ -1,0 +1,27 @@
+{
+  "name": "audioskip-js",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "qli5",
+  "private": true,
+  "devDependencies": {
+    "@types/webassembly-js-api": "0.0.1",
+    "assemblyscript": "github:AssemblyScript/assemblyscript",
+    "http-server": "^0.11.1",
+    "libsvm-js": "^0.2.1",
+    "rollup": "^0.65.2",
+    "rollup-plugin-commonjs": "^9.1.6",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "typescript": "^3.0.3"
+  },
+  "scripts": {
+    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate",
+    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate --optimize --noDebug",
+    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
+  },
+  "dependencies": {
+    "fft-js": "0.0.11",
+    "mfcc": "github:vail-systems/node-mfcc"
+  }
+}

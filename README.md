@@ -16,13 +16,13 @@
 
 下载组件已完工。万岁！
 
-功能增强组件(./service/bilipolyfill.ts)正在进行中。
+功能增强组件(src/service/bilipolyfill.ts)正在进行中。
 
-我本来是不看番剧的，但是最近居然也沉迷了，准备加一个没有灵魂的空降指挥部(./codec/audioskip)
+我本来是不看番剧的，但是最近居然也沉迷了，准备加一个没有灵魂的空降指挥部(src/codec/audioskip)
 
-万岁！python证明了SVM可以用在空降指挥部上，接下来只剩下实现一个JavaScript版了！
+万岁！python(src/codec/audioskip-py)证明了SVM可以用在空降指挥部上，F1达到0.856，recall达到0.874，接下来只剩下实现一个JavaScript版了！
 
-video.captureStream() -> web audio worklet -> svm web worker -> output
+~~video.captureStream() -> web audio worklet~~(已完成) -> svm web worker -> output
 
 数据集请见dataset.py
 

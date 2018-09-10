@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "sourceMap": false,
+    "allowJs": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ],
+    "outDir": "./build"
+  },
+  "include": [
+    "web/**/*.ts",
+    "web/**/*.js",
+    "wrapper/**/libsvm.js"
+  ],
+  "exclude": [
+    "assembly",
+    "node_modules"
+  ]
+}
