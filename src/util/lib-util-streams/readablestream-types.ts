@@ -7,9 +7,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { BuiltinReadableStream } from './builtin-namespace-wrapper.js';
 import { TransformStream } from './transformstream-types.js';
 import { WritableStream } from './writablestream-types.js';
+import { ForceOverride } from '../common-types.js';
 
 export interface PipeOptions {
     preventClose?: boolean
@@ -17,10 +17,10 @@ export interface PipeOptions {
     preventCancel?: boolean
 }
 
-export interface ReadableStream extends BuiltinReadableStream {
-    pipeThrough(transformStream: TransformStream, options?: PipeOptions): ReadableStream
+interface ReadableStream1 extends ReadableStream {
+    pipeThrough(transformStream: TransformStream, options?: PipeOptions): ReadableStream1
     pipeTo(destination: WritableStream, options?: PipeOptions): Promise<void>
-    tee(): [ReadableStream, ReadableStream]
+    tee(): [ReadableStream1, ReadableStream1]
 }
 
 export interface ReadableStreamDefaultController {
@@ -36,10 +36,10 @@ export interface UnderlyingSource {
     cancel?(reason: any): void
 }
 
-declare const ReadableStream: {
-    prototype: ReadableStream;
-    new(source?: UnderlyingSource, strategy?: QueuingStrategy): ReadableStream;
-}
-export { ReadableStream }
+const ReadableStream1 = ReadableStream as ForceOverride<typeof ReadableStream, {
+    prototype: ReadableStream1;
+    new(source?: UnderlyingSource, strategy?: QueuingStrategy): ReadableStream1;
+}>
+export { ReadableStream1 as ReadableStream }
 
-export default ReadableStream
+export default ReadableStream1

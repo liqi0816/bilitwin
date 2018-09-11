@@ -7,10 +7,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { BuiltinWritableStream } from './builtin-namespace-wrapper.js'
-
-export type WritableStream = BuiltinWritableStream
-
 export interface UnderlyingSink {
     start?: WritableStreamDefaultControllerCallback
     write?: WritableStreamChunkCallback
@@ -18,9 +14,9 @@ export interface UnderlyingSink {
     abort?: WritableStreamErrorCallback
 }
 
-declare const WritableStream: BuiltinWritableStream & {
+const WritableStream1 = WritableStream as typeof WritableStream & {
     new(underlyingSink?: UnderlyingSink, strategy?: QueuingStrategy): WritableStream;
 }
-export { WritableStream }
+export { WritableStream1 as WritableStream }
 
-export default WritableStream;
+export default WritableStream1;

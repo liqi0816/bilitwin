@@ -16,7 +16,7 @@ export interface Constructor<T = object> {
 }
 
 /**
- * Combined progress marking type of T
+ * Integrated progress marking type of T
  * 
  * * null => uninitialized
  * * async pending => someone is working on it
@@ -26,15 +26,17 @@ export interface Constructor<T = object> {
 export type AsyncOrSyncOrNull<T> = Promise<T> | T | null
 
 /**
- * Override properties `Override` in `Original`
- * (example: { a: number } => { a: boolean })
+ * Override properties in `Original` with `Override`
+ * 
+ * Typical use case: `{ a: number } => { a: boolean }`
  */
 export type ForceOverride<Original, Override = {}> =
     Pick<Original, Exclude<keyof Original, keyof Override>> & Override
 
 /**
- * Extend properties `Override` in `Original`
- * (example: { a: number } => { a: number | boolean })
+ * Extend properties in `Original` with `Extend`
+ * 
+ * Typical use case: `{ a: number } => { a: number | boolean })`
  */
 export type ForceExtend<Original, Extend = {}> =
     Pick<Original, Exclude<keyof Original, keyof Extend>>

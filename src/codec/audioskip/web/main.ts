@@ -28,7 +28,8 @@ import * as constants from './constants.js';
     const worker = new Worker(new URL('./worker.js', import.meta.url).href, { type: 'module' });
 
     // Start sharing buffer
-    const sampleRing = new SharedRingBuffer(constants.AUDIO_ANALYSOR_FRAME_LENGTH, constants.AUDIO_ANALYSOR_RING_BUFFER_LENGTH);
-    forward.port.postMessage(sampleRing.buffer);
-    worker.postMessage(sampleRing.buffer);
+    const sampleRing = new SharedRingBuffer(constants.AUDIO_ANALYSOR_FRAME_BYTE_LENGTH, constants.AUDIO_ANALYSOR_RING_BUFFER_BYTE_LENGTH);
+    const message = { name: 'init', data: sampleRing.buffer };
+    forward.port.postMessage(message);
+    worker.postMessage(message);
 })();

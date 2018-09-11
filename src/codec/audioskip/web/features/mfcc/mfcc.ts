@@ -1,4 +1,4 @@
-import { dct } from './dct.js';
+import dct from './dct.js';
 
 export interface MFCCInit {
     fftSize?: number

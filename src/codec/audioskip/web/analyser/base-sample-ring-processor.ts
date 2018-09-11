@@ -1,37 +1,35 @@
-import { SharedRingBuffer, SharedRingBufferMetadata } from '../util/shared-ring-buffer';
-import * as constants from '../constants';
+import SharedRingBuffer, { SharedRingBufferMetadata } from '../util/shared-ring-buffer.js';
+import * as constants from '../constants.js';
 
 export const enum SampleRingState {
     noMoreData,
     hasMoreData
 }
 
-abstract class SampleRingProcessor {
-    sampleRing: SharedRingBuffer | null
-    label: number
-    closed: boolean
+const w = [] as number[]
 
-    constructor(port = self) {
+abstract class SampleRingProcessor {
+    sampleRing = null as SharedRingBuffer | null
+    label = 0
+    closed = false
+
+    listen(port = self) {
         port.addEventListener('message', ({ data: { name, data } }) => {
             switch (name) {
                 case 'init':
                     this.sampleRing = new SharedRingBuffer(data);
                     this.start();
-                    break;
+                    return;
                 case 'label':
                     this.label = this.label ^ 1;
-                    break;
+                    return;
                 case 'close':
                     this.closed = true;
-                    break;
+                    return;
                 default:
                     throw new RangeError(`message.name ${name} is unrecognizable`);
-
             }
         });
-        this.sampleRing = null;
-        this.label = 0;
-        this.closed = false;
     }
 
     abstract process(sampleWindow: Float32Array): void
@@ -39,6 +37,7 @@ abstract class SampleRingProcessor {
     start() {
         if (!this.sampleRing) throw new TypeError('SampleRingProcessor: not initialized');
         const ringByteLength = this.sampleRing[SharedRingBufferMetadata.ringByteLength];
+        const takeByteLength = this.sampleRing[SharedRingBufferMetadata.takeByteLength];
 
         for (let mybyteOffset = this.sampleRing[SharedRingBufferMetadata.currentByteOffset]; ;) {
             // 1. closed => return
@@ -52,22 +51,22 @@ abstract class SampleRingProcessor {
 
             // 3. get producer offset
             const currentByteOffset = this.sampleRing[SharedRingBufferMetadata.currentByteOffset];
+            const currentByteOffsetAligned = currentByteOffset - currentByteOffset % takeByteLength;
 
             // 4. run after producer
-            for (; mybyteOffset !== currentByteOffset; mybyteOffset = (mybyteOffset + constants.AUDIO_WORKLET_INPUT_LENGTH) % ringByteLength) {
+            for (; mybyteOffset !== currentByteOffsetAligned; mybyteOffset = (mybyteOffset + takeByteLength) % ringByteLength) {
                 // 4.1 take next window
                 const sampleWindow = this.sampleRing.takeAt(mybyteOffset, Float32Array);
 
-                // 4.2 silent window => drop
-                silencedetect: {
-                    for (const sample of sampleWindow) {
-                        if (sample) break silencedetect;
+                // 4.2 filter out silent window
+                for (const sample of sampleWindow) {
+                    // 4.2.1 not silent => process
+                    if (sample) {
+                        this.process(sampleWindow);
+                        break;
                     }
-                    continue; // to next sampleWindow
                 }
-
-                // 4.3 process new window
-                this.process(sampleWindow);
+                // 4.2.2 silent => ignore
             }
         }
     }

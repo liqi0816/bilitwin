@@ -7,11 +7,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { BuiltinTransformStream } from './builtin-namespace-wrapper.js'
 import { ReadableStream } from './readablestream-types.js';
 import { WritableStream } from './writablestream-types.js';
 
-export interface TransformStream extends BuiltinTransformStream {
+export interface TransformStream {
     readable: ReadableStream
     writable: WritableStream
 }
@@ -33,6 +32,7 @@ declare const TransformStream: {
     prototype: TransformStream
     new(transformer?: Transformer, writableStrategy?: QueuingStrategy, readableStrategy?: QueuingStrategy): TransformStream
 }
-export { TransformStream }
+const TransformStream1 = TransformStream;
+export { TransformStream1 as TransformStream }
 
-export default TransformStream
+export default TransformStream1

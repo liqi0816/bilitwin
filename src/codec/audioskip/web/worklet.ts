@@ -1,15 +1,28 @@
-import { SharedRingBuffer, SharedRingBufferMetadata } from './util/shared-ring-buffer.js';
+import SharedRingBuffer, { SharedRingBufferMetadata } from './util/shared-ring-buffer.js';
 import { SampleRingState } from './analyser/base-sample-ring-processor.js';
-import { AudioWorkletProcessor, registerProcessor } from './util/dom-fix.js';
+
+declare class AudioWorkletProcessor {
+    process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: {}): boolean
+    port: MessagePort
+}
+declare function registerProcessor(name: string, processor: typeof AudioWorkletProcessor): void
+declare var currentTime: number
+declare var currentFrame: number
 
 class WaveForwardProcessor extends AudioWorkletProcessor {
     sampleRing: SharedRingBuffer | null
 
     constructor() {
         super();
-        this.port.onmessage = ({ data }: { data: SharedArrayBuffer }) => {
-            this.sampleRing = new SharedRingBuffer(data);
-            this.port.onmessage = () => this.sampleRing = null;
+        this.port.onmessage = ({ data: { name, data } }: { data: { name: string, data: SharedArrayBuffer } }) => {
+            switch (name) {
+                case 'init':
+                    this.sampleRing = new SharedRingBuffer(data);
+                    return;
+                case 'close':
+                    this.sampleRing = null;
+                    return;
+            }
         };
         this.sampleRing = null;
     }

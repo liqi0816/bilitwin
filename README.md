@@ -22,7 +22,7 @@
 
 万岁！python(src/codec/audioskip-py)证明了SVM可以用在空降指挥部上，F1达到0.856，recall达到0.874，接下来只剩下实现一个JavaScript版了！
 
-~~video.captureStream() -> web audio worklet~~(已完成) -> svm web worker -> output
+~~video.captureStream() -> web audio worklet~~(已完成) -> 特征抽取 -> svm web worker -> output
 
 数据集请见dataset.py
 
@@ -152,7 +152,5 @@
   * bilitwin-store：vuex中介，输入Monkey/Polyfill，筛选需要的事件，然后写入vuex
   * bilitwin-ui：监控UI，如果UI被源页面一句`$.html()`清掉了负责补上，输入BiliUserjs，输出待定
   * bilitwin：负责启动上面一大堆，并且安装合适的pipe，同时充当IoC容器
-
-* store：实验性地学习一下Vuex怎么用，结构随便
 
 * components：解耦UI与服务，这样以后UI可以单独放出去自定义，方便人民群众fork

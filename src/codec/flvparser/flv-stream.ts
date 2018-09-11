@@ -150,7 +150,7 @@ class FLVStream extends TransformStream {
         return ret;
     }
 
-    wrapTag(buffer: SharedArrayBuffer | ArrayBuffer) {
+    wrapTag(buffer: ArrayBufferLike) {
         // if (ArrayBuffer.isView(buffer)) buffer = buffer.buffer;
         return new FLVTag(new TwentyFourDataView(buffer));
     }
