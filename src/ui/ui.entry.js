@@ -167,7 +167,13 @@ class UI {
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>视频分段 {index + 1}</a></td>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>另存为</a></td>
+                <td><a onclick={e => this.downloadFLV({
+                    monkey,
+                    index,
+                    a: e.target,
+                    progress: tr.children[2].children[0],
+                })}>缓存本段</a></td>
+                <td><progress value="0" max="100">进度条</progress></td>
             </tr>;
             return tr;
         });
@@ -209,6 +215,7 @@ class UI {
                     monkey,
                     table
                 })}>缓存全部+自动合并</a></td>
+                <td><progress value="0" max={flvs.length + 1}>进度条</progress></td>
             </tr>,
             <tr><td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td></tr>,
             cache ?
@@ -273,8 +280,6 @@ class UI {
     }
 
     async downloadAllFLVs({ a, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
-        let blobs = await monkey.get_blob_urls()
-
         if (this.cidSessionDom.downloadAllTr) return;
 
         // 1. hang player
@@ -284,12 +289,26 @@ class UI {
         this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。切换清晰度可重新激活播放器。</td></tr>;
         table.append(this.cidSessionDom.downloadAllTr);
 
-        // 3. merge splits
-        const href = await this.twin.mergeFLVFiles(blobs);
+        // 3. click download all split
+        for (let i = 0; i < monkey.flvs.length; i++) {
+            if (table.rows[i].cells[1].children[0].textContent == '缓存本段')
+                table.rows[i].cells[1].children[0].click();
+        }
+
+        // 4. set sprogress
+        const progress = a.parentElement.nextElementSibling.children[0];
+        progress.max = monkey.flvs.length + 1;
+        progress.value = 0;
+        for (let i = 0; i < monkey.flvs.length; i++) monkey.getFLV(i).then(e => progress.value++);
+
+        // 5. merge splits
+        const files = await monkey.getAllFLVs();
+        const href = await this.twin.mergeFLVFiles(files);
         const ass = await monkey.ass;
         const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        // 4. build download all ui
+        // 6. build download all ui
+        progress.value++;
         table.prepend(
             <tr>
                 <td colspan="3" style="border: 1px solid black">
@@ -307,6 +326,45 @@ class UI {
         );
 
         return href;
+}
+
+    async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
+        // 1. add beforeUnloadHandler
+        const handler = e => UI.beforeUnloadHandler(e);
+        window.addEventListener('beforeunload', handler);
+
+        // 2. switch to cancel ui
+        a.textContent = '取消';
+        a.onclick = () => {
+            a.onclick = null;
+            window.removeEventListener('beforeunload', handler);
+            a.textContent = '已取消';
+            monkey.abortFLV(index);
+        };
+
+        // 3. try download
+        let url;
+        try {
+            url = await monkey.getFLV(index, (loaded, total) => {
+                progress.value = loaded;
+                progress.max = total;
+            });
+            url = URL.createObjectURL(url);
+            if (progress.value == 0) progress.value = progress.max = 1;
+        } catch (e) {
+            a.onclick = null;
+            window.removeEventListener('beforeunload', handler);
+            a.textContent = '错误';
+            throw e;
+        }
+
+        // 4. switch to complete ui
+        a.onclick = null;
+        window.removeEventListener('beforeunload', handler);
+        a.textContent = '另存为';
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.href = url;
+        return url;
     }
 
     async displayQuota(td) {

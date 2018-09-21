@@ -1858,6 +1858,23 @@ class BiliMonkey {
         return this.ass;
     }
 
+    async get_blob_urls() {
+        let flvs = this.flvs;
+        let blobs = [];
+
+        for (let url of flvs) {
+            let r = await fetch(url);
+            let blob = await r.blob();
+            blobs.push(blob);
+        }
+
+        let blob_urls = blobs.map(blob => window.URL.createObjectURL(blob));
+        
+        this.blob_urls = blob_urls;
+
+        return blob_urls
+    }
+
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
@@ -1879,20 +1896,9 @@ class BiliMonkey {
                     console.log(data);
                     let durls = data.durl;
 
-                    flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
-
-                    console.log(flvs);
-
-                    let blobs = [];
-
-                    for (let url of flvs) {
-                        let r = await fetch(url);
-                        let blob = await r.blob();
-                        blobs.push(blob);
-                    }
+                    let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
 
                     this.flvs = flvs;
-                    this.blobs = blobs;
 
                     return durls
                 case 'ass':
@@ -7453,9 +7459,7 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, blobs = monkey.blobs, cache = monkey.cache) {
-        let flvs = blobs.map(blob => window.URL.createObjectURL(blob));
-
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = document.createElement('tr');
@@ -7469,11 +7473,24 @@ class UI {
                 tr.append(td1);
                 const td2 = document.createElement('td');
                 const a2 = document.createElement('a');
-                a2.href = href;
-                a2.download = aid + '-' + (index + 1) + '.flv';
-                a2.textContent = '\u53E6\u5B58\u4E3A';
+
+                a2.onclick = e => this.downloadFLV({
+                    monkey,
+                    index,
+                    a: e.target,
+                    progress: tr.children[2].children[0]
+                });
+
+                a2.textContent = '\u7F13\u5B58\u672C\u6BB5';
                 td2.append(a2);
                 tr.append(td2);
+                const td3 = document.createElement('td');
+                const progress1 = document.createElement('progress');
+                progress1.setAttribute('value', '0');
+                progress1.setAttribute('max', '100');
+                progress1.textContent = '\u8FDB\u5EA6\u6761';
+                td3.append(progress1);
+                tr.append(td3);
             }
             return tr;
         });
@@ -7514,13 +7531,20 @@ class UI {
 
             a1.onclick = e => this.downloadAllFLVs({
                 a: e.target,
-                blobs,
-                monkey, table
+                monkey,
+                table
             });
 
             a1.textContent = '\u7F13\u5B58\u5168\u90E8+\u81EA\u52A8\u5408\u5E76';
             td2.append(a1);
             tr1.append(td2);
+            const td3 = document.createElement('td');
+            const progress1 = document.createElement('progress');
+            progress1.setAttribute('value', '0');
+            progress1.setAttribute('max', flvs.length + 1);
+            progress1.textContent = '\u8FDB\u5EA6\u6761';
+            td3.append(progress1);
+            tr1.append(td3);
             return tr1;
         })(), (() => {
             const tr1 = document.createElement('tr');
@@ -7646,7 +7670,7 @@ class UI {
         return flvDiv;
     }
 
-    async downloadAllFLVs({ a, blobs, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
+    async downloadAllFLVs({ a, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
         if (this.cidSessionDom.downloadAllTr) return;
 
         // 1. hang player
@@ -7663,12 +7687,25 @@ class UI {
         })();
         table.append(this.cidSessionDom.downloadAllTr);
 
-        // 3. merge splits
-        const href = await this.twin.mergeFLVFiles(blobs);
+        // 3. click download all split
+        for (let i = 0; i < monkey.flvs.length; i++) {
+            if (table.rows[i].cells[1].children[0].textContent == '缓存本段') table.rows[i].cells[1].children[0].click();
+        }
+
+        // 4. set sprogress
+        const progress = a.parentElement.nextElementSibling.children[0];
+        progress.max = monkey.flvs.length + 1;
+        progress.value = 0;
+        for (let i = 0; i < monkey.flvs.length; i++) monkey.getFLV(i).then(e => progress.value++);
+
+        // 5. merge splits
+        const files = await monkey.getAllFLVs();
+        const href = await this.twin.mergeFLVFiles(files);
         const ass = await monkey.ass;
         const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        // 4. build download all ui
+        // 6. build download all ui
+        progress.value++;
         table.prepend((() => {
             const tr1 = document.createElement('tr');
             const td1 = document.createElement('td');
@@ -7704,6 +7741,45 @@ class UI {
         })());
 
         return href;
+    }
+
+    async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
+        // 1. add beforeUnloadHandler
+        const handler = e => UI.beforeUnloadHandler(e);
+        window.addEventListener('beforeunload', handler);
+
+        // 2. switch to cancel ui
+        a.textContent = '取消';
+        a.onclick = () => {
+            a.onclick = null;
+            window.removeEventListener('beforeunload', handler);
+            a.textContent = '已取消';
+            monkey.abortFLV(index);
+        };
+
+        // 3. try download
+        let url;
+        try {
+            url = await monkey.getFLV(index, (loaded, total) => {
+                progress.value = loaded;
+                progress.max = total;
+            });
+            url = URL.createObjectURL(url);
+            if (progress.value == 0) progress.value = progress.max = 1;
+        } catch (e) {
+            a.onclick = null;
+            window.removeEventListener('beforeunload', handler);
+            a.textContent = '错误';
+            throw e;
+        }
+
+        // 4. switch to complete ui
+        a.onclick = null;
+        window.removeEventListener('beforeunload', handler);
+        a.textContent = '另存为';
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.href = url;
+        return url;
     }
 
     async displayQuota(td) {
