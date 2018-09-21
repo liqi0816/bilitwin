@@ -205,37 +205,18 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() {
-        // 1. search for img tag
-        const img = top.document.querySelector('.cover_image')
-            || top.document.querySelector('div.info-cover > a > img')
-            || top.document.querySelector('[data-state-play="true"]  img');
+    getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const _jq = top.window.jQuery;
+        const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
 
-        // 2. search for ld+jason
-        const script = top.document.querySelector('script[type="application/ld+json"]');
-
-        // 3. find src
-        let ret = (img && img.src) || (script && JSON.parse(script.textContent).images[0]);
-        if (!ret) {
-            const _jq = top.window.jQuery;
-            try {
-                const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
-                let view_res = _jq.ajax({ url: view_url, async: false })
-                let view_json = JSON.parse(view_res.responseText)
-                return view_json.data.pic
-            }
-            catch{
-                return null
-            }
+        try {
+            let view_res = _jq.ajax({ url: view_url, async: false })
+            let view_json = JSON.parse(view_res.responseText)
+            return view_json.data.pic
         }
-
-        // 4. trim parameters
-        let i;
-        i = ret.indexOf('.jpg');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        i = ret.indexOf('.png');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        return ret;
+        catch{
+            return null
+        }
     }
 
     reallocateElectricPanel() {
