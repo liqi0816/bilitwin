@@ -374,7 +374,7 @@ class BiliMonkey {
                         blobs.push(blob)
                     }
 
-                    this.flvs = blobs
+                    this.blobs = blobs
 
                     return durls
                 case 'ass':

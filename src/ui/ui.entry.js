@@ -162,12 +162,12 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
-        const format = flvs.shift()
+    buildFLVDiv(monkey = this.twin.monkey, blobs = monkey.blobs, cache = monkey.cache) {
+        const format = blobs.shift()
+        let flvs = blobs.map(blob=>window.URL.createObjectURL(blob))
 
         // 1. build video splits
-        const flvTrs = flvs.map((blob, index) => {
-            const href = window.URL.createObjectURL(blob)
+        const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>视频分段 {index + 1}</a></td>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>另存为</a></td>
@@ -209,7 +209,7 @@ class UI {
                 <td>{...[exporterA]}</td>
                 <td><a onclick={e => this.downloadAllFLVs({
                     a: e.target,
-                    blobs: flvs,
+                    blobs,
                     monkey, table
                 })}>缓存全部+自动合并</a></td>
             </tr>,
