@@ -364,6 +364,7 @@ class UI {
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
         a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        // a.download = aid + '-' + (index + 1)
         a.href = url;
         return url;
     }

@@ -439,7 +439,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop()
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -448,7 +448,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop()
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -468,14 +468,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop()
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop()
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -483,7 +483,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop()
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -546,7 +546,7 @@ class BiliMonkey {
 
         let ret = [];
         for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+            let name = flv.split("/").pop()
             ret.push(await this.cache.deleteData(name));
             ret.push(await this.cache.deleteData('PC_' + name));
         }
