@@ -169,12 +169,7 @@ class UI {
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>视频分段 {index + 1}</a></td>
-                <td><a onclick={e => this.downloadFLV({
-                    monkey,
-                    index,
-                    a: e.target,
-                    progress: tr.children[2].children[0],
-                })}>缓存本段</a></td>
+                <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>另存为</a></td>
                 <td><progress value="0" max="100">进度条</progress></td>
             </tr>;
             return tr;
@@ -327,17 +322,6 @@ class UI {
         );
 
         return href;
-    }
-
-    async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
-        let url = monkey.flvs[index]
-
-        a.onclick = null;
-        a.textContent = '另存为';
-        a.download = monkey.flvs[index].split("/").pop();
-        // a.download = aid + '-' + (index + 1)
-        a.href = url;
-        return url;
     }
 
     async displayQuota(td) {
