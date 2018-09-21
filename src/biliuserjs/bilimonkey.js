@@ -371,7 +371,7 @@ class BiliMonkey {
                     for (let url_obj of durls) {
                         let r = await fetch(url_obj.url.replace("http://", "https://"))
                         let blob = await r.blob()
-                        blobs.push(window.URL.createObjectURL(blob))
+                        blobs.push(blob)
                     }
 
                     this.flvs = blobs

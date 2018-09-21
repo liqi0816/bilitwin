@@ -166,11 +166,11 @@ class UI {
         const format = flvs.shift()
 
         // 1. build video splits
-        const flvTrs = flvs.map((href, index) => {
+        const flvTrs = flvs.map((blob, index) => {
+            const href = window.URL.createObjectURL(blob)
             const tr = <tr>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>视频分段 {index + 1}</a></td>
                 <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>另存为</a></td>
-                <td><progress value="0" max="100">进度条</progress></td>
             </tr>;
             return tr;
         });
@@ -209,9 +209,9 @@ class UI {
                 <td>{...[exporterA]}</td>
                 <td><a onclick={e => this.downloadAllFLVs({
                     a: e.target,
+                    blobs: flvs,
                     monkey, table
                 })}>缓存全部+自动合并</a></td>
-                <td><progress value="0" max={flvs.length + 1}>进度条</progress></td>
             </tr>,
             <tr><td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td></tr>,
             cache ?
@@ -275,7 +275,7 @@ class UI {
         return flvDiv
     }
 
-    async downloadAllFLVs({ a, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
+    async downloadAllFLVs({ a, blobs, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
         if (this.cidSessionDom.downloadAllTr) return;
 
         // 1. hang player
@@ -285,26 +285,12 @@ class UI {
         this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。切换清晰度可重新激活播放器。</td></tr>;
         table.append(this.cidSessionDom.downloadAllTr);
 
-        // 3. click download all split
-        for (let i = 0; i < monkey.flvs.length; i++) {
-            if (table.rows[i].cells[1].children[0].textContent == '缓存本段')
-                table.rows[i].cells[1].children[0].click();
-        }
-
-        // 4. set sprogress
-        const progress = a.parentElement.nextElementSibling.children[0];
-        progress.max = monkey.flvs.length + 1;
-        progress.value = 0;
-        for (let i = 0; i < monkey.flvs.length; i++) monkey.getFLV(i).then(e => progress.value++);
-
-        // 5. merge splits
-        const files = await monkey.getAllFLVs();
-        const href = await this.twin.mergeFLVFiles(files);
+        // 3. merge splits
+        const href = await this.twin.mergeFLVFiles(blobs);
         const ass = await monkey.ass;
         const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        // 6. build download all ui
-        progress.value++;
+        // 4. build download all ui
         table.prepend(
             <tr>
                 <td colspan="3" style="border: 1px solid black">
