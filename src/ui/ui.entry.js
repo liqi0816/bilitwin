@@ -44,8 +44,7 @@ class UI {
             transition: all .3s ease-in-out;
             cursor: pointer;
         }
-        `;
-        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
+
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;

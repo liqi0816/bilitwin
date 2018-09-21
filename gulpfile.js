@@ -10,7 +10,7 @@
 
 /*************************************************/
 /***************   Build Configs   ***************/
-const gitPath = 'D:\\Program Files\\Git\\bin\\git';
+const gitPath = 'git';
 const npmPath = 'npm';
 const includeSourcemap = false;
 /*************************************************/
