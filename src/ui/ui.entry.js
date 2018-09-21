@@ -330,40 +330,11 @@ class UI {
     }
 
     async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
-        // 1. add beforeUnloadHandler
-        const handler = e => UI.beforeUnloadHandler(e);
-        window.addEventListener('beforeunload', handler);
+        let url = monkey.flvs[index]
 
-        // 2. switch to cancel ui
-        a.textContent = '取消';
-        a.onclick = () => {
-            a.onclick = null;
-            window.removeEventListener('beforeunload', handler);
-            a.textContent = '已取消';
-            monkey.abortFLV(index);
-        };
-
-        // 3. try download
-        let url;
-        try {
-            url = await monkey.getFLV(index, (loaded, total) => {
-                progress.value = loaded;
-                progress.max = total;
-            });
-            url = URL.createObjectURL(url);
-            if (progress.value == 0) progress.value = progress.max = 1;
-        } catch (e) {
-            a.onclick = null;
-            window.removeEventListener('beforeunload', handler);
-            a.textContent = '错误';
-            throw e;
-        }
-
-        // 4. switch to complete ui
         a.onclick = null;
-        window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.download = monkey.flvs[index].split("/").pop();
         // a.download = aid + '-' + (index + 1)
         a.href = url;
         return url;

@@ -366,7 +366,7 @@ class BiliMonkey {
                     console.log(data)
                     let durls = data.durl
 
-                    let blobs = [data.format]
+                    let blobs = [data.format.slice(0,3)]
 
                     for (let url_obj of durls) {
                         let r = await fetch(url_obj.url.replace("http://", "https://"))
