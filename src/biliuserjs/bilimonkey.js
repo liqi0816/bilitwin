@@ -30,7 +30,7 @@ import AsyncContainer from '../util/async-container.js';
 import CacheDB from '../util/cache-db.js';
 import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
 import Mutex from '../util/mutex.js';
-import ASSConverter from '../assconverter/interface.js';
+import ASSConverter from '../ass-converter/interface.js';
 import HookedFunction from '../util/hooked-function.js';
 import BiliUserJS from './biliuserjs.js';
 
@@ -400,8 +400,8 @@ class BiliMonkey {
             } || undefined;
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
-                danmaku, top.document.title, top.location.href
+            resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
+                danmaku, top.document.title, top.location.href,option
             )));
         });
         return this.ass;
@@ -415,7 +415,8 @@ class BiliMonkey {
                         return this.flvs;
                     else if (this.flvFormatName == 'does_not_exist')
                         return this.flvFormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
+                    // else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality .bui-select-result').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
+                    else if (true)
                         return this.getCurrentFormat(this.flvFormatName);
                     else
                         return this.getNonCurrentFormat(this.flvFormatName);

@@ -49,7 +49,7 @@ class BiliTwin extends BiliUserJS {
         const href = location.href;
         this.option = this.getOption();
         if (this.option.debug) {
-            if (top.console) top.console.clear();
+            // if (top.console) top.console.clear();
         }
 
         // 2. monkey and polyfill

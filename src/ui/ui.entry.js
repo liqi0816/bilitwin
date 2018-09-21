@@ -171,14 +171,12 @@ class UI {
         // 1. build div
         const div = <div
             onClick={e => e.stopPropagation()}
-            style={{ float: 'left', clear: 'left' }}
             className="bilitwin"
         >{...[flvA, ' ', mp4A, ' ', assA]}</div>;
 
         // 2. append to title
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
         tminfo.style.float = 'none';
-        tminfo.style.marginLeft = '185px';
         tminfo.parentElement.insertBefore(div, tminfo);
 
         // 3. save to cache

@@ -35,6 +35,7 @@
   },
   "scripts": {
     "install": "gulp",
-    "build": "gulp"
+    "build": "gulp",
+    "start": "gulp && http-server --cors -p 8082 -c-1"
   }
 }

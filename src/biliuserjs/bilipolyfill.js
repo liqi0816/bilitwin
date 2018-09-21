@@ -216,7 +216,18 @@ class BiliPolyfill {
 
         // 3. find src
         let ret = (img && img.src) || (script && JSON.parse(script.textContent).images[0]);
-        if (!ret) return null;
+        if (!ret) {
+            const _jq = top.window.jQuery;
+            try {
+                const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
+                let view_res = _jq.ajax({ url: view_url, async: false })
+                let view_json = JSON.parse(view_res.responseText)
+                return view_json.data.pic
+            }
+            catch{
+                return null
+            }
+        }
 
         // 4. trim parameters
         let i;
