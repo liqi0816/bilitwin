@@ -102,56 +102,34 @@ class UI {
     buildTitle(monkey = this.twin.monkey) {
         // 1. build flvA, mp4A, assA
         const fontSize = '15px';
-        const flvA = <a style={{ fontSize }}>超清FLV</a>;
-        const mp4A = <a style={{ fontSize }}>原生MP4</a>;
+        const flvA = <a style={{ fontSize }}>视频FLV/MP4</a>;
         const assA = <a style={{ fontSize }}>弹幕ASS</a>;
 
         // 1.1 build flvA
         flvA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
+            flvA.textContent = '正在FLV/MP4';
             flvA.onmouseover = null;
 
             // 1.1.2 query flv
-            const href = await monkey.queryInfo('flv');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV';
+            const href = await monkey.queryInfo('video');
+            if (href == 'does_not_exist') return flvA.textContent = '没有FLV/MP4视频';
 
             // 1.1.3 display flv
-            flvA.textContent = '超清FLV';
+            flvA.textContent = '视频FLV/MP4';
             flvA.onclick = () => this.displayFLVDiv();
         };
 
-        // 1.2 build mp4A
-        mp4A.onmouseover = async () => {
-            // 1.2.1 give processing hint
-            mp4A.textContent = '正在MP4';
-            mp4A.onmouseover = null;
-            if (this.option.autoDanmaku) {
-                await assA.onmouseover();
-                mp4A.onclick = () => assA.click();
-            }
-
-            // 1.2.2 query flv
-            let href = await monkey.queryInfo('mp4');
-            if (href == 'does_not_exist') return mp4A.textContent = '没有MP4';
-
-            // 1.2.3 response mp4
-            mp4A.href = href;
-            mp4A.textContent = '原生MP4';
-            mp4A.download = '';
-            mp4A.referrerPolicy = 'origin';
-        };
-
-        // 1.3 build assA
+        // 1.2 build assA
         assA.onmouseover = async () => {
-            // 1.3.1 give processing hint
+            // 1.2.1 give processing hint
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
-            // 1.3.2 query flv
+            // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
-            // 1.3.3 response mp4
+            // 1.2.3 response mp4
             assA.textContent = '弹幕ASS';
             if (monkey.mp4 && monkey.mp4.match) {
                 assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
@@ -162,16 +140,16 @@ class UI {
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, mp4A, assA });
+        Object.assign(this.cidSessionDom, { flvA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, mp4A, assA } = this.cidSessionDom) {
+    appendTitle({ flvA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = <div
             onClick={e => e.stopPropagation()}
             className="bilitwin"
-        >{...[flvA, ' ', mp4A, ' ', assA]}</div>;
+        >{...[flvA, ' ', assA]}</div>;
 
         // 2. append to title
         const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
@@ -185,10 +163,12 @@ class UI {
     }
 
     buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
-        // 1. build flv splits
+        const format = flvs.shift()
+
+        // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>FLV分段 {index + 1}</a></td>
+                <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>视频分段 {index + 1}</a></td>
                 <td><a onclick={e => this.downloadFLV({
                     monkey,
                     index,
@@ -444,15 +424,7 @@ class UI {
                     flvA.click();
                 }}>
                     <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载FLV
-                </a>
-                </li>
-                <li class="context-menu-function" onclick={async () => {
-                    if (mp4A.onmouseover) await mp4A.onmouseover();
-                    mp4A.click();
-                }}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载MP4
+                        <span class="video-contextmenu-icon"></span> 下载视频FLV/MP4
                 </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => {
@@ -460,7 +432,7 @@ class UI {
                     assA.click();
                 }}>
                     <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载ASS
+                        <span class="video-contextmenu-icon"></span> 下载弹幕ASS
                 </a>
                 </li>
                 <li class="context-menu-function" onclick={() => this.displayOptionDiv()}>

@@ -352,7 +352,7 @@ class BiliMonkey {
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
-                case 'flv':
+                case 'video':
                     if (this.flvs)
                         return this.flvs;
                     else if (this.flvFormatName == 'does_not_exist')
@@ -362,10 +362,11 @@ class BiliMonkey {
                     let scripts = _jq("script[type!='text/javascript']")
                     let e = scripts.filter((i) => scripts[i].innerHTML.startsWith("window.__playinfo__=")).text().slice(20)
 
-                    // console.log(JSON.parse(e).data)
-                    let durls = JSON.parse(e).data.durl
+                    let data = JSON.parse(e).data
+                    console.log(data)
+                    let durls = data.durl
 
-                    let blobs = []
+                    let blobs = [data.format]
 
                     for (let url_obj of durls) {
                         let r = await fetch(url_obj.url.replace("http://", "https://"))
@@ -376,8 +377,6 @@ class BiliMonkey {
                     this.flvs = blobs
 
                     return durls
-                case 'mp4':
-                    return 'does_not_exist'
                 case 'ass':
                     if (this.ass)
                         return this.ass;
