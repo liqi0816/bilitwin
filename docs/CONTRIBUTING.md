@@ -71,7 +71,6 @@ npm install
 
 ## 坑
 
-* `./src/assconverter`是一个[git子模块](https://git-scm.com/book/zh/v2/Git-%E5%B7%A5%E5%85%B7-%E5%AD%90%E6%A8%A1%E5%9D%97)
 * `./src/ui/ui.entry.js`使用了一个合理的[jsx](https://github.com/facebook/jsx)子集，推荐用[liqi0816/jsx-append-child](https://github.com/liqi0816/jsx-append-child)转译
 * `./src/flvass2mkv`是一个独立的子package
 * 把中间文件到处乱扔，这确实不是一个好习惯

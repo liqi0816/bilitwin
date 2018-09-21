@@ -70,7 +70,7 @@ gulp.task('biliTwinBabelCompiled.user.js', ['biliTwin.user.js'], async () => new
     });
 }));
 
-gulp.task('./src/bilitwin.js', ['./src/ui/ui.js', './src/assconverter/interface.js', './src/flvass2mkv/interface.js'], async () => {
+gulp.task('./src/bilitwin.js', ['./src/ui/ui.js', './src/flvass2mkv/interface.js'], async () => {
     const bundle = await rollup.rollup({
         input: './src/bilitwin.entry.js'
     });
@@ -90,25 +90,6 @@ gulp.task('./src/ui/ui.js', () => {
         .pipe(rename('ui.js'))
         .pipe(gulp.dest('./src/ui/'));
 });
-
-gulp.task('./src/assconverter/interface.js', async () => new Promise((resolve, reject) => {
-    fs.access('./src/assconverter/interface.js', fs.constants.R_OK, err => {
-        if (err) {
-            spawn(gitPath, ['submodule', 'init'], { shell: true }).once('close', err => {
-                if (err) return reject(err);
-                else {
-                    spawn(gitPath, ['submodule', 'update'], { shell: true }).once('close', err => {
-                        if (err) return reject(err);
-                        resolve();
-                    });
-                }
-            });
-        }
-        else {
-            resolve();
-        }
-    })
-}));
 
 gulp.task('./src/flvass2mkv/interface.js', async () => new Promise((resolve, reject) => {
     fs.access('./src/flvass2mkv/interface.js', fs.constants.R_OK, err => {

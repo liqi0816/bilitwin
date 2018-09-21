@@ -212,9 +212,9 @@ class BiliPolyfill {
         try {
             let view_res = _jq.ajax({ url: view_url, async: false })
             let view_json = JSON.parse(view_res.responseText)
-            return view_json.data.pic.replace("http://","https://")
+            return view_json.data.pic.replace("http://", "https://")
         }
-        catch{
+        catch (e) {
             return null
         }
     }
