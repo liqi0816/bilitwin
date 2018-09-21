@@ -362,13 +362,14 @@ class BiliMonkey {
                     let scripts = _jq("script[type!='text/javascript']")
                     let e = scripts.filter((i) => scripts[i].innerHTML.startsWith("window.__playinfo__=")).text().slice(20)
 
+                    // console.log(JSON.parse(e).data)
                     let durls = JSON.parse(e).data.durl
 
                     let blobs = []
 
-                    for (var url_obj of durls) {
-                        var r = await fetch(url_obj.url.replace("http://", "https://"))
-                        var blob = await r.blob()
+                    for (let url_obj of durls) {
+                        let r = await fetch(url_obj.url.replace("http://", "https://"))
+                        let blob = await r.blob()
                         blobs.push(window.URL.createObjectURL(blob))
                     }
 
