@@ -401,13 +401,18 @@ class BiliMonkey {
 
             // 3. generate
             resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
-                danmaku, top.document.title, top.location.href,option
+                danmaku, top.document.title, top.location.href, option
             )));
         });
         return this.ass;
     }
 
     async queryInfo(format) {
+        let _jq = this.playerWin.jQuery
+        let scripts = _jq("script[type!='text/javascript']")
+        let e = scripts.filter((i) => scripts[i].innerHTML.startsWith("window.__playinfo__=")).text().slice(20)
+        let quality = JSON.parse(e).data.quality
+
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
                 case 'flv':
@@ -415,8 +420,8 @@ class BiliMonkey {
                         return this.flvs;
                     else if (this.flvFormatName == 'does_not_exist')
                         return this.flvFormatName;
-                    // else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality .bui-select-result').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
-                    else if (true)
+                    else if (quality == BiliMonkey.formatToValue(this.flvFormatName))
+                    // else if (true) div.bilibili-player-video-btn-quality .bui-select-result
                         return this.getCurrentFormat(this.flvFormatName);
                     else
                         return this.getNonCurrentFormat(this.flvFormatName);
@@ -425,14 +430,14 @@ class BiliMonkey {
                         return this.mp4;
                     else if (this.mp4FormatName == 'does_not_exist')
                         return this.mp4FormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.mp4FormatName))
+                    else if (quality == BiliMonkey.formatToValue(this.mp4FormatName))
                         return this.getCurrentFormat(this.mp4FormatName);
                     else
                         return this.getNonCurrentFormat(this.mp4FormatName);
                 case 'ass':
                     if (this.ass)
                         return this.ass;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
+                    else if (quality == BiliMonkey.formatToValue(this.flvFormatName))
                         return this.getASS(this.mp4FormatName);
                     else
                         return this.getASS(this.flvFormatName);
@@ -638,7 +643,7 @@ class BiliMonkey {
                 const e = new XMLHttpRequest();
                 e.onload = () => resolve(e.responseText);
                 e.onerror = reject;
-                e.open('get', `https://comment.bilibili.com/${cid}.xml`, );
+                e.open('get', `https://comment.bilibili.com/${cid}.xml`);
                 e.send();
             })
         );
