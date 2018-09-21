@@ -188,7 +188,7 @@ class UI {
         // 1. build flv splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href}>FLV分段 {index + 1}</a></td>
+                <td><a href={href} download={aid + '-' + index + '.flv'}>FLV分段 {index + 1}</a></td>
                 <td><a onclick={e => this.downloadFLV({
                     monkey,
                     index,
