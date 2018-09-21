@@ -8,9 +8,9 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.14
+// @version     1.15
 // @author      qli5
-// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
+// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
 // @grant       none
 // @run-at      document-start
@@ -1343,104 +1343,33 @@ const rtlCanvas = function (options) {
     return blob;
   };
 
-/***
+/* 
  * Copyright (C) 2018 Qli5. All Rights Reserved.
  * 
  * @author qli5 <goodlq11[at](163|gmail).com>
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
-*/
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * An API wrapper of tiansh/ass-danmaku for liqi0816/bilitwin
- */
-class ASSConverter {
-    /**
-     * @typedef {ExtOption}
-     * @property {number} resolutionX canvas width for drawing danmaku (px)
-     * @property {number} resolutionY canvas height for drawing danmaku (px)
-     * @property {number} bottomReserved reserved height at bottom for drawing danmaku (px)
-     * @property {string} fontFamily danmaku font family
-     * @property {number} fontSize danmaku font size (ratio)
-     * @property {number} textSpace space between danmaku (px)
-     * @property {number} rtlDuration duration of right to left moving danmaku appeared on screen (s)
-     * @property {number} fixDuration duration of keep bottom / top danmaku appeared on screen (s)
-     * @property {number} maxDelay // maxinum amount of allowed delay (s)
-     * @property {number} textOpacity // opacity of text, in range of [0, 1]
-     * @property {number} maxOverlap // maxinum layers of danmaku
-     */
+const parseXML = (xml) => parser.bilibili(xml).danmaku;
 
-    /**
-     * @param {ExtOption} option tiansh/ass-danmaku compatible option
-     */
-    constructor(option = {}) {
-        this.option = option;
-    }
+const genASS = async (danmaku, option = {}) => {
+    option = normalize(option);
+    const layout$$1 = await layout(danmaku, option);
+    const ass$$1 = ass({
+        content: danmaku,
+        layout: layout$$1,
+        meta: {
+            name: option && option.title || 'danmaku',
+            url: option && option.originalURL || 'anonymous xml',
+        }
+    }, option);
+    return ass$$1;
+};
 
-    get option() {
-        return this.normalizedOption;
-    }
-
-    set option(e) {
-        return this.normalizedOption = normalize(e);
-    }
-
-    /**
-     * @param {Danmaku[]} danmaku use ASSConverter.parseXML
-     * @param {string} title 
-     * @param {string} originalURL 
-     */
-    async genASS(danmaku, title = 'danmaku', originalURL = 'anonymous xml') {
-        const layout$$1 = await layout(danmaku, this.option);
-        const ass$$1 = ass({
-            content: danmaku,
-            layout: layout$$1,
-            meta: {
-                name: title,
-                url: originalURL
-            }
-        }, this.option);
-        return ass$$1;
-    }
-
-    async genASSBlob(danmaku, title = 'danmaku', originalURL = 'anonymous xml') {
-        return convertToBlob(await this.genASS(danmaku, title, originalURL));
-    }
-
-    /**
-     * @typedef DanmakuColor
-     * @property {number} r
-     * @property {number} g
-     * @property {number} b
-     */
-
-    /**
-     * @typedef Danmaku
-     * @property {string} text
-     * @property {number} time
-     * @property {string} mode
-     * @property {number} size
-     * @property {DanmakuColor} color
-     * @property {boolean} bottom
-     */
-
-    /**
-     * @param {string} xml bilibili danmaku xml
-     * @returns {Danmaku[]}
-     */
-    static parseXML(xml) {
-        return parser.bilibili(xml).danmaku;
-    }
-
-
-    static _UNIT_TEST() {
-        const e = new ASSConverter();
-        const xml = `<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>32873758</chatid><mission>0</mission><maxlimit>6000</maxlimit><state>0</state><realname>0</realname><source>k-v</source><d p="0.00000,1,25,16777215,1519733589,0,d286a97b,4349604072">真第一</d><d p="7.29900,1,25,16777215,1519733812,0,3548796c,4349615908">五分钟前</d><d p="587.05100,1,25,16777215,1519734291,0,f2ed792f,4349641325">惊呆了！</d><d p="136.82200,1,25,16777215,1519734458,0,1e5784f,4349652071">神王代表虚空</d><d p="0.00000,1,25,16777215,1519736251,0,f16cbf44,4349751461">66666666666666666</d><d p="590.60400,1,25,16777215,1519736265,0,fbb3d1b3,4349752331">这要吹多长时间</d><d p="537.15500,1,25,16777215,1519736280,0,1e5784f,4349753170">反而不是，疾病是个恶魔，别人说她伪装成了精灵</d><d p="872.08200,1,25,16777215,1519736881,0,1e5784f,4349787709">精灵都会吃</d><d p="2648.42500,1,25,16777215,1519737840,0,e9e6b2b4,4349844463">就不能大部分都是铜币么？</d><d p="2115.09400,1,25,16777215,1519738271,0,3548796c,4349870808">吓死我了。。。</d><d p="11.45400,1,25,16777215,1519739974,0,9937b428,4349974512">???</d><d p="1285.73900,1,25,16777215,1519748274,0,3bb4c9ee,4350512859">儿砸</d><d p="595.48600,1,25,16777215,1519757148,0,f3ed26b6,4350787048">怕是要吹到缺氧哦</d><d p="1206.31500,1,25,16777215,1519767204,0,62a9186a,4350882680">233333333333333</d><d p="638.68700,1,25,16777215,1519769219,0,de0a99ae,4350893310">菜鸡的借口</d><d p="655.76500,1,25,16777215,1519769236,0,de0a99ae,4350893397">竟然吹蜡烛打医生</d><d p="2235.89600,1,25,16777215,1519769418,0,de0a99ae,4350894325">这暴击率太高了</d><d p="389.88700,1,25,16777215,1519780435,0,8879732c,4351021740">医生好想进10万，血，上万甲</d><d p="2322.47900,1,25,16777215,1519780901,0,e509a801,4351032321">前一个命都没了</d><d p="2408.93600,1,25,16777215,1519801350,0,1a692eb6,4351826484">23333333333333</d><d p="1290.62000,1,25,16777215,1519809649,0,af8f12dc,4352159267">儿砸~</d><d p="917.96300,1,25,16777215,1519816770,0,fef64b6a,4352474878">应该姆西自己控制洛斯   七杀点太快了差评</d><d p="2328.03100,1,25,16777215,1519825291,0,8549205d,4352919003">现在前一个连命都没了啊喂</d><d p="1246.16700,1,25,16777215,1519827514,0,fef64b6a,4353052309">不如走到面前用扫射   基本全中  伤害爆表</d><d p="592.38100,1,25,16777215,1519912489,0,edc3f0a9,4355960085">这是这个游戏最震撼的几幕之一</d></i>`;
-        console.log(window.ass = e.genASSBlob(ASSConverter.parseXML(xml)));
-    }
-}
+const genASSBlob = async (danmaku, option = {}) => convertToBlob(await genASS(danmaku, option));
+var ASSConverter = { parseXML, genASS, genASSBlob };
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -1849,62 +1778,6 @@ class BiliMonkey {
         return pendingFormat;
     }
 
-    async getCurrentFormat(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-        const siblingFormat = this.fallbackFormatName || (format == this.flvFormatName ? this.mp4FormatName : this.flvFormatName);
-        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        let blockedRequest = await new Promise(resolve => {
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    // Send back a fake response to enable the change-format button.
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    a.success(fakedRes);
-                    self.playerWin.document.getElementsByTagName('video')[1].loop = true;
-                    self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', () => resolve([a, c]), { once: true });
-                }
-                else {
-                    return _ajax.call(jq, a, c);
-                }
-            };
-            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(siblingFormat)}"]`).click();
-        });
-
-        let siblingOK = siblingFormat == this.fallbackFormatName ? true : siblingFormat == this.flvFormatName ? this.flvs : this.mp4;
-        if (!siblingOK) {
-            this.lockFormat(siblingFormat);
-            blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
-            _ajax.call(jq, ...blockedRequest);
-        }
-
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                let _success = a.success;
-                a.success = res => {
-                    if (self.proxy) {
-                        self.resolveFormat(res, format);
-                        if (self.flvs) self.setupProxy(res, _success);
-                    }
-                    else {
-                        _success(res);
-                        self.resolveFormat(res, format);
-                    }
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
-
-        return pendingFormat;
-    }
-
     async getNonCurrentFormat(format) {
         const jq = this.playerWin.jQuery;
         const _ajax = jq.ajax;
@@ -1978,8 +1851,8 @@ class BiliMonkey {
             } || undefined;
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
-                danmaku, top.document.title, top.location.href
+            resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
+                danmaku, top.document.title, top.location.href, option
             )));
         });
         return this.ass;
@@ -1988,28 +1861,35 @@ class BiliMonkey {
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
-                case 'flv':
+                case 'video':
                     if (this.flvs)
                         return this.flvs;
                     else if (this.flvFormatName == 'does_not_exist')
                         return this.flvFormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
-                        return this.getCurrentFormat(this.flvFormatName);
-                    else
-                        return this.getNonCurrentFormat(this.flvFormatName);
-                case 'mp4':
-                    if (this.mp4)
-                        return this.mp4;
-                    else if (this.mp4FormatName == 'does_not_exist')
-                        return this.mp4FormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.mp4FormatName))
-                        return this.getCurrentFormat(this.mp4FormatName);
-                    else
-                        return this.getNonCurrentFormat(this.mp4FormatName);
+
+                    let _jq = this.playerWin.jQuery;
+                    let scripts = _jq("script[type!='text/javascript']");
+                    let e = scripts.filter((i) => scripts[i].innerHTML.startsWith("window.__playinfo__=")).text().slice(20);
+
+                    let data = JSON.parse(e).data;
+                    console.log(data);
+                    let durls = data.durl;
+
+                    let blobs = [data.format.slice(0,3)];
+
+                    for (let url_obj of durls) {
+                        let r = await fetch(url_obj.url.replace("http://", "https://"));
+                        let blob = await r.blob();
+                        blobs.push(blob);
+                    }
+
+                    this.blobs = blobs;
+
+                    return durls
                 case 'ass':
                     if (this.ass)
                         return this.ass;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
+                    else if (quality == BiliMonkey.formatToValue(this.flvFormatName))
                         return this.getASS(this.mp4FormatName);
                     else
                         return this.getASS(this.flvFormatName);
@@ -2067,7 +1947,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop();
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -2076,7 +1956,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop();
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -2096,14 +1976,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop();
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop();
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -2111,7 +1991,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].split("/").pop();
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -2174,7 +2054,7 @@ class BiliMonkey {
 
         let ret = [];
         for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+            let name = flv.split("/").pop();
             ret.push(await this.cache.deleteData(name));
             ret.push(await this.cache.deleteData('PC_' + name));
         }
@@ -2214,7 +2094,7 @@ class BiliMonkey {
                 const e = new XMLHttpRequest();
                 e.onload = () => resolve(e.responseText);
                 e.onerror = reject;
-                e.open('get', `https://comment.bilibili.com/${cid}.xml`, );
+                e.open('get', `https://comment.bilibili.com/${cid}.xml`);
                 e.send();
             })
         );
@@ -2611,26 +2491,18 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() {
-        // 1. search for img tag
-        const img = top.document.querySelector('.cover_image')
-            || top.document.querySelector('div.info-cover > a > img')
-            || top.document.querySelector('[data-state-play="true"]  img');
+    getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const _jq = top.window.jQuery;
+        const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid;
 
-        // 2. search for ld+jason
-        const script = top.document.querySelector('script[type="application/ld+json"]');
-
-        // 3. find src
-        let ret = (img && img.src) || (script && JSON.parse(script.textContent).images[0]);
-        if (!ret) return null;
-
-        // 4. trim parameters
-        let i;
-        i = ret.indexOf('.jpg');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        i = ret.indexOf('.png');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        return ret;
+        try {
+            let view_res = _jq.ajax({ url: view_url, async: false });
+            let view_json = JSON.parse(view_res.responseText);
+            return view_json.data.pic.replace("http://", "https://")
+        }
+        catch (e) {
+            return null
+        }
     }
 
     reallocateElectricPanel() {
@@ -5572,7 +5444,7 @@ var FLVASS2MKV = (function () {
          * @returns {Array<Object>} - array of subtitle lines
          */
         static extractSubtitleLines(str) {
-            const lines = str.split('\\n');
+            const lines = str.split(/\\r\\n+/);
             if (lines[0] != '[Events]' && lines[0] != '[events]') throw new Error('ASSDemuxer: section is not [Events]');
             if (lines[1].indexOf('Format:') != 0 && lines[1].indexOf('format:') != 0) throw new Error('ASSDemuxer: cannot find Format definition in section [Events]');
 
@@ -7449,8 +7321,7 @@ class UI {
             transition: all .3s ease-in-out;
             cursor: pointer;
         }
-        `;
-        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
+
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;
@@ -7512,10 +7383,7 @@ class UI {
         const fontSize = '15px';
         const flvA = document.createElement('a');
         flvA.style.fontSize = fontSize;
-        flvA.textContent = '\u8D85\u6E05FLV';
-        const mp4A = document.createElement('a');
-        mp4A.style.fontSize = fontSize;
-        mp4A.textContent = '\u539F\u751FMP4';
+        flvA.textContent = '\u89C6\u9891FLV/MP4';
         const assA = document.createElement('a');
 
         // 1.1 build flvA
@@ -7523,49 +7391,28 @@ class UI {
         assA.textContent = '\u5F39\u5E55ASS';
         flvA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
+            flvA.textContent = '正在FLV/MP4';
             flvA.onmouseover = null;
 
             // 1.1.2 query flv
-            const href = await monkey.queryInfo('flv');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV';
+            const href = await monkey.queryInfo('video');
+            if (href == 'does_not_exist') return flvA.textContent = '没有FLV/MP4视频';
 
             // 1.1.3 display flv
-            flvA.textContent = '超清FLV';
+            flvA.textContent = '视频FLV/MP4';
             flvA.onclick = () => this.displayFLVDiv();
         };
 
-        // 1.2 build mp4A
-        mp4A.onmouseover = async () => {
-            // 1.2.1 give processing hint
-            mp4A.textContent = '正在MP4';
-            mp4A.onmouseover = null;
-            if (this.option.autoDanmaku) {
-                await assA.onmouseover();
-                mp4A.onclick = () => assA.click();
-            }
-
-            // 1.2.2 query flv
-            let href = await monkey.queryInfo('mp4');
-            if (href == 'does_not_exist') return mp4A.textContent = '没有MP4';
-
-            // 1.2.3 response mp4
-            mp4A.href = href;
-            mp4A.textContent = '原生MP4';
-            mp4A.download = '';
-            mp4A.referrerPolicy = 'origin';
-        };
-
-        // 1.3 build assA
+        // 1.2 build assA
         assA.onmouseover = async () => {
-            // 1.3.1 give processing hint
+            // 1.2.1 give processing hint
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
-            // 1.3.2 query flv
+            // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
-            // 1.3.3 response mp4
+            // 1.2.3 response mp4
             assA.textContent = '弹幕ASS';
             if (monkey.mp4 && monkey.mp4.match) {
                 assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
@@ -7575,23 +7422,20 @@ class UI {
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, mp4A, assA });
+        Object.assign(this.cidSessionDom, { flvA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, mp4A, assA } = this.cidSessionDom) {
+    appendTitle({ flvA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = document.createElement('div');
 
         // 2. append to title
         div.addEventListener('click', e => e.stopPropagation());
-        div.style.float = 'left';
-        div.style.clear = 'left';
         div.className = 'bilitwin';
-        div.append(...[flvA, ' ', mp4A, ' ', assA]);
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        div.append(...[flvA, ' ', assA]);
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
         tminfo.style.float = 'none';
-        tminfo.style.marginLeft = '185px';
         tminfo.parentElement.insertBefore(div, tminfo);
 
         // 3. save to cache
@@ -7600,37 +7444,28 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
-        // 1. build flv splits
+    buildFLVDiv(monkey = this.twin.monkey, blobs = monkey.blobs, cache = monkey.cache) {
+        const format = blobs.shift();
+        let flvs = blobs.map(blob => window.URL.createObjectURL(blob));
+
+        // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = document.createElement('tr');
             {
                 const td1 = document.createElement('td');
                 const a1 = document.createElement('a');
                 a1.href = href;
-                a1.textContent = `FLV分段 ${index + 1}`;
+                a1.download = aid + '-' + (index + 1) + '.' + format;
+                a1.textContent = `视频分段 ${index + 1}`;
                 td1.append(a1);
                 tr.append(td1);
                 const td2 = document.createElement('td');
                 const a2 = document.createElement('a');
-
-                a2.onclick = e => this.downloadFLV({
-                    monkey,
-                    index,
-                    a: e.target,
-                    progress: tr.children[2].children[0]
-                });
-
-                a2.textContent = '\u7F13\u5B58\u672C\u6BB5';
+                a2.href = href;
+                a2.download = aid + '-' + (index + 1) + '.' + format;
+                a2.textContent = '\u53E6\u5B58\u4E3A';
                 td2.append(a2);
                 tr.append(td2);
-                const td3 = document.createElement('td');
-                const progress1 = document.createElement('progress');
-                progress1.setAttribute('value', '0');
-                progress1.setAttribute('max', '100');
-                progress1.textContent = '\u8FDB\u5EA6\u6761';
-                td3.append(progress1);
-                tr.append(td3);
             }
             return tr;
         });
@@ -7671,19 +7506,13 @@ class UI {
 
             a1.onclick = e => this.downloadAllFLVs({
                 a: e.target,
+                blobs,
                 monkey, table
             });
 
             a1.textContent = '\u7F13\u5B58\u5168\u90E8+\u81EA\u52A8\u5408\u5E76';
             td2.append(a1);
             tr1.append(td2);
-            const td3 = document.createElement('td');
-            const progress1 = document.createElement('progress');
-            progress1.setAttribute('value', '0');
-            progress1.setAttribute('max', flvs.length + 1);
-            progress1.textContent = '\u8FDB\u5EA6\u6761';
-            td3.append(progress1);
-            tr1.append(td3);
             return tr1;
         })(), (() => {
             const tr1 = document.createElement('tr');
@@ -7809,7 +7638,7 @@ class UI {
         return flvDiv;
     }
 
-    async downloadAllFLVs({ a, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
+    async downloadAllFLVs({ a, blobs, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
         if (this.cidSessionDom.downloadAllTr) return;
 
         // 1. hang player
@@ -7826,25 +7655,12 @@ class UI {
         })();
         table.append(this.cidSessionDom.downloadAllTr);
 
-        // 3. click download all split
-        for (let i = 0; i < monkey.flvs.length; i++) {
-            if (table.rows[i].cells[1].children[0].textContent == '缓存本段') table.rows[i].cells[1].children[0].click();
-        }
-
-        // 4. set sprogress
-        const progress = a.parentElement.nextElementSibling.children[0];
-        progress.max = monkey.flvs.length + 1;
-        progress.value = 0;
-        for (let i = 0; i < monkey.flvs.length; i++) monkey.getFLV(i).then(e => progress.value++);
-
-        // 5. merge splits
-        const files = await monkey.getAllFLVs();
-        const href = await this.twin.mergeFLVFiles(files);
+        // 3. merge splits
+        const href = await this.twin.mergeFLVFiles(blobs);
         const ass = await monkey.ass;
         const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        // 6. build download all ui
-        progress.value++;
+        // 4. build download all ui
         table.prepend((() => {
             const tr1 = document.createElement('tr');
             const td1 = document.createElement('td');
@@ -7880,45 +7696,6 @@ class UI {
         })());
 
         return href;
-    }
-
-    async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
-        // 1. add beforeUnloadHandler
-        const handler = e => UI.beforeUnloadHandler(e);
-        window.addEventListener('beforeunload', handler);
-
-        // 2. switch to cancel ui
-        a.textContent = '取消';
-        a.onclick = () => {
-            a.onclick = null;
-            window.removeEventListener('beforeunload', handler);
-            a.textContent = '已取消';
-            monkey.abortFLV(index);
-        };
-
-        // 3. try download
-        let url;
-        try {
-            url = await monkey.getFLV(index, (loaded, total) => {
-                progress.value = loaded;
-                progress.max = total;
-            });
-            url = URL.createObjectURL(url);
-            if (progress.value == 0) progress.value = progress.max = 1;
-        } catch (e) {
-            a.onclick = null;
-            window.removeEventListener('beforeunload', handler);
-            a.textContent = '错误';
-            throw e;
-        }
-
-        // 4. switch to complete ui
-        a.onclick = null;
-        window.removeEventListener('beforeunload', handler);
-        a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
-        a.href = url;
-        return url;
     }
 
     async displayQuota(td) {
@@ -7986,15 +7763,15 @@ class UI {
         const span1 = document.createElement('span');
         span1.className = 'video-contextmenu-icon';
         a2.append(span1);
-        a2.append(' \u4E0B\u8F7DFLV');
+        a2.append(' \u4E0B\u8F7D\u89C6\u9891FLV/MP4');
         li1.append(a2);
         ul1.append(li1);
         const li2 = document.createElement('li');
         li2.className = 'context-menu-function';
 
         li2.onclick = async () => {
-            if (mp4A.onmouseover) await mp4A.onmouseover();
-            mp4A.click();
+            if (assA.onmouseover) await assA.onmouseover();
+            assA.click();
         };
 
         const a3 = document.createElement('a');
@@ -8002,55 +7779,39 @@ class UI {
         const span2 = document.createElement('span');
         span2.className = 'video-contextmenu-icon';
         a3.append(span2);
-        a3.append(' \u4E0B\u8F7DMP4');
+        a3.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
         li2.append(a3);
         ul1.append(li2);
         const li3 = document.createElement('li');
         li3.className = 'context-menu-function';
 
-        li3.onclick = async () => {
-            if (assA.onmouseover) await assA.onmouseover();
-            assA.click();
-        };
+        li3.onclick = () => this.displayOptionDiv();
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
         const span3 = document.createElement('span');
         span3.className = 'video-contextmenu-icon';
         a4.append(span3);
-        a4.append(' \u4E0B\u8F7DASS');
+        a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li3.append(a4);
         ul1.append(li3);
         const li4 = document.createElement('li');
         li4.className = 'context-menu-function';
 
-        li4.onclick = () => this.displayOptionDiv();
+        li4.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin)));
 
         const a5 = document.createElement('a');
         a5.className = 'context-menu-a';
         const span4 = document.createElement('span');
         span4.className = 'video-contextmenu-icon';
         a5.append(span4);
-        a5.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+        a5.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
         li4.append(a5);
         ul1.append(li4);
         const li5 = document.createElement('li');
         li5.className = 'context-menu-function';
 
-        li5.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin)));
-
-        const a6 = document.createElement('a');
-        a6.className = 'context-menu-a';
-        const span5 = document.createElement('span');
-        span5.className = 'video-contextmenu-icon';
-        a6.append(span5);
-        a6.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
-        li5.append(a6);
-        ul1.append(li5);
-        const li6 = document.createElement('li');
-        li6.className = 'context-menu-function';
-
-        li6.onclick = async () => {
+        li5.onclick = async () => {
             monkey.proxy = true;
             monkey.flvs = null;
             UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
@@ -8060,53 +7821,53 @@ class UI {
             return monkey.queryInfo('flv');
         };
 
+        const a6 = document.createElement('a');
+        a6.className = 'context-menu-a';
+        const span5 = document.createElement('span');
+        span5.className = 'video-contextmenu-icon';
+        a6.append(span5);
+        a6.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        li5.append(a6);
+        ul1.append(li5);
+        const li6 = document.createElement('li');
+        li6.className = 'context-menu-function';
+
+        li6.onclick = () => top.location.reload(true);
+
         const a7 = document.createElement('a');
         a7.className = 'context-menu-a';
         const span6 = document.createElement('span');
         span6.className = 'video-contextmenu-icon';
         a7.append(span6);
-        a7.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        a7.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
         li6.append(a7);
         ul1.append(li6);
         const li7 = document.createElement('li');
         li7.className = 'context-menu-function';
 
-        li7.onclick = () => top.location.reload(true);
+        li7.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
         const span7 = document.createElement('span');
         span7.className = 'video-contextmenu-icon';
         a8.append(span7);
-        a8.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
+        a8.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
         li7.append(a8);
         ul1.append(li7);
         const li8 = document.createElement('li');
         li8.className = 'context-menu-function';
 
-        li8.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
+        li8.onclick = () => playerWin.player && playerWin.player.destroy();
 
         const a9 = document.createElement('a');
         a9.className = 'context-menu-a';
         const span8 = document.createElement('span');
         span8.className = 'video-contextmenu-icon';
         a9.append(span8);
-        a9.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
+        a9.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
         li8.append(a9);
         ul1.append(li8);
-        const li9 = document.createElement('li');
-        li9.className = 'context-menu-function';
-
-        li9.onclick = () => playerWin.player && playerWin.player.destroy();
-
-        const a10 = document.createElement('a');
-        a10.className = 'context-menu-a';
-        const span9 = document.createElement('span');
-        span9.className = 'video-contextmenu-icon';
-        a10.append(span9);
-        a10.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
-        li9.append(a10);
-        ul1.append(li9);
         li.append(ul1);
 
         return li;
@@ -8986,7 +8747,7 @@ class BiliTwin extends BiliUserJS {
         const href = location.href;
         this.option = this.getOption();
         if (this.option.debug) {
-            if (top.console) top.console.clear();
+            // if (top.console) top.console.clear();
         }
 
         // 2. monkey and polyfill
