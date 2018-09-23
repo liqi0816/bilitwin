@@ -349,6 +349,23 @@ class BiliMonkey {
         return this.ass;
     }
 
+    async get_blob_urls() {
+        let flvs = this.flvs
+        let blobs = []
+
+        for (let url of flvs) {
+            let r = await fetch(url)
+            let blob = await r.blob()
+            blobs.push(blob)
+        }
+
+        let blob_urls = blobs.map(blob => window.URL.createObjectURL(blob))
+        
+        this.blob_urls = blob_urls
+
+        return blob_urls
+    }
+
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
@@ -360,7 +377,7 @@ class BiliMonkey {
 
                     const _jq = this.playerWin.jQuery
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`
-                    
+
                     let re = _jq.ajax({
                         url: api_url,
                         async: false
@@ -370,15 +387,9 @@ class BiliMonkey {
                     console.log(data)
                     let durls = data.durl
 
-                    let blobs = [data.format.slice(0, 3)]
+                    let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"))
 
-                    for (let url_obj of durls) {
-                        let r = await fetch(url_obj.url.replace("http://", "https://"))
-                        let blob = await r.blob()
-                        blobs.push(blob)
-                    }
-
-                    this.blobs = blobs
+                    this.flvs = flvs
 
                     return durls
                 case 'ass':

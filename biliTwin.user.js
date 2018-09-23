@@ -1869,7 +1869,7 @@ class BiliMonkey {
 
                     const _jq = this.playerWin.jQuery;
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`;
-                    
+
                     let re = _jq.ajax({
                         url: api_url,
                         async: false
@@ -1879,14 +1879,19 @@ class BiliMonkey {
                     console.log(data);
                     let durls = data.durl;
 
-                    let blobs = [data.format.slice(0, 3)];
+                    flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
 
-                    for (let url_obj of durls) {
-                        let r = await fetch(url_obj.url.replace("http://", "https://"));
+                    console.log(flvs);
+
+                    let blobs = [];
+
+                    for (let url of flvs) {
+                        let r = await fetch(url);
                         let blob = await r.blob();
                         blobs.push(blob);
                     }
 
+                    this.flvs = flvs;
                     this.blobs = blobs;
 
                     return durls
@@ -7449,7 +7454,6 @@ class UI {
     }
 
     buildFLVDiv(monkey = this.twin.monkey, blobs = monkey.blobs, cache = monkey.cache) {
-        const format = blobs.shift();
         let flvs = blobs.map(blob => window.URL.createObjectURL(blob));
 
         // 1. build video splits
@@ -7459,14 +7463,14 @@ class UI {
                 const td1 = document.createElement('td');
                 const a1 = document.createElement('a');
                 a1.href = href;
-                a1.download = aid + '-' + (index + 1) + '.' + format;
+                a1.download = aid + '-' + (index + 1) + '.flv';
                 a1.textContent = `视频分段 ${index + 1}`;
                 td1.append(a1);
                 tr.append(td1);
                 const td2 = document.createElement('td');
                 const a2 = document.createElement('a');
                 a2.href = href;
-                a2.download = aid + '-' + (index + 1) + '.' + format;
+                a2.download = aid + '-' + (index + 1) + '.flv';
                 a2.textContent = '\u53E6\u5B58\u4E3A';
                 td2.append(a2);
                 tr.append(td2);

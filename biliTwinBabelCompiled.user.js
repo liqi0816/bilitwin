@@ -3270,14 +3270,14 @@ var BiliMonkey = function () {
                         switch (_context35.prev = _context35.next) {
                             case 0:
                                 return _context35.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
-                                    var _jq, api_url, re, data, durls, blobs, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, url_obj, r, blob;
+                                    var _jq, api_url, re, data, durls, blobs, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, url, r, blob;
 
                                     return regeneratorRuntime.wrap(function _callee34$(_context34) {
                                         while (1) {
                                             switch (_context34.prev = _context34.next) {
                                                 case 0:
                                                     _context34.t0 = format;
-                                                    _context34.next = _context34.t0 === 'video' ? 3 : _context34.t0 === 'ass' ? 49 : 58;
+                                                    _context34.next = _context34.t0 === 'video' ? 3 : _context34.t0 === 'ass' ? 52 : 61;
                                                     break;
 
                                                 case 3:
@@ -3307,106 +3307,115 @@ var BiliMonkey = function () {
 
                                                     console.log(data);
                                                     durls = data.durl;
-                                                    blobs = [data.format.slice(0, 3)];
+
+
+                                                    flvs = durls.map(function (url_obj) {
+                                                        return url_obj.url.replace("http://", "https://");
+                                                    });
+
+                                                    console.log(flvs);
+
+                                                    blobs = [];
                                                     _iteratorNormalCompletion2 = true;
                                                     _didIteratorError2 = false;
                                                     _iteratorError2 = undefined;
-                                                    _context34.prev = 19;
-                                                    _iterator2 = durls[Symbol.iterator]();
+                                                    _context34.prev = 21;
+                                                    _iterator2 = flvs[Symbol.iterator]();
 
-                                                case 21:
+                                                case 23:
                                                     if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                                                        _context34.next = 33;
+                                                        _context34.next = 35;
                                                         break;
                                                     }
 
-                                                    url_obj = _step2.value;
-                                                    _context34.next = 25;
-                                                    return fetch(url_obj.url.replace("http://", "https://"));
+                                                    url = _step2.value;
+                                                    _context34.next = 27;
+                                                    return fetch(url);
 
-                                                case 25:
+                                                case 27:
                                                     r = _context34.sent;
-                                                    _context34.next = 28;
+                                                    _context34.next = 30;
                                                     return r.blob();
 
-                                                case 28:
+                                                case 30:
                                                     blob = _context34.sent;
 
                                                     blobs.push(blob);
 
-                                                case 30:
+                                                case 32:
                                                     _iteratorNormalCompletion2 = true;
-                                                    _context34.next = 21;
-                                                    break;
-
-                                                case 33:
-                                                    _context34.next = 39;
+                                                    _context34.next = 23;
                                                     break;
 
                                                 case 35:
-                                                    _context34.prev = 35;
-                                                    _context34.t1 = _context34['catch'](19);
+                                                    _context34.next = 41;
+                                                    break;
+
+                                                case 37:
+                                                    _context34.prev = 37;
+                                                    _context34.t1 = _context34['catch'](21);
                                                     _didIteratorError2 = true;
                                                     _iteratorError2 = _context34.t1;
 
-                                                case 39:
-                                                    _context34.prev = 39;
-                                                    _context34.prev = 40;
+                                                case 41:
+                                                    _context34.prev = 41;
+                                                    _context34.prev = 42;
 
                                                     if (!_iteratorNormalCompletion2 && _iterator2.return) {
                                                         _iterator2.return();
                                                     }
 
-                                                case 42:
-                                                    _context34.prev = 42;
+                                                case 44:
+                                                    _context34.prev = 44;
 
                                                     if (!_didIteratorError2) {
-                                                        _context34.next = 45;
+                                                        _context34.next = 47;
                                                         break;
                                                     }
 
                                                     throw _iteratorError2;
 
-                                                case 45:
-                                                    return _context34.finish(42);
-
-                                                case 46:
-                                                    return _context34.finish(39);
-
                                                 case 47:
+                                                    return _context34.finish(44);
 
+                                                case 48:
+                                                    return _context34.finish(41);
+
+                                                case 49:
+
+                                                    _this19.flvs = flvs;
                                                     _this19.blobs = blobs;
 
                                                     return _context34.abrupt('return', durls);
 
-                                                case 49:
+                                                case 52:
                                                     if (!_this19.ass) {
-                                                        _context34.next = 53;
+                                                        _context34.next = 56;
                                                         break;
                                                     }
 
                                                     return _context34.abrupt('return', _this19.ass);
 
-                                                case 53:
+                                                case 56:
                                                     if (!(quality == BiliMonkey.formatToValue(_this19.flvFormatName))) {
-                                                        _context34.next = 57;
+                                                        _context34.next = 60;
                                                         break;
                                                     }
 
                                                     return _context34.abrupt('return', _this19.getASS(_this19.mp4FormatName));
 
-                                                case 57:
+                                                case 60:
                                                     return _context34.abrupt('return', _this19.getASS(_this19.flvFormatName));
 
-                                                case 58:
+                                                case 61:
                                                     throw 'Bilimonkey: What is format ' + format + '?';
 
-                                                case 59:
+                                                case 62:
                                                 case 'end':
                                                     return _context34.stop();
                                             }
                                         }
-                                    }, _callee34, _this19, [[19, 35, 39, 47], [40,, 42, 46]]);
+                                    }, _callee34, _this19, [[21, 37, 41, 49], [42,, 44, 48]]);
                                 }))));
 
                             case 1:
@@ -6640,7 +6649,6 @@ var UI = function () {
             var blobs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.blobs;
             var cache = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : monkey.cache;
 
-            var format = blobs.shift();
             var flvs = blobs.map(function (blob) {
                 return window.URL.createObjectURL(blob);
             });
@@ -6652,14 +6660,14 @@ var UI = function () {
                     var td1 = document.createElement('td');
                     var a1 = document.createElement('a');
                     a1.href = href;
-                    a1.download = aid + '-' + (index + 1) + '.' + format;
+                    a1.download = aid + '-' + (index + 1) + '.flv';
                     a1.textContent = '\u89C6\u9891\u5206\u6BB5 ' + (index + 1);
                     td1.append(a1);
                     tr.append(td1);
                     var td2 = document.createElement('td');
                     var a2 = document.createElement('a');
                     a2.href = href;
-                    a2.download = aid + '-' + (index + 1) + '.' + format;
+                    a2.download = aid + '-' + (index + 1) + '.flv';
                     a2.textContent = '\u53E6\u5B58\u4E3A';
                     td2.append(a2);
                     tr.append(td2);

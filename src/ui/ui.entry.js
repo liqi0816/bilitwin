@@ -162,15 +162,12 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, blobs = monkey.blobs, cache = monkey.cache) {
-        const format = blobs.shift()
-        let flvs = blobs.map(blob=>window.URL.createObjectURL(blob))
-
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>视频分段 {index + 1}</a></td>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.' + format}>另存为</a></td>
+                <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>视频分段 {index + 1}</a></td>
+                <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>另存为</a></td>
             </tr>;
             return tr;
         });
@@ -209,8 +206,8 @@ class UI {
                 <td>{...[exporterA]}</td>
                 <td><a onclick={e => this.downloadAllFLVs({
                     a: e.target,
-                    blobs,
-                    monkey, table
+                    monkey,
+                    table
                 })}>缓存全部+自动合并</a></td>
             </tr>,
             <tr><td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td></tr>,
@@ -275,7 +272,9 @@ class UI {
         return flvDiv
     }
 
-    async downloadAllFLVs({ a, blobs, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
+    async downloadAllFLVs({ a, monkey = this.twin.monkey, table = this.cidSessionDom.flvTable }) {
+        let blobs = await monkey.get_blob_urls()
+
         if (this.cidSessionDom.downloadAllTr) return;
 
         // 1. hang player
