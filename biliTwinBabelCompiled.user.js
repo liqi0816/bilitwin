@@ -3270,7 +3270,7 @@ var BiliMonkey = function () {
                         switch (_context35.prev = _context35.next) {
                             case 0:
                                 return _context35.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee34() {
-                                    var _jq, scripts, e, data, durls, blobs, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, url_obj, r, blob;
+                                    var _jq, api_url, re, data, durls, blobs, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, url_obj, r, blob;
 
                                     return regeneratorRuntime.wrap(function _callee34$(_context34) {
                                         while (1) {
@@ -3298,11 +3298,12 @@ var BiliMonkey = function () {
 
                                                 case 9:
                                                     _jq = _this19.playerWin.jQuery;
-                                                    scripts = _jq("script[type!='text/javascript']");
-                                                    e = scripts.filter(function (i) {
-                                                        return scripts[i].innerHTML.startsWith("window.__playinfo__=");
-                                                    }).text().slice(20);
-                                                    data = JSON.parse(e).data;
+                                                    api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=80';
+                                                    re = _jq.ajax({
+                                                        url: api_url,
+                                                        async: false
+                                                    });
+                                                    data = JSON.parse(re.responseText).data;
 
                                                     console.log(data);
                                                     durls = data.durl;

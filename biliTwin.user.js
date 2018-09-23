@@ -1867,15 +1867,19 @@ class BiliMonkey {
                     else if (this.flvFormatName == 'does_not_exist')
                         return this.flvFormatName;
 
-                    let _jq = this.playerWin.jQuery;
-                    let scripts = _jq("script[type!='text/javascript']");
-                    let e = scripts.filter((i) => scripts[i].innerHTML.startsWith("window.__playinfo__=")).text().slice(20);
+                    const _jq = this.playerWin.jQuery;
+                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`;
+                    
+                    let re = _jq.ajax({
+                        url: api_url,
+                        async: false
+                    });
 
-                    let data = JSON.parse(e).data;
+                    let data = JSON.parse(re.responseText).data;
                     console.log(data);
                     let durls = data.durl;
 
-                    let blobs = [data.format.slice(0,3)];
+                    let blobs = [data.format.slice(0, 3)];
 
                     for (let url_obj of durls) {
                         let r = await fetch(url_obj.url.replace("http://", "https://"));
