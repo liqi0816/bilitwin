@@ -7387,7 +7387,7 @@ class UI {
         const fontSize = '15px';
         const flvA = document.createElement('a');
         flvA.style.fontSize = fontSize;
-        flvA.textContent = '\u89C6\u9891FLV/MP4';
+        flvA.textContent = '\u89C6\u9891FLV';
         const assA = document.createElement('a');
 
         // 1.1 build flvA
@@ -7395,15 +7395,15 @@ class UI {
         assA.textContent = '\u5F39\u5E55ASS';
         flvA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV/MP4';
+            flvA.textContent = '正在FLV';
             flvA.onmouseover = null;
 
             // 1.1.2 query flv
             const href = await monkey.queryInfo('video');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV/MP4视频';
+            if (href == 'does_not_exist') return flvA.textContent = '没有FLV视频';
 
             // 1.1.3 display flv
-            flvA.textContent = '视频FLV/MP4';
+            flvA.textContent = '视频FLV';
             flvA.onclick = () => this.displayFLVDiv();
         };
 
@@ -7767,7 +7767,7 @@ class UI {
         const span1 = document.createElement('span');
         span1.className = 'video-contextmenu-icon';
         a2.append(span1);
-        a2.append(' \u4E0B\u8F7D\u89C6\u9891FLV/MP4');
+        a2.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
         li1.append(a2);
         ul1.append(li1);
         const li2 = document.createElement('li');

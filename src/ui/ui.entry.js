@@ -102,21 +102,21 @@ class UI {
     buildTitle(monkey = this.twin.monkey) {
         // 1. build flvA, mp4A, assA
         const fontSize = '15px';
-        const flvA = <a style={{ fontSize }}>视频FLV/MP4</a>;
+        const flvA = <a style={{ fontSize }}>视频FLV</a>;
         const assA = <a style={{ fontSize }}>弹幕ASS</a>;
 
         // 1.1 build flvA
         flvA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV/MP4';
+            flvA.textContent = '正在FLV';
             flvA.onmouseover = null;
 
             // 1.1.2 query flv
             const href = await monkey.queryInfo('video');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV/MP4视频';
+            if (href == 'does_not_exist') return flvA.textContent = '没有FLV视频';
 
             // 1.1.3 display flv
-            flvA.textContent = '视频FLV/MP4';
+            flvA.textContent = '视频FLV';
             flvA.onclick = () => this.displayFLVDiv();
         };
 
@@ -366,7 +366,7 @@ class UI {
                     flvA.click();
                 }}>
                     <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载视频FLV/MP4
+                        <span class="video-contextmenu-icon"></span> 下载视频FLV
                 </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => {
