@@ -1962,7 +1962,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop();
+        let name = this.flvs[index].split("/").pop().split("?")[0];
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -1971,7 +1971,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop();
+        let name = this.flvs[index].split("/").pop().split("?")[0];
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -1991,14 +1991,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop();
+        let name = this.flvs[index].split("/").pop().split("?")[0];
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop();
+        let name = this.flvs[index].split("/").pop().split("?")[0];
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -2006,7 +2006,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop();
+        let name = this.flvs[index].split("/").pop().split("?")[0];
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -2069,7 +2069,7 @@ class BiliMonkey {
 
         let ret = [];
         for (let flv of this.flvs) {
-            let name = flv.split("/").pop();
+            let name = flv.split("/").pop().split("?")[0];
             ret.push(await this.cache.deleteData(name));
             ret.push(await this.cache.deleteData('PC_' + name));
         }
@@ -7290,8 +7290,9 @@ class MKVTransmuxer {
         URL.revokeObjectURL(ass);
 
         // 4. Free parent window
-        // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) 
-        top.location = 'about:blank';
+        if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
+            top.location = 'about:blank';
+        }
     }
 }
 

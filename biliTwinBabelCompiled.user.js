@@ -3605,7 +3605,7 @@ var BiliMonkey = function () {
                                 throw 'BiliMonkey: info uninitialized';
 
                             case 4:
-                                name = this.flvs[index].split("/").pop();
+                                name = this.flvs[index].split("/").pop().split("?")[0];
                                 _context40.next = 7;
                                 return this.cache.getData(name);
 
@@ -3661,7 +3661,7 @@ var BiliMonkey = function () {
                                 throw 'BiliMonkey: info uninitialized';
 
                             case 4:
-                                name = this.flvs[index].split("/").pop();
+                                name = this.flvs[index].split("/").pop().split("?")[0];
 
                                 name = 'PC_' + name;
                                 _context41.next = 8;
@@ -3764,7 +3764,7 @@ var BiliMonkey = function () {
                                 throw 'BiliMonkey: info uninitialized';
 
                             case 4:
-                                name = this.flvs[index].split("/").pop();
+                                name = this.flvs[index].split("/").pop().split("?")[0];
                                 return _context43.abrupt('return', this.cache.addData({ name: name, data: blob }));
 
                             case 6:
@@ -3806,7 +3806,7 @@ var BiliMonkey = function () {
                                 throw 'BiliMonkey: info uninitialized';
 
                             case 4:
-                                name = this.flvs[index].split("/").pop();
+                                name = this.flvs[index].split("/").pop().split("?")[0];
 
                                 name = 'PC_' + name;
                                 return _context44.abrupt('return', this.cache.putData({ name: name, data: blob }));
@@ -3850,7 +3850,7 @@ var BiliMonkey = function () {
                                 throw 'BiliMonkey: info uninitialized';
 
                             case 4:
-                                name = this.flvs[index].split("/").pop();
+                                name = this.flvs[index].split("/").pop().split("?")[0];
 
                                 name = 'PC_' + name;
                                 return _context45.abrupt('return', this.cache.deleteData(name));
@@ -4089,7 +4089,7 @@ var BiliMonkey = function () {
                                 }
 
                                 flv = _step3.value;
-                                name = flv.split("/").pop();
+                                name = flv.split("/").pop().split("?")[0];
                                 _context50.t0 = ret;
                                 _context50.next = 16;
                                 return this.cache.deleteData(name);
@@ -6473,8 +6473,9 @@ var MKVTransmuxer = function () {
             URL.revokeObjectURL(ass);
 
             // 4. Free parent window
-            // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) 
-            top.location = 'about:blank';
+            if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
+                top.location = 'about:blank';
+            }
         }
     }]);
 

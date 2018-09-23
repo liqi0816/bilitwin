@@ -326,7 +326,7 @@ class UI {
         );
 
         return href;
-}
+    }
 
     async downloadFLV({ a, monkey = this.twin.monkey, index, progress = {} }) {
         // 1. add beforeUnloadHandler
