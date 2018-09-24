@@ -1302,6 +1302,8 @@ const rtlCanvas = function (options) {
     { name: 'textOpacity', type: 'number', min: 10, max: 100, predef: 60 },
     { name: 'maxOverlap', type: 'number', min: 1, max: 20, predef: 1 },
     { name: 'bold', type: 'boolean', predef: true },
+    { name: 'title', type: 'string', predef: 'danmaku', valid: title => title != 'undefined' },
+    { name: 'originalURL', type: 'string', predef: 'anonymous xml', valid: url => url != 'undefined' },
   ];
 
   const attrNormalize = (option, { name, type, min = -Infinity, max = Infinity, step = 1, predef, valid }) => {
@@ -1852,7 +1854,11 @@ class BiliMonkey {
 
             // 3. generate
             resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
-                danmaku, top.document.title, top.location.href, option
+                danmaku,
+                Object.assign(option, {
+                    title: top.document.title,
+                    originalURL: top.location.href
+                })
             )));
         });
         return this.ass;
@@ -1869,7 +1875,7 @@ class BiliMonkey {
         }
 
         let blob_urls = blobs.map(blob => window.URL.createObjectURL(blob));
-        
+
         this.blob_urls = blob_urls;
 
         return blob_urls

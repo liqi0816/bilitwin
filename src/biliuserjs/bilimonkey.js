@@ -343,7 +343,11 @@ class BiliMonkey {
 
             // 3. generate
             resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
-                danmaku, top.document.title, top.location.href, option
+                danmaku,
+                Object.assign(option, {
+                    title: top.document.title,
+                    originalURL: top.location.href
+                })
             )));
         });
         return this.ass;
@@ -360,7 +364,7 @@ class BiliMonkey {
         }
 
         let blob_urls = blobs.map(blob => window.URL.createObjectURL(blob))
-        
+
         this.blob_urls = blob_urls
 
         return blob_urls

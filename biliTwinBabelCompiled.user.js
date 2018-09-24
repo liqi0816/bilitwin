@@ -2309,7 +2309,11 @@ var predefFontFamily = function predefFontFamily() {
 
 var attributes = [{ name: 'resolutionX', type: 'number', min: 480, predef: 560 }, { name: 'resolutionY', type: 'number', min: 360, predef: 420 }, { name: 'bottomReserved', type: 'number', min: 0, predef: 60 }, { name: 'fontFamily', type: 'string', predef: predefFontFamily(), valid: function valid(font$$1) {
         return font.valid(font$$1);
-    } }, { name: 'fontSize', type: 'number', min: 0, predef: 1, step: 0.01 }, { name: 'textSpace', type: 'number', min: 0, predef: 0 }, { name: 'rtlDuration', type: 'number', min: 0.1, predef: 8, step: 0.1 }, { name: 'fixDuration', type: 'number', min: 0.1, predef: 4, step: 0.1 }, { name: 'maxDelay', type: 'number', min: 0, predef: 6, step: 0.1 }, { name: 'textOpacity', type: 'number', min: 10, max: 100, predef: 60 }, { name: 'maxOverlap', type: 'number', min: 1, max: 20, predef: 1 }, { name: 'bold', type: 'boolean', predef: true }];
+    } }, { name: 'fontSize', type: 'number', min: 0, predef: 1, step: 0.01 }, { name: 'textSpace', type: 'number', min: 0, predef: 0 }, { name: 'rtlDuration', type: 'number', min: 0.1, predef: 8, step: 0.1 }, { name: 'fixDuration', type: 'number', min: 0.1, predef: 4, step: 0.1 }, { name: 'maxDelay', type: 'number', min: 0, predef: 6, step: 0.1 }, { name: 'textOpacity', type: 'number', min: 10, max: 100, predef: 60 }, { name: 'maxOverlap', type: 'number', min: 1, max: 20, predef: 1 }, { name: 'bold', type: 'boolean', predef: true }, { name: 'title', type: 'string', predef: 'danmaku', valid: function valid(title) {
+        return title != 'undefined';
+    } }, { name: 'originalURL', type: 'string', predef: 'anonymous xml', valid: function valid(url) {
+        return url != 'undefined';
+    } }];
 
 var attrNormalize = function attrNormalize(option, _ref35) {
     var name = _ref35.name,
@@ -3224,7 +3228,10 @@ var BiliMonkey = function () {
                                                         _context32.t0 = resolve;
                                                         _context32.t1 = top.URL;
                                                         _context32.next = 14;
-                                                        return ASSConverter.genASSBlob(danmaku, top.document.title, top.location.href, option);
+                                                        return ASSConverter.genASSBlob(danmaku, Object.assign(option, {
+                                                            title: top.document.title,
+                                                            originalURL: top.location.href
+                                                        }));
 
                                                     case 14:
                                                         _context32.t2 = _context32.sent;

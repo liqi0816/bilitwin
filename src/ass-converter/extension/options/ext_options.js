@@ -52,6 +52,8 @@
     { name: 'textOpacity', type: 'number', min: 10, max: 100, predef: 60 },
     { name: 'maxOverlap', type: 'number', min: 1, max: 20, predef: 1 },
     { name: 'bold', type: 'boolean', predef: true },
+    { name: 'title', type: 'string', predef: 'danmaku', valid: title => title != 'undefined' },
+    { name: 'originalURL', type: 'string', predef: 'anonymous xml', valid: url => url != 'undefined' },
   ];
 
   const attrNormalize = (option, { name, type, min = -Infinity, max = Infinity, step = 1, predef, valid }) => {
