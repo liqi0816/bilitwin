@@ -1,4 +1,4 @@
-# 国产浏览器请点[这里](https://liqi0816.github.io/bilitwin/biliTwinBabelCompiled.user.js)
+# 国产浏览器请点[这里](https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js)
 
 # 脚本功能
 * BiliMonkey
@@ -8,7 +8,7 @@
     * 缓存
         * 缓存FLV到本地
         * 断点续传
-        * 用缓存加速播放器 (在新版播放器中不可用)
+        * 用缓存加速播放器 **(在新版播放器中不可用)**
     * 转码
         * 合并FLV
         * 弹幕转码ASS
@@ -17,7 +17,7 @@
         * 下载合并一条龙 <sub>一键下载所有超清FLV分段并自动合并</sub>
         * 关标签页已下载的分段不消失 <sub>保留已经下载好的分段到缓存</sub>
         * 断点续传 <sub>也保留部分下载的分段到缓存</sub>
-        * 用B站原生播放器播放下载好的缓存 <sub>如果发现缓存里有完整的分段，直接喂给网页播放器，不重新访问网络。小水管利器。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。</sub> (在新版播放器中不可用)
+        * 用B站原生播放器播放下载好的缓存 <sub>如果发现缓存里有完整的分段，直接喂给网页播放器，不重新访问网络。小水管利器。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。</sub> **(在新版播放器中不可用)**
 * BiliPolyfill
     * 界面
         * 稍后再看添加数字角标
@@ -36,7 +36,7 @@
         * 自动全屏
         * 标记后自动跳OP/ED
         * 尝试自动找上下集
-    * 交互 (在新版播放器中不可用)
+    * 交互 **(在新版播放器中不可用)**
         * 双击全屏
         * 首次回车键可全屏自动播放
     * 功能
@@ -61,7 +61,7 @@
             <tbody>
             <tr>
                 <td>国产浏览器</td>
-                <td><strong>请用<a href="https://liqi0816.github.io/bilitwin/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
+                <td><strong>请用<a href="https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
             </tr>
             <tr>
                 <td>Chrome</td>
@@ -94,7 +94,7 @@
 * 轻量  
   新建一个书签，书签地址粘贴下面的代码，想用的时候点一下也可以使用。  
   ```javascript
-  javascript:(function(){f=document.createElement("script");f.setAttribute("src","https://liqi0816.github.io/bilitwin/biliTwinBabelCompiled.user.js");document.body.appendChild(f)})()
+  javascript:(function(){f=document.createElement("script");f.setAttribute("src","https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js");document.body.appendChild(f)})()
   ```
 * 充分保障隐私  
   作者根本就没有服务器可以用来偷偷记下各位的奇怪癖好
