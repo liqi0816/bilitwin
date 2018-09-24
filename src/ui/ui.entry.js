@@ -650,7 +650,7 @@ class UI {
                     {' '}
                     <a href="https://github.com/liqi0816/bilitwin/" target="_blank">GitHub</a>
                     {' '}
-                    Author: qli5. Copyright: qli5, 2014+, 田生, grepmusic
+                    Author: qli5. Copyright: qli5, 2014+, 田生, grepmusic, xmader
                 </td></tr>
             </table>,
             <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={() => div.style.display = 'none'}>关闭</button>,

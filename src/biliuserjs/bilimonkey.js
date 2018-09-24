@@ -287,7 +287,7 @@ class BiliMonkey {
                     })
 
                     let data = JSON.parse(re.responseText).data
-                    console.log(data)
+                    // console.log(data)
                     let durls = data.durl
 
                     if (!durls) {
