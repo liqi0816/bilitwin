@@ -3924,22 +3924,24 @@ var BiliMonkey = function () {
                                                                         switch (_context47.prev = _context47.next) {
                                                                             case 0:
                                                                                 _context47.t0 = top.URL;
-                                                                                _context47.t1 = new ASSConverter();
+                                                                                _context47.t1 = ASSConverter;
                                                                                 _context47.next = 4;
                                                                                 return BiliMonkey.fetchDanmaku(cid);
 
                                                                             case 4:
                                                                                 _context47.t2 = _context47.sent;
-                                                                                _context47.t3 = top.document.title;
-                                                                                _context47.t4 = top.location.href;
-                                                                                _context47.next = 9;
-                                                                                return _context47.t1.genASSBlob.call(_context47.t1, _context47.t2, _context47.t3, _context47.t4);
+                                                                                _context47.t3 = {
+                                                                                    title: top.document.title,
+                                                                                    originalURL: top.location.href
+                                                                                };
+                                                                                _context47.next = 8;
+                                                                                return _context47.t1.genASSBlob.call(_context47.t1, _context47.t2, _context47.t3);
 
-                                                                            case 9:
-                                                                                _context47.t5 = _context47.sent;
-                                                                                return _context47.abrupt('return', _context47.t0.createObjectURL.call(_context47.t0, _context47.t5));
+                                                                            case 8:
+                                                                                _context47.t4 = _context47.sent;
+                                                                                return _context47.abrupt('return', _context47.t0.createObjectURL.call(_context47.t0, _context47.t4));
 
-                                                                            case 11:
+                                                                            case 10:
                                                                             case 'end':
                                                                                 return _context47.stop();
                                                                         }

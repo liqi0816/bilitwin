@@ -2002,8 +2002,12 @@ class BiliMonkey {
                     // 5.3 grab information
                     const [danmuku, res] = await Promise.all([
                         // 5.3.1 grab danmuku
-                        (async () => top.URL.createObjectURL(await new ASSConverter().genASSBlob(
-                            await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
+                        (async () => top.URL.createObjectURL(await ASSConverter.genASSBlob(
+                            await BiliMonkey.fetchDanmaku(cid), 
+                            {
+                                title: top.document.title,
+                                originalURL: top.location.href
+                            }
                         )))(),
 
                         // 5.3.2 grab download res
