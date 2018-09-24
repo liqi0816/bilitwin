@@ -255,8 +255,6 @@ class BiliMonkey {
                 case 'ass':
                     if (this.ass)
                         return this.ass;
-                    else if (quality == BiliMonkey.formatToValue(this.flvFormatName))
-                        return this.getASS(this.mp4FormatName);
                     else
                         return this.getASS(this.flvFormatName);
                 default:

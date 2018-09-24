@@ -1769,8 +1769,6 @@ class BiliMonkey {
                 case 'ass':
                     if (this.ass)
                         return this.ass;
-                    else if (quality == BiliMonkey.formatToValue(this.flvFormatName))
-                        return this.getASS(this.mp4FormatName);
                     else
                         return this.getASS(this.flvFormatName);
                 default:
@@ -2198,7 +2196,10 @@ class BiliPolyfill {
         // 3. set up functions that are cid static
         if (!videoRefresh) {
             this.retrieveUserdata();
-            if (this.option.badgeWatchLater) this.badgeWatchLater();
+            if (this.option.badgeWatchLater) {
+                await this.getWatchLaterBtn();
+                this.badgeWatchLater();
+            }
             if (this.option.scroll) this.scrollToPlayer();
 
             if (this.option.series) this.inferNextInSeries();
@@ -2426,7 +2427,9 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
         const input = this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
@@ -2454,7 +2457,9 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
         // 4.1 danmukuSwitch
@@ -2670,7 +2675,8 @@ class BiliPolyfill {
     }
 
     focusOnPlayer() {
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0].click();
+        let player = this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0];
+        if (player) player.click();
     }
 
     menuFocusOnPlayer() {
@@ -2828,6 +2834,23 @@ class BiliPolyfill {
         }
     }
 
+    async getWatchLaterBtn() {
+        let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
     static async openMinimizedPlayer(option = { cid: top.cid, aid: top.aid, playerWin: top }) {
         // 1. check param
         if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
@@ -2977,10 +3000,10 @@ class BiliPolyfill {
 
             // 2. automation
             scroll: true,
-            focus: true,
+            focus: false,
             menuFocus: true,
-            restorePrevent: true,
-            restoreDanmuku: true,
+            restorePrevent: false,
+            restoreDanmuku: false,
             restoreSpeed: true,
             restoreWide: true,
             autoResume: true,
@@ -7297,7 +7320,7 @@ class UI {
         div.append(...[flvA, ' ', assA]);
         const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
         tminfo.style.float = 'none';
-        tminfo.parentElement.insertBefore(div, tminfo);
+        tminfo.after(div);
 
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;

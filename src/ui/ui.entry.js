@@ -154,7 +154,7 @@ class UI {
         // 2. append to title
         const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
         tminfo.style.float = 'none';
-        tminfo.parentElement.insertBefore(div, tminfo);
+        tminfo.after(div);
 
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;
