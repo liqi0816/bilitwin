@@ -1584,8 +1584,6 @@ class BiliMonkey {
 
         this.defaultFormatPromise = null;
         this.queryInfoMutex = new Mutex();
-        this.queryInfoMutex.lockAndAwait(() => this.getPlayerButtons());
-        this.queryInfoMutex.lockAndAwait(() => this.getAvailableFormatName());
 
         this.destroy = new HookedFunction();
     }
@@ -1674,28 +1672,6 @@ class BiliMonkey {
         }
     }
 
-    getAvailableFormatName(accept_quality) {
-        if (!Array.isArray(accept_quality)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
-
-        const accept_format = accept_quality.map(e => BiliMonkey.valueToFormat(e));
-
-        const vipExclusiveFormatSet = new Set(['flv_p60', 'hdflv2', 'flv720_p60']);
-        const candidateFormatSet = new Set(this.getVIPStatus() ? accept_format : accept_format.filter(e => !vipExclusiveFormatSet.has(e)));
-
-        this.flvFormatName = ['flv_p60', 'hdflv2', 'flv', 'flv720_p60', 'flv720', 'flv480', 'flv360']
-            .find(e => candidateFormatSet.has(e))
-            || 'does_not_exist';
-
-        this.mp4FormatName = ['hdmp4', 'mp4']
-            .find(e => candidateFormatSet.has(e))
-            || 'does_not_exist';
-
-        if (this.flvFormatName == 'does_not_exist' || this.mp4FormatName == 'does_not_exist') {
-            this.fallbackFormatName = ['mp4', 'flv360'].find(e => candidateFormatSet.has(e));
-            if (!this.fallbackFormatName) throw 'BiliMonkey: cannot get available format names (this video has only one available quality?)';
-        }
-    }
-
     async execOptions() {
         if (this.option.autoDefault) await this.sniffDefaultFormat();
         if (this.option.autoFLV) this.queryInfo('flv');
@@ -1719,7 +1695,6 @@ class BiliMonkey {
                     let _success = a.success;
                     a.success = res => {
                         // 1. determine available format names
-                        self.getAvailableFormatName(res.accept_quality);
 
                         // 2. determine if we should take this response
                         const format = res.format;
@@ -1864,31 +1839,12 @@ class BiliMonkey {
         return this.ass;
     }
 
-    async get_blob_urls() {
-        let flvs = this.flvs;
-        let blobs = [];
-
-        for (let url of flvs) {
-            let r = await fetch(url);
-            let blob = await r.blob();
-            blobs.push(blob);
-        }
-
-        let blob_urls = blobs.map(blob => window.URL.createObjectURL(blob));
-
-        this.blob_urls = blob_urls;
-
-        return blob_urls
-    }
-
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
                 case 'video':
                     if (this.flvs)
                         return this.flvs;
-                    else if (this.flvFormatName == 'does_not_exist')
-                        return this.flvFormatName;
 
                     const _jq = this.playerWin.jQuery;
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`;
@@ -1918,23 +1874,6 @@ class BiliMonkey {
                     throw `Bilimonkey: What is format ${format}?`;
             }
         });
-    }
-
-    async getPlayerButtons() {
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
-            return this.playerWin;
-        }
-        else {
-            return new Promise(resolve => {
-                let observer = new MutationObserver(() => {
-                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
-                        observer.disconnect();
-                        resolve(this.playerWin);
-                    }
-                });
-                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
-            });
-        }
     }
 
     async hangPlayer() {
