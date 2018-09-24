@@ -789,10 +789,10 @@ class UI {
                         {i.name}
                     </td>
                     <td>
-                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0]}</a>
+                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].split("/").pop().split("?")[0]}</a>
                     </td>
                     <td>
-                        <a href={i.danmuku} download={`${i.outputName}.ass`} referrerpolicy="origin">{i.danmuku}</a>
+                        <a href={i.danmuku} download={`${i.outputName}.ass`} referrerpolicy="origin">{`${i.outputName}.ass`}</a>
                     </td>
                 </tr>,
                 ...i.durl.slice(1).map(href => <tr>

@@ -7754,7 +7754,7 @@ var UI = function () {
                     a1.href = i.durl[0];
                     a1.download = '';
                     a1.setAttribute('referrerpolicy', 'origin');
-                    a1.textContent = i.durl[0];
+                    a1.textContent = i.durl[0].split("/").pop().split("?")[0];
                     td2.append(a1);
                     tr1.append(td2);
                     var td3 = document.createElement('td');
@@ -7762,7 +7762,7 @@ var UI = function () {
                     a2.href = i.danmuku;
                     a2.download = i.outputName + '.ass';
                     a2.setAttribute('referrerpolicy', 'origin');
-                    a2.textContent = i.danmuku;
+                    a2.textContent = i.outputName + '.ass';
                     td3.append(a2);
                     tr1.append(td3);
                     return tr1;
