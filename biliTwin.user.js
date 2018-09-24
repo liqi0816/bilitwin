@@ -7229,7 +7229,7 @@ var FLVASS2MKV = (function () {
         const fileProgress = document.getElementById('fileProgress');
         const mkvProgress = document.getElementById('mkvProgress');
         const a = document.getElementById('a');
-        window.exec = async option => {
+        window.exec = async (option, target) => {
             const defaultOption = {
                 onflvprogress: ({ loaded, total }) => {
                     fileProgress.value = loaded;
@@ -7246,18 +7246,22 @@ var FLVASS2MKV = (function () {
                 name: 'merged.mkv',
             };
             option = Object.assign(defaultOption, option);
-            a.download = a.textContent = option.name;
+            target.download = a.download = a.textContent = option.name;
             console.time('file');
             const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);
             console.timeEnd('flvass2mkv');
-            return a.href = URL.createObjectURL(mkv);
+            target.href = a.href = URL.createObjectURL(mkv);
+            target.textContent = "另存为MKV"
+            target.onclick = () => {
+                window.close()
+            }
+            return a.href
         };
         
     </script>
 </body>
 
-</html>
-`;
+</html>`;
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -7281,23 +7285,27 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
      */
-    exec(flv, ass, name) {
-        // 1. Allocate for a new window
-        if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
+    exec(flv, ass, name, target) {
+        if (target.textContent != "另存为MKV") {
+            target.textContent = "打包中";
 
-        // 2. Inject scripts
-        this.workerWin.document.write(embeddedHTML);
-        this.workerWin.document.close();
+            // 1. Allocate for a new window
+            if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
 
-        // 3. Invoke exec
-        if (!(this.option instanceof Object)) this.option = null;
-        this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }));
-        URL.revokeObjectURL(flv);
-        URL.revokeObjectURL(ass);
+            // 2. Inject scripts
+            this.workerWin.document.write(embeddedHTML);
+            this.workerWin.document.close();
 
-        // 4. Free parent window
-        if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
-            top.location = 'about:blank';
+            // 3. Invoke exec
+            if (!(this.option instanceof Object)) this.option = null;
+            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }), target);
+            URL.revokeObjectURL(flv);
+            URL.revokeObjectURL(ass);
+
+            // 4. Free parent window
+            // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
+            //     top.location = 'about:blank';
+            // }
         }
     }
 }
@@ -7737,7 +7745,7 @@ class UI {
             td1.append(' ');
             const a3 = document.createElement('a');
 
-            a3.onclick = () => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`);
+            a3.onclick = e => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target);
 
             a3.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
             td1.append(a3);

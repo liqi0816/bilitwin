@@ -318,7 +318,7 @@ class UI {
                     {' '}
                     <a href={ass} download={`${outputName}.ass`}>弹幕ASS</a>
                     {' '}
-                    <a onclick={() => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`)}>打包MKV(软字幕封装)</a>
+                    <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)}>打包MKV(软字幕封装)</a>
                     {' '}
                     记得清理分段缓存哦~
                </td>

@@ -22,23 +22,28 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
      */
-    exec(flv, ass, name) {
-        // 1. Allocate for a new window
-        if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
+    exec(flv, ass, name, target) {
+        if (target.textContent != "另存为MKV") {
+            target.textContent = "打包中"
 
-        // 2. Inject scripts
-        this.workerWin.document.write(embeddedHTML);
-        this.workerWin.document.close();
+            // 1. Allocate for a new window
+            if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
 
-        // 3. Invoke exec
-        if (!(this.option instanceof Object)) this.option = null;
-        this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }));
-        URL.revokeObjectURL(flv);
-        URL.revokeObjectURL(ass);
+            // 2. Inject scripts
+            this.workerWin.document.write(embeddedHTML);
+            this.workerWin.document.close();
 
-        // 4. Free parent window
-        // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) 
-        top.location = 'about:blank';
+            // 3. Invoke exec
+            if (!(this.option instanceof Object)) this.option = null;
+            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }), target);
+            URL.revokeObjectURL(flv);
+            URL.revokeObjectURL(ass);
+
+            // 4. Free parent window
+            // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
+            //     top.location = 'about:blank';
+            // }
+        }
     }
 }
 
