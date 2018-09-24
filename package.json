@@ -36,6 +36,6 @@
   "scripts": {
     "install": "gulp",
     "build": "gulp",
-    "dev": "gulp && http-server --cors -p 8082 -c-1"
+    "dev": "gulp && http-server --cors -p 8081 -c-1"
   }
 }

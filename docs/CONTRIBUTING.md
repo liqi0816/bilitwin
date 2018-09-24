@@ -45,7 +45,7 @@ npm install
    // @match       *://www.bilibili.com/watchlater/
    // @version     1.0
    // @author      qli5
-   // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
+   // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
    // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
    // @grant       none
    // ==/UserScript==
