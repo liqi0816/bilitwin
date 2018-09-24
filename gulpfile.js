@@ -111,6 +111,7 @@ gulp.task('bump-minor-version', async () => {
             .pipe(replace(/(\/\/[ ]?@version\s+)([\d\.]+)/, ({ }, $1, version) => {
                 const arr = version.split('.', 3);
                 arr[1] = (parseInt(arr[1]) + 1).toString();
+                if (arr[2]) arr[2] = '0'
                 return `${$1}${arr.join('.')}`;
             }))
             .pipe(gulp.dest('./src/'))
@@ -125,7 +126,29 @@ gulp.task('bump-minor-version', async () => {
     });
 });
 
+gulp.task('bump-patch-version', async () => {
+    await new Promise((resolve, reject) => {
+        gulp.src('./src/bilitwin.meta.js')
+            .pipe(replace(/(\/\/[ ]?@version\s+)([\d\.]+)/, ({ }, $1, version) => {
+                const arr = version.split('.', 3);
+                arr[2] ? arr[2] = (parseInt(arr[2]) + 1).toString() : arr.push("1")
+                return `${$1}${arr.join('.')}`;
+            }))
+            .pipe(gulp.dest('./src/'))
+            .on('end', resolve)
+            .on('error', reject);
+    });
+    await new Promise((resolve, reject) => {
+        spawn(npmPath, ['--no-git-tag-version', 'version', 'patch'], { shell: true }).once('close', err => {
+            if (err) return reject(err);
+            resolve();
+        });
+    });
+});
+
 gulp.task('release', ['bump-minor-version', 'build'])
+
+gulp.task('release-patch', ['bump-patch-version', 'build'])
 
 gulp.task('watch', () => {
     return gulp.watch(['src/*.js', 'src/*/*.js'], { delay: 5000 }, ['build']);
