@@ -30,7 +30,7 @@ import AsyncContainer from '../util/async-container.js';
 import CacheDB from '../util/cache-db.js';
 import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
 import Mutex from '../util/mutex.js';
-import ASSConverter from '../ass-converter/interface.js';
+import ASSConverter from '../assconverter/interface.js';
 import HookedFunction from '../util/hooked-function.js';
 import BiliUserJS from './biliuserjs.js';
 
@@ -209,12 +209,8 @@ class BiliMonkey {
             } || undefined;
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await ASSConverter.genASSBlob(
-                danmaku,
-                Object.assign(option, {
-                    title: top.document.title,
-                    originalURL: top.location.href
-                })
+            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
+                danmaku, top.document.title, top.location.href
             )));
         });
         return this.ass;
@@ -488,12 +484,8 @@ class BiliMonkey {
                     // 5.3 grab information
                     const [danmuku, res] = await Promise.all([
                         // 5.3.1 grab danmuku
-                        (async () => top.URL.createObjectURL(await ASSConverter.genASSBlob(
-                            await BiliMonkey.fetchDanmaku(cid), 
-                            {
-                                title: top.document.title,
-                                originalURL: top.location.href
-                            }
+                        (async () => top.URL.createObjectURL(await new ASSConverter().genASSBlob(
+                            await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
                         )))(),
 
                         // 5.3.2 grab download res
