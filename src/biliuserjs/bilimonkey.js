@@ -208,63 +208,6 @@ class BiliMonkey {
         return this.defaultFormatPromise;
     }
 
-    async getBackgroundFormat(format) {
-        if (format == 'hdmp4' || format == 'mp4') {
-            let src = this.playerWin.document.getElementsByTagName('video')[0].src;
-            if ((src.includes('hd') || format == 'mp4') && src.includes('.mp4')) {
-                let pendingFormat = this.lockFormat(format);
-                this.resolveFormat({ durl: [{ url: src }] }, format);
-                return pendingFormat;
-            }
-        }
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                a.success = res => {
-                    if (format == 'hdmp4') res.durl = [res.durl[0].backup_url.find(e => e.includes('hd') && e.includes('.mp4'))];
-                    if (format == 'mp4') res.durl = [res.durl[0].backup_url.find(e => !e.includes('hd') && e.includes('.mp4'))];
-                    self.resolveFormat(res, format);
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.player.reloadAccess();
-
-        return pendingFormat;
-    }
-
-    async getNonCurrentFormat(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                _success({});
-                a.success = res => self.resolveFormat(res, format);
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
-        return pendingFormat;
-    }
-
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
         this.ass = new Promise(async resolve => {
@@ -346,6 +289,14 @@ class BiliMonkey {
                     let data = JSON.parse(re.responseText).data
                     console.log(data)
                     let durls = data.durl
+
+                    if (!durls) {
+                        durls = JSON.parse(
+                            window.Gc.split("\n").filter(
+                                x => x.startsWith("{")
+                            )[0]
+                        ).Y.segments
+                    }
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"))
 
