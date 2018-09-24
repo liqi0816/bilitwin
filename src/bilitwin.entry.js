@@ -55,7 +55,7 @@ class BiliTwin extends BiliUserJS {
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
-        await Promise.all([this.monkey.execOptions(), this.polyfill.setFunctions()]);
+        await Promise.all([this.polyfill.setFunctions()]);
 
         // 3. async consistent => render UI
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);

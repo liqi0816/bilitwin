@@ -157,57 +157,6 @@ class BiliMonkey {
         }
     }
 
-    async execOptions() {
-        if (this.option.autoDefault) await this.sniffDefaultFormat();
-        if (this.option.autoFLV) this.queryInfo('flv');
-        if (this.option.autoMP4) this.queryInfo('mp4');
-    }
-
-    async sniffDefaultFormat() {
-        if (this.defaultFormatPromise) return this.defaultFormatPromise;
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) return this.defaultFormatPromise = Promise.resolve();
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        this.defaultFormatPromise = new Promise(resolve => {
-            let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 3000);
-            let self = this;
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    clearTimeout(timeout);
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    let _success = a.success;
-                    a.success = res => {
-                        // 1. determine available format names
-
-                        // 2. determine if we should take this response
-                        const format = res.format;
-                        if (format == self.mp4FormatName || format == self.flvFormatName) {
-                            self.lockFormat(format);
-                            self.resolveFormat(res, format);
-                        }
-
-                        // 3. callback
-                        if (self.proxy && self.flvs) {
-                            self.setupProxy(res, _success);
-                        }
-                        else {
-                            _success(res);
-                        }
-
-                        // 4. return to await
-                        resolve(res);
-                    };
-                    jq.ajax = _ajax;
-                }
-                return _ajax.call(jq, a, c);
-            };
-        });
-        return this.defaultFormatPromise;
-    }
-
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
         this.ass = new Promise(async resolve => {
@@ -630,17 +579,12 @@ class BiliMonkey {
 
     static get optionDescriptions() {
         return [
-            // 1. automation
-            ['autoDefault', '尝试自动抓取：不会拖慢页面，抓取默认清晰度，但可能抓不到。'],
-            ['autoFLV', '强制自动抓取FLV：会拖慢页面，如果默认清晰度也是超清会更慢，但保证抓到。'],
-            ['autoMP4', '强制自动抓取MP4：会拖慢页面，如果默认清晰度也是高清会更慢，但保证抓到。'],
-
-            // 2. cache
+            // 1. cache
             ['cache', '关标签页不清缓存：保留完全下载好的分段到缓存，忘记另存为也没关系。'],
             ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'],
             ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
 
-            // 3. customizing
+            // 2. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
             ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
         ];
@@ -669,19 +613,9 @@ class BiliMonkey {
             let playerWin = await BiliUserJS.getPlayerWin();
             window.m = new BiliMonkey(playerWin);
 
-            console.warn('sniffDefaultFormat test');
-            await m.sniffDefaultFormat();
-            console.log(m);
-
             console.warn('data race test');
-            m.queryInfo('mp4');
-            console.log(m.queryInfo('mp4'));
-
-            console.warn('getNonCurrentFormat test');
-            console.log(await m.queryInfo('mp4'));
-
-            console.warn('getCurrentFormat test');
-            console.log(await m.queryInfo('flv'));
+            m.queryInfo('video');
+            console.log(m.queryInfo('video'));
 
             //location.reload();
         })();

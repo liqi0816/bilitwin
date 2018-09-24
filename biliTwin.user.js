@@ -1672,111 +1672,6 @@ class BiliMonkey {
         }
     }
 
-    async execOptions() {
-        if (this.option.autoDefault) await this.sniffDefaultFormat();
-        if (this.option.autoFLV) this.queryInfo('flv');
-        if (this.option.autoMP4) this.queryInfo('mp4');
-    }
-
-    async sniffDefaultFormat() {
-        if (this.defaultFormatPromise) return this.defaultFormatPromise;
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) return this.defaultFormatPromise = Promise.resolve();
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        this.defaultFormatPromise = new Promise(resolve => {
-            let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 3000);
-            let self = this;
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    clearTimeout(timeout);
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    let _success = a.success;
-                    a.success = res => {
-                        // 1. determine available format names
-
-                        // 2. determine if we should take this response
-                        const format = res.format;
-                        if (format == self.mp4FormatName || format == self.flvFormatName) {
-                            self.lockFormat(format);
-                            self.resolveFormat(res, format);
-                        }
-
-                        // 3. callback
-                        if (self.proxy && self.flvs) {
-                            self.setupProxy(res, _success);
-                        }
-                        else {
-                            _success(res);
-                        }
-
-                        // 4. return to await
-                        resolve(res);
-                    };
-                    jq.ajax = _ajax;
-                }
-                return _ajax.call(jq, a, c);
-            };
-        });
-        return this.defaultFormatPromise;
-    }
-
-    async getBackgroundFormat(format) {
-        if (format == 'hdmp4' || format == 'mp4') {
-            let src = this.playerWin.document.getElementsByTagName('video')[0].src;
-            if ((src.includes('hd') || format == 'mp4') && src.includes('.mp4')) {
-                let pendingFormat = this.lockFormat(format);
-                this.resolveFormat({ durl: [{ url: src }] }, format);
-                return pendingFormat;
-            }
-        }
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                a.success = res => {
-                    if (format == 'hdmp4') res.durl = [res.durl[0].backup_url.find(e => e.includes('hd') && e.includes('.mp4'))];
-                    if (format == 'mp4') res.durl = [res.durl[0].backup_url.find(e => !e.includes('hd') && e.includes('.mp4'))];
-                    self.resolveFormat(res, format);
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.player.reloadAccess();
-
-        return pendingFormat;
-    }
-
-    async getNonCurrentFormat(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                _success({});
-                a.success = res => self.resolveFormat(res, format);
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
-        return pendingFormat;
-    }
-
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
         this.ass = new Promise(async resolve => {
@@ -1855,8 +1750,16 @@ class BiliMonkey {
                     });
 
                     let data = JSON.parse(re.responseText).data;
-                    console.log(data);
+                    // console.log(data)
                     let durls = data.durl;
+
+                    if (!durls) {
+                        durls = JSON.parse(
+                            window.Gc.split("\n").filter(
+                                x => x.startsWith("{")
+                            )[0]
+                        ).Y.segments;
+                    }
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
 
@@ -2188,17 +2091,12 @@ class BiliMonkey {
 
     static get optionDescriptions() {
         return [
-            // 1. automation
-            ['autoDefault', '尝试自动抓取：不会拖慢页面，抓取默认清晰度，但可能抓不到。'],
-            ['autoFLV', '强制自动抓取FLV：会拖慢页面，如果默认清晰度也是超清会更慢，但保证抓到。'],
-            ['autoMP4', '强制自动抓取MP4：会拖慢页面，如果默认清晰度也是高清会更慢，但保证抓到。'],
-
-            // 2. cache
+            // 1. cache
             ['cache', '关标签页不清缓存：保留完全下载好的分段到缓存，忘记另存为也没关系。'],
             ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'],
             ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
 
-            // 3. customizing
+            // 2. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
             ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
         ];
@@ -2227,19 +2125,9 @@ class BiliMonkey {
             let playerWin = await BiliUserJS.getPlayerWin();
             window.m = new BiliMonkey(playerWin);
 
-            console.warn('sniffDefaultFormat test');
-            await m.sniffDefaultFormat();
-            console.log(m);
-
             console.warn('data race test');
-            m.queryInfo('mp4');
-            console.log(m.queryInfo('mp4'));
-
-            console.warn('getNonCurrentFormat test');
-            console.log(await m.queryInfo('mp4'));
-
-            console.warn('getCurrentFormat test');
-            console.log(await m.queryInfo('flv'));
+            m.queryInfo('video');
+            console.log(m.queryInfo('video'));
 
             //location.reload();
         })();
@@ -8291,7 +8179,7 @@ class UI {
             a2.textContent = 'GitHub';
             td5.append(a2);
             td5.append(' ');
-            td5.append('Author: qli5. Copyright: qli5, 2014+, \u7530\u751F, grepmusic');
+            td5.append('Author: qli5. Copyright: qli5, 2014+, \u7530\u751F, grepmusic, xmader');
             tr5.append(td5);
             table1.append(tr5);
             return table1;
@@ -8338,12 +8226,6 @@ class UI {
             td1.textContent = 'BiliMonkey\uFF08\u89C6\u9891\u6293\u53D6\u7EC4\u4EF6\uFF09';
             tr1.append(td1);
             table.append(tr1);
-            const tr2 = document.createElement('tr');
-            const td2 = document.createElement('td');
-            td2.style = 'text-align:center';
-            td2.textContent = '\u56E0\u4E3A\u4F5C\u8005\u5077\u61D2\u4E86\uFF0C\u7F13\u5B58\u7684\u4E09\u4E2A\u9009\u9879\u6700\u597D\u8981\u4E48\u5168\u5F00\uFF0C\u8981\u4E48\u5168\u5173\u3002\u6700\u597D\u3002';
-            tr2.append(td2);
-            table.append(tr2);
         }
 
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => {
@@ -8785,13 +8667,13 @@ class BiliTwin extends BiliUserJS {
         const href = location.href;
         this.option = this.getOption();
         if (this.option.debug) {
-            // if (top.console) top.console.clear();
+            if (top.console) top.console.clear();
         }
 
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
-        await Promise.all([this.monkey.execOptions(), this.polyfill.setFunctions()]);
+        await Promise.all([this.polyfill.setFunctions()]);
 
         // 3. async consistent => render UI
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);

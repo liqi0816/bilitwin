@@ -664,7 +664,6 @@ class UI {
     buildMonkeyOptionTable(twin = this.twin, BiliMonkey = this.twin.BiliMonkey) {
         const table = <table style={{ width: '100%', lineHeight: '2em' }}>
             <tr><td style="text-align:center">BiliMonkey（视频抓取组件）</td></tr>
-            <tr><td style="text-align:center">因为作者偷懒了，缓存的三个选项最好要么全开，要么全关。最好。</td></tr>
         </table>;
 
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => <tr>
