@@ -451,7 +451,7 @@ class UI {
                     // Yes, I AM lazy.
                     playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
                     await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
-                    return monkey.queryInfo('flv');
+                    return monkey.queryInfo('video');
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)载入缓存FLV

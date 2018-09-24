@@ -3117,7 +3117,7 @@ var BiliMonkey = function () {
                                                             jq.ajax = function (a, c) {
                                                                 if ((typeof c === 'undefined' ? 'undefined' : _typeof(c)) === 'object') {
                                                                     if (typeof a === 'string') c.url = a;a = c;c = undefined;
-                                                                }if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                                                                }if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?') || a.url.includes('api.bilibili.com/x/player/playurl?')) {
                                                                     clearTimeout(blockerTimeout);
                                                                     a.success(fakedRes);
                                                                     blockerTimeout = setTimeout(function () {
@@ -3132,7 +3132,7 @@ var BiliMonkey = function () {
                                                                 return _this18.playerWin.localStorage.setItem = _setItem;
                                                             };
                                                             button = Array.from(_this18.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).find(function (e) {
-                                                                return !e.getAttribute('data-selected') && e.children.length == 2;
+                                                                return !e.getAttribute('data-selected') && !e.classList.contains("bui-select-item-active") && e.children.length == 2;
                                                             });
 
                                                             button.click();
@@ -6938,7 +6938,7 @@ var UI = function () {
                                 });
 
                             case 6:
-                                return _context68.abrupt('return', monkey.queryInfo('flv'));
+                                return _context68.abrupt('return', monkey.queryInfo('video'));
 
                             case 7:
                             case 'end':

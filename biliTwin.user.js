@@ -1788,7 +1788,7 @@ class BiliMonkey {
         return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
             let blockerTimeout;
             jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
+                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?') || a.url.includes('api.bilibili.com/x/player/playurl?')) {
                     clearTimeout(blockerTimeout);
                     a.success(fakedRes);
                     blockerTimeout = setTimeout(() => {
@@ -1802,7 +1802,7 @@ class BiliMonkey {
             };
             this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
             let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
-                .find(e => !e.getAttribute('data-selected') && e.children.length == 2);
+                .find(e => !e.getAttribute('data-selected') && !e.classList.contains("bui-select-item-active") && e.children.length == 2);
             button.click();
         }));
     }
@@ -7748,7 +7748,7 @@ class UI {
             // Yes, I AM lazy.
             playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
             await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
-            return monkey.queryInfo('flv');
+            return monkey.queryInfo('video');
         };
 
         const a6 = document.createElement('a');
