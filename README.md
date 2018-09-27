@@ -1,3 +1,13 @@
+
+[原作者的脚本](https://greasyfork.org/scripts/27819)失效了，
+于是我在他的基础上继续开发脚本以兼容B站新版播放器
+
+Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.org/scripts/372516)
+
+如果有bug，请直接使用[Github Issues](https://github.com/Xmader/bilitwin/issues)向我反馈
+
+---
+
 # 国产浏览器请点[这里](https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js)
 
 # 脚本功能
@@ -23,7 +33,7 @@
         * 稍后再看添加数字角标
         * 弹幕列表换成相关视频
         * 整合充电榜与换P倒计时
-    * 自动化 (大部分在新版播放器中不可用)
+    * 自动化 **(大部分在新版播放器中不可用)**
         * 自动滚动到播放器
         * 自动聚焦到播放器 <sub>新页面直接按空格会播放而不是向下滚动</sub>
         * 关闭菜单后聚焦到播放器
@@ -65,11 +75,11 @@
             </tr>
             <tr>
                 <td>Chrome</td>
-                <td>作者在用</td>
+                <td>原作者在用</td>
             </tr>
             <tr>
                 <td>Firefox</td>
-                <td>应该OK</td>
+                <td>鄙人在用</td>
             </tr>
             <tr>
                 <td>Edge</td>
@@ -85,10 +95,9 @@
 </ul>
 
 # 更新/讨论
-* [Greasy Fork](https://greasyfork.org/zh-CN/scripts/27819)
-* [Github](https://github.com/liqi0816/bilitwin)
-* [文档](https://github.com/liqi0816/bilitwin/tree/master/docs)
-* 如果鄙人的代码太辣鸡，请一起来[Fork you](https://github.com/liqi0816/bilitwin)！
+
+* [Greasy Fork](https://greasyfork.org/scripts/372516)
+* [Github](https://github.com/Xmader/bilitwin)
 
 # 特征
 * 轻量  
@@ -105,7 +114,7 @@
 
 ----------
 
-作者用的是Chrome，8G内存。
+原作者用的是Chrome，8G内存。
 
 支持HTTPS，不借助第三方服务器，用原生的appsecret，不需要额外权限，用书签就可以运行。
 
