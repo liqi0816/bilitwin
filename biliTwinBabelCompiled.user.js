@@ -8200,15 +8200,16 @@ var BiliTwin = function (_BiliUserJS) {
                                 cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
                                 video = document.querySelector("video");
 
-                                video.addEventListener('play', function () {
-                                    var event = new MouseEvent('contextmenu', {
-                                        'bubbles': true
-                                    });
+                                if (video) {
+                                    video.addEventListener('play', function () {
+                                        var event = new MouseEvent('contextmenu', {
+                                            'bubbles': true
+                                        });
 
-                                    video.dispatchEvent(event);
-                                    video.dispatchEvent(event);
-                                }, { once: true });
-
+                                        video.dispatchEvent(event);
+                                        video.dispatchEvent(event);
+                                    }, { once: true });
+                                }
                                 _context70.next = 23;
                                 return this.polyfill.setFunctions();
 
