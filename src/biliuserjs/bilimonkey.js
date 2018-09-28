@@ -223,7 +223,7 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.flvs;
 
-                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`
+                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`
 
                     let re = await fetch(api_url, { credentials: 'include' })
 
