@@ -223,15 +223,11 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.flvs;
 
-                    const _jq = this.playerWin.jQuery
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`
 
-                    let re = _jq.ajax({
-                        url: api_url,
-                        async: false
-                    })
+                    let re = await fetch(api_url, { credentials: 'include' })
 
-                    let data = JSON.parse(re.responseText).data
+                    let data = (await re.json()).data
                     // console.log(data)
                     let durls = data.durl
 

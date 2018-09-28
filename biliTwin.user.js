@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.1
+// @version     1.15.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1806,15 +1806,11 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.flvs;
 
-                    const _jq = this.playerWin.jQuery;
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=80`;
 
-                    let re = _jq.ajax({
-                        url: api_url,
-                        async: false
-                    });
+                    let re = await fetch(api_url, { credentials: 'include' });
 
-                    let data = JSON.parse(re.responseText).data;
+                    let data = (await re.json()).data;
                     // console.log(data)
                     let durls = data.durl;
 

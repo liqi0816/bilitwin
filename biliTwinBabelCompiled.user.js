@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.1
+// @version     1.15.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -158,7 +158,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.1
+// @version     1.15.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3081,14 +3081,13 @@ var BiliMonkey = function () {
                         switch (_context31.prev = _context31.next) {
                             case 0:
                                 return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                    var _jq, api_url, re, data, durls, flvs;
-
+                                    var api_url, re, data, durls, flvs;
                                     return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                         while (1) {
                                             switch (_context30.prev = _context30.next) {
                                                 case 0:
                                                     _context30.t0 = format;
-                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 14 : 19;
+                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 17 : 22;
                                                     break;
 
                                                 case 3:
@@ -3100,15 +3099,19 @@ var BiliMonkey = function () {
                                                     return _context30.abrupt('return', _this17.flvs);
 
                                                 case 5:
-                                                    _jq = _this17.playerWin.jQuery;
                                                     api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=80';
-                                                    re = _jq.ajax({
-                                                        url: api_url,
-                                                        async: false
-                                                    });
-                                                    data = JSON.parse(re.responseText).data;
-                                                    // console.log(data)
+                                                    _context30.next = 8;
+                                                    return fetch(api_url, { credentials: 'include' });
 
+                                                case 8:
+                                                    re = _context30.sent;
+                                                    _context30.next = 11;
+                                                    return re.json();
+
+                                                case 11:
+                                                    data = _context30.sent.data;
+
+                                                    // console.log(data)
                                                     durls = data.durl;
 
 
@@ -3127,21 +3130,21 @@ var BiliMonkey = function () {
 
                                                     return _context30.abrupt('return', durls);
 
-                                                case 14:
+                                                case 17:
                                                     if (!_this17.ass) {
-                                                        _context30.next = 18;
+                                                        _context30.next = 21;
                                                         break;
                                                     }
 
                                                     return _context30.abrupt('return', _this17.ass);
 
-                                                case 18:
+                                                case 21:
                                                     return _context30.abrupt('return', _this17.getASS(_this17.flvFormatName));
 
-                                                case 19:
+                                                case 22:
                                                     throw 'Bilimonkey: What is format ' + format + '?';
 
-                                                case 20:
+                                                case 23:
                                                 case 'end':
                                                     return _context30.stop();
                                             }
