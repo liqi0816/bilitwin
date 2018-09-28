@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.4
+// @version     1.15.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -158,7 +158,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.4
+// @version     1.15.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8151,7 +8151,7 @@ var BiliTwin = function (_BiliUserJS) {
             var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
                 var _this50 = this;
 
-                var href, cidRefresh, _ref98;
+                var href, cidRefresh, video, _ref98;
 
                 return regeneratorRuntime.wrap(function _callee69$(_context70) {
                     while (1) {
@@ -8196,14 +8196,25 @@ var BiliTwin = function (_BiliUserJS) {
                                 this.polyfill = new BiliPolyfill(this.playerWin, this.option, function (t) {
                                     return UI.hintInfo(t, _this50.playerWin);
                                 });
-                                _context70.next = 20;
+
+                                cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
+                                video = document.querySelector("video");
+
+                                video.addEventListener('play', function () {
+                                    var event = new MouseEvent('contextmenu', {
+                                        'bubbles': true
+                                    });
+
+                                    video.dispatchEvent(event);
+                                    video.dispatchEvent(event);
+                                }, { once: true });
+
+                                _context70.next = 23;
                                 return this.polyfill.setFunctions();
 
-                            case 20:
+                            case 23:
 
                                 // 3. async consistent => render UI
-                                cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
-
                                 if (href == location.href) {
                                     this.ui.option = this.option;
                                     this.ui.cidSessionRender();
@@ -8219,15 +8230,15 @@ var BiliTwin = function (_BiliUserJS) {
                                 }
 
                                 // 5. refresh => session expire
-                                _context70.next = 25;
+                                _context70.next = 27;
                                 return cidRefresh;
 
-                            case 25:
+                            case 27:
                                 this.monkey.destroy();
                                 this.polyfill.destroy();
                                 this.ui.cidSessionDestroy();
 
-                            case 28:
+                            case 30:
                             case 'end':
                                 return _context70.stop();
                         }
@@ -8338,7 +8349,7 @@ var BiliTwin = function (_BiliUserJS) {
         key: 'init',
         value: function () {
             var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
-                var video, twin;
+                var twin;
                 return regeneratorRuntime.wrap(function _callee72$(_context73) {
                     while (1) {
                         switch (_context73.prev = _context73.next) {
@@ -8354,33 +8365,22 @@ var BiliTwin = function (_BiliUserJS) {
                                 BiliTwin.outdatedEngineClearance();
                                 BiliTwin.firefoxClearance();
 
-                                video = document.querySelector("video");
-
-                                video.addEventListener('play', function () {
-                                    var event = new MouseEvent('contextmenu', {
-                                        'bubbles': true
-                                    });
-
-                                    video.dispatchEvent(event);
-                                    video.dispatchEvent(event);
-                                }, { once: true });
-
                                 twin = new BiliTwin();
 
-                            case 7:
+                            case 5:
                                 if (!1) {
-                                    _context73.next = 12;
+                                    _context73.next = 10;
                                     break;
                                 }
 
-                                _context73.next = 10;
+                                _context73.next = 8;
                                 return twin.runCidSession();
 
-                            case 10:
-                                _context73.next = 7;
+                            case 8:
+                                _context73.next = 5;
                                 break;
 
-                            case 12:
+                            case 10:
                             case 'end':
                                 return _context73.stop();
                         }

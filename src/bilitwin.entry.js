@@ -55,10 +55,21 @@ class BiliTwin extends BiliUserJS {
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
+        
+        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
+        const video = document.querySelector("video")
+        video.addEventListener('play', () => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event)
+            video.dispatchEvent(event)
+        },{once:true});
+
         await this.polyfill.setFunctions()
 
         // 3. async consistent => render UI
-        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
@@ -121,16 +132,6 @@ class BiliTwin extends BiliUserJS {
         if (!document.body) return;
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
-
-        const video = document.querySelector("video")
-        video.addEventListener('play', () => {
-            let event = new MouseEvent('contextmenu', {
-                'bubbles': true
-            });
-
-            video.dispatchEvent(event)
-            video.dispatchEvent(event)
-        },{once:true});
 
         const twin = new BiliTwin();
 

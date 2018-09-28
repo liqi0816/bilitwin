@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.4
+// @version     1.15.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8757,10 +8757,21 @@ class BiliTwin extends BiliUserJS {
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
+        
+        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
+        const video = document.querySelector("video");
+        video.addEventListener('play', () => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event);
+            video.dispatchEvent(event);
+        },{once:true});
+
         await this.polyfill.setFunctions();
 
         // 3. async consistent => render UI
-        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
@@ -8823,16 +8834,6 @@ class BiliTwin extends BiliUserJS {
         if (!document.body) return;
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
-
-        const video = document.querySelector("video");
-        video.addEventListener('play', () => {
-            let event = new MouseEvent('contextmenu', {
-                'bubbles': true
-            });
-
-            video.dispatchEvent(event);
-            video.dispatchEvent(event);
-        },{once:true});
 
         const twin = new BiliTwin();
 
