@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.3
+// @version     1.15.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8823,6 +8823,16 @@ class BiliTwin extends BiliUserJS {
         if (!document.body) return;
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
+
+        const video = document.querySelector("video");
+        video.addEventListener('play', () => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event);
+            video.dispatchEvent(event);
+        },{once:true});
 
         const twin = new BiliTwin();
 

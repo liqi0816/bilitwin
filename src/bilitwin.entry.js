@@ -122,6 +122,16 @@ class BiliTwin extends BiliUserJS {
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
 
+        const video = document.querySelector("video")
+        video.addEventListener('play', () => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event)
+            video.dispatchEvent(event)
+        },{once:true});
+
         const twin = new BiliTwin();
 
         while (1) {

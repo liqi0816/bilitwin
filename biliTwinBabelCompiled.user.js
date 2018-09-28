@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.3
+// @version     1.15.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -158,7 +158,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.3
+// @version     1.15.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8338,7 +8338,7 @@ var BiliTwin = function (_BiliUserJS) {
         key: 'init',
         value: function () {
             var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
-                var twin;
+                var video, twin;
                 return regeneratorRuntime.wrap(function _callee72$(_context73) {
                     while (1) {
                         switch (_context73.prev = _context73.next) {
@@ -8354,22 +8354,33 @@ var BiliTwin = function (_BiliUserJS) {
                                 BiliTwin.outdatedEngineClearance();
                                 BiliTwin.firefoxClearance();
 
+                                video = document.querySelector("video");
+
+                                video.addEventListener('play', function () {
+                                    var event = new MouseEvent('contextmenu', {
+                                        'bubbles': true
+                                    });
+
+                                    video.dispatchEvent(event);
+                                    video.dispatchEvent(event);
+                                }, { once: true });
+
                                 twin = new BiliTwin();
 
-                            case 5:
+                            case 7:
                                 if (!1) {
-                                    _context73.next = 10;
+                                    _context73.next = 12;
                                     break;
                                 }
 
-                                _context73.next = 8;
+                                _context73.next = 10;
                                 return twin.runCidSession();
 
-                            case 8:
-                                _context73.next = 5;
+                            case 10:
+                                _context73.next = 7;
                                 break;
 
-                            case 10:
+                            case 12:
                             case 'end':
                                 return _context73.stop();
                         }
