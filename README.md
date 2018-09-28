@@ -6,7 +6,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 如果有bug，请直接使用[Github Issues](https://github.com/Xmader/bilitwin/issues)向我反馈
 
-## 由于B站限制，右键一下播放器才能显示下载按钮
+## 由于B站限制，右键一下播放器 或 开始播放 才能显示下载按钮
 
 ---
 
