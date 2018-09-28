@@ -8197,7 +8197,7 @@ var BiliTwin = function (_BiliUserJS) {
                                     return UI.hintInfo(t, _this50.playerWin);
                                 });
                                 _context70.next = 20;
-                                return Promise.all([this.polyfill.setFunctions()]);
+                                return this.polyfill.setFunctions();
 
                             case 20:
 
