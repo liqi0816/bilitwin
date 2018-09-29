@@ -286,7 +286,7 @@ class UI {
         monkey.hangPlayer();
 
         // 2. give hang player hint
-        this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。切换清晰度可重新激活播放器。</td></tr>;
+        this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。刷新页面可重新激活播放器。</td></tr>;
         table.append(this.cidSessionDom.downloadAllTr);
 
         // 3. click download all split

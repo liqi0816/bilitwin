@@ -231,33 +231,8 @@ class BiliMonkey {
         });
     }
 
-    async hangPlayer() {
-        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-
-        return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
-            let blockerTimeout;
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?') || a.url.includes('api.bilibili.com/x/player/playurl?')) {
-                    clearTimeout(blockerTimeout);
-                    a.success(fakedRes);
-                    blockerTimeout = setTimeout(() => {
-                        jq.ajax = _ajax;
-                        resolve();
-                    }, 2500);
-                }
-                else {
-                    return _ajax.call(jq, a, c);
-                }
-            };
-            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-            let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
-                .find(e => !e.getAttribute('data-selected') && !e.classList.contains("bui-select-item-active") && e.children.length == 2);
-            button.click();
-        }));
+    hangPlayer() {
+        this.playerWin.document.getElementsByTagName('video')[0].src = "https://www.xmader.com/bilitwin/src/black.mp4"
     }
 
     async loadFLVFromCache(index) {
