@@ -10,7 +10,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 ---
 
-# 国产浏览器请点[这里](https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js)
+# 国产浏览器 和 Edge浏览器 请点[这里](https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js)
 
 # 脚本功能
 * BiliMonkey
@@ -85,7 +85,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
             </tr>
             <tr>
                 <td>Edge</td>
-                <td>不造</td>
+                <td><strong>请使用<a href="https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
             </tr>
             <tr>
                 <td>IE</td>
