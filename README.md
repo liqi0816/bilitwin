@@ -10,7 +10,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 ---
 
-# 国产浏览器 和 Edge浏览器 请点[这里](https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js)
+# 国产浏览器 和 Edge浏览器 请点[这里](https://www.xmader.com/bilitwin/biliTwinBabelCompiled.user.js)
 
 # 脚本功能
 * BiliMonkey
@@ -73,7 +73,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
             <tbody>
             <tr>
                 <td>国产浏览器</td>
-                <td><strong>请用<a href="https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
+                <td><strong>请用<a href="https://www.xmader.com/bilitwin/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
             </tr>
             <tr>
                 <td>Chrome</td>
@@ -85,7 +85,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
             </tr>
             <tr>
                 <td>Edge</td>
-                <td><strong>请使用<a href="https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
+                <td><strong>请使用<a href="https://www.xmader.com/bilitwin/biliTwinBabelCompiled.user.js">兼容版本</a></strong></td>
             </tr>
             <tr>
                 <td>IE</td>
@@ -105,7 +105,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 * 轻量  
   新建一个书签，书签地址粘贴下面的代码，想用的时候点一下也可以使用。  
   ```javascript
-  javascript:(function(){f=document.createElement("script");f.setAttribute("src","https://github.com/Xmader/bilitwin/raw/master/biliTwinBabelCompiled.user.js");document.body.appendChild(f)})()
+  javascript:(function(){f=document.createElement("script");f.setAttribute("src","https://www.xmader.com/bilitwin/biliTwinBabelCompiled.user.js");document.body.appendChild(f)})()
   ```
 * 充分保障隐私  
   作者根本就没有服务器可以用来偷偷记下各位的奇怪癖好
