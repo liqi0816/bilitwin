@@ -8,7 +8,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.5
+// @version     1.15.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -296,7 +296,7 @@ class BiliUserJS {
                 cidRefresh.resolve();
             }
         });
-        observer.observe(playerWin.document.getElementsByClassName('bilibili-player-video')[0], { childList: true });
+        observer.observe(playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
 
         // 2. playerWin unload => cid refresh
         playerWin.addEventListener('unload', () => Promise.resolve().then(() => cidRefresh.resolve()));
@@ -1745,30 +1745,7 @@ class BiliMonkey {
         if (this.ass) return this.ass;
         this.ass = new Promise(async resolve => {
             // 1. cid
-            if (!this.cid) this.cid = await new Promise((resolve, reject) => {
-                clickableFormat = this.fallbackFormatName || clickableFormat;
-                if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
-                const jq = this.playerWin.jQuery;
-                const _ajax = jq.ajax;
-                const _setItem = this.playerWin.localStorage.setItem;
-
-                if (!this.fallbackFormatName) this.lockFormat(clickableFormat);
-                let self = this;
-                jq.ajax = function (a, c) {
-                    if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                    if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                        resolve(self.cid = a.url.match(/cid=\d+/)[0].slice(4));
-                        let _success = a.success;
-                        _success({});
-                        a.success = res => {
-                            if (!this.fallbackFormatName) self.resolveFormat(res, clickableFormat);
-                        };
-                        jq.ajax = _ajax;
-                    }
-                    return _ajax.call(jq, a, c);
-                };
-                this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-                this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(clickableFormat)}"]`).click();
-            });
+            if (!this.cid) this.cid = this.playerWin.cid;
 
             // 2. options
             const bilibili_player_settings = this.playerWin.localStorage.bilibili_player_settings && JSON.parse(this.playerWin.localStorage.bilibili_player_settings);

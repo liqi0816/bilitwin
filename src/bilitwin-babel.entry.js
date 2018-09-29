@@ -22,10 +22,12 @@ function load() {
             top.eval(script);
         }).then(function () {
             script();
+            _babelPolyfill = false;
         });
     }
     else {
         script();
+        _babelPolyfill = false;
     }
 }
 

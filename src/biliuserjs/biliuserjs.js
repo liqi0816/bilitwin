@@ -105,7 +105,7 @@ class BiliUserJS {
                 cidRefresh.resolve();
             }
         });
-        observer.observe(playerWin.document.getElementsByClassName('bilibili-player-video')[0], { childList: true });
+        observer.observe(playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
 
         // 2. playerWin unload => cid refresh
         playerWin.addEventListener('unload', () => Promise.resolve().then(() => cidRefresh.resolve()));
