@@ -12,6 +12,20 @@ else {
 }
 
 function load() {
+    if (typeof TextEncoder === 'undefined') {
+        top.TextEncoder = function () {
+            this.encoding = 'utf-8';
+            this.encode = function (str) {
+                var binstr = unescape(encodeURIComponent(str)),
+                    arr = new Uint8Array(binstr.length);
+                binstr.split('').forEach(function (char, i) {
+                    arr[i] = char.charCodeAt(0);
+                });
+                return arr;
+            };
+        }
+    }
+
     if (typeof _babelPolyfill === 'undefined') {
         new Promise(function (resolve) {
             var req = new XMLHttpRequest();
