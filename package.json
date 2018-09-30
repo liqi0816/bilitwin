@@ -1,6 +1,6 @@
 {
   "name": "bilitwin",
-  "version": "1.15.7",
+  "version": "1.16.0",
   "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
   "main": "bilitwin.user.js",
   "directories": {
@@ -37,6 +37,7 @@
     "install": "gulp",
     "build": "gulp",
     "dev": "gulp && http-server --cors -p 8081 -c-1",
+    "release-minor": "gulp release-minor",
     "release-patch": "gulp release-patch"
   }
 }

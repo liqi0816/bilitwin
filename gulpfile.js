@@ -146,7 +146,7 @@ gulp.task('bump-patch-version', async () => {
     });
 });
 
-gulp.task('release', ['bump-minor-version', 'build'])
+gulp.task('release-minor', ['bump-minor-version', 'build'])
 
 gulp.task('release-patch', ['bump-patch-version', 'build'])
 

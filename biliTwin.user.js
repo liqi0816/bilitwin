@@ -7,8 +7,9 @@
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.7
+// @version     1.16.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8784,8 +8785,32 @@ class BiliTwin extends BiliUserJS {
         return option.setStorage('BiliTwin', JSON.stringify(option));
     }
 
+    static async biligame_init() {
+        const game_id = location.href.match(/id=(\d+)/)[1];
+        const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`;
+
+        const req = await fetch(api_url, { credentials: 'include' });
+        const data = (await req.json()).data;
+
+        const aid = data.video_url;
+        const video_url = `https://www.bilibili.com/video/av${aid}`;
+
+        const tabs = document.querySelector(".tab-head");
+        const tab = document.createElement("a");
+        tab.href = video_url;
+        tab.textContent = "查看视频";
+        tab.target = "_blank";
+        tabs.appendChild(tab);
+    }
+
     static async init() {
         if (!document.body) return;
+
+        if (location.href.includes("www.biligame.com")) {
+            BiliTwin.biligame_init();
+            return;
+        }
+
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
 

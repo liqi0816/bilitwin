@@ -7,8 +7,9 @@
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.7
+// @version     1.16.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -173,8 +174,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.15.7
+// @version     1.16.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -8252,41 +8254,37 @@ var BiliTwin = function (_BiliUserJS) {
             return option.setStorage('BiliTwin', JSON.stringify(option));
         }
     }], [{
-        key: 'init',
+        key: 'biligame_init',
         value: function () {
             var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
-                var twin;
+                var game_id, api_url, req, data, aid, video_url, tabs, tab;
                 return regeneratorRuntime.wrap(function _callee70$(_context71) {
                     while (1) {
                         switch (_context71.prev = _context71.next) {
                             case 0:
-                                if (document.body) {
-                                    _context71.next = 2;
-                                    break;
-                                }
+                                game_id = location.href.match(/id=(\d+)/)[1];
+                                api_url = 'https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=' + game_id;
+                                _context71.next = 4;
+                                return fetch(api_url, { credentials: 'include' });
 
-                                return _context71.abrupt('return');
+                            case 4:
+                                req = _context71.sent;
+                                _context71.next = 7;
+                                return req.json();
 
-                            case 2:
-                                BiliTwin.outdatedEngineClearance();
-                                BiliTwin.firefoxClearance();
+                            case 7:
+                                data = _context71.sent.data;
+                                aid = data.video_url;
+                                video_url = 'https://www.bilibili.com/video/av' + aid;
+                                tabs = document.querySelector(".tab-head");
+                                tab = document.createElement("a");
 
-                                twin = new BiliTwin();
+                                tab.href = video_url;
+                                tab.textContent = "查看视频";
+                                tab.target = "_blank";
+                                tabs.appendChild(tab);
 
-                            case 5:
-                                if (!1) {
-                                    _context71.next = 10;
-                                    break;
-                                }
-
-                                _context71.next = 8;
-                                return twin.runCidSession();
-
-                            case 8:
-                                _context71.next = 5;
-                                break;
-
-                            case 10:
+                            case 16:
                             case 'end':
                                 return _context71.stop();
                         }
@@ -8294,8 +8292,67 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee70, this);
             }));
 
-            function init() {
+            function biligame_init() {
                 return _ref99.apply(this, arguments);
+            }
+
+            return biligame_init;
+        }()
+    }, {
+        key: 'init',
+        value: function () {
+            var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
+                var twin;
+                return regeneratorRuntime.wrap(function _callee71$(_context72) {
+                    while (1) {
+                        switch (_context72.prev = _context72.next) {
+                            case 0:
+                                if (document.body) {
+                                    _context72.next = 2;
+                                    break;
+                                }
+
+                                return _context72.abrupt('return');
+
+                            case 2:
+                                if (!location.href.includes("www.biligame.com")) {
+                                    _context72.next = 5;
+                                    break;
+                                }
+
+                                BiliTwin.biligame_init();
+                                return _context72.abrupt('return');
+
+                            case 5:
+
+                                BiliTwin.outdatedEngineClearance();
+                                BiliTwin.firefoxClearance();
+
+                                twin = new BiliTwin();
+
+                            case 8:
+                                if (!1) {
+                                    _context72.next = 13;
+                                    break;
+                                }
+
+                                _context72.next = 11;
+                                return twin.runCidSession();
+
+                            case 11:
+                                _context72.next = 8;
+                                break;
+
+                            case 13:
+                            case 'end':
+                                return _context72.stop();
+                        }
+                    }
+                }, _callee71, this);
+            }));
+
+            function init() {
+                return _ref100.apply(this, arguments);
             }
 
             return init;
