@@ -35,6 +35,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
         * 稍后再看添加数字角标
         * 弹幕列表换成相关视频
         * 整合充电榜与换P倒计时
+        * 为B站游戏详情页面(如[这里](https://www.biligame.com/detail/?id=101690))添加查看视频按钮
     * 自动化 **(大部分在新版播放器中不可用)**
         * 自动滚动到播放器
         * 自动聚焦到播放器 <sub>新页面直接按空格会播放而不是向下滚动</sub>

@@ -810,6 +810,24 @@ class BiliPolyfill {
         [playerDiv.webkitRequestFullscreen, playerDiv.mozRequestFullScreen, playerDiv.msRequestFullscreen, playerDiv.requestFullscreen] = hook;
     }
 
+    static async biligame_init() {
+        const game_id = location.href.match(/id=(\d+)/)[1]
+        const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`
+
+        const req = await fetch(api_url, { credentials: 'include' })
+        const data = (await req.json()).data
+
+        const aid = data.video_url
+        const video_url = `https://www.bilibili.com/video/av${aid}`
+
+        const tabs = document.querySelector(".tab-head")
+        const tab = document.createElement("a")
+        tab.href = video_url
+        tab.textContent = "查看视频"
+        tab.target = "_blank"
+        tabs.appendChild(tab)
+    }
+
     static secondToReadable(s) {
         if (s > 60) return `${parseInt(s / 60)}分${parseInt(s % 60)}秒`;
         else return `${parseInt(s % 60)}秒`;
