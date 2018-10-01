@@ -1,7 +1,7 @@
 "${metadata}"
 
 if (document.readyState == 'loading') {
-    var h = () => {
+    var h = function () {
         load();
         document.removeEventListener('DOMContentLoaded', h);
     };
