@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.0
+// @version     1.16.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -75,7 +75,7 @@
 
 
 if (document.readyState == 'loading') {
-    var h = () => {
+    var h = function () {
         load();
         document.removeEventListener('DOMContentLoaded', h);
     };
@@ -104,7 +104,7 @@ function load() {
         new Promise(function (resolve) {
             var req = new XMLHttpRequest();
             req.onload = function () { resolve(req.responseText); };
-            req.open('get', 'https://cdn.bootcss.com/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
+            req.open('get', 'https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
             req.send();
         }).then(function (script) {
             top.eval(script);
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.0
+// @version     1.16.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
