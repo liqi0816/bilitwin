@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.1
+// @version     1.16.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3082,21 +3082,30 @@ class Exporter {
     }
 
     static async sendToAria2RPC(urls, referrer = top.location.origin, target = 'http://127.0.0.1:6800/jsonrpc') {
-        // 1. prepare body
         const h = 'referer';
-        const body = JSON.stringify(urls.map((url, id) => ({
-            id,
-            jsonrpc: 2,
-            method: "aria2.addUri",
-            params: [
-                [url],
-                { [h]: referrer }
-            ]
-        })));
-
-        // 2. send to jsonrpc target
         const method = 'POST';
+
         while (1) {
+            const token_array = target.match(/\/\/((.+)@)/);
+            const body = JSON.stringify(urls.map((url, id) => {
+                const params = [
+                    [url],
+                    { [h]: referrer }
+                ];
+
+                if (token_array) {
+                    params.unshift(token_array[2]);
+                    target = target.replace(token_array[1], "");
+                }
+
+                return ({
+                    id,
+                    jsonrpc: 2,
+                    method: "aria2.addUri",
+                    params
+                })
+            }));
+
             try {
                 return await (await fetch(target, { method, body })).json();
             }
