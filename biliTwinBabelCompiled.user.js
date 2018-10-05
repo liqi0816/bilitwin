@@ -5523,7 +5523,7 @@ var Exporter = function () {
                                                     _context56.prev = 15;
                                                     _context56.t0 = _context56['catch'](2);
 
-                                                    target = top.prompt('Aria2 connection failed' + (_context56.t0.message != "Failed to fetch" ? ': ' + _context56.t0.message + '.\n' : ". ") + 'Please provide a valid server address:', target);
+                                                    target = top.prompt('Aria2 connection failed' + (!_context56.t0.message.includes("fetch") ? ': ' + _context56.t0.message + '.\n' : ". ") + 'Please provide a valid server address:', target);
 
                                                     if (target) {
                                                         _context56.next = 20;

@@ -3116,7 +3116,7 @@ class Exporter {
                 }
             }
             catch (e) {
-                target = top.prompt(`Aria2 connection failed${e.message != "Failed to fetch" ? `: ${e.message}.\n` : ". "}Please provide a valid server address:`, target);
+                target = top.prompt(`Aria2 connection failed${!e.message.includes("fetch") ? `: ${e.message}.\n` : ". "}Please provide a valid server address:`, target);
                 if (!target) return null;
             }
         }
