@@ -8,6 +8,8 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 ## 由于B站限制，右键一下播放器 或 开始播放 才能显示下载按钮
 
+**使用`发送到aria2 RPC`功能，请自行解决浏览器默认阻止[混合活动内容](https://developer.mozilla.org/zh-CN/docs/Security/MixedContent#Mixed_active_content)的问题**
+
 ---
 
 # 国产浏览器 和 Edge浏览器 请点[这里](https://www.xmader.com/bilitwin/biliTwinBabelCompiled.user.js)

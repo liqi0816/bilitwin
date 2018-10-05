@@ -908,7 +908,7 @@ class UI {
 
             // 3. download
             ['aria2', '导出aria2'],
-            ['aria2RPC', '发送到aria2 RPC'],
+            ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'],
             ['m3u8', '(限VLC兼容播放器)导出m3u8'],
             ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板'],
         ];

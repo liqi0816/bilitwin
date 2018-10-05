@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.2
+// @version     1.16.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3107,10 +3107,16 @@ class Exporter {
             }));
 
             try {
-                return await (await fetch(target, { method, body })).json();
+                const res = await (await fetch(target, { method, body })).json();
+                if (res.error || res[0].error) {
+                    throw new Error((res.error || res[0].error).message)
+                }
+                else {
+                    return res;
+                }
             }
             catch (e) {
-                target = top.prompt('Aria2 connection failed. Please provide a valid server address:', target);
+                target = top.prompt(`Aria2 connection failed${e.message != "Failed to fetch" ? `: ${e.message}.\n` : ". "}Please provide a valid server address:`, target);
                 if (!target) return null;
             }
         }
@@ -8666,7 +8672,7 @@ class UI {
         ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'],
 
         // 3. download
-        ['aria2', '导出aria2'], ['aria2RPC', '发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
+        ['aria2', '导出aria2'], ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
     }
 
     static get optionDefaults() {

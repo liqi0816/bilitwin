@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.2
+// @version     1.16.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.2
+// @version     1.16.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -5471,7 +5471,7 @@ var Exporter = function () {
                                 h = 'referer';
                                 method = 'POST';
                                 _loop = /*#__PURE__*/regeneratorRuntime.mark(function _loop() {
-                                    var token_array, body;
+                                    var token_array, body, res;
                                     return regeneratorRuntime.wrap(function _loop$(_context56) {
                                         while (1) {
                                             switch (_context56.prev = _context56.next) {
@@ -5501,19 +5501,32 @@ var Exporter = function () {
                                                     return _context56.sent.json();
 
                                                 case 7:
-                                                    _context56.t0 = _context56.sent;
+                                                    res = _context56.sent;
+
+                                                    if (!(res.error || res[0].error)) {
+                                                        _context56.next = 12;
+                                                        break;
+                                                    }
+
+                                                    throw new Error((res.error || res[0].error).message);
+
+                                                case 12:
                                                     return _context56.abrupt('return', {
-                                                        v: _context56.t0
+                                                        v: res
                                                     });
 
-                                                case 11:
-                                                    _context56.prev = 11;
-                                                    _context56.t1 = _context56['catch'](2);
+                                                case 13:
+                                                    _context56.next = 20;
+                                                    break;
 
-                                                    target = top.prompt('Aria2 connection failed. Please provide a valid server address:', target);
+                                                case 15:
+                                                    _context56.prev = 15;
+                                                    _context56.t0 = _context56['catch'](2);
+
+                                                    target = top.prompt('Aria2 connection failed' + (_context56.t0.message != "Failed to fetch" ? ': ' + _context56.t0.message + '.\n' : ". ") + 'Please provide a valid server address:', target);
 
                                                     if (target) {
-                                                        _context56.next = 16;
+                                                        _context56.next = 20;
                                                         break;
                                                     }
 
@@ -5521,12 +5534,12 @@ var Exporter = function () {
                                                         v: null
                                                     });
 
-                                                case 16:
+                                                case 20:
                                                 case 'end':
                                                     return _context56.stop();
                                             }
                                         }
-                                    }, _loop, _this39, [[2, 11]]);
+                                    }, _loop, _this39, [[2, 15]]);
                                 });
 
                             case 3:
@@ -8067,7 +8080,7 @@ var UI = function () {
             ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'],
 
             // 3. download
-            ['aria2', '导出aria2'], ['aria2RPC', '发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
+            ['aria2', '导出aria2'], ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
         }
     }, {
         key: 'optionDefaults',

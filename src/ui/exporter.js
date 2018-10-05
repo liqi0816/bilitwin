@@ -47,10 +47,16 @@ class Exporter {
             }));
 
             try {
-                return await (await fetch(target, { method, body })).json();
+                const res = await (await fetch(target, { method, body })).json();
+                if (res.error || res[0].error) {
+                    throw new Error((res.error || res[0].error).message)
+                }
+                else {
+                    return res;
+                }
             }
             catch (e) {
-                target = top.prompt('Aria2 connection failed. Please provide a valid server address:', target);
+                target = top.prompt(`Aria2 connection failed${e.message != "Failed to fetch" ? `: ${e.message}.\n` : ". "}Please provide a valid server address:`, target);
                 if (!target) return null;
             }
         }
