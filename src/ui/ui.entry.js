@@ -409,6 +409,21 @@ class UI {
         videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA,
     } = {}) {
+        let context_menu_videoA =
+            <li class="context-menu-function"
+                onmouseover={async ({ target: { lastChild: textNode } }) => {
+                    if (videoA.onmouseover) await videoA.onmouseover();
+                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
+                }}
+                onclick={() => videoA.click()}
+            >
+                <a class="context-menu-a">
+                    <span class="video-contextmenu-icon"></span> 下载视频FLV
+                </a>
+            </li>
+
+        Object.assign(this.cidSessionDom, { context_menu_videoA })
+
         return <li
             class="context-menu-menu bilitwin"
             onclick={() => playerWin.document.getElementById('bilibiliPlayer').click()}
@@ -418,32 +433,24 @@ class UI {
             <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
             </a>
             <ul>
-                <li class="context-menu-function" onclick={async ({ target: { lastChild: textNode } }) => {
-                    if (videoA.onmouseover) await videoA.onmouseover();
-                    videoA.click();
-                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
-                }}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载视频FLV
-                </a>
-                </li>
+                {context_menu_videoA}
                 <li class="context-menu-function" onclick={async () => {
                     if (assA.onmouseover) await assA.onmouseover();
                     assA.click();
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 下载弹幕ASS
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => this.displayOptionDiv()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin))}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)批量下载
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => {
                     monkey.proxy = true;
@@ -456,22 +463,22 @@ class UI {
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)载入缓存FLV
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => top.location.reload(true)}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)强制刷新
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => this.cidSessionDestroy() && this.cidSessionRender()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)重启脚本
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => playerWin.player && playerWin.player.destroy()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)销毁播放器
-                </a>
+                    </a>
                 </li>
             </ul>
         </li>;

@@ -1,6 +1,6 @@
 {
   "name": "bilitwin",
-  "version": "1.16.5",
+  "version": "1.16.6",
   "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
   "main": "bilitwin.user.js",
   "directories": {

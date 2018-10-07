@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.5
+// @version     1.16.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.5
+// @version     1.16.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -6927,6 +6927,57 @@ var UI = function () {
                 _ref84$assA = _ref84.assA,
                 assA = _ref84$assA === undefined ? this.cidSessionDom.assA : _ref84$assA;
 
+            var context_menu_videoA = document.createElement('li');
+
+            {
+                context_menu_videoA.className = 'context-menu-function';
+
+                context_menu_videoA.onmouseover = function () {
+                    var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(_ref85) {
+                        var textNode = _ref85.target.lastChild;
+                        return regeneratorRuntime.wrap(function _callee64$(_context66) {
+                            while (1) {
+                                switch (_context66.prev = _context66.next) {
+                                    case 0:
+                                        if (!videoA.onmouseover) {
+                                            _context66.next = 3;
+                                            break;
+                                        }
+
+                                        _context66.next = 3;
+                                        return videoA.onmouseover();
+
+                                    case 3:
+                                        textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+
+                                    case 4:
+                                    case 'end':
+                                        return _context66.stop();
+                                }
+                            }
+                        }, _callee64, _this46);
+                    }));
+
+                    return function (_x92) {
+                        return _ref86.apply(this, arguments);
+                    };
+                }();
+
+                context_menu_videoA.onclick = function () {
+                    return videoA.click();
+                };
+
+                var _a = document.createElement('a');
+                _a.className = 'context-menu-a';
+                var _span = document.createElement('span');
+                _span.className = 'video-contextmenu-icon';
+                _a.append(_span);
+                _a.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
+                context_menu_videoA.append(_a);
+            }
+
+            Object.assign(this.cidSessionDom, { context_menu_videoA: context_menu_videoA });
+
             var li = document.createElement('li');
             li.className = 'context-menu-menu bilitwin';
 
@@ -6943,53 +6994,11 @@ var UI = function () {
             a1.append(span);
             li.append(a1);
             var ul1 = document.createElement('ul');
+            ul1.append(context_menu_videoA);
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = function () {
-                var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(_ref85) {
-                    var textNode = _ref85.target.lastChild;
-                    return regeneratorRuntime.wrap(function _callee64$(_context66) {
-                        while (1) {
-                            switch (_context66.prev = _context66.next) {
-                                case 0:
-                                    if (!videoA.onmouseover) {
-                                        _context66.next = 3;
-                                        break;
-                                    }
-
-                                    _context66.next = 3;
-                                    return videoA.onmouseover();
-
-                                case 3:
-                                    videoA.click();
-                                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
-
-                                case 5:
-                                case 'end':
-                                    return _context66.stop();
-                            }
-                        }
-                    }, _callee64, _this46);
-                }));
-
-                return function (_x92) {
-                    return _ref86.apply(this, arguments);
-                };
-            }();
-
-            var a2 = document.createElement('a');
-            a2.className = 'context-menu-a';
-            var span1 = document.createElement('span');
-            span1.className = 'video-contextmenu-icon';
-            a2.append(span1);
-            a2.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
-            li1.append(a2);
-            ul1.append(li1);
-            var li2 = document.createElement('li');
-            li2.className = 'context-menu-function';
-
-            li2.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
+            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
                 return regeneratorRuntime.wrap(function _callee65$(_context67) {
                     while (1) {
                         switch (_context67.prev = _context67.next) {
@@ -7013,33 +7022,33 @@ var UI = function () {
                 }, _callee65, _this46);
             }));
 
+            var a2 = document.createElement('a');
+            a2.className = 'context-menu-a';
+            var span1 = document.createElement('span');
+            span1.className = 'video-contextmenu-icon';
+            a2.append(span1);
+            a2.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
+            li1.append(a2);
+            ul1.append(li1);
+            var li2 = document.createElement('li');
+            li2.className = 'context-menu-function';
+
+            li2.onclick = function () {
+                return _this46.displayOptionDiv();
+            };
+
             var a3 = document.createElement('a');
             a3.className = 'context-menu-a';
             var span2 = document.createElement('span');
             span2.className = 'video-contextmenu-icon';
             a3.append(span2);
-            a3.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
+            a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
             li2.append(a3);
             ul1.append(li2);
             var li3 = document.createElement('li');
             li3.className = 'context-menu-function';
 
-            li3.onclick = function () {
-                return _this46.displayOptionDiv();
-            };
-
-            var a4 = document.createElement('a');
-            a4.className = 'context-menu-a';
-            var span3 = document.createElement('span');
-            span3.className = 'video-contextmenu-icon';
-            a4.append(span3);
-            a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-            li3.append(a4);
-            ul1.append(li3);
-            var li4 = document.createElement('li');
-            li4.className = 'context-menu-function';
-
-            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
+            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
                 return regeneratorRuntime.wrap(function _callee66$(_context68) {
                     while (1) {
                         switch (_context68.prev = _context68.next) {
@@ -7060,18 +7069,18 @@ var UI = function () {
                 }, _callee66, _this46);
             }));
 
-            var a5 = document.createElement('a');
-            a5.className = 'context-menu-a';
-            var span4 = document.createElement('span');
-            span4.className = 'video-contextmenu-icon';
-            a5.append(span4);
-            a5.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
-            li4.append(a5);
-            ul1.append(li4);
-            var li5 = document.createElement('li');
-            li5.className = 'context-menu-function';
+            var a4 = document.createElement('a');
+            a4.className = 'context-menu-a';
+            var span3 = document.createElement('span');
+            span3.className = 'video-contextmenu-icon';
+            a4.append(span3);
+            a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
+            li3.append(a4);
+            ul1.append(li3);
+            var li4 = document.createElement('li');
+            li4.className = 'context-menu-function';
 
-            li5.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
+            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
                 return regeneratorRuntime.wrap(function _callee67$(_context69) {
                     while (1) {
                         switch (_context69.prev = _context69.next) {
@@ -7097,19 +7106,34 @@ var UI = function () {
                 }, _callee67, _this46);
             }));
 
+            var a5 = document.createElement('a');
+            a5.className = 'context-menu-a';
+            var span4 = document.createElement('span');
+            span4.className = 'video-contextmenu-icon';
+            a5.append(span4);
+            a5.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+            li4.append(a5);
+            ul1.append(li4);
+            var li5 = document.createElement('li');
+            li5.className = 'context-menu-function';
+
+            li5.onclick = function () {
+                return top.location.reload(true);
+            };
+
             var a6 = document.createElement('a');
             a6.className = 'context-menu-a';
             var span5 = document.createElement('span');
             span5.className = 'video-contextmenu-icon';
             a6.append(span5);
-            a6.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+            a6.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
             li5.append(a6);
             ul1.append(li5);
             var li6 = document.createElement('li');
             li6.className = 'context-menu-function';
 
             li6.onclick = function () {
-                return top.location.reload(true);
+                return _this46.cidSessionDestroy() && _this46.cidSessionRender();
             };
 
             var a7 = document.createElement('a');
@@ -7117,14 +7141,14 @@ var UI = function () {
             var span6 = document.createElement('span');
             span6.className = 'video-contextmenu-icon';
             a7.append(span6);
-            a7.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
+            a7.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
             li6.append(a7);
             ul1.append(li6);
             var li7 = document.createElement('li');
             li7.className = 'context-menu-function';
 
             li7.onclick = function () {
-                return _this46.cidSessionDestroy() && _this46.cidSessionRender();
+                return playerWin.player && playerWin.player.destroy();
             };
 
             var a8 = document.createElement('a');
@@ -7132,26 +7156,10 @@ var UI = function () {
             var span7 = document.createElement('span');
             span7.className = 'video-contextmenu-icon';
             a8.append(span7);
-            a8.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
+            a8.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
             li7.append(a8);
             ul1.append(li7);
-            var li8 = document.createElement('li');
-            li8.className = 'context-menu-function';
-
-            li8.onclick = function () {
-                return playerWin.player && playerWin.player.destroy();
-            };
-
-            var a9 = document.createElement('a');
-            a9.className = 'context-menu-a';
-            var span8 = document.createElement('span');
-            span8.className = 'video-contextmenu-icon';
-            a9.append(span8);
-            a9.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
-            li8.append(a9);
-            ul1.append(li8);
             li.append(ul1);
-
             return li;
         }
     }, {
@@ -8161,7 +8169,7 @@ var BiliTwin = function (_BiliUserJS) {
             var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
                 var _this49 = this;
 
-                var href, cidRefresh, video, _ref98;
+                var href, cidRefresh, video, videoA, _ref98;
 
                 return regeneratorRuntime.wrap(function _callee68$(_context70) {
                     while (1) {
@@ -8229,6 +8237,10 @@ var BiliTwin = function (_BiliUserJS) {
                                 if (href == location.href) {
                                     this.ui.option = this.option;
                                     this.ui.cidSessionRender();
+
+                                    videoA = this.ui.cidSessionDom.context_menu_videoA || this.ui.cidSessionDom.videoA;
+
+                                    if (videoA && videoA.onmouseover) videoA.onmouseover({ target: videoA.lastChild });
                                 } else {
                                     cidRefresh.resolve();
                                 }

@@ -74,6 +74,9 @@ class BiliTwin extends BiliUserJS {
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
+
+            let videoA = this.ui.cidSessionDom.context_menu_videoA || this.ui.cidSessionDom.videoA
+            if (videoA && videoA.onmouseover) videoA.onmouseover({ target: videoA.lastChild });
         }
         else {
             cidRefresh.resolve();

@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.5
+// @version     1.16.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -7737,6 +7737,29 @@ class UI {
         videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA
     } = {}) {
+        let context_menu_videoA = document.createElement('li');
+
+        {
+            context_menu_videoA.className = 'context-menu-function';
+
+            context_menu_videoA.onmouseover = async ({ target: { lastChild: textNode } }) => {
+                if (videoA.onmouseover) await videoA.onmouseover();
+                textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+            };
+
+            context_menu_videoA.onclick = () => videoA.click();
+
+            const a1 = document.createElement('a');
+            a1.className = 'context-menu-a';
+            const span = document.createElement('span');
+            span.className = 'video-contextmenu-icon';
+            a1.append(span);
+            a1.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
+            context_menu_videoA.append(a1);
+        }
+
+        Object.assign(this.cidSessionDom, { context_menu_videoA });
+
         const li = document.createElement('li');
         li.className = 'context-menu-menu bilitwin';
 
@@ -7751,13 +7774,13 @@ class UI {
         a1.append(span);
         li.append(a1);
         const ul1 = document.createElement('ul');
+        ul1.append(context_menu_videoA);
         const li1 = document.createElement('li');
         li1.className = 'context-menu-function';
 
-        li1.onclick = async ({ target: { lastChild: textNode } }) => {
-            if (videoA.onmouseover) await videoA.onmouseover();
-            videoA.click();
-            textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+        li1.onclick = async () => {
+            if (assA.onmouseover) await assA.onmouseover();
+            assA.click();
         };
 
         const a2 = document.createElement('a');
@@ -7765,55 +7788,39 @@ class UI {
         const span1 = document.createElement('span');
         span1.className = 'video-contextmenu-icon';
         a2.append(span1);
-        a2.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
+        a2.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
         li1.append(a2);
         ul1.append(li1);
         const li2 = document.createElement('li');
         li2.className = 'context-menu-function';
 
-        li2.onclick = async () => {
-            if (assA.onmouseover) await assA.onmouseover();
-            assA.click();
-        };
+        li2.onclick = () => this.displayOptionDiv();
 
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';
         const span2 = document.createElement('span');
         span2.className = 'video-contextmenu-icon';
         a3.append(span2);
-        a3.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
+        a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li2.append(a3);
         ul1.append(li2);
         const li3 = document.createElement('li');
         li3.className = 'context-menu-function';
 
-        li3.onclick = () => this.displayOptionDiv();
+        li3.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin)));
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
         const span3 = document.createElement('span');
         span3.className = 'video-contextmenu-icon';
         a4.append(span3);
-        a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+        a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
         li3.append(a4);
         ul1.append(li3);
         const li4 = document.createElement('li');
         li4.className = 'context-menu-function';
 
-        li4.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin)));
-
-        const a5 = document.createElement('a');
-        a5.className = 'context-menu-a';
-        const span4 = document.createElement('span');
-        span4.className = 'video-contextmenu-icon';
-        a5.append(span4);
-        a5.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
-        li4.append(a5);
-        ul1.append(li4);
-        const li5 = document.createElement('li');
-        li5.className = 'context-menu-function';
-
-        li5.onclick = async () => {
+        li4.onclick = async () => {
             monkey.proxy = true;
             monkey.flvs = null;
             UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
@@ -7823,55 +7830,54 @@ class UI {
             return monkey.queryInfo('video');
         };
 
+        const a5 = document.createElement('a');
+        a5.className = 'context-menu-a';
+        const span4 = document.createElement('span');
+        span4.className = 'video-contextmenu-icon';
+        a5.append(span4);
+        a5.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        li4.append(a5);
+        ul1.append(li4);
+        const li5 = document.createElement('li');
+        li5.className = 'context-menu-function';
+
+        li5.onclick = () => top.location.reload(true);
+
         const a6 = document.createElement('a');
         a6.className = 'context-menu-a';
         const span5 = document.createElement('span');
         span5.className = 'video-contextmenu-icon';
         a6.append(span5);
-        a6.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        a6.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
         li5.append(a6);
         ul1.append(li5);
         const li6 = document.createElement('li');
         li6.className = 'context-menu-function';
 
-        li6.onclick = () => top.location.reload(true);
+        li6.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
 
         const a7 = document.createElement('a');
         a7.className = 'context-menu-a';
         const span6 = document.createElement('span');
         span6.className = 'video-contextmenu-icon';
         a7.append(span6);
-        a7.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
+        a7.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
         li6.append(a7);
         ul1.append(li6);
         const li7 = document.createElement('li');
         li7.className = 'context-menu-function';
 
-        li7.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
+        li7.onclick = () => playerWin.player && playerWin.player.destroy();
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
         const span7 = document.createElement('span');
         span7.className = 'video-contextmenu-icon';
         a8.append(span7);
-        a8.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
+        a8.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
         li7.append(a8);
         ul1.append(li7);
-        const li8 = document.createElement('li');
-        li8.className = 'context-menu-function';
-
-        li8.onclick = () => playerWin.player && playerWin.player.destroy();
-
-        const a9 = document.createElement('a');
-        a9.className = 'context-menu-a';
-        const span8 = document.createElement('span');
-        span8.className = 'video-contextmenu-icon';
-        a9.append(span8);
-        a9.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
-        li8.append(a9);
-        ul1.append(li8);
         li.append(ul1);
-
         return li;
     }
 
@@ -8768,6 +8774,9 @@ class BiliTwin extends BiliUserJS {
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
+
+            let videoA = this.ui.cidSessionDom.context_menu_videoA || this.ui.cidSessionDom.videoA;
+            if (videoA && videoA.onmouseover) videoA.onmouseover({ target: videoA.lastChild });
         }
         else {
             cidRefresh.resolve();
