@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.7
+// @version     1.17.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1769,6 +1769,14 @@ class BiliMonkey {
                 'bold': bilibili_player_settings.setting_config['bold'] ? 1 : 0,
             } || undefined;
 
+            // 2.3 resolution
+            if (this.option.resolution) {
+                Object.assign(option, {
+                    'resolutionX': +this.option.resolutionX || 560,
+                    'resolutionY': +this.option.resolutionY || 420
+                });
+            }
+
             // 3. generate
             resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
@@ -1798,9 +1806,11 @@ class BiliMonkey {
                                 x => x.startsWith("{")
                             )[0]
                         );
-                        
+
                         durls = data.Y.segments;
                     }
+
+                    // console.log(data)
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
 
@@ -2117,7 +2127,8 @@ class BiliMonkey {
 
             // 2. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
-            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
+            ['resolution', '(测)自定义弹幕画布分辨率：仅对下载的弹幕生效。(默认值: 560 x 420)'],
         ];
     }
 
@@ -2136,6 +2147,9 @@ class BiliMonkey {
             // 3. customizing
             blocker: true,
             font: true,
+            resolution: false,
+            resolutionX: 560,
+            resolutionY: 420,
         }
     }
 
@@ -7385,7 +7399,7 @@ class UI {
                 const td1 = document.createElement('td');
                 const a1 = document.createElement('a');
                 a1.href = href;
-                a1.download = aid + '-' + (index + 1) + '.' + (format || "flv");
+                a1.download = cid + '-' + (index + 1) + '.' + (format || "flv");
                 a1.textContent = `视频分段 ${index + 1}`;
                 td1.append(a1);
                 tr.append(td1);
@@ -7744,7 +7758,9 @@ class UI {
 
             context_menu_videoA.onmouseover = async ({ target: { lastChild: textNode } }) => {
                 if (videoA.onmouseover) await videoA.onmouseover();
-                textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+                if (textNode && textNode.textContent) {
+                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+                }
             };
 
             context_menu_videoA.onclick = () => videoA.click();
@@ -8327,6 +8343,36 @@ class UI {
             tr1.append(label);
             return tr1;
         }));
+
+        table.append((() => {
+            const tr1 = document.createElement('tr');
+            const label = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = +twin.option["resolutionX"] || 560;
+            input.min = 480;
+
+            input.onchange = e => {
+                twin.option["resolutionX"] = +e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input);
+            label.append(" x ");
+            const input1 = document.createElement('input');
+            input1.type = 'number';
+            input1.value = +twin.option["resolutionY"] || 420;
+            input1.min = 360;
+
+            input1.onchange = e => {
+                twin.option["resolutionY"] = +e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input1);
+            tr1.append(label);
+            return tr1;
+        })());
 
         return table;
     }

@@ -165,7 +165,7 @@ class UI {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.' + (format || "flv")}>视频分段 {index + 1}</a></td>
+                <td><a href={href} download={cid + '-' + (index + 1) + '.' + (format || "flv")}>视频分段 {index + 1}</a></td>
                 <td><a onclick={e => this.downloadFLV({
                     monkey,
                     index,
@@ -413,7 +413,9 @@ class UI {
             <li class="context-menu-function"
                 onmouseover={async ({ target: { lastChild: textNode } }) => {
                     if (videoA.onmouseover) await videoA.onmouseover();
-                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
+                    if (textNode && textNode.textContent) {
+                        textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
+                    }
                 }}
                 onclick={() => videoA.click()}
             >
@@ -686,6 +688,28 @@ class UI {
                 {description}
             </label>
         </tr>));
+
+        table.append( <tr>
+            <label>
+                <input
+                    type="number"
+                    value={+twin.option["resolutionX"] || 560}
+                    min={480}
+                    onchange={e => {
+                        twin.option["resolutionX"] = +e.target.value;
+                        twin.saveOption(twin.option);
+                    }} />
+                {" x "}
+                <input
+                    type="number"
+                    value={+twin.option["resolutionY"] || 420}
+                    min={360}
+                    onchange={e => {
+                        twin.option["resolutionY"] = +e.target.value;
+                        twin.saveOption(twin.option);
+                    }} />
+            </label>
+        </tr>);
 
         return table;
     }

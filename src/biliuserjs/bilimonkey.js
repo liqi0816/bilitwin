@@ -184,6 +184,14 @@ class BiliMonkey {
                 'bold': bilibili_player_settings.setting_config['bold'] ? 1 : 0,
             } || undefined;
 
+            // 2.3 resolution
+            if (this.option.resolution) {
+                Object.assign(option, {
+                    'resolutionX': +this.option.resolutionX || 560,
+                    'resolutionY': +this.option.resolutionY || 420
+                })
+            }
+
             // 3. generate
             resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
@@ -213,9 +221,11 @@ class BiliMonkey {
                                 x => x.startsWith("{")
                             )[0]
                         )
-                        
+
                         durls = data.Y.segments
                     }
+
+                    // console.log(data)
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"))
 
@@ -533,7 +543,8 @@ class BiliMonkey {
 
             // 2. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
-            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
+            ['resolution', '(测)自定义弹幕画布分辨率：仅对下载的弹幕生效。(默认值: 560 x 420)'],
         ];
     }
 
@@ -552,6 +563,9 @@ class BiliMonkey {
             // 3. customizing
             blocker: true,
             font: true,
+            resolution: false,
+            resolutionX: 560,
+            resolutionY: 420,
         }
     }
 

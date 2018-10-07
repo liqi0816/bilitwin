@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.7
+// @version     1.17.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.7
+// @version     1.17.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3009,19 +3009,27 @@ var BiliMonkey = function () {
                                                             'bold': bilibili_player_settings.setting_config['bold'] ? 1 : 0
                                                         } || undefined;
 
-                                                        // 3. generate
+                                                        // 2.3 resolution
 
+                                                        if (_this15.option.resolution) {
+                                                            Object.assign(option, {
+                                                                'resolutionX': +_this15.option.resolutionX || 560,
+                                                                'resolutionY': +_this15.option.resolutionY || 420
+                                                            });
+                                                        }
+
+                                                        // 3. generate
                                                         _context28.t0 = resolve;
                                                         _context28.t1 = top.URL;
-                                                        _context28.next = 11;
+                                                        _context28.next = 12;
                                                         return new ASSConverter(option).genASSBlob(danmaku, top.document.title, top.location.href);
 
-                                                    case 11:
+                                                    case 12:
                                                         _context28.t2 = _context28.sent;
                                                         _context28.t3 = _this15.ass = _context28.t1.createObjectURL.call(_context28.t1, _context28.t2);
                                                         (0, _context28.t0)(_context28.t3);
 
-                                                    case 14:
+                                                    case 15:
                                                     case 'end':
                                                         return _context28.stop();
                                                 }
@@ -3101,6 +3109,8 @@ var BiliMonkey = function () {
 
                                                         durls = data.Y.segments;
                                                     }
+
+                                                    // console.log(data)
 
                                                     flvs = durls.map(function (url_obj) {
                                                         return url_obj.url.replace("http://", "https://");
@@ -4111,7 +4121,7 @@ var BiliMonkey = function () {
             ['cache', '关标签页不清缓存：保留完全下载好的分段到缓存，忘记另存为也没关系。'], ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'], ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
 
             // 2. customizing
-            ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'], ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']];
+            ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'], ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'], ['resolution', '(测)自定义弹幕画布分辨率：仅对下载的弹幕生效。(默认值: 560 x 420)']];
         }
     }, {
         key: 'optionDefaults',
@@ -4129,7 +4139,10 @@ var BiliMonkey = function () {
 
                 // 3. customizing
                 blocker: true,
-                font: true
+                font: true,
+                resolution: false,
+                resolutionX: 560,
+                resolutionY: 420
             };
         }
     }]);
@@ -6391,7 +6404,7 @@ var UI = function () {
                     var td1 = document.createElement('td');
                     var a1 = document.createElement('a');
                     a1.href = href;
-                    a1.download = aid + '-' + (index + 1) + '.' + (format || "flv");
+                    a1.download = cid + '-' + (index + 1) + '.' + (format || "flv");
                     a1.textContent = '\u89C6\u9891\u5206\u6BB5 ' + (index + 1);
                     td1.append(a1);
                     tr.append(td1);
@@ -6947,7 +6960,9 @@ var UI = function () {
                                         return videoA.onmouseover();
 
                                     case 3:
-                                        textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+                                        if (textNode && textNode.textContent) {
+                                            textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+                                        }
 
                                     case 4:
                                     case 'end':
@@ -7690,6 +7705,36 @@ var UI = function () {
                 tr1.append(label);
                 return tr1;
             })));
+
+            table.append(function () {
+                var tr1 = document.createElement('tr');
+                var label = document.createElement('label');
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.value = +twin.option["resolutionX"] || 560;
+                input.min = 480;
+
+                input.onchange = function (e) {
+                    twin.option["resolutionX"] = +e.target.value;
+                    twin.saveOption(twin.option);
+                };
+
+                label.append(input);
+                label.append(" x ");
+                var input1 = document.createElement('input');
+                input1.type = 'number';
+                input1.value = +twin.option["resolutionY"] || 420;
+                input1.min = 360;
+
+                input1.onchange = function (e) {
+                    twin.option["resolutionY"] = +e.target.value;
+                    twin.saveOption(twin.option);
+                };
+
+                label.append(input1);
+                tr1.append(label);
+                return tr1;
+            }());
 
             return table;
         }
