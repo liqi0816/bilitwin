@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.4
+// @version     1.16.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.4
+// @version     1.16.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -6946,29 +6946,37 @@ var UI = function () {
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
-                return regeneratorRuntime.wrap(function _callee64$(_context66) {
-                    while (1) {
-                        switch (_context66.prev = _context66.next) {
-                            case 0:
-                                if (!videoA.onmouseover) {
+            li1.onclick = function () {
+                var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(_ref85) {
+                    var textNode = _ref85.target.lastChild;
+                    return regeneratorRuntime.wrap(function _callee64$(_context66) {
+                        while (1) {
+                            switch (_context66.prev = _context66.next) {
+                                case 0:
+                                    if (!videoA.onmouseover) {
+                                        _context66.next = 3;
+                                        break;
+                                    }
+
                                     _context66.next = 3;
-                                    break;
-                                }
+                                    return videoA.onmouseover();
 
-                                _context66.next = 3;
-                                return videoA.onmouseover();
+                                case 3:
+                                    videoA.click();
+                                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
 
-                            case 3:
-                                videoA.click();
-
-                            case 4:
-                            case 'end':
-                                return _context66.stop();
+                                case 5:
+                                case 'end':
+                                    return _context66.stop();
+                            }
                         }
-                    }
-                }, _callee64, _this46);
-            }));
+                    }, _callee64, _this46);
+                }));
+
+                return function (_x92) {
+                    return _ref86.apply(this, arguments);
+                };
+            }();
 
             var a2 = document.createElement('a');
             a2.className = 'context-menu-a';
@@ -7151,13 +7159,13 @@ var UI = function () {
         value: function buildPolyfillMenu() {
             var _this47 = this;
 
-            var _ref89 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref89$playerWin = _ref89.playerWin,
-                playerWin = _ref89$playerWin === undefined ? this.twin.playerWin : _ref89$playerWin,
-                _ref89$BiliPolyfill = _ref89.BiliPolyfill,
-                BiliPolyfill = _ref89$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref89$BiliPolyfill,
-                _ref89$polyfill = _ref89.polyfill,
-                polyfill = _ref89$polyfill === undefined ? this.twin.polyfill : _ref89$polyfill;
+            var _ref90 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref90$playerWin = _ref90.playerWin,
+                playerWin = _ref90$playerWin === undefined ? this.twin.playerWin : _ref90$playerWin,
+                _ref90$BiliPolyfill = _ref90.BiliPolyfill,
+                BiliPolyfill = _ref90$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref90$BiliPolyfill,
+                _ref90$polyfill = _ref90.polyfill,
+                polyfill = _ref90$polyfill === undefined ? this.twin.polyfill : _ref90$polyfill;
 
             var oped = [];
             var refreshSession = new HookedFunction(function () {
@@ -7654,10 +7662,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref90) {
-                var _ref91 = _slicedToArray(_ref90, 2),
-                    name = _ref91[0],
-                    description = _ref91[1];
+            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref91) {
+                var _ref92 = _slicedToArray(_ref91, 2),
+                    name = _ref92[0],
+                    description = _ref92[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -7702,11 +7710,11 @@ var UI = function () {
                 table.append(tr2);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref92) {
-                var _ref93 = _slicedToArray(_ref92, 3),
-                    name = _ref93[0],
-                    description = _ref93[1],
-                    disabled = _ref93[2];
+            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref93) {
+                var _ref94 = _slicedToArray(_ref93, 3),
+                    name = _ref94[0],
+                    description = _ref94[1],
+                    disabled = _ref94[2];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -7746,10 +7754,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref94) {
-                var _ref95 = _slicedToArray(_ref94, 2),
-                    name = _ref95[0],
-                    description = _ref95[1];
+            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref95) {
+                var _ref96 = _slicedToArray(_ref95, 2),
+                    name = _ref96[0],
+                    description = _ref96[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8150,10 +8158,10 @@ var BiliTwin = function (_BiliUserJS) {
     _createClass(BiliTwin, [{
         key: 'runCidSession',
         value: function () {
-            var _ref96 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
+            var _ref97 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
                 var _this49 = this;
 
-                var href, cidRefresh, video, _ref97;
+                var href, cidRefresh, video, _ref98;
 
                 return regeneratorRuntime.wrap(function _callee68$(_context70) {
                     while (1) {
@@ -8227,9 +8235,9 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 // 4. debug
                                 if (this.option.debug) {
-                                    _ref97 = [this.monkey, this.polyfill];
-                                    (top.unsafeWindow || top).monkey = _ref97[0];
-                                    (top.unsafeWindow || top).polyfill = _ref97[1];
+                                    _ref98 = [this.monkey, this.polyfill];
+                                    (top.unsafeWindow || top).monkey = _ref98[0];
+                                    (top.unsafeWindow || top).polyfill = _ref98[1];
                                 }
 
                                 // 5. refresh => session expire
@@ -8250,7 +8258,7 @@ var BiliTwin = function (_BiliUserJS) {
             }));
 
             function runCidSession() {
-                return _ref96.apply(this, arguments);
+                return _ref97.apply(this, arguments);
             }
 
             return runCidSession;
@@ -8258,7 +8266,7 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'mergeFLVFiles',
         value: function () {
-            var _ref98 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69(files) {
+            var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69(files) {
                 return regeneratorRuntime.wrap(function _callee69$(_context71) {
                     while (1) {
                         switch (_context71.prev = _context71.next) {
@@ -8279,8 +8287,8 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee69, this);
             }));
 
-            function mergeFLVFiles(_x102) {
-                return _ref98.apply(this, arguments);
+            function mergeFLVFiles(_x103) {
+                return _ref99.apply(this, arguments);
             }
 
             return mergeFLVFiles;
@@ -8288,7 +8296,7 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'clearCacheDB',
         value: function () {
-            var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(cache) {
+            var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(cache) {
                 return regeneratorRuntime.wrap(function _callee70$(_context72) {
                     while (1) {
                         switch (_context72.prev = _context72.next) {
@@ -8308,8 +8316,8 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee70, this);
             }));
 
-            function clearCacheDB(_x103) {
-                return _ref99.apply(this, arguments);
+            function clearCacheDB(_x104) {
+                return _ref100.apply(this, arguments);
             }
 
             return clearCacheDB;
@@ -8351,7 +8359,7 @@ var BiliTwin = function (_BiliUserJS) {
     }], [{
         key: 'init',
         value: function () {
-            var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
+            var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
                 var twin;
                 return regeneratorRuntime.wrap(function _callee71$(_context73) {
                     while (1) {
@@ -8402,7 +8410,7 @@ var BiliTwin = function (_BiliUserJS) {
             }));
 
             function init() {
-                return _ref100.apply(this, arguments);
+                return _ref101.apply(this, arguments);
             }
 
             return init;

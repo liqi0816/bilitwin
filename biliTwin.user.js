@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.4
+// @version     1.16.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -7754,9 +7754,10 @@ class UI {
         const li1 = document.createElement('li');
         li1.className = 'context-menu-function';
 
-        li1.onclick = async () => {
+        li1.onclick = async ({ target: { lastChild: textNode } }) => {
             if (videoA.onmouseover) await videoA.onmouseover();
             videoA.click();
+            textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
         };
 
         const a2 = document.createElement('a');

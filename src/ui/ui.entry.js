@@ -418,9 +418,10 @@ class UI {
             <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
             </a>
             <ul>
-                <li class="context-menu-function" onclick={async () => {
+                <li class="context-menu-function" onclick={async ({ target: { lastChild: textNode } }) => {
                     if (videoA.onmouseover) await videoA.onmouseover();
                     videoA.click();
+                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 下载视频FLV
