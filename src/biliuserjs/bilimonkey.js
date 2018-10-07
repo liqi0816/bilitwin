@@ -197,7 +197,7 @@ class BiliMonkey {
             switch (format) {
                 case 'video':
                     if (this.flvs)
-                        return this.flvs;
+                        return this.video_format;
 
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`
 
@@ -208,18 +208,24 @@ class BiliMonkey {
                     let durls = data.durl
 
                     if (!durls) {
-                        durls = JSON.parse(
+                        data = JSON.parse(
                             window.Gc.split("\n").filter(
                                 x => x.startsWith("{")
                             )[0]
-                        ).Y.segments
+                        )
+                        
+                        durls = data.Y.segments
                     }
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"))
 
                     this.flvs = flvs
 
-                    return durls
+                    let format = data.format && data.format.slice(0, 3)
+
+                    this.video_format = format
+
+                    return format
                 case 'ass':
                     if (this.ass)
                         return this.ass;

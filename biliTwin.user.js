@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.3
+// @version     1.16.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1782,7 +1782,7 @@ class BiliMonkey {
             switch (format) {
                 case 'video':
                     if (this.flvs)
-                        return this.flvs;
+                        return this.video_format;
 
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`;
 
@@ -1793,18 +1793,24 @@ class BiliMonkey {
                     let durls = data.durl;
 
                     if (!durls) {
-                        durls = JSON.parse(
+                        data = JSON.parse(
                             window.Gc.split("\n").filter(
                                 x => x.startsWith("{")
                             )[0]
-                        ).Y.segments;
+                        );
+                        
+                        durls = data.Y.segments;
                     }
 
                     let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
 
                     this.flvs = flvs;
 
-                    return durls
+                    let format = data.format && data.format.slice(0, 3);
+
+                    this.video_format = format;
+
+                    return format
                 case 'ass':
                     if (this.ass)
                         return this.ass;
@@ -7307,28 +7313,27 @@ class UI {
 
     // Title Append
     buildTitle(monkey = this.twin.monkey) {
-        // 1. build flvA, mp4A, assA
+        // 1. build videoA, assA
         const fontSize = '15px';
-        const flvA = document.createElement('a');
-        flvA.style.fontSize = fontSize;
-        flvA.textContent = '\u89C6\u9891FLV';
+        const videoA = document.createElement('a');
+        videoA.style.fontSize = fontSize;
+        videoA.textContent = '\u89C6\u9891FLV';
         const assA = document.createElement('a');
 
-        // 1.1 build flvA
+        // 1.1 build videoA
         assA.style.fontSize = fontSize;
         assA.textContent = '\u5F39\u5E55ASS';
-        flvA.onmouseover = async () => {
+        videoA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
-            flvA.onmouseover = null;
+            videoA.textContent = '正在FLV';
+            videoA.onmouseover = null;
 
-            // 1.1.2 query flv
-            const href = await monkey.queryInfo('video');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV视频';
+            // 1.1.2 query video
+            const video_format = await monkey.queryInfo('video');
 
-            // 1.1.3 display flv
-            flvA.textContent = '视频FLV';
-            flvA.onclick = () => this.displayFLVDiv();
+            // 1.1.3 display video
+            videoA.textContent = `视频${video_format ? video_format.toUpperCase() : 'FLV'}`;
+            videoA.onclick = () => this.displayFLVDiv();
         };
 
         // 1.2 build assA
@@ -7350,18 +7355,18 @@ class UI {
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, assA });
+        Object.assign(this.cidSessionDom, { videoA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, assA } = this.cidSessionDom) {
+    appendTitle({ videoA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = document.createElement('div');
 
         // 2. append to title
         div.addEventListener('click', e => e.stopPropagation());
         div.className = 'bilitwin';
-        div.append(...[flvA, ' ', assA]);
+        div.append(...[videoA, ' ', assA]);
         const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
         tminfo.style.float = 'none';
         tminfo.after(div);
@@ -7372,7 +7377,7 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = document.createElement('tr');
@@ -7380,7 +7385,7 @@ class UI {
                 const td1 = document.createElement('td');
                 const a1 = document.createElement('a');
                 a1.href = href;
-                a1.download = aid + '-' + (index + 1) + '.flv';
+                a1.download = aid + '-' + (index + 1) + '.' + (format || "flv");
                 a1.textContent = `视频分段 ${index + 1}`;
                 td1.append(a1);
                 tr.append(td1);
@@ -7442,11 +7447,11 @@ class UI {
             const td2 = document.createElement('td');
             const a1 = document.createElement('a');
 
-            a1.onclick = e => this.downloadAllFLVs({
+            a1.onclick = e => format != "mp4" ? this.downloadAllFLVs({
                 a: e.target,
                 monkey,
                 table
-            });
+            }) : top.alert("不支持合并MP4视频");
 
             a1.textContent = '\u7F13\u5B58\u5168\u90E8+\u81EA\u52A8\u5408\u5E76';
             td2.append(a1);
@@ -7690,7 +7695,7 @@ class UI {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         a.href = url;
         return url;
     }
@@ -7729,8 +7734,7 @@ class UI {
         playerWin = this.twin.playerWin,
         BiliMonkey = this.twin.BiliMonkey,
         monkey = this.twin.monkey,
-        flvA = this.cidSessionDom.flvA,
-        mp4A = this.cidSessionDom.mp4A,
+        videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA
     } = {}) {
         const li = document.createElement('li');
@@ -7751,8 +7755,8 @@ class UI {
         li1.className = 'context-menu-function';
 
         li1.onclick = async () => {
-            if (flvA.onmouseover) await flvA.onmouseover();
-            flvA.click();
+            if (videoA.onmouseover) await videoA.onmouseover();
+            videoA.click();
         };
 
         const a2 = document.createElement('a');

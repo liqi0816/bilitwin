@@ -100,24 +100,23 @@ class UI {
 
     // Title Append
     buildTitle(monkey = this.twin.monkey) {
-        // 1. build flvA, mp4A, assA
+        // 1. build videoA, assA
         const fontSize = '15px';
-        const flvA = <a style={{ fontSize }}>视频FLV</a>;
+        const videoA = <a style={{ fontSize }}>视频FLV</a>;
         const assA = <a style={{ fontSize }}>弹幕ASS</a>;
 
-        // 1.1 build flvA
-        flvA.onmouseover = async () => {
+        // 1.1 build videoA
+        videoA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
-            flvA.onmouseover = null;
+            videoA.textContent = '正在FLV';
+            videoA.onmouseover = null;
 
-            // 1.1.2 query flv
-            const href = await monkey.queryInfo('video');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV视频';
+            // 1.1.2 query video
+            const video_format = await monkey.queryInfo('video');
 
-            // 1.1.3 display flv
-            flvA.textContent = '视频FLV';
-            flvA.onclick = () => this.displayFLVDiv();
+            // 1.1.3 display video
+            videoA.textContent = `视频${video_format ? video_format.toUpperCase() : 'FLV'}`;
+            videoA.onclick = () => this.displayFLVDiv();
         };
 
         // 1.2 build assA
@@ -140,16 +139,16 @@ class UI {
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, assA });
+        Object.assign(this.cidSessionDom, { videoA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, assA } = this.cidSessionDom) {
+    appendTitle({ videoA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = <div
             onClick={e => e.stopPropagation()}
             className="bilitwin"
-        >{...[flvA, ' ', assA]}</div>;
+        >{...[videoA, ' ', assA]}</div>;
 
         // 2. append to title
         const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
@@ -162,11 +161,11 @@ class UI {
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href} download={aid + '-' + (index + 1) + '.flv'}>视频分段 {index + 1}</a></td>
+                <td><a href={href} download={aid + '-' + (index + 1) + '.' + (format || "flv")}>视频分段 {index + 1}</a></td>
                 <td><a onclick={e => this.downloadFLV({
                     monkey,
                     index,
@@ -210,11 +209,13 @@ class UI {
             ...flvTrs,
             <tr>
                 <td>{...[exporterA]}</td>
-                <td><a onclick={e => this.downloadAllFLVs({
-                    a: e.target,
-                    monkey,
-                    table
-                })}>缓存全部+自动合并</a></td>
+                <td><a onclick={e => (format != "mp4") ?
+                    this.downloadAllFLVs({
+                        a: e.target,
+                        monkey,
+                        table
+                    })
+                    : top.alert("不支持合并MP4视频")}>缓存全部+自动合并</a></td>
                 <td><progress value="0" max={flvs.length + 1}>进度条</progress></td>
             </tr>,
             <tr><td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td></tr>,
@@ -362,7 +363,7 @@ class UI {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         a.href = url;
         return url;
     }
@@ -405,8 +406,7 @@ class UI {
         playerWin = this.twin.playerWin,
         BiliMonkey = this.twin.BiliMonkey,
         monkey = this.twin.monkey,
-        flvA = this.cidSessionDom.flvA,
-        mp4A = this.cidSessionDom.mp4A,
+        videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA,
     } = {}) {
         return <li
@@ -419,8 +419,8 @@ class UI {
             </a>
             <ul>
                 <li class="context-menu-function" onclick={async () => {
-                    if (flvA.onmouseover) await flvA.onmouseover();
-                    flvA.click();
+                    if (videoA.onmouseover) await videoA.onmouseover();
+                    videoA.click();
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 下载视频FLV

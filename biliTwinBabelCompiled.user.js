@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.3
+// @version     1.16.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.3
+// @version     1.16.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3060,13 +3060,14 @@ var BiliMonkey = function () {
                         switch (_context31.prev = _context31.next) {
                             case 0:
                                 return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                    var api_url, re, data, durls, flvs;
+                                    var api_url, re, data, durls, flvs, _format;
+
                                     return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                         while (1) {
                                             switch (_context30.prev = _context30.next) {
                                                 case 0:
-                                                    _context30.t0 = format;
-                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 17 : 22;
+                                                    _context30.t0 = _format;
+                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 19 : 24;
                                                     break;
 
                                                 case 3:
@@ -3075,7 +3076,7 @@ var BiliMonkey = function () {
                                                         break;
                                                     }
 
-                                                    return _context30.abrupt('return', _this16.flvs);
+                                                    return _context30.abrupt('return', _this16.video_format);
 
                                                 case 5:
                                                     api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=116';
@@ -3095,9 +3096,11 @@ var BiliMonkey = function () {
 
 
                                                     if (!durls) {
-                                                        durls = JSON.parse(window.Gc.split("\n").filter(function (x) {
+                                                        data = JSON.parse(window.Gc.split("\n").filter(function (x) {
                                                             return x.startsWith("{");
-                                                        })[0]).Y.segments;
+                                                        })[0]);
+
+                                                        durls = data.Y.segments;
                                                     }
 
                                                     flvs = durls.map(function (url_obj) {
@@ -3107,23 +3110,28 @@ var BiliMonkey = function () {
 
                                                     _this16.flvs = flvs;
 
-                                                    return _context30.abrupt('return', durls);
+                                                    _format = data.format && data.format.slice(0, 3);
 
-                                                case 17:
+
+                                                    _this16.video_format = _format;
+
+                                                    return _context30.abrupt('return', _format);
+
+                                                case 19:
                                                     if (!_this16.ass) {
-                                                        _context30.next = 21;
+                                                        _context30.next = 23;
                                                         break;
                                                     }
 
                                                     return _context30.abrupt('return', _this16.ass);
 
-                                                case 21:
+                                                case 23:
                                                     return _context30.abrupt('return', _this16.getASS(_this16.flvFormatName));
 
-                                                case 22:
-                                                    throw 'Bilimonkey: What is format ' + format + '?';
+                                                case 24:
+                                                    throw 'Bilimonkey: What is format ' + _format + '?';
 
-                                                case 23:
+                                                case 25:
                                                 case 'end':
                                                     return _context30.stop();
                                             }
@@ -6261,49 +6269,41 @@ var UI = function () {
 
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
 
-            // 1. build flvA, mp4A, assA
+            // 1. build videoA, assA
             var fontSize = '15px';
-            var flvA = document.createElement('a');
-            flvA.style.fontSize = fontSize;
-            flvA.textContent = '\u89C6\u9891FLV';
+            var videoA = document.createElement('a');
+            videoA.style.fontSize = fontSize;
+            videoA.textContent = '\u89C6\u9891FLV';
             var assA = document.createElement('a');
 
-            // 1.1 build flvA
+            // 1.1 build videoA
             assA.style.fontSize = fontSize;
             assA.textContent = '\u5F39\u5E55ASS';
-            flvA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58() {
-                var href;
+            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58() {
+                var video_format;
                 return regeneratorRuntime.wrap(function _callee58$(_context60) {
                     while (1) {
                         switch (_context60.prev = _context60.next) {
                             case 0:
                                 // 1.1.1 give processing hint
-                                flvA.textContent = '正在FLV';
-                                flvA.onmouseover = null;
+                                videoA.textContent = '正在FLV';
+                                videoA.onmouseover = null;
 
-                                // 1.1.2 query flv
+                                // 1.1.2 query video
                                 _context60.next = 4;
                                 return monkey.queryInfo('video');
 
                             case 4:
-                                href = _context60.sent;
+                                video_format = _context60.sent;
 
-                                if (!(href == 'does_not_exist')) {
-                                    _context60.next = 7;
-                                    break;
-                                }
 
-                                return _context60.abrupt('return', flvA.textContent = '没有FLV视频');
-
-                            case 7:
-
-                                // 1.1.3 display flv
-                                flvA.textContent = '视频FLV';
-                                flvA.onclick = function () {
+                                // 1.1.3 display video
+                                videoA.textContent = '\u89C6\u9891' + (video_format ? video_format.toUpperCase() : 'FLV');
+                                videoA.onclick = function () {
                                     return _this43.displayFLVDiv();
                                 };
 
-                            case 9:
+                            case 7:
                             case 'end':
                                 return _context60.stop();
                         }
@@ -6346,14 +6346,14 @@ var UI = function () {
             }));
 
             // 2. save to cache
-            Object.assign(this.cidSessionDom, { flvA: flvA, assA: assA });
+            Object.assign(this.cidSessionDom, { videoA: videoA, assA: assA });
             return this.cidSessionDom;
         }
     }, {
         key: 'appendTitle',
         value: function appendTitle() {
             var _ref77 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
-                flvA = _ref77.flvA,
+                videoA = _ref77.videoA,
                 assA = _ref77.assA;
 
             // 1. build div
@@ -6364,7 +6364,7 @@ var UI = function () {
                 return e.stopPropagation();
             });
             div.className = 'bilitwin';
-            div.append.apply(div, [flvA, ' ', assA]);
+            div.append.apply(div, [videoA, ' ', assA]);
             var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
             tminfo.style.float = 'none';
             tminfo.after(div);
@@ -6378,11 +6378,12 @@ var UI = function () {
         key: 'buildFLVDiv',
         value: function buildFLVDiv() {
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
+            var flvs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.flvs;
 
             var _this44 = this;
 
-            var flvs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.flvs;
             var cache = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : monkey.cache;
+            var format = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : monkey.video_format;
 
             // 1. build video splits
             var flvTrs = flvs.map(function (href, index) {
@@ -6391,7 +6392,7 @@ var UI = function () {
                     var td1 = document.createElement('td');
                     var a1 = document.createElement('a');
                     a1.href = href;
-                    a1.download = aid + '-' + (index + 1) + '.flv';
+                    a1.download = aid + '-' + (index + 1) + '.' + (format || "flv");
                     a1.textContent = '\u89C6\u9891\u5206\u6BB5 ' + (index + 1);
                     td1.append(a1);
                     tr.append(td1);
@@ -6460,11 +6461,11 @@ var UI = function () {
                 var a1 = document.createElement('a');
 
                 a1.onclick = function (e) {
-                    return _this44.downloadAllFLVs({
+                    return format != "mp4" ? _this44.downloadAllFLVs({
                         a: e.target,
                         monkey: monkey,
                         table: table
-                    });
+                    }) : top.alert("不支持合并MP4视频");
                 };
 
                 a1.textContent = '\u7F13\u5B58\u5168\u90E8+\u81EA\u52A8\u5408\u5E76';
@@ -6578,7 +6579,7 @@ var UI = function () {
                     }, _callee60, _this44);
                 }));
 
-                return function (_x84) {
+                return function (_x85) {
                     return _ref78.apply(this, arguments);
                 };
             }();
@@ -6765,7 +6766,7 @@ var UI = function () {
                 }, _callee61, this);
             }));
 
-            function downloadAllFLVs(_x86) {
+            function downloadAllFLVs(_x87) {
                 return _ref80.apply(this, arguments);
             }
 
@@ -6834,7 +6835,7 @@ var UI = function () {
                                 a.onclick = null;
                                 window.removeEventListener('beforeunload', handler);
                                 a.textContent = '另存为';
-                                a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+                                a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
                                 a.href = url;
                                 return _context64.abrupt('return', url);
 
@@ -6846,7 +6847,7 @@ var UI = function () {
                 }, _callee62, this, [[5, 13]]);
             }));
 
-            function downloadFLV(_x87) {
+            function downloadFLV(_x88) {
                 return _ref82.apply(this, arguments);
             }
 
@@ -6876,7 +6877,7 @@ var UI = function () {
                 }, _callee63, this);
             }));
 
-            function displayQuota(_x88) {
+            function displayQuota(_x89) {
                 return _ref83.apply(this, arguments);
             }
 
@@ -6921,10 +6922,8 @@ var UI = function () {
                 BiliMonkey = _ref84$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref84$BiliMonkey,
                 _ref84$monkey = _ref84.monkey,
                 monkey = _ref84$monkey === undefined ? this.twin.monkey : _ref84$monkey,
-                _ref84$flvA = _ref84.flvA,
-                flvA = _ref84$flvA === undefined ? this.cidSessionDom.flvA : _ref84$flvA,
-                _ref84$mp4A = _ref84.mp4A,
-                mp4A = _ref84$mp4A === undefined ? this.cidSessionDom.mp4A : _ref84$mp4A,
+                _ref84$videoA = _ref84.videoA,
+                videoA = _ref84$videoA === undefined ? this.cidSessionDom.videoA : _ref84$videoA,
                 _ref84$assA = _ref84.assA,
                 assA = _ref84$assA === undefined ? this.cidSessionDom.assA : _ref84$assA;
 
@@ -6952,16 +6951,16 @@ var UI = function () {
                     while (1) {
                         switch (_context66.prev = _context66.next) {
                             case 0:
-                                if (!flvA.onmouseover) {
+                                if (!videoA.onmouseover) {
                                     _context66.next = 3;
                                     break;
                                 }
 
                                 _context66.next = 3;
-                                return flvA.onmouseover();
+                                return videoA.onmouseover();
 
                             case 3:
-                                flvA.click();
+                                videoA.click();
 
                             case 4:
                             case 'end':
@@ -8280,7 +8279,7 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee69, this);
             }));
 
-            function mergeFLVFiles(_x101) {
+            function mergeFLVFiles(_x102) {
                 return _ref98.apply(this, arguments);
             }
 
@@ -8309,7 +8308,7 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee70, this);
             }));
 
-            function clearCacheDB(_x102) {
+            function clearCacheDB(_x103) {
                 return _ref99.apply(this, arguments);
             }
 
