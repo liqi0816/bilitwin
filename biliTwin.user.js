@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.6
+// @version     1.16.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1806,11 +1806,11 @@ class BiliMonkey {
 
                     this.flvs = flvs;
 
-                    let format = data.format && data.format.slice(0, 3);
+                    let video_format = data.format && data.format.slice(0, 3);
 
-                    this.video_format = format;
+                    this.video_format = video_format;
 
-                    return format
+                    return video_format
                 case 'ass':
                     if (this.ass)
                         return this.ass;

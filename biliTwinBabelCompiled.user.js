@@ -9,7 +9,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.6
+// @version     1.16.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -176,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.16.6
+// @version     1.16.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3060,13 +3060,12 @@ var BiliMonkey = function () {
                         switch (_context31.prev = _context31.next) {
                             case 0:
                                 return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                    var api_url, re, data, durls, flvs, _format;
-
+                                    var api_url, re, data, durls, flvs, video_format;
                                     return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                         while (1) {
                                             switch (_context30.prev = _context30.next) {
                                                 case 0:
-                                                    _context30.t0 = _format;
+                                                    _context30.t0 = format;
                                                     _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 19 : 24;
                                                     break;
 
@@ -3110,12 +3109,12 @@ var BiliMonkey = function () {
 
                                                     _this16.flvs = flvs;
 
-                                                    _format = data.format && data.format.slice(0, 3);
+                                                    video_format = data.format && data.format.slice(0, 3);
 
 
-                                                    _this16.video_format = _format;
+                                                    _this16.video_format = video_format;
 
-                                                    return _context30.abrupt('return', _format);
+                                                    return _context30.abrupt('return', video_format);
 
                                                 case 19:
                                                     if (!_this16.ass) {
@@ -3129,7 +3128,7 @@ var BiliMonkey = function () {
                                                     return _context30.abrupt('return', _this16.getASS(_this16.flvFormatName));
 
                                                 case 24:
-                                                    throw 'Bilimonkey: What is format ' + _format + '?';
+                                                    throw 'Bilimonkey: What is format ' + format + '?';
 
                                                 case 25:
                                                 case 'end':

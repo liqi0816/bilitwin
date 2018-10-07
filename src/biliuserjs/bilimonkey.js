@@ -221,11 +221,11 @@ class BiliMonkey {
 
                     this.flvs = flvs
 
-                    let format = data.format && data.format.slice(0, 3)
+                    let video_format = data.format && data.format.slice(0, 3)
 
-                    this.video_format = format
+                    this.video_format = video_format
 
-                    return format
+                    return video_format
                 case 'ass':
                     if (this.ass)
                         return this.ass;
