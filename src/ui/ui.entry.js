@@ -691,7 +691,7 @@ class UI {
             </label>
         </tr>));
 
-        table.append( <tr>
+        table.append(<tr>
             <label>
                 <input
                     type="number"
@@ -710,6 +710,24 @@ class UI {
                         twin.option["resolutionY"] = +e.target.value;
                         twin.saveOption(twin.option);
                     }} />
+            </label>
+        </tr>);
+
+        table.append(<tr>
+            <label>
+                自定义下载的视频<b>最高</b>分辨率：
+                <select onchange={e => {
+                    twin.option["videoMaxResolution"] = +e.target.value;
+                    twin.saveOption(twin.option);
+                }}>
+                    {...BiliMonkey.resolutionPreferenceOptions.map(
+                        ([name, value]) =>
+                            <option
+                                value={value}
+                                selected={(twin.option["videoMaxResolution"] || "116") == value}
+                            >{name}</option>
+                    )}
+                </select>
             </label>
         </tr>);
 

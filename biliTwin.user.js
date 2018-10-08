@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.4
+// @version     1.18.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -247,6 +247,9 @@ class BiliUserJS {
         }
         else if (document.querySelector('#bofqi > object')) {
             throw 'Need H5 Player';
+        }
+        else if (!(document.getElementById('bofqi') instanceof Node)) {
+            location.href = location.href; // 刷新
         }
         else {
             return new Promise(resolve => {
@@ -1793,7 +1796,8 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.video_format;
 
-                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`;
+                    const qn = this.option.videoMaxResolution || "116";
+                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
 
                     let re = await fetch(api_url, { credentials: 'include' });
 
@@ -2133,6 +2137,18 @@ class BiliMonkey {
         ];
     }
 
+    static get resolutionPreferenceOptions() {
+        return [
+            ['高清 1080P60 (大会员)','116'],
+            ['高清 1080P+ (大会员)','112'],
+            ['高清 720P60 (大会员)','74'],
+            ['高清 1080P','80'],
+            ['高清 720P','64'],
+            ['清晰 480P','32'],
+            ['流畅 360P','15'],
+        ]
+    }
+
     static get optionDefaults() {
         return {
             // 1. automation
@@ -2151,6 +2167,7 @@ class BiliMonkey {
             resolution: false,
             resolutionX: 560,
             resolutionY: 420,
+            videoMaxResolution: "116",
         }
     }
 
@@ -8411,6 +8428,33 @@ class UI {
             };
 
             label.append(input1);
+            tr1.append(label);
+            return tr1;
+        })());
+
+        table.append((() => {
+            const tr1 = document.createElement('tr');
+            const label = document.createElement('label');
+            label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891');
+            const b1 = document.createElement('b');
+            b1.textContent = '\u6700\u9AD8';
+            label.append(b1);
+            label.append('\u5206\u8FA8\u7387\uFF1A');
+            const select = document.createElement('select');
+
+            select.onchange = e => {
+                twin.option["videoMaxResolution"] = +e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            select.append(...BiliMonkey.resolutionPreferenceOptions.map(([name, value]) => {
+                const option1 = document.createElement('option');
+                option1.value = value;
+                option1.selected = (twin.option["videoMaxResolution"] || "116") == value;
+                option1.textContent = name;
+                return option1;
+            }));
+            label.append(select);
             tr1.append(label);
             return tr1;
         })());

@@ -55,6 +55,9 @@ class BiliUserJS {
         else if (document.querySelector('#bofqi > object')) {
             throw 'Need H5 Player';
         }
+        else if (!(document.getElementById('bofqi') instanceof Node)) {
+            location.href = location.href // 刷新
+        }
         else {
             return new Promise(resolve => {
                 const observer = new MutationObserver(() => {
