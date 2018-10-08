@@ -222,7 +222,7 @@ class BiliMonkey {
                             )[0]
                         )
 
-                        durls = data.Y.segments
+                        durls = data.Y.segments || [data.Y]
                     }
 
                     // console.log(data)

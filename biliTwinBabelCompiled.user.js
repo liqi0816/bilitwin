@@ -7,9 +7,10 @@
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.0
+// @version     1.17.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -174,9 +175,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.0
+// @version     1.17.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3107,7 +3109,7 @@ var BiliMonkey = function () {
                                                             return x.startsWith("{");
                                                         })[0]);
 
-                                                        durls = data.Y.segments;
+                                                        durls = data.Y.segments || [data.Y];
                                                     }
 
                                                     // console.log(data)
@@ -5308,7 +5310,7 @@ var BiliPolyfill = function () {
             return openMinimizedPlayer;
         }()
     }, {
-        key: 'biligame_init',
+        key: 'biligameInit',
         value: function () {
             var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55() {
                 var game_id, api_url, req, data, aid, video_url, tabs, tab;
@@ -5346,12 +5348,26 @@ var BiliPolyfill = function () {
                 }, _callee55, this);
             }));
 
-            function biligame_init() {
+            function biligameInit() {
                 return _ref71.apply(this, arguments);
             }
 
-            return biligame_init;
+            return biligameInit;
         }()
+    }, {
+        key: 'showBangumiCoverImage',
+        value: function showBangumiCoverImage() {
+            var imgElement = document.querySelector(".media-preview img");
+            if (!imgElement) return;
+
+            var cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
+
+            imgElement.style.cursor = "pointer";
+
+            imgElement.onclick = function () {
+                return top.window.open(cover_img, '_blank');
+            };
+        }
     }, {
         key: 'secondToReadable',
         value: function secondToReadable(s) {
@@ -8430,34 +8446,41 @@ var BiliTwin = function (_BiliUserJS) {
 
                             case 2:
                                 if (!location.href.includes("www.biligame.com")) {
-                                    _context73.next = 5;
+                                    _context73.next = 6;
                                     break;
                                 }
 
-                                BiliPolyfill.biligame_init();
-                                return _context73.abrupt('return');
+                                return _context73.abrupt('return', BiliPolyfill.biligameInit());
 
-                            case 5:
+                            case 6:
+                                if (!location.pathname.startsWith("/bangumi/media/md")) {
+                                    _context73.next = 8;
+                                    break;
+                                }
+
+                                return _context73.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+
+                            case 8:
 
                                 BiliTwin.outdatedEngineClearance();
                                 BiliTwin.firefoxClearance();
 
                                 twin = new BiliTwin();
 
-                            case 8:
+                            case 11:
                                 if (!1) {
-                                    _context73.next = 13;
+                                    _context73.next = 16;
                                     break;
                                 }
 
-                                _context73.next = 11;
+                                _context73.next = 14;
                                 return twin.runCidSession();
 
-                            case 11:
-                                _context73.next = 8;
+                            case 14:
+                                _context73.next = 11;
                                 break;
 
-                            case 13:
+                            case 16:
                             case 'end':
                                 return _context73.stop();
                         }

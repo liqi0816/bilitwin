@@ -810,7 +810,7 @@ class BiliPolyfill {
         [playerDiv.webkitRequestFullscreen, playerDiv.mozRequestFullScreen, playerDiv.msRequestFullscreen, playerDiv.requestFullscreen] = hook;
     }
 
-    static async biligame_init() {
+    static async biligameInit() {
         const game_id = location.href.match(/id=(\d+)/)[1]
         const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`
 
@@ -826,6 +826,17 @@ class BiliPolyfill {
         tab.textContent = "查看视频"
         tab.target = "_blank"
         tabs.appendChild(tab)
+    }
+
+    static showBangumiCoverImage() {
+        const imgElement = document.querySelector(".media-preview img")
+        if (!imgElement) return;
+        
+        const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0]
+
+        imgElement.style.cursor = "pointer"
+
+        imgElement.onclick = () => top.window.open(cover_img, '_blank')
     }
 
     static secondToReadable(s) {

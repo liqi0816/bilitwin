@@ -7,9 +7,10 @@
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.0
+// @version     1.17.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1807,7 +1808,7 @@ class BiliMonkey {
                             )[0]
                         );
 
-                        durls = data.Y.segments;
+                        durls = data.Y.segments || [data.Y];
                     }
 
                     // console.log(data)
@@ -2975,7 +2976,7 @@ class BiliPolyfill {
         [playerDiv.webkitRequestFullscreen, playerDiv.mozRequestFullScreen, playerDiv.msRequestFullscreen, playerDiv.requestFullscreen] = hook;
     }
 
-    static async biligame_init() {
+    static async biligameInit() {
         const game_id = location.href.match(/id=(\d+)/)[1];
         const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`;
 
@@ -2991,6 +2992,17 @@ class BiliPolyfill {
         tab.textContent = "查看视频";
         tab.target = "_blank";
         tabs.appendChild(tab);
+    }
+
+    static showBangumiCoverImage() {
+        const imgElement = document.querySelector(".media-preview img");
+        if (!imgElement) return;
+        
+        const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
+
+        imgElement.style.cursor = "pointer";
+
+        imgElement.onclick = () => top.window.open(cover_img, '_blank');
     }
 
     static secondToReadable(s) {
@@ -8882,8 +8894,10 @@ class BiliTwin extends BiliUserJS {
         if (!document.body) return;
 
         if (location.href.includes("www.biligame.com")) {
-            BiliPolyfill.biligame_init();
-            return;
+            return BiliPolyfill.biligameInit();
+        }
+        else if (location.pathname.startsWith("/bangumi/media/md")) {
+            return BiliPolyfill.showBangumiCoverImage();
         }
 
         BiliTwin.outdatedEngineClearance();

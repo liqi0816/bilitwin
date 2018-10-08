@@ -136,8 +136,10 @@ class BiliTwin extends BiliUserJS {
         if (!document.body) return;
 
         if (location.href.includes("www.biligame.com")) {
-            BiliPolyfill.biligame_init();
-            return;
+            return BiliPolyfill.biligameInit();
+        }
+        else if (location.pathname.startsWith("/bangumi/media/md")) {
+            return BiliPolyfill.showBangumiCoverImage();
         }
 
         BiliTwin.outdatedEngineClearance();
