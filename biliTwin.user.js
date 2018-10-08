@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.3
+// @version     1.17.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2241,7 +2241,10 @@ class BiliPolyfill {
             if (this.option.restorePrevent) this.restorePreventShade();
             if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
             if (this.option.restoreSpeed) this.restoreSpeed();
-            if (this.option.restoreWide) this.restoreWideScreen();
+            if (this.option.restoreWide) {
+                await this.getWideScreenBtn();
+                this.restoreWideScreen();
+            }
             if (this.option.autoResume) this.autoResume();
             if (this.option.autoPlay) this.autoPlay();
             if (this.option.autoFullScreen) this.autoFullScreen();
@@ -2550,14 +2553,14 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. restore if different
-        const i = this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0];
-        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('icon-24wideon')) {
+        const i = this.playerWin.document.querySelector('.bilibili-player-video-btn-widescreen');
+        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('closed') && !i.firstElementChild.classList.contains('icon-24wideon')) {
             i.click();
         }
 
         // 4. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.wideScreen[index] = i.classList.contains('icon-24wideon');
+            this.userdata.restore.wideScreen[index] = i.classList.contains('closed') || i.firstElementChild.classList.contains('icon-24wideon');
         });
     }
 
@@ -2885,6 +2888,23 @@ class BiliPolyfill {
         }
     }
 
+    async getWideScreenBtn() {
+        let li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
     static async openMinimizedPlayer(option = { cid: top.cid, aid: top.aid, playerWin: top }) {
         // 1. check param
         if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
@@ -2999,7 +3019,7 @@ class BiliPolyfill {
     static showBangumiCoverImage() {
         const imgElement = document.querySelector(".media-preview img");
         if (!imgElement) return;
-        
+
         imgElement.style.cursor = "pointer";
 
         imgElement.onclick = () => {
