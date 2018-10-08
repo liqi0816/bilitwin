@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.0
+// @version     1.18.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1796,7 +1796,7 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.video_format;
 
-                    const qn = this.option.videoMaxResolution || "116";
+                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "116";
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
 
                     let re = await fetch(api_url, { credentials: 'include' });
@@ -2145,7 +2145,7 @@ class BiliMonkey {
             ['高清 1080P','80'],
             ['高清 720P','64'],
             ['清晰 480P','32'],
-            ['流畅 360P','15'],
+            ['流畅 360P','16'],
         ]
     }
 
@@ -2168,6 +2168,7 @@ class BiliMonkey {
             resolutionX: 560,
             resolutionY: 420,
             videoMaxResolution: "116",
+            enableVideoMaxResolution: false,
         }
     }
 
@@ -8435,7 +8436,17 @@ class UI {
         table.append((() => {
             const tr1 = document.createElement('tr');
             const label = document.createElement('label');
-            label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891');
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = twin.option["enableVideoMaxResolution"];
+
+            input.onchange = e => {
+                twin.option["enableVideoMaxResolution"] = e.target.checked;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input);
+            label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891\u7684');
             const b1 = document.createElement('b');
             b1.textContent = '\u6700\u9AD8';
             label.append(b1);
@@ -8443,7 +8454,7 @@ class UI {
             const select = document.createElement('select');
 
             select.onchange = e => {
-                twin.option["videoMaxResolution"] = +e.target.value;
+                twin.option["videoMaxResolution"] = e.target.value;
                 twin.saveOption(twin.option);
             };
 

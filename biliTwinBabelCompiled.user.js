@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.0
+// @version     1.18.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -178,7 +178,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.0
+// @version     1.18.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3098,7 +3098,7 @@ var BiliMonkey = function () {
                                                     return _context30.abrupt('return', _this16.video_format);
 
                                                 case 5:
-                                                    qn = _this16.option.videoMaxResolution || "116";
+                                                    qn = _this16.option.enableVideoMaxResolution && _this16.option.videoMaxResolution || "116";
                                                     api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
                                                     _context30.next = 9;
                                                     return fetch(api_url, { credentials: 'include' });
@@ -4139,7 +4139,7 @@ var BiliMonkey = function () {
     }, {
         key: 'resolutionPreferenceOptions',
         get: function get() {
-            return [['高清 1080P60 (大会员)', '116'], ['高清 1080P+ (大会员)', '112'], ['高清 720P60 (大会员)', '74'], ['高清 1080P', '80'], ['高清 720P', '64'], ['清晰 480P', '32'], ['流畅 360P', '15']];
+            return [['高清 1080P60 (大会员)', '116'], ['高清 1080P+ (大会员)', '112'], ['高清 720P60 (大会员)', '74'], ['高清 1080P', '80'], ['高清 720P', '64'], ['清晰 480P', '32'], ['流畅 360P', '16']];
         }
     }, {
         key: 'optionDefaults',
@@ -4161,7 +4161,8 @@ var BiliMonkey = function () {
                 resolution: false,
                 resolutionX: 560,
                 resolutionY: 420,
-                videoMaxResolution: "116"
+                videoMaxResolution: "116",
+                enableVideoMaxResolution: false
             };
         }
     }]);
@@ -7840,7 +7841,17 @@ var UI = function () {
             table.append(function () {
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
-                label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891');
+                var input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = twin.option["enableVideoMaxResolution"];
+
+                input.onchange = function (e) {
+                    twin.option["enableVideoMaxResolution"] = e.target.checked;
+                    twin.saveOption(twin.option);
+                };
+
+                label.append(input);
+                label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891\u7684');
                 var b1 = document.createElement('b');
                 b1.textContent = '\u6700\u9AD8';
                 label.append(b1);
@@ -7848,7 +7859,7 @@ var UI = function () {
                 var select = document.createElement('select');
 
                 select.onchange = function (e) {
-                    twin.option["videoMaxResolution"] = +e.target.value;
+                    twin.option["videoMaxResolution"] = e.target.value;
                     twin.saveOption(twin.option);
                 };
 

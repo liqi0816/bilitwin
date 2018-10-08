@@ -207,7 +207,7 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.video_format;
 
-                    const qn = this.option.videoMaxResolution || "116"
+                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "116"
                     const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
 
                     let re = await fetch(api_url, { credentials: 'include' })
@@ -557,7 +557,7 @@ class BiliMonkey {
             ['高清 1080P','80'],
             ['高清 720P','64'],
             ['清晰 480P','32'],
-            ['流畅 360P','15'],
+            ['流畅 360P','16'],
         ]
     }
 
@@ -580,6 +580,7 @@ class BiliMonkey {
             resolutionX: 560,
             resolutionY: 420,
             videoMaxResolution: "116",
+            enableVideoMaxResolution: false,
         }
     }
 

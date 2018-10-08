@@ -715,9 +715,16 @@ class UI {
 
         table.append(<tr>
             <label>
-                自定义下载的视频<b>最高</b>分辨率：
+                <input
+                    type="checkbox"
+                    checked={twin.option["enableVideoMaxResolution"]}
+                    onchange={e => {
+                        twin.option["enableVideoMaxResolution"] = e.target.checked;
+                        twin.saveOption(twin.option);
+                    }} />
+                自定义下载的视频的<b>最高</b>分辨率：
                 <select onchange={e => {
-                    twin.option["videoMaxResolution"] = +e.target.value;
+                    twin.option["videoMaxResolution"] = e.target.value;
                     twin.saveOption(twin.option);
                 }}>
                     {...BiliMonkey.resolutionPreferenceOptions.map(
