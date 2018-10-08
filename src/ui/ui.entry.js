@@ -656,9 +656,11 @@ class UI {
                 <tr><td>功能增强组件尽量保证了兼容性。但如果有同功能脚本/插件，请关闭本插件的对应功能。</td></tr>
                 <tr><td>这个脚本乃“按原样”提供，不附带任何明示，暗示或法定的保证，包括但不限于其没有缺陷，适合特定目的或非侵权。</td></tr>
                 <tr><td>
-                    <a href="https://greasyfork.org/zh-CN/scripts/27819" target="_blank">更新/讨论</a>
+                    <a href="https://greasyfork.org/zh-CN/scripts/372516" target="_blank">更新</a>
                     {' '}
-                    <a href="https://github.com/liqi0816/bilitwin/" target="_blank">GitHub</a>
+                    <a href="https://github.com/Xmader/bilitwin/issues" target="_blank">讨论</a>
+                    {' '}
+                    <a href="https://github.com/Xmader/bilitwin/" target="_blank">GitHub</a>
                     {' '}
                     Author: qli5. Copyright: qli5, 2014+, 田生, grepmusic, xmader
                 </td></tr>

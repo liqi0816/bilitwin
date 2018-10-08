@@ -51,12 +51,12 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
         * 自动全屏
         * 标记后自动跳OP/ED
         * 尝试自动找上下集
-    * 交互 **(在新版播放器中不可用)**
+    * 交互
         * 双击全屏
-        * 首次回车键可全屏自动播放
+        * 首次回车键可全屏自动播放 **(在新版播放器中不可用)**
     * 功能
         * 获取视频封面
-        * 获取番剧封面 <sub>在番剧详情页面(如[这里](https://www.bilibili.com/bangumi/media/md134912))点击左侧的封面图片就能查看大图</sub>
+        * 获取番剧封面 <sub>在番剧详情页面(如[这里](https://www.bilibili.com/bangumi/media/md134912))点击左侧的封面图片就能获取大图</sub>
         * 小窗播放
         * 自定义播放速度
     * 彩蛋

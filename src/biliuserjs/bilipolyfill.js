@@ -701,6 +701,8 @@ class BiliPolyfill {
     async getWatchLaterBtn() {
         let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
 
+        if (!document.cookie.includes("DedeUserID")) return; // 未登录
+
         if (!li) {
             return new Promise(resolve => {
                 const observer = new MutationObserver(() => {

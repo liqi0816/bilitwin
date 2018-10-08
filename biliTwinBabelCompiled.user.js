@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.2
+// @version     1.17.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -178,7 +178,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.2
+// @version     1.17.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -5115,8 +5115,16 @@ var BiliPolyfill = function () {
                             case 0:
                                 li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
 
-                                if (li) {
+                                if (document.cookie.includes("DedeUserID")) {
                                     _context53.next = 3;
+                                    break;
+                                }
+
+                                return _context53.abrupt('return');
+
+                            case 3:
+                                if (li) {
+                                    _context53.next = 5;
                                     break;
                                 }
 
@@ -5131,7 +5139,7 @@ var BiliPolyfill = function () {
                                     observer.observe(_this38.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
                                 }));
 
-                            case 3:
+                            case 5:
                             case 'end':
                                 return _context53.stop();
                         }
@@ -7629,16 +7637,22 @@ var UI = function () {
                 var tr5 = document.createElement('tr');
                 var td5 = document.createElement('td');
                 var a1 = document.createElement('a');
-                a1.href = 'https://greasyfork.org/zh-CN/scripts/27819';
+                a1.href = 'https://greasyfork.org/zh-CN/scripts/372516';
                 a1.target = '_blank';
-                a1.textContent = '\u66F4\u65B0/\u8BA8\u8BBA';
+                a1.textContent = '\u66F4\u65B0';
                 td5.append(a1);
                 td5.append(' ');
                 var a2 = document.createElement('a');
-                a2.href = 'https://github.com/liqi0816/bilitwin/';
+                a2.href = 'https://github.com/Xmader/bilitwin/issues';
                 a2.target = '_blank';
-                a2.textContent = 'GitHub';
+                a2.textContent = '\u8BA8\u8BBA';
                 td5.append(a2);
+                td5.append(' ');
+                var a3 = document.createElement('a');
+                a3.href = 'https://github.com/Xmader/bilitwin/';
+                a3.target = '_blank';
+                a3.textContent = 'GitHub';
+                td5.append(a3);
                 td5.append(' ');
                 td5.append('Author: qli5. Copyright: qli5, 2014+, \u7530\u751F, grepmusic, xmader');
                 tr5.append(td5);
