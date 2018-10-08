@@ -17,10 +17,10 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 # 脚本功能
 * BiliMonkey
     * 网络
-        * 抓取FLV
+        * 抓取FLV / MP4
         * 抓取弹幕
     * 缓存
-        * 缓存FLV到本地
+        * 缓存FLV / MP4到本地
         * 断点续传
         * 用缓存加速播放器 **(在新版播放器中不可用)**
     * 转码
@@ -55,7 +55,8 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
         * 双击全屏
         * 首次回车键可全屏自动播放
     * 功能
-        * 获取封面
+        * 获取视频封面
+        * 获取番剧封面 <sub>在番剧详情页面(如[这里](https://www.bilibili.com/bangumi/media/md134912))点击左侧的封面图片就能查看大图</sub>
         * 小窗播放
         * 自定义播放速度
     * 彩蛋
