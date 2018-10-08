@@ -832,11 +832,12 @@ class BiliPolyfill {
         const imgElement = document.querySelector(".media-preview img")
         if (!imgElement) return;
         
-        const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0]
-
         imgElement.style.cursor = "pointer"
 
-        imgElement.onclick = () => top.window.open(cover_img, '_blank')
+        imgElement.onclick = () => {
+            const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0]
+            top.window.open(cover_img, '_blank')
+        }
     }
 
     static secondToReadable(s) {

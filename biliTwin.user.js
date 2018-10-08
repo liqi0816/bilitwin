@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.1
+// @version     1.17.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2998,11 +2998,12 @@ class BiliPolyfill {
         const imgElement = document.querySelector(".media-preview img");
         if (!imgElement) return;
         
-        const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
-
         imgElement.style.cursor = "pointer";
 
-        imgElement.onclick = () => top.window.open(cover_img, '_blank');
+        imgElement.onclick = () => {
+            const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
+            top.window.open(cover_img, '_blank');
+        };
     }
 
     static secondToReadable(s) {

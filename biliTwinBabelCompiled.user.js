@@ -10,7 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.1
+// @version     1.17.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -178,7 +178,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.17.1
+// @version     1.17.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -5360,12 +5360,11 @@ var BiliPolyfill = function () {
             var imgElement = document.querySelector(".media-preview img");
             if (!imgElement) return;
 
-            var cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
-
             imgElement.style.cursor = "pointer";
 
             imgElement.onclick = function () {
-                return top.window.open(cover_img, '_blank');
+                var cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
+                top.window.open(cover_img, '_blank');
             };
         }
     }, {
