@@ -26,24 +26,12 @@ export type InEventMap = {
     menuclose: SimpleCustomEvent<HTMLUListElement>
 }
 
-export interface OPEDData {
-    opstart?: number
-    opend?: number
-    opduration?: number
-    edstart?: number
-    edend?: number
-    edduration?: number
-}
-
 export interface SubDomainSpecificSettings<T> {
     www?: T
     bangumi?: T
 }
 
 export interface UserData {
-    oped: {
-        [aid: string]: OPEDData
-    }
     restore: {
         preventShade: SubDomainSpecificSettings<boolean>
         danmukuSwitch: SubDomainSpecificSettings<boolean>
@@ -55,6 +43,10 @@ export interface UserData {
     }
 }
 
+export interface State {
+    series: any[]
+}
+
 class BiliPolyFillException extends Error { }
 BiliPolyFillException.prototype.name = 'BiliPolyfillException';
 
@@ -64,6 +56,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     options: typeof BiliPolyfill.OPTIONS_DEFAULT
     storage: CommonCachedStorage | null
     userdata: UserData | null
+    state: State
 
     static readonly OPTIONS_DEFAULT = {
         // 1. user interface
@@ -117,6 +110,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
             this.storage = null;
         }
         this.userdata = null;
+        this.state = { series: [] };
     }
 
     static readonly USERDATA_SIZE_LIMIT = 1048576
@@ -137,7 +131,6 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         catch { }
 
         if (!this.userdata) this.userdata = {} as UserData;
-        if (typeof this.userdata.oped !== 'object') this.userdata.oped = {};
         if (typeof this.userdata.restore !== 'object') this.userdata.restore = {
             preventShade: {},
             danmukuSwitch: {},
@@ -431,53 +424,23 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
     // multiple-times
     oped() {
-        let collectionId: string;
-        getCollectionId: {
-            {
-                const e = top.location.pathname.match(/av\d+/);
-                if (e) {
-                    collectionId = e[0];
-                    break getCollectionId;
-                }
-            }
-
-            {
-                const e = top.location.pathname.match(/av\d+/);
-                if (e) {
-                    collectionId = e[0];
-                    break getCollectionId;
-                }
-            }
-
-            {
-                const e = this.userjs.playerWin.document.querySelector('div.bangumi-info a') as HTMLAnchorElement;
-                if (e) {
-                    collectionId = e.href;
-                    break getCollectionId;
-                }
-            }
-
-            throw new BiliPolyFillException('BiliPolyFill.oped: cannot get collection ID')
-        }
-
-        this[inputSocketSymbol].addEventListener('opstart', () => {
-
-        });
-        this[inputSocketSymbol].addEventListener('opstart', () => {
-
-        });
-        this[inputSocketSymbol].addEventListener('opstart', () => {
-
-        });
-        this[inputSocketSymbol].addEventListener('opstart', () => {
-
-        });
-
+        console.warn(new BiliPolyFillException('bilipolyfill.oped not implemented yet'));
     }
 
     // multiple-times
     series() {
+        this[inputSocketSymbol].addEventListener('aidchange', ({ detail: aid }) => {
+            // 1. find current title
+            const title = top.document.getElementsByTagName('h1')[0].textContent!.replace(/\(\d+\)$/, '').trim();
 
+            // 2. find current ep number
+            const ep = title.match(/\d+(?=[^\d]*$)/);
+            if (!ep) return;
+
+            // 3. current title - current ep number => series common title
+            const seriesTitle = title.slice(0, title.lastIndexOf(ep[0])).trim();
+
+        });
     }
 
     // once
