@@ -56,7 +56,7 @@ class BiliUserJS {
             throw 'Need H5 Player';
         }
         else if (!(document.getElementById('bofqi') instanceof Node) && document.querySelector("video")) {
-            location.href = location.href // 刷新
+            top.location.reload() // 刷新
         }
         else {
             return new Promise(resolve => {

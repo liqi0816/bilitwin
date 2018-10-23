@@ -135,7 +135,7 @@ class BiliTwin extends BiliUserJS {
     static async init() {
         if (!document.body) return;
 
-        if (location.href.includes("www.biligame.com")) {
+        if (location.hostname == "www.biligame.com") {
             return BiliPolyfill.biligameInit();
         }
         else if (location.pathname.startsWith("/bangumi/media/md")) {
@@ -146,6 +146,11 @@ class BiliTwin extends BiliUserJS {
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+
+        if (location.hostname == "vc.bilibili.com") {
+            const vc_info = await BiliMonkey.getBiliShortVideoInfo()
+            return twin.ui.appendShortVideoTitle(vc_info);
+        }
 
         while (1) {
             await twin.runCidSession();

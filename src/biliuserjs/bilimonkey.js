@@ -505,6 +505,17 @@ class BiliMonkey {
         return ret;
     }
 
+    static async getBiliShortVideoInfo() {
+        const video_id = location.pathname.match(/\/video\/(\d+)/)[1]
+        const api_url = `https://api.vc.bilibili.com/clip/v1/video/detail?video_id=${video_id}&need_playurl=1`
+
+        const req = await fetch(api_url, { credentials: 'include' })
+        const data = (await req.json()).data
+        const { video_playurl, first_pic: cover_img } = data.item
+
+        return { video_playurl, cover_img }
+    }
+
     static formatToValue(format) {
         if (format == 'does_not_exist') throw `formatToValue: cannot lookup does_not_exist`;
         if (typeof BiliMonkey.formatToValue.dict == 'undefined') BiliMonkey.formatToValue.dict = {

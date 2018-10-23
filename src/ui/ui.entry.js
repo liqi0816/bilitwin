@@ -161,6 +161,21 @@ class UI {
         return div;
     }
 
+    appendShortVideoTitle({ video_playurl, cover_img }) {
+        const fontSize = '15px';
+        const marginRight = '15px';
+        const videoA = <a style={{ fontSize, marginRight }} href={video_playurl} target="_blank">下载视频</a>;
+        const coverA = <a style={{ fontSize }} href={cover_img} target="_blank">获取封面</a>;
+
+        const span = <span
+            onClick={e => e.stopPropagation()}
+            className="bilitwin"
+        >{...[videoA, ' ', coverA]}</span>;
+
+        const infoDiv = document.querySelector('div.base-info div.info');
+        infoDiv.appendChild(span);
+    }
+
     buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {

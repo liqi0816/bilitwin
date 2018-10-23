@@ -10,6 +10,7 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
 // @version     1.18.4
 // @author      qli5
