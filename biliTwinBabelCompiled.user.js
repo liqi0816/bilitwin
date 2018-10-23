@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name        (Babel)bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
-// @homepageURL https://github.com/liqi0816/bilitwin/
+// @homepageURL https://github.com/Xmader/bilitwin/
+// @supportURL  https://github.com/Xmader/bilitwin/issues
 // @description (国产浏览器和Edge浏览器专用)bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
@@ -70,7 +71,7 @@
 /***
  * This is a bundled code. While it is not uglified, it may still be too
  * complex for reviewing. Please refer to
- * https://github.com/liqi0816/bilitwin/
+ * https://github.com/Xmader/bilitwin/
  * for source code.
  */
 
@@ -105,7 +106,7 @@ function load() {
         new Promise(function (resolve) {
             var req = new XMLHttpRequest();
             req.onload = function () { resolve(req.responseText); };
-            req.open('get', 'https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
+            req.open('get', 'https://cdn.staticfile.org/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
             req.send();
         }).then(function (script) {
             top.eval(script);
@@ -169,7 +170,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // ==UserScript==
 // @name        bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
-// @homepageURL https://github.com/liqi0816/bilitwin/
+// @homepageURL https://github.com/Xmader/bilitwin/
+// @supportURL  https://github.com/Xmader/bilitwin/issues
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
 // @match       *://bangumi.bilibili.com/anime/*/play*
@@ -238,7 +240,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 /***
  * This is a bundled code. While it is not uglified, it may still be too
  * complex for reviewing. Please refer to
- * https://github.com/liqi0816/bilitwin/
+ * https://github.com/Xmader/bilitwin/
  * for source code.
  */
 

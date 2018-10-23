@@ -30,7 +30,7 @@ function load() {
         new Promise(function (resolve) {
             var req = new XMLHttpRequest();
             req.onload = function () { resolve(req.responseText); };
-            req.open('get', 'https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
+            req.open('get', 'https://cdn.staticfile.org/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
             req.send();
         }).then(function (script) {
             top.eval(script);
