@@ -217,13 +217,23 @@ class BiliMonkey {
                     let durls = data.durl
 
                     if (!durls) {
+                        const _zc = window.Gc || window.zc ||
+                            Object.values(window).filter(
+                                x => typeof x == "string" && x.includes("[Info]")
+                            )[0]
+
                         data = JSON.parse(
-                            window.Gc.split("\n").filter(
+                            _zc.split("\n").filter(
                                 x => x.startsWith("{")
                             )[0]
                         )
 
-                        durls = data.Y.segments || [data.Y]
+                        const _data_X = data.Y || data.X ||
+                            Object.values(data).filter(
+                                x => typeof x == "object" && Object.prototype.toString.call(x) == "[object Object]"
+                            )[0]
+
+                        durls = _data_X.segments || [_data_X]
                     }
 
                     // console.log(data)
@@ -551,13 +561,13 @@ class BiliMonkey {
 
     static get resolutionPreferenceOptions() {
         return [
-            ['高清 1080P60 (大会员)','116'],
-            ['高清 1080P+ (大会员)','112'],
-            ['高清 720P60 (大会员)','74'],
-            ['高清 1080P','80'],
-            ['高清 720P','64'],
-            ['清晰 480P','32'],
-            ['流畅 360P','16'],
+            ['高清 1080P60 (大会员)', '116'],
+            ['高清 1080P+ (大会员)', '112'],
+            ['高清 720P60 (大会员)', '74'],
+            ['高清 1080P', '80'],
+            ['高清 720P', '64'],
+            ['清晰 480P', '32'],
+            ['流畅 360P', '16'],
         ]
     }
 

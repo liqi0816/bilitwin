@@ -11,7 +11,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.1
+// @version     1.18.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -180,7 +180,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.1
+// @version     1.18.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3082,7 +3082,8 @@ var BiliMonkey = function () {
                         switch (_context31.prev = _context31.next) {
                             case 0:
                                 return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                    var qn, api_url, re, data, durls, flvs, video_format;
+                                    var qn, api_url, re, data, durls, _zc, _data_X, flvs, video_format;
+
                                     return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                         while (1) {
                                             switch (_context30.prev = _context30.next) {
@@ -3118,11 +3119,21 @@ var BiliMonkey = function () {
 
 
                                                     if (!durls) {
-                                                        data = JSON.parse(window.Gc.split("\n").filter(function (x) {
+                                                        _zc = window.Gc || window.zc || Object.values(window).filter(function (x) {
+                                                            return typeof x == "string" && x.includes("[Info]");
+                                                        })[0];
+
+
+                                                        data = JSON.parse(_zc.split("\n").filter(function (x) {
                                                             return x.startsWith("{");
                                                         })[0]);
 
-                                                        durls = data.Y.segments || [data.Y];
+                                                        _data_X = data.Y || data.X || Object.values(data).filter(function (x) {
+                                                            return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) == "object" && Object.prototype.toString.call(x) == "[object Object]";
+                                                        })[0];
+
+
+                                                        durls = _data_X.segments || [_data_X];
                                                     }
 
                                                     // console.log(data)
