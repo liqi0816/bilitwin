@@ -11,7 +11,7 @@
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.3
+// @version     1.18.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
