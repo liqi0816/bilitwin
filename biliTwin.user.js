@@ -10,8 +10,9 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.4
+// @version     1.19.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -250,7 +251,7 @@ class BiliUserJS {
             throw 'Need H5 Player';
         }
         else if (!(document.getElementById('bofqi') instanceof Node) && document.querySelector("video")) {
-            location.href = location.href; // 刷新
+            top.location.reload(); // 刷新
         }
         else {
             return new Promise(resolve => {
@@ -2092,6 +2093,17 @@ class BiliMonkey {
         }
 
         return ret;
+    }
+
+    static async getBiliShortVideoInfo() {
+        const video_id = location.pathname.match(/\/video\/(\d+)/)[1];
+        const api_url = `https://api.vc.bilibili.com/clip/v1/video/detail?video_id=${video_id}&need_playurl=1`;
+
+        const req = await fetch(api_url, { credentials: 'include' });
+        const data = (await req.json()).data;
+        const { video_playurl, first_pic: cover_img } = data.item;
+
+        return { video_playurl: video_playurl.replace("http://", "https://"), cover_img }
     }
 
     static formatToValue(format) {
@@ -7455,6 +7467,34 @@ class UI {
         return div;
     }
 
+    appendShortVideoTitle({ video_playurl, cover_img }) {
+        const fontSize = '15px';
+        const marginRight = '15px';
+        const videoA = document.createElement('a');
+        videoA.style.fontSize = fontSize;
+        videoA.style.marginRight = marginRight;
+        videoA.href = video_playurl;
+        videoA.target = '_blank';
+        videoA.textContent = '\u4E0B\u8F7D\u89C6\u9891';
+        const coverA = document.createElement('a');
+
+        coverA.style.fontSize = fontSize;
+        coverA.href = cover_img;
+        coverA.target = '_blank';
+        coverA.textContent = '\u83B7\u53D6\u5C01\u9762';
+        videoA.onclick = e => {
+            e.preventDefault();alert("请使用右键另存为下载视频");
+        };
+
+        const span = document.createElement('span');
+
+        span.addEventListener('click', e => e.stopPropagation());
+        span.className = 'bilitwin';
+        span.append(...[videoA, ' ', coverA]);
+        const infoDiv = document.querySelector('div.base-info div.info');
+        infoDiv.appendChild(span);
+    }
+
     buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
         // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
@@ -7831,9 +7871,9 @@ class UI {
 
             const a1 = document.createElement('a');
             a1.className = 'context-menu-a';
-            const span = document.createElement('span');
-            span.className = 'video-contextmenu-icon';
-            a1.append(span);
+            const span1 = document.createElement('span');
+            span1.className = 'video-contextmenu-icon';
+            a1.append(span1);
             a1.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
             context_menu_videoA.append(a1);
         }
@@ -7848,10 +7888,10 @@ class UI {
         const a1 = document.createElement('a');
         a1.className = 'context-menu-a';
         a1.append('BiliMonkey');
-        const span = document.createElement('span');
-        span.className = 'bpui-icon bpui-icon-arrow-down';
-        span.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a1.append(span);
+        const span1 = document.createElement('span');
+        span1.className = 'bpui-icon bpui-icon-arrow-down';
+        span1.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a1.append(span1);
         li.append(a1);
         const ul1 = document.createElement('ul');
         ul1.append(context_menu_videoA);
@@ -7865,9 +7905,9 @@ class UI {
 
         const a2 = document.createElement('a');
         a2.className = 'context-menu-a';
-        const span1 = document.createElement('span');
-        span1.className = 'video-contextmenu-icon';
-        a2.append(span1);
+        const span2 = document.createElement('span');
+        span2.className = 'video-contextmenu-icon';
+        a2.append(span2);
         a2.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
         li1.append(a2);
         ul1.append(li1);
@@ -7878,9 +7918,9 @@ class UI {
 
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';
-        const span2 = document.createElement('span');
-        span2.className = 'video-contextmenu-icon';
-        a3.append(span2);
+        const span3 = document.createElement('span');
+        span3.className = 'video-contextmenu-icon';
+        a3.append(span3);
         a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li2.append(a3);
         ul1.append(li2);
@@ -7891,9 +7931,9 @@ class UI {
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
-        const span3 = document.createElement('span');
-        span3.className = 'video-contextmenu-icon';
-        a4.append(span3);
+        const span4 = document.createElement('span');
+        span4.className = 'video-contextmenu-icon';
+        a4.append(span4);
         a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
         li3.append(a4);
         ul1.append(li3);
@@ -7912,9 +7952,9 @@ class UI {
 
         const a5 = document.createElement('a');
         a5.className = 'context-menu-a';
-        const span4 = document.createElement('span');
-        span4.className = 'video-contextmenu-icon';
-        a5.append(span4);
+        const span5 = document.createElement('span');
+        span5.className = 'video-contextmenu-icon';
+        a5.append(span5);
         a5.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
         li4.append(a5);
         ul1.append(li4);
@@ -7925,9 +7965,9 @@ class UI {
 
         const a6 = document.createElement('a');
         a6.className = 'context-menu-a';
-        const span5 = document.createElement('span');
-        span5.className = 'video-contextmenu-icon';
-        a6.append(span5);
+        const span6 = document.createElement('span');
+        span6.className = 'video-contextmenu-icon';
+        a6.append(span6);
         a6.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
         li5.append(a6);
         ul1.append(li5);
@@ -7938,9 +7978,9 @@ class UI {
 
         const a7 = document.createElement('a');
         a7.className = 'context-menu-a';
-        const span6 = document.createElement('span');
-        span6.className = 'video-contextmenu-icon';
-        a7.append(span6);
+        const span7 = document.createElement('span');
+        span7.className = 'video-contextmenu-icon';
+        a7.append(span7);
         a7.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
         li6.append(a7);
         ul1.append(li6);
@@ -7951,9 +7991,9 @@ class UI {
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
-        const span7 = document.createElement('span');
-        span7.className = 'video-contextmenu-icon';
-        a8.append(span7);
+        const span8 = document.createElement('span');
+        span8.className = 'video-contextmenu-icon';
+        a8.append(span8);
         a8.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
         li7.append(a8);
         ul1.append(li7);
@@ -7980,10 +8020,10 @@ class UI {
 
         a1.append('BiliPolyfill');
         a1.append(!polyfill.option.betabeta ? '(到设置开启)' : '');
-        const span = document.createElement('span');
-        span.className = 'bpui-icon bpui-icon-arrow-down';
-        span.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a1.append(span);
+        const span1 = document.createElement('span');
+        span1.className = 'bpui-icon bpui-icon-arrow-down';
+        span1.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a1.append(span1);
         li.append(a1);
         const ul1 = document.createElement('ul');
         const li1 = document.createElement('li');
@@ -7993,9 +8033,9 @@ class UI {
 
         const a2 = document.createElement('a');
         a2.className = 'context-menu-a';
-        const span1 = document.createElement('span');
-        span1.className = 'video-contextmenu-icon';
-        a2.append(span1);
+        const span2 = document.createElement('span');
+        span2.className = 'video-contextmenu-icon';
+        a2.append(span2);
         a2.append(' \u83B7\u53D6\u5C01\u9762');
         li1.append(a2);
         ul1.append(li1);
@@ -8003,14 +8043,14 @@ class UI {
         li2.className = 'context-menu-menu';
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';
-        const span2 = document.createElement('span');
-        span2.className = 'video-contextmenu-icon';
-        a3.append(span2);
-        a3.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
         const span3 = document.createElement('span');
-        span3.className = 'bpui-icon bpui-icon-arrow-down';
-        span3.style = 'transform:rotate(-90deg);margin-top:3px;';
+        span3.className = 'video-contextmenu-icon';
         a3.append(span3);
+        a3.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
+        const span4 = document.createElement('span');
+        span4.className = 'bpui-icon bpui-icon-arrow-down';
+        span4.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a3.append(span4);
         li2.append(a3);
         const ul2 = document.createElement('ul');
         const li3 = document.createElement('li');
@@ -8022,9 +8062,9 @@ class UI {
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
-        const span4 = document.createElement('span');
-        span4.className = 'video-contextmenu-icon';
-        a4.append(span4);
+        const span5 = document.createElement('span');
+        span5.className = 'video-contextmenu-icon';
+        a4.append(span5);
         a4.append(' 0.1');
         li3.append(a4);
         ul2.append(li3);
@@ -8037,9 +8077,9 @@ class UI {
 
         const a5 = document.createElement('a');
         a5.className = 'context-menu-a';
-        const span5 = document.createElement('span');
-        span5.className = 'video-contextmenu-icon';
-        a5.append(span5);
+        const span6 = document.createElement('span');
+        span6.className = 'video-contextmenu-icon';
+        a5.append(span6);
         a5.append(' 3');
         li4.append(a5);
         ul2.append(li4);
@@ -8050,9 +8090,9 @@ class UI {
 
         const a6 = document.createElement('a');
         a6.className = 'context-menu-a';
-        const span6 = document.createElement('span');
-        span6.className = 'video-contextmenu-icon';
-        a6.append(span6);
+        const span7 = document.createElement('span');
+        span7.className = 'video-contextmenu-icon';
+        a6.append(span7);
         a6.append(' \u70B9\u51FB\u786E\u8BA4');
         const input = document.createElement('input');
         input.type = 'text';
@@ -8071,14 +8111,14 @@ class UI {
         li6.className = 'context-menu-menu';
         const a7 = document.createElement('a');
         a7.className = 'context-menu-a';
-        const span7 = document.createElement('span');
-        span7.className = 'video-contextmenu-icon';
-        a7.append(span7);
-        a7.append(' \u7247\u5934\u7247\u5C3E');
         const span8 = document.createElement('span');
-        span8.className = 'bpui-icon bpui-icon-arrow-down';
-        span8.style = 'transform:rotate(-90deg);margin-top:3px;';
+        span8.className = 'video-contextmenu-icon';
         a7.append(span8);
+        a7.append(' \u7247\u5934\u7247\u5C3E');
+        const span9 = document.createElement('span');
+        span9.className = 'bpui-icon bpui-icon-arrow-down';
+        span9.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a7.append(span9);
         li6.append(a7);
         const ul3 = document.createElement('ul');
         const li7 = document.createElement('li');
@@ -8088,15 +8128,15 @@ class UI {
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
-        const span9 = document.createElement('span');
-        span9.className = 'video-contextmenu-icon';
-        a8.append(span9);
-        a8.append(' \u7247\u5934\u5F00\u59CB:');
         const span10 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span10);
-
+        span10.className = 'video-contextmenu-icon';
         a8.append(span10);
+        a8.append(' \u7247\u5934\u5F00\u59CB:');
+        const span11 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span11);
+
+        a8.append(span11);
         li7.append(a8);
         ul3.append(li7);
         const li8 = document.createElement('li');
@@ -8106,15 +8146,15 @@ class UI {
 
         const a9 = document.createElement('a');
         a9.className = 'context-menu-a';
-        const span11 = document.createElement('span');
-        span11.className = 'video-contextmenu-icon';
-        a9.append(span11);
-        a9.append(' \u7247\u5934\u7ED3\u675F:');
         const span12 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span12);
-
+        span12.className = 'video-contextmenu-icon';
         a9.append(span12);
+        a9.append(' \u7247\u5934\u7ED3\u675F:');
+        const span13 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span13);
+
+        a9.append(span13);
         li8.append(a9);
         ul3.append(li8);
         const li9 = document.createElement('li');
@@ -8124,15 +8164,15 @@ class UI {
 
         const a10 = document.createElement('a');
         a10.className = 'context-menu-a';
-        const span13 = document.createElement('span');
-        span13.className = 'video-contextmenu-icon';
-        a10.append(span13);
-        a10.append(' \u7247\u5C3E\u5F00\u59CB:');
         const span14 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span14);
-
+        span14.className = 'video-contextmenu-icon';
         a10.append(span14);
+        a10.append(' \u7247\u5C3E\u5F00\u59CB:');
+        const span15 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span15);
+
+        a10.append(span15);
         li9.append(a10);
         ul3.append(li9);
         const li10 = document.createElement('li');
@@ -8142,15 +8182,15 @@ class UI {
 
         const a11 = document.createElement('a');
         a11.className = 'context-menu-a';
-        const span15 = document.createElement('span');
-        span15.className = 'video-contextmenu-icon';
-        a11.append(span15);
-        a11.append(' \u7247\u5C3E\u7ED3\u675F:');
         const span16 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span16);
-
+        span16.className = 'video-contextmenu-icon';
         a11.append(span16);
+        a11.append(' \u7247\u5C3E\u7ED3\u675F:');
+        const span17 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span17);
+
+        a11.append(span17);
         li10.append(a11);
         ul3.append(li10);
         const li11 = document.createElement('li');
@@ -8160,9 +8200,9 @@ class UI {
 
         const a12 = document.createElement('a');
         a12.className = 'context-menu-a';
-        const span17 = document.createElement('span');
-        span17.className = 'video-contextmenu-icon';
-        a12.append(span17);
+        const span18 = document.createElement('span');
+        span18.className = 'video-contextmenu-icon';
+        a12.append(span18);
         a12.append(' \u53D6\u6D88\u6807\u8BB0');
         li11.append(a12);
         ul3.append(li11);
@@ -8173,9 +8213,9 @@ class UI {
 
         const a13 = document.createElement('a');
         a13.className = 'context-menu-a';
-        const span18 = document.createElement('span');
-        span18.className = 'video-contextmenu-icon';
-        a13.append(span18);
+        const span19 = document.createElement('span');
+        span19.className = 'video-contextmenu-icon';
+        a13.append(span19);
         a13.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
         li12.append(a13);
         ul3.append(li12);
@@ -8185,14 +8225,14 @@ class UI {
         li13.className = 'context-menu-menu';
         const a14 = document.createElement('a');
         a14.className = 'context-menu-a';
-        const span19 = document.createElement('span');
-        span19.className = 'video-contextmenu-icon';
-        a14.append(span19);
-        a14.append(' \u627E\u4E0A\u4E0B\u96C6');
         const span20 = document.createElement('span');
-        span20.className = 'bpui-icon bpui-icon-arrow-down';
-        span20.style = 'transform:rotate(-90deg);margin-top:3px;';
+        span20.className = 'video-contextmenu-icon';
         a14.append(span20);
+        a14.append(' \u627E\u4E0A\u4E0B\u96C6');
+        const span21 = document.createElement('span');
+        span21.className = 'bpui-icon bpui-icon-arrow-down';
+        span21.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a14.append(span21);
         li13.append(a14);
         const ul4 = document.createElement('ul');
         const li14 = document.createElement('li');
@@ -8207,14 +8247,14 @@ class UI {
         const a15 = document.createElement('a');
         a15.className = 'context-menu-a';
         a15.style.width = 'initial';
-        const span21 = document.createElement('span');
-        span21.className = 'video-contextmenu-icon';
-        a15.append(span21);
         const span22 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span22);
-
+        span22.className = 'video-contextmenu-icon';
         a15.append(span22);
+        const span23 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span23);
+
+        a15.append(span23);
         li14.append(a15);
         ul4.append(li14);
         const li15 = document.createElement('li');
@@ -8229,14 +8269,14 @@ class UI {
         const a16 = document.createElement('a');
         a16.className = 'context-menu-a';
         a16.style.width = 'initial';
-        const span23 = document.createElement('span');
-        span23.className = 'video-contextmenu-icon';
-        a16.append(span23);
         const span24 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span24);
-
+        span24.className = 'video-contextmenu-icon';
         a16.append(span24);
+        const span25 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span25);
+
+        a16.append(span25);
         li15.append(a16);
         ul4.append(li15);
         li13.append(ul4);
@@ -8248,9 +8288,9 @@ class UI {
 
         const a17 = document.createElement('a');
         a17.className = 'context-menu-a';
-        const span25 = document.createElement('span');
-        span25.className = 'video-contextmenu-icon';
-        a17.append(span25);
+        const span26 = document.createElement('span');
+        span26.className = 'video-contextmenu-icon';
+        a17.append(span26);
         a17.append(' \u5C0F\u7A97\u64AD\u653E');
         li16.append(a17);
         ul1.append(li16);
@@ -8261,9 +8301,9 @@ class UI {
 
         const a18 = document.createElement('a');
         a18.className = 'context-menu-a';
-        const span26 = document.createElement('span');
-        span26.className = 'video-contextmenu-icon';
-        a18.append(span26);
+        const span27 = document.createElement('span');
+        span27.className = 'video-contextmenu-icon';
+        a18.append(span27);
         a18.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li17.append(a18);
         ul1.append(li17);
@@ -8274,9 +8314,9 @@ class UI {
 
         const a19 = document.createElement('a');
         a19.className = 'context-menu-a';
-        const span27 = document.createElement('span');
-        span27.className = 'video-contextmenu-icon';
-        a19.append(span27);
+        const span28 = document.createElement('span');
+        span28.className = 'video-contextmenu-icon';
+        a19.append(span28);
         a19.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
         li18.append(a19);
         ul1.append(li18);
@@ -8290,9 +8330,9 @@ class UI {
 
         const a20 = document.createElement('a');
         a20.className = 'context-menu-a';
-        const span28 = document.createElement('span');
-        span28.className = 'video-contextmenu-icon';
-        a20.append(span28);
+        const span29 = document.createElement('span');
+        span29.className = 'video-contextmenu-icon';
+        a20.append(span29);
         a20.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
         li19.append(a20);
         ul1.append(li19);
@@ -8817,9 +8857,9 @@ class UI {
             div1.className = 'bilibili-player-video-toast-item';
             const div2 = document.createElement('div');
             div2.className = 'bilibili-player-video-toast-item-text';
-            const span = document.createElement('span');
-            span.textContent = text;
-            div2.append(span);
+            const span1 = document.createElement('span');
+            span1.textContent = text;
+            div2.append(span1);
             div1.append(div2);
             div.append(div1);
         }
@@ -8988,7 +9028,7 @@ class BiliTwin extends BiliUserJS {
     static async init() {
         if (!document.body) return;
 
-        if (location.href.includes("www.biligame.com")) {
+        if (location.hostname == "www.biligame.com") {
             return BiliPolyfill.biligameInit();
         }
         else if (location.pathname.startsWith("/bangumi/media/md")) {
@@ -8999,6 +9039,11 @@ class BiliTwin extends BiliUserJS {
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+
+        if (location.hostname == "vc.bilibili.com") {
+            const vc_info = await BiliMonkey.getBiliShortVideoInfo();
+            return twin.ui.appendShortVideoTitle(vc_info);
+        }
 
         while (1) {
             await twin.runCidSession();

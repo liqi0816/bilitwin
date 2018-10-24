@@ -10,8 +10,9 @@
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.4
+// @version     1.19.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -179,8 +180,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.bilibili.com/bangumi/play/ss*
 // @match       *://www.bilibili.com/bangumi/media/md*
 // @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.18.4
+// @version     1.19.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -549,7 +551,7 @@ var BiliUserJS = function () {
                                     break;
                                 }
 
-                                location.href = location.href; // 刷新
+                                top.location.reload(); // 刷新
                                 _context3.next = 24;
                                 break;
 
@@ -4065,6 +4067,45 @@ var BiliMonkey = function () {
             return getAllPageDefaultFormats;
         }()
     }, {
+        key: 'getBiliShortVideoInfo',
+        value: function () {
+            var _ref63 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+                var video_id, api_url, req, data, _data$item, video_playurl, cover_img;
+
+                return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                    while (1) {
+                        switch (_context48.prev = _context48.next) {
+                            case 0:
+                                video_id = location.pathname.match(/\/video\/(\d+)/)[1];
+                                api_url = 'https://api.vc.bilibili.com/clip/v1/video/detail?video_id=' + video_id + '&need_playurl=1';
+                                _context48.next = 4;
+                                return fetch(api_url, { credentials: 'include' });
+
+                            case 4:
+                                req = _context48.sent;
+                                _context48.next = 7;
+                                return req.json();
+
+                            case 7:
+                                data = _context48.sent.data;
+                                _data$item = data.item, video_playurl = _data$item.video_playurl, cover_img = _data$item.first_pic;
+                                return _context48.abrupt('return', { video_playurl: video_playurl.replace("http://", "https://"), cover_img: cover_img });
+
+                            case 10:
+                            case 'end':
+                                return _context48.stop();
+                        }
+                    }
+                }, _callee48, this);
+            }));
+
+            function getBiliShortVideoInfo() {
+                return _ref63.apply(this, arguments);
+            }
+
+            return getBiliShortVideoInfo;
+        }()
+    }, {
         key: 'formatToValue',
         value: function formatToValue(format) {
             if (format == 'does_not_exist') throw 'formatToValue: cannot lookup does_not_exist';
@@ -4111,17 +4152,17 @@ var BiliMonkey = function () {
         value: function _UNIT_TEST() {
             var _this20 = this;
 
-            return _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee48() {
+            return _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
                 var playerWin;
-                return regeneratorRuntime.wrap(function _callee48$(_context48) {
+                return regeneratorRuntime.wrap(function _callee49$(_context49) {
                     while (1) {
-                        switch (_context48.prev = _context48.next) {
+                        switch (_context49.prev = _context49.next) {
                             case 0:
-                                _context48.next = 2;
+                                _context49.next = 2;
                                 return BiliUserJS.getPlayerWin();
 
                             case 2:
-                                playerWin = _context48.sent;
+                                playerWin = _context49.sent;
 
                                 window.m = new BiliMonkey(playerWin);
 
@@ -4133,10 +4174,10 @@ var BiliMonkey = function () {
 
                             case 7:
                             case 'end':
-                                return _context48.stop();
+                                return _context49.stop();
                         }
                     }
-                }, _callee48, _this20);
+                }, _callee49, _this20);
             }))();
         }
     }, {
@@ -4245,44 +4286,44 @@ var BiliPolyfill = function () {
     }, {
         key: 'setFunctions',
         value: function () {
-            var _ref64 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee49() {
+            var _ref65 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
                 var _this22 = this;
 
-                var _ref65 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                    _ref65$videoRefresh = _ref65.videoRefresh,
-                    videoRefresh = _ref65$videoRefresh === undefined ? false : _ref65$videoRefresh;
+                var _ref66 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                    _ref66$videoRefresh = _ref66.videoRefresh,
+                    videoRefresh = _ref66$videoRefresh === undefined ? false : _ref66$videoRefresh;
 
-                return regeneratorRuntime.wrap(function _callee49$(_context49) {
+                return regeneratorRuntime.wrap(function _callee50$(_context50) {
                     while (1) {
-                        switch (_context49.prev = _context49.next) {
+                        switch (_context50.prev = _context50.next) {
                             case 0:
-                                _context49.next = 2;
+                                _context50.next = 2;
                                 return this.getPlayerVideo();
 
                             case 2:
-                                this.video = _context49.sent;
+                                this.video = _context50.sent;
 
                                 if (this.option.betabeta) {
-                                    _context49.next = 5;
+                                    _context50.next = 5;
                                     break;
                                 }
 
-                                return _context49.abrupt('return', this.getPlayerMenu());
+                                return _context50.abrupt('return', this.getPlayerMenu());
 
                             case 5:
                                 if (videoRefresh) {
-                                    _context49.next = 27;
+                                    _context50.next = 27;
                                     break;
                                 }
 
                                 this.retrieveUserdata();
 
                                 if (!this.option.badgeWatchLater) {
-                                    _context49.next = 11;
+                                    _context50.next = 11;
                                     break;
                                 }
 
-                                _context49.next = 10;
+                                _context50.next = 10;
                                 return this.getWatchLaterBtn();
 
                             case 10:
@@ -4300,11 +4341,11 @@ var BiliPolyfill = function () {
                                 if (this.option.restoreSpeed) this.restoreSpeed();
 
                                 if (!this.option.restoreWide) {
-                                    _context49.next = 22;
+                                    _context50.next = 22;
                                     break;
                                 }
 
-                                _context49.next = 21;
+                                _context50.next = 21;
                                 return this.getWideScreenBtn();
 
                             case 21:
@@ -4330,7 +4371,7 @@ var BiliPolyfill = function () {
                                 }, { once: true });
 
                                 // 5. set up functions that require everything to be ready
-                                _context49.next = 33;
+                                _context50.next = 33;
                                 return this.getPlayerMenu();
 
                             case 33:
@@ -4343,14 +4384,14 @@ var BiliPolyfill = function () {
 
                             case 35:
                             case 'end':
-                                return _context49.stop();
+                                return _context50.stop();
                         }
                     }
-                }, _callee49, this);
+                }, _callee50, this);
             }));
 
             function setFunctions() {
-                return _ref64.apply(this, arguments);
+                return _ref65.apply(this, arguments);
             }
 
             return setFunctions;
@@ -4358,11 +4399,11 @@ var BiliPolyfill = function () {
     }, {
         key: 'inferNextInSeries',
         value: function () {
-            var _ref66 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee50() {
+            var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
                 var title, ep, seriesTitle, epNumber, epSibling, keywords, midParent, mid, vlist;
-                return regeneratorRuntime.wrap(function _callee50$(_context50) {
+                return regeneratorRuntime.wrap(function _callee51$(_context51) {
                     while (1) {
-                        switch (_context50.prev = _context50.next) {
+                        switch (_context51.prev = _context51.next) {
                             case 0:
                                 // 1. find current title
                                 title = top.document.getElementsByTagName('h1')[0].textContent.replace(/\(\d+\)$/, '').trim();
@@ -4372,11 +4413,11 @@ var BiliPolyfill = function () {
                                 ep = title.match(/\d+(?=[^\d]*$)/);
 
                                 if (ep) {
-                                    _context50.next = 4;
+                                    _context51.next = 4;
                                     break;
                                 }
 
-                                return _context50.abrupt('return', this.series = []);
+                                return _context51.abrupt('return', this.series = []);
 
                             case 4:
 
@@ -4400,18 +4441,18 @@ var BiliPolyfill = function () {
                                 midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
 
                                 if (midParent) {
-                                    _context50.next = 11;
+                                    _context51.next = 11;
                                     break;
                                 }
 
-                                return _context50.abrupt('return', this.series = []);
+                                return _context51.abrupt('return', this.series = []);
 
                             case 11:
                                 mid = midParent.children[0].href.match(/\d+/)[0];
 
                                 // 7. fetch query
 
-                                _context50.next = 14;
+                                _context51.next = 14;
                                 return Promise.all(keywords.map(function (keyword) {
                                     return new Promise(function (resolve, reject) {
                                         var req = new XMLHttpRequest();
@@ -4426,7 +4467,7 @@ var BiliPolyfill = function () {
                                 }));
 
                             case 14:
-                                vlist = _context50.sent;
+                                vlist = _context51.sent;
 
 
                                 // 8. verify current video exists
@@ -4435,11 +4476,11 @@ var BiliPolyfill = function () {
                                 });
 
                                 if (vlist[0][0]) {
-                                    _context50.next = 19;
+                                    _context51.next = 19;
                                     break;
                                 }
 
-                                console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space');return _context50.abrupt('return', this.series = []);
+                                console && console.warn('BiliPolyfill: inferNextInSeries: cannot find current video in mid space');return _context51.abrupt('return', this.series = []);
 
                             case 19:
 
@@ -4458,18 +4499,18 @@ var BiliPolyfill = function () {
                                     return e.created > vlist[0][0].created;
                                 });
 
-                                return _context50.abrupt('return', this.series);
+                                return _context51.abrupt('return', this.series);
 
                             case 23:
                             case 'end':
-                                return _context50.stop();
+                                return _context51.stop();
                         }
                     }
-                }, _callee50, this);
+                }, _callee51, this);
             }));
 
             function inferNextInSeries() {
-                return _ref66.apply(this, arguments);
+                return _ref67.apply(this, arguments);
             }
 
             return inferNextInSeries;
@@ -5064,22 +5105,22 @@ var BiliPolyfill = function () {
     }, {
         key: 'getPlayerVideo',
         value: function () {
-            var _ref67 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee51() {
+            var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
                 var _this36 = this;
 
-                return regeneratorRuntime.wrap(function _callee51$(_context51) {
+                return regeneratorRuntime.wrap(function _callee52$(_context52) {
                     while (1) {
-                        switch (_context51.prev = _context51.next) {
+                        switch (_context52.prev = _context52.next) {
                             case 0:
                                 if (!this.playerWin.document.getElementsByTagName('video').length) {
-                                    _context51.next = 4;
+                                    _context52.next = 4;
                                     break;
                                 }
 
-                                return _context51.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
+                                return _context52.abrupt('return', this.video = this.playerWin.document.getElementsByTagName('video')[0]);
 
                             case 4:
-                                return _context51.abrupt('return', new Promise(function (resolve) {
+                                return _context52.abrupt('return', new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         if (_this36.playerWin.document.getElementsByTagName('video').length) {
                                             observer.disconnect();
@@ -5091,14 +5132,14 @@ var BiliPolyfill = function () {
 
                             case 5:
                             case 'end':
-                                return _context51.stop();
+                                return _context52.stop();
                         }
                     }
-                }, _callee51, this);
+                }, _callee52, this);
             }));
 
             function getPlayerVideo() {
-                return _ref67.apply(this, arguments);
+                return _ref68.apply(this, arguments);
             }
 
             return getPlayerVideo;
@@ -5106,22 +5147,22 @@ var BiliPolyfill = function () {
     }, {
         key: 'getPlayerMenu',
         value: function () {
-            var _ref68 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee52() {
+            var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
                 var _this37 = this;
 
-                return regeneratorRuntime.wrap(function _callee52$(_context52) {
+                return regeneratorRuntime.wrap(function _callee53$(_context53) {
                     while (1) {
-                        switch (_context52.prev = _context52.next) {
+                        switch (_context53.prev = _context53.next) {
                             case 0:
                                 if (!this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
-                                    _context52.next = 4;
+                                    _context53.next = 4;
                                     break;
                                 }
 
-                                return _context52.abrupt('return', this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0]);
+                                return _context53.abrupt('return', this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0]);
 
                             case 4:
-                                return _context52.abrupt('return', new Promise(function (resolve) {
+                                return _context53.abrupt('return', new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         if (_this37.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length) {
                                             observer.disconnect();
@@ -5133,14 +5174,14 @@ var BiliPolyfill = function () {
 
                             case 5:
                             case 'end':
-                                return _context52.stop();
+                                return _context53.stop();
                         }
                     }
-                }, _callee52, this);
+                }, _callee53, this);
             }));
 
             function getPlayerMenu() {
-                return _ref68.apply(this, arguments);
+                return _ref69.apply(this, arguments);
             }
 
             return getPlayerMenu;
@@ -5148,30 +5189,30 @@ var BiliPolyfill = function () {
     }, {
         key: 'getWatchLaterBtn',
         value: function () {
-            var _ref69 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee53() {
+            var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54() {
                 var _this38 = this;
 
                 var li;
-                return regeneratorRuntime.wrap(function _callee53$(_context53) {
+                return regeneratorRuntime.wrap(function _callee54$(_context54) {
                     while (1) {
-                        switch (_context53.prev = _context53.next) {
+                        switch (_context54.prev = _context54.next) {
                             case 0:
                                 li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
 
                                 if (document.cookie.includes("DedeUserID")) {
-                                    _context53.next = 3;
+                                    _context54.next = 3;
                                     break;
                                 }
 
-                                return _context53.abrupt('return');
+                                return _context54.abrupt('return');
 
                             case 3:
                                 if (li) {
-                                    _context53.next = 5;
+                                    _context54.next = 5;
                                     break;
                                 }
 
-                                return _context53.abrupt('return', new Promise(function (resolve) {
+                                return _context54.abrupt('return', new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
                                         if (li) {
@@ -5184,14 +5225,14 @@ var BiliPolyfill = function () {
 
                             case 5:
                             case 'end':
-                                return _context53.stop();
+                                return _context54.stop();
                         }
                     }
-                }, _callee53, this);
+                }, _callee54, this);
             }));
 
             function getWatchLaterBtn() {
-                return _ref69.apply(this, arguments);
+                return _ref70.apply(this, arguments);
             }
 
             return getWatchLaterBtn;
@@ -5199,22 +5240,22 @@ var BiliPolyfill = function () {
     }, {
         key: 'getWideScreenBtn',
         value: function () {
-            var _ref70 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee54() {
+            var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55() {
                 var _this39 = this;
 
                 var li;
-                return regeneratorRuntime.wrap(function _callee54$(_context54) {
+                return regeneratorRuntime.wrap(function _callee55$(_context55) {
                     while (1) {
-                        switch (_context54.prev = _context54.next) {
+                        switch (_context55.prev = _context55.next) {
                             case 0:
                                 li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
 
                                 if (li) {
-                                    _context54.next = 3;
+                                    _context55.next = 3;
                                     break;
                                 }
 
-                                return _context54.abrupt('return', new Promise(function (resolve) {
+                                return _context55.abrupt('return', new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
                                         if (li) {
@@ -5227,14 +5268,14 @@ var BiliPolyfill = function () {
 
                             case 3:
                             case 'end':
-                                return _context54.stop();
+                                return _context55.stop();
                         }
                     }
-                }, _callee54, this);
+                }, _callee55, this);
             }));
 
             function getWideScreenBtn() {
-                return _ref70.apply(this, arguments);
+                return _ref71.apply(this, arguments);
             }
 
             return getWideScreenBtn;
@@ -5242,15 +5283,15 @@ var BiliPolyfill = function () {
     }], [{
         key: 'openMinimizedPlayer',
         value: function () {
-            var _ref71 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee55() {
+            var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
                 var option = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { cid: top.cid, aid: top.aid, playerWin: top };
                 var miniPlayerWin, res, playerDiv, hook;
-                return regeneratorRuntime.wrap(function _callee55$(_context55) {
+                return regeneratorRuntime.wrap(function _callee56$(_context56) {
                     while (1) {
-                        switch (_context55.prev = _context55.next) {
+                        switch (_context56.prev = _context56.next) {
                             case 0:
                                 if (option) {
-                                    _context55.next = 2;
+                                    _context56.next = 2;
                                     break;
                                 }
 
@@ -5258,7 +5299,7 @@ var BiliPolyfill = function () {
 
                             case 2:
                                 if (option.cid) {
-                                    _context55.next = 4;
+                                    _context56.next = 4;
                                     break;
                                 }
 
@@ -5273,14 +5314,14 @@ var BiliPolyfill = function () {
 
                                 // 3. bangumi => request referrer must match => hook response of current page
 
-                                _context55.t0 = top.location.href.includes('bangumi');
+                                _context56.t0 = top.location.href.includes('bangumi');
 
-                                if (!_context55.t0) {
-                                    _context55.next = 12;
+                                if (!_context56.t0) {
+                                    _context56.next = 12;
                                     break;
                                 }
 
-                                _context55.next = 11;
+                                _context56.next = 11;
                                 return new Promise(function (resolve) {
                                     var jq = option.playerWin.jQuery;
                                     var _ajax = jq.ajax;
@@ -5298,11 +5339,11 @@ var BiliPolyfill = function () {
                                 });
 
                             case 11:
-                                _context55.t0 = _context55.sent;
+                                _context56.t0 = _context56.sent;
 
                             case 12:
-                                res = _context55.t0;
-                                _context55.next = 15;
+                                res = _context56.t0;
+                                _context56.next = 15;
                                 return new Promise(function (resolve) {
                                     // 4.1 check for every500ms
                                     var i = setInterval(function () {
@@ -5325,19 +5366,19 @@ var BiliPolyfill = function () {
                                 playerDiv = miniPlayerWin.document.getElementById('bilibiliPlayer');
 
                                 if (playerDiv) {
-                                    _context55.next = 19;
+                                    _context56.next = 19;
                                     break;
                                 }
 
-                                console.warn('openMinimizedPlayer: document load timeout');return _context55.abrupt('return');
+                                console.warn('openMinimizedPlayer: document load timeout');return _context56.abrupt('return');
 
                             case 19:
                                 if (!res) {
-                                    _context55.next = 22;
+                                    _context56.next = 22;
                                     break;
                                 }
 
-                                _context55.next = 22;
+                                _context56.next = 22;
                                 return new Promise(function (resolve) {
                                     var jq = miniPlayerWin.jQuery;
                                     var _ajax = jq.ajax;
@@ -5359,7 +5400,7 @@ var BiliPolyfill = function () {
                                 });
 
                             case 22:
-                                _context55.next = 24;
+                                _context56.next = 24;
                                 return new Promise(function (resolve) {
                                     if (miniPlayerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen')) resolve();else {
                                         var observer = new MutationObserver(function () {
@@ -5391,14 +5432,14 @@ var BiliPolyfill = function () {
 
                             case 31:
                             case 'end':
-                                return _context55.stop();
+                                return _context56.stop();
                         }
                     }
-                }, _callee55, this);
+                }, _callee56, this);
             }));
 
             function openMinimizedPlayer() {
-                return _ref71.apply(this, arguments);
+                return _ref72.apply(this, arguments);
             }
 
             return openMinimizedPlayer;
@@ -5406,24 +5447,24 @@ var BiliPolyfill = function () {
     }, {
         key: 'biligameInit',
         value: function () {
-            var _ref72 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee56() {
+            var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57() {
                 var game_id, api_url, req, data, aid, video_url, tabs, tab;
-                return regeneratorRuntime.wrap(function _callee56$(_context56) {
+                return regeneratorRuntime.wrap(function _callee57$(_context57) {
                     while (1) {
-                        switch (_context56.prev = _context56.next) {
+                        switch (_context57.prev = _context57.next) {
                             case 0:
                                 game_id = location.href.match(/id=(\d+)/)[1];
                                 api_url = 'https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=' + game_id;
-                                _context56.next = 4;
+                                _context57.next = 4;
                                 return fetch(api_url, { credentials: 'include' });
 
                             case 4:
-                                req = _context56.sent;
-                                _context56.next = 7;
+                                req = _context57.sent;
+                                _context57.next = 7;
                                 return req.json();
 
                             case 7:
-                                data = _context56.sent.data;
+                                data = _context57.sent.data;
                                 aid = data.video_url;
                                 video_url = 'https://www.bilibili.com/video/av' + aid;
                                 tabs = document.querySelector(".tab-head");
@@ -5436,14 +5477,14 @@ var BiliPolyfill = function () {
 
                             case 16:
                             case 'end':
-                                return _context56.stop();
+                                return _context57.stop();
                         }
                     }
-                }, _callee56, this);
+                }, _callee57, this);
             }));
 
             function biligameInit() {
-                return _ref72.apply(this, arguments);
+                return _ref73.apply(this, arguments);
             }
 
             return biligameInit;
@@ -5585,7 +5626,7 @@ var Exporter = function () {
     }, {
         key: 'sendToAria2RPC',
         value: function () {
-            var _ref73 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee57(urls) {
+            var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(urls) {
                 var _this40 = this;
 
                 var referrer = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : top.location.origin;
@@ -5593,17 +5634,17 @@ var Exporter = function () {
 
                 var h, method, _loop, _ret3;
 
-                return regeneratorRuntime.wrap(function _callee57$(_context58) {
+                return regeneratorRuntime.wrap(function _callee58$(_context59) {
                     while (1) {
-                        switch (_context58.prev = _context58.next) {
+                        switch (_context59.prev = _context59.next) {
                             case 0:
                                 h = 'referer';
                                 method = 'POST';
                                 _loop = /*#__PURE__*/regeneratorRuntime.mark(function _loop() {
                                     var token_array, body, res;
-                                    return regeneratorRuntime.wrap(function _loop$(_context57) {
+                                    return regeneratorRuntime.wrap(function _loop$(_context58) {
                                         while (1) {
-                                            switch (_context57.prev = _context57.next) {
+                                            switch (_context58.prev = _context58.next) {
                                                 case 0:
                                                     token_array = target.match(/\/\/((.+)@)/);
                                                     body = JSON.stringify(urls.map(function (url, id) {
@@ -5621,51 +5662,51 @@ var Exporter = function () {
                                                             params: params
                                                         };
                                                     }));
-                                                    _context57.prev = 2;
-                                                    _context57.next = 5;
+                                                    _context58.prev = 2;
+                                                    _context58.next = 5;
                                                     return fetch(target, { method: method, body: body });
 
                                                 case 5:
-                                                    _context57.next = 7;
-                                                    return _context57.sent.json();
+                                                    _context58.next = 7;
+                                                    return _context58.sent.json();
 
                                                 case 7:
-                                                    res = _context57.sent;
+                                                    res = _context58.sent;
 
                                                     if (!(res.error || res[0].error)) {
-                                                        _context57.next = 12;
+                                                        _context58.next = 12;
                                                         break;
                                                     }
 
                                                     throw new Error((res.error || res[0].error).message);
 
                                                 case 12:
-                                                    return _context57.abrupt('return', {
+                                                    return _context58.abrupt('return', {
                                                         v: res
                                                     });
 
                                                 case 13:
-                                                    _context57.next = 20;
+                                                    _context58.next = 20;
                                                     break;
 
                                                 case 15:
-                                                    _context57.prev = 15;
-                                                    _context57.t0 = _context57['catch'](2);
+                                                    _context58.prev = 15;
+                                                    _context58.t0 = _context58['catch'](2);
 
-                                                    target = top.prompt('Aria2 connection failed' + (!_context57.t0.message.includes("fetch") ? ': ' + _context57.t0.message + '.\n' : ". ") + 'Please provide a valid server address:', target);
+                                                    target = top.prompt('Aria2 connection failed' + (!_context58.t0.message.includes("fetch") ? ': ' + _context58.t0.message + '.\n' : ". ") + 'Please provide a valid server address:', target);
 
                                                     if (target) {
-                                                        _context57.next = 20;
+                                                        _context58.next = 20;
                                                         break;
                                                     }
 
-                                                    return _context57.abrupt('return', {
+                                                    return _context58.abrupt('return', {
                                                         v: null
                                                     });
 
                                                 case 20:
                                                 case 'end':
-                                                    return _context57.stop();
+                                                    return _context58.stop();
                                             }
                                         }
                                     }, _loop, _this40, [[2, 15]]);
@@ -5673,36 +5714,36 @@ var Exporter = function () {
 
                             case 3:
                                 if (!1) {
-                                    _context58.next = 10;
+                                    _context59.next = 10;
                                     break;
                                 }
 
-                                return _context58.delegateYield(_loop(), 't0', 5);
+                                return _context59.delegateYield(_loop(), 't0', 5);
 
                             case 5:
-                                _ret3 = _context58.t0;
+                                _ret3 = _context59.t0;
 
                                 if (!((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object")) {
-                                    _context58.next = 8;
+                                    _context59.next = 8;
                                     break;
                                 }
 
-                                return _context58.abrupt('return', _ret3.v);
+                                return _context59.abrupt('return', _ret3.v);
 
                             case 8:
-                                _context58.next = 3;
+                                _context59.next = 3;
                                 break;
 
                             case 10:
                             case 'end':
-                                return _context58.stop();
+                                return _context59.stop();
                         }
                     }
-                }, _callee57, this);
+                }, _callee58, this);
             }));
 
             function sendToAria2RPC(_x73) {
-                return _ref73.apply(this, arguments);
+                return _ref74.apply(this, arguments);
             }
 
             return sendToAria2RPC;
@@ -6061,17 +6102,17 @@ var FLV = function () {
     }, {
         key: 'mergeBlobs',
         value: function () {
-            var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee58(blobs) {
+            var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(blobs) {
                 var _this42 = this;
 
                 var ret, basetimestamp, lasttimestamp, duration, durationDataView, _loop2, _iteratorNormalCompletion5, _didIteratorError5, _iteratorError5, _iterator5, _step5, blob;
 
-                return regeneratorRuntime.wrap(function _callee58$(_context60) {
+                return regeneratorRuntime.wrap(function _callee59$(_context61) {
                     while (1) {
-                        switch (_context60.prev = _context60.next) {
+                        switch (_context61.prev = _context61.next) {
                             case 0:
                                 if (!(blobs.length < 1)) {
-                                    _context60.next = 2;
+                                    _context61.next = 2;
                                     break;
                                 }
 
@@ -6086,9 +6127,9 @@ var FLV = function () {
                                 _loop2 = /*#__PURE__*/regeneratorRuntime.mark(function _loop2(blob) {
                                     var bts, foundDuration, flv, modifiedMediaTags, _iteratorNormalCompletion6, _didIteratorError6, _iteratorError6, _iterator6, _step6, tag, _tag$getDurationAndVi2;
 
-                                    return regeneratorRuntime.wrap(function _loop2$(_context59) {
+                                    return regeneratorRuntime.wrap(function _loop2$(_context60) {
                                         while (1) {
-                                            switch (_context59.prev = _context59.next) {
+                                            switch (_context60.prev = _context60.next) {
                                                 case 0:
                                                     bts = duration * 1000;
 
@@ -6096,7 +6137,7 @@ var FLV = function () {
                                                     basetimestamp[1] = lasttimestamp[1];
                                                     bts = Math.max(bts, basetimestamp[0], basetimestamp[1]);
                                                     foundDuration = 0;
-                                                    _context59.next = 7;
+                                                    _context60.next = 7;
                                                     return new Promise(function (resolve, reject) {
                                                         var fr = new FileReader();
                                                         fr.onload = function () {
@@ -6107,12 +6148,12 @@ var FLV = function () {
                                                     });
 
                                                 case 7:
-                                                    flv = _context59.sent;
+                                                    flv = _context60.sent;
                                                     modifiedMediaTags = [];
                                                     _iteratorNormalCompletion6 = true;
                                                     _didIteratorError6 = false;
                                                     _iteratorError6 = undefined;
-                                                    _context59.prev = 12;
+                                                    _context60.prev = 12;
 
                                                     for (_iterator6 = flv.tags[Symbol.iterator](); !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
                                                         tag = _step6.value;
@@ -6137,45 +6178,45 @@ var FLV = function () {
                                                             modifiedMediaTags.push(tag.tagHeader, tag.tagData, tag.previousSize);
                                                         }
                                                     }
-                                                    _context59.next = 20;
+                                                    _context60.next = 20;
                                                     break;
 
                                                 case 16:
-                                                    _context59.prev = 16;
-                                                    _context59.t0 = _context59['catch'](12);
+                                                    _context60.prev = 16;
+                                                    _context60.t0 = _context60['catch'](12);
                                                     _didIteratorError6 = true;
-                                                    _iteratorError6 = _context59.t0;
+                                                    _iteratorError6 = _context60.t0;
 
                                                 case 20:
-                                                    _context59.prev = 20;
-                                                    _context59.prev = 21;
+                                                    _context60.prev = 20;
+                                                    _context60.prev = 21;
 
                                                     if (!_iteratorNormalCompletion6 && _iterator6.return) {
                                                         _iterator6.return();
                                                     }
 
                                                 case 23:
-                                                    _context59.prev = 23;
+                                                    _context60.prev = 23;
 
                                                     if (!_didIteratorError6) {
-                                                        _context59.next = 26;
+                                                        _context60.next = 26;
                                                         break;
                                                     }
 
                                                     throw _iteratorError6;
 
                                                 case 26:
-                                                    return _context59.finish(23);
+                                                    return _context60.finish(23);
 
                                                 case 27:
-                                                    return _context59.finish(20);
+                                                    return _context60.finish(20);
 
                                                 case 28:
                                                     ret.push(new Blob(modifiedMediaTags));
 
                                                 case 29:
                                                 case 'end':
-                                                    return _context59.stop();
+                                                    return _context60.stop();
                                             }
                                         }
                                     }, _loop2, _this42, [[12, 16, 20, 28], [21,, 23, 27]]);
@@ -6183,72 +6224,72 @@ var FLV = function () {
                                 _iteratorNormalCompletion5 = true;
                                 _didIteratorError5 = false;
                                 _iteratorError5 = undefined;
-                                _context60.prev = 11;
+                                _context61.prev = 11;
                                 _iterator5 = blobs[Symbol.iterator]();
 
                             case 13:
                                 if (_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done) {
-                                    _context60.next = 19;
+                                    _context61.next = 19;
                                     break;
                                 }
 
                                 blob = _step5.value;
-                                return _context60.delegateYield(_loop2(blob), 't0', 16);
+                                return _context61.delegateYield(_loop2(blob), 't0', 16);
 
                             case 16:
                                 _iteratorNormalCompletion5 = true;
-                                _context60.next = 13;
+                                _context61.next = 13;
                                 break;
 
                             case 19:
-                                _context60.next = 25;
+                                _context61.next = 25;
                                 break;
 
                             case 21:
-                                _context60.prev = 21;
-                                _context60.t1 = _context60['catch'](11);
+                                _context61.prev = 21;
+                                _context61.t1 = _context61['catch'](11);
                                 _didIteratorError5 = true;
-                                _iteratorError5 = _context60.t1;
+                                _iteratorError5 = _context61.t1;
 
                             case 25:
-                                _context60.prev = 25;
-                                _context60.prev = 26;
+                                _context61.prev = 25;
+                                _context61.prev = 26;
 
                                 if (!_iteratorNormalCompletion5 && _iterator5.return) {
                                     _iterator5.return();
                                 }
 
                             case 28:
-                                _context60.prev = 28;
+                                _context61.prev = 28;
 
                                 if (!_didIteratorError5) {
-                                    _context60.next = 31;
+                                    _context61.next = 31;
                                     break;
                                 }
 
                                 throw _iteratorError5;
 
                             case 31:
-                                return _context60.finish(28);
+                                return _context61.finish(28);
 
                             case 32:
-                                return _context60.finish(25);
+                                return _context61.finish(25);
 
                             case 33:
                                 durationDataView.setFloat64(0, duration);
 
-                                return _context60.abrupt('return', new Blob(ret));
+                                return _context61.abrupt('return', new Blob(ret));
 
                             case 35:
                             case 'end':
-                                return _context60.stop();
+                                return _context61.stop();
                         }
                     }
-                }, _callee58, this, [[11, 21, 25, 33], [26,, 28, 32]]);
+                }, _callee59, this, [[11, 21, 25, 33], [26,, 28, 32]]);
             }));
 
             function mergeBlobs(_x77) {
-                return _ref75.apply(this, arguments);
+                return _ref76.apply(this, arguments);
             }
 
             return mergeBlobs;
@@ -6400,22 +6441,22 @@ var UI = function () {
             // 1.1 build videoA
             assA.style.fontSize = fontSize;
             assA.textContent = '\u5F39\u5E55ASS';
-            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59() {
+            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
                 var video_format;
-                return regeneratorRuntime.wrap(function _callee59$(_context61) {
+                return regeneratorRuntime.wrap(function _callee60$(_context62) {
                     while (1) {
-                        switch (_context61.prev = _context61.next) {
+                        switch (_context62.prev = _context62.next) {
                             case 0:
                                 // 1.1.1 give processing hint
                                 videoA.textContent = '正在FLV';
                                 videoA.onmouseover = null;
 
                                 // 1.1.2 query video
-                                _context61.next = 4;
+                                _context62.next = 4;
                                 return monkey.queryInfo('video');
 
                             case 4:
-                                video_format = _context61.sent;
+                                video_format = _context62.sent;
 
 
                                 // 1.1.3 display video
@@ -6426,28 +6467,28 @@ var UI = function () {
 
                             case 7:
                             case 'end':
-                                return _context61.stop();
+                                return _context62.stop();
                         }
                     }
-                }, _callee59, _this44);
+                }, _callee60, _this44);
             }));
 
             // 1.2 build assA
-            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
-                return regeneratorRuntime.wrap(function _callee60$(_context62) {
+            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
+                return regeneratorRuntime.wrap(function _callee61$(_context63) {
                     while (1) {
-                        switch (_context62.prev = _context62.next) {
+                        switch (_context63.prev = _context63.next) {
                             case 0:
                                 // 1.2.1 give processing hint
                                 assA.textContent = '正在ASS';
                                 assA.onmouseover = null;
 
                                 // 1.2.2 query flv
-                                _context62.next = 4;
+                                _context63.next = 4;
                                 return monkey.queryInfo('ass');
 
                             case 4:
-                                assA.href = _context62.sent;
+                                assA.href = _context63.sent;
 
 
                                 // 1.2.3 response mp4
@@ -6460,10 +6501,10 @@ var UI = function () {
 
                             case 7:
                             case 'end':
-                                return _context62.stop();
+                                return _context63.stop();
                         }
                     }
-                }, _callee60, _this44);
+                }, _callee61, _this44);
             }));
 
             // 2. save to cache
@@ -6473,9 +6514,9 @@ var UI = function () {
     }, {
         key: 'appendTitle',
         value: function appendTitle() {
-            var _ref78 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
-                videoA = _ref78.videoA,
-                assA = _ref78.assA;
+            var _ref79 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
+                videoA = _ref79.videoA,
+                assA = _ref79.assA;
 
             // 1. build div
             var div = document.createElement('div');
@@ -6494,6 +6535,40 @@ var UI = function () {
             this.cidSessionDom.titleDiv = div;
 
             return div;
+        }
+    }, {
+        key: 'appendShortVideoTitle',
+        value: function appendShortVideoTitle(_ref80) {
+            var video_playurl = _ref80.video_playurl,
+                cover_img = _ref80.cover_img;
+
+            var fontSize = '15px';
+            var marginRight = '15px';
+            var videoA = document.createElement('a');
+            videoA.style.fontSize = fontSize;
+            videoA.style.marginRight = marginRight;
+            videoA.href = video_playurl;
+            videoA.target = '_blank';
+            videoA.textContent = '\u4E0B\u8F7D\u89C6\u9891';
+            var coverA = document.createElement('a');
+
+            coverA.style.fontSize = fontSize;
+            coverA.href = cover_img;
+            coverA.target = '_blank';
+            coverA.textContent = '\u83B7\u53D6\u5C01\u9762';
+            videoA.onclick = function (e) {
+                e.preventDefault();alert("请使用右键另存为下载视频");
+            };
+
+            var span = document.createElement('span');
+
+            span.addEventListener('click', function (e) {
+                return e.stopPropagation();
+            });
+            span.className = 'bilitwin';
+            span.append.apply(span, [videoA, ' ', coverA]);
+            var infoDiv = document.querySelector('div.base-info div.info');
+            infoDiv.appendChild(span);
         }
     }, {
         key: 'buildFLVDiv',
@@ -6637,11 +6712,11 @@ var UI = function () {
                 return UI.allowDrag(e);
             };
             div.ondrop = function () {
-                var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(e) {
+                var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(e) {
                     var files, outputName, href;
-                    return regeneratorRuntime.wrap(function _callee61$(_context63) {
+                    return regeneratorRuntime.wrap(function _callee62$(_context64) {
                         while (1) {
-                            switch (_context63.prev = _context63.next) {
+                            switch (_context64.prev = _context64.next) {
                                 case 0:
                                     // 4.1 allow drag
                                     UI.allowDrag(e);
@@ -6673,11 +6748,11 @@ var UI = function () {
                                     if (outputName) outputName = outputName[0].replace(/-\d/, "");else outputName = 'merge_' + files[0].name;
 
                                     // 4.5 build output ui
-                                    _context63.next = 8;
+                                    _context64.next = 8;
                                     return _this45.twin.mergeFLVFiles(files);
 
                                 case 8:
-                                    href = _context63.sent;
+                                    href = _context64.sent;
 
                                     table.append(function () {
                                         var tr1 = document.createElement('tr');
@@ -6694,14 +6769,14 @@ var UI = function () {
 
                                 case 10:
                                 case 'end':
-                                    return _context63.stop();
+                                    return _context64.stop();
                             }
                         }
-                    }, _callee61, _this45);
+                    }, _callee62, _this45);
                 }));
 
                 return function (_x85) {
-                    return _ref79.apply(this, arguments);
+                    return _ref81.apply(this, arguments);
                 };
             }();
 
@@ -6766,27 +6841,27 @@ var UI = function () {
     }, {
         key: 'downloadAllFLVs',
         value: function () {
-            var _ref81 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(_ref80) {
+            var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(_ref82) {
                 var _this46 = this;
 
-                var a = _ref80.a,
-                    _ref80$monkey = _ref80.monkey,
-                    monkey = _ref80$monkey === undefined ? this.twin.monkey : _ref80$monkey,
-                    _ref80$table = _ref80.table,
-                    table = _ref80$table === undefined ? this.cidSessionDom.flvTable : _ref80$table;
+                var a = _ref82.a,
+                    _ref82$monkey = _ref82.monkey,
+                    monkey = _ref82$monkey === undefined ? this.twin.monkey : _ref82$monkey,
+                    _ref82$table = _ref82.table,
+                    table = _ref82$table === undefined ? this.cidSessionDom.flvTable : _ref82$table;
 
                 var i, progress, _i2, files, href, ass, outputName;
 
-                return regeneratorRuntime.wrap(function _callee62$(_context64) {
+                return regeneratorRuntime.wrap(function _callee63$(_context65) {
                     while (1) {
-                        switch (_context64.prev = _context64.next) {
+                        switch (_context65.prev = _context65.next) {
                             case 0:
                                 if (!this.cidSessionDom.downloadAllTr) {
-                                    _context64.next = 2;
+                                    _context65.next = 2;
                                     break;
                                 }
 
-                                return _context64.abrupt('return');
+                                return _context65.abrupt('return');
 
                             case 2:
 
@@ -6819,21 +6894,21 @@ var UI = function () {
                                         return progress.value++;
                                     });
                                 } // 5. merge splits
-                                _context64.next = 12;
+                                _context65.next = 12;
                                 return monkey.getAllFLVs();
 
                             case 12:
-                                files = _context64.sent;
-                                _context64.next = 15;
+                                files = _context65.sent;
+                                _context65.next = 15;
                                 return this.twin.mergeFLVFiles(files);
 
                             case 15:
-                                href = _context64.sent;
-                                _context64.next = 18;
+                                href = _context65.sent;
+                                _context65.next = 18;
                                 return monkey.ass;
 
                             case 18:
-                                ass = _context64.sent;
+                                ass = _context65.sent;
                                 outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
                                 // 6. build download all ui
@@ -6877,18 +6952,18 @@ var UI = function () {
                                     return tr1;
                                 }());
 
-                                return _context64.abrupt('return', href);
+                                return _context65.abrupt('return', href);
 
                             case 23:
                             case 'end':
-                                return _context64.stop();
+                                return _context65.stop();
                         }
                     }
-                }, _callee62, this);
+                }, _callee63, this);
             }));
 
             function downloadAllFLVs(_x87) {
-                return _ref81.apply(this, arguments);
+                return _ref83.apply(this, arguments);
             }
 
             return downloadAllFLVs;
@@ -6896,17 +6971,17 @@ var UI = function () {
     }, {
         key: 'downloadFLV',
         value: function () {
-            var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(_ref82) {
-                var a = _ref82.a,
-                    _ref82$monkey = _ref82.monkey,
-                    monkey = _ref82$monkey === undefined ? this.twin.monkey : _ref82$monkey,
-                    index = _ref82.index,
-                    _ref82$progress = _ref82.progress,
-                    progress = _ref82$progress === undefined ? {} : _ref82$progress;
+            var _ref85 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(_ref84) {
+                var a = _ref84.a,
+                    _ref84$monkey = _ref84.monkey,
+                    monkey = _ref84$monkey === undefined ? this.twin.monkey : _ref84$monkey,
+                    index = _ref84.index,
+                    _ref84$progress = _ref84.progress,
+                    progress = _ref84$progress === undefined ? {} : _ref84$progress;
                 var handler, url;
-                return regeneratorRuntime.wrap(function _callee63$(_context65) {
+                return regeneratorRuntime.wrap(function _callee64$(_context66) {
                     while (1) {
-                        switch (_context65.prev = _context65.next) {
+                        switch (_context66.prev = _context66.next) {
                             case 0:
                                 // 1. add beforeUnloadHandler
                                 handler = function handler(e) {
@@ -6926,29 +7001,29 @@ var UI = function () {
 
                                 // 3. try download
                                 url = void 0;
-                                _context65.prev = 5;
-                                _context65.next = 8;
+                                _context66.prev = 5;
+                                _context66.next = 8;
                                 return monkey.getFLV(index, function (loaded, total) {
                                     progress.value = loaded;
                                     progress.max = total;
                                 });
 
                             case 8:
-                                url = _context65.sent;
+                                url = _context66.sent;
 
                                 url = URL.createObjectURL(url);
                                 if (progress.value == 0) progress.value = progress.max = 1;
-                                _context65.next = 19;
+                                _context66.next = 19;
                                 break;
 
                             case 13:
-                                _context65.prev = 13;
-                                _context65.t0 = _context65['catch'](5);
+                                _context66.prev = 13;
+                                _context66.t0 = _context66['catch'](5);
 
                                 a.onclick = null;
                                 window.removeEventListener('beforeunload', handler);
                                 a.textContent = '错误';
-                                throw _context65.t0;
+                                throw _context66.t0;
 
                             case 19:
 
@@ -6958,18 +7033,18 @@ var UI = function () {
                                 a.textContent = '另存为';
                                 a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
                                 a.href = url;
-                                return _context65.abrupt('return', url);
+                                return _context66.abrupt('return', url);
 
                             case 25:
                             case 'end':
-                                return _context65.stop();
+                                return _context66.stop();
                         }
                     }
-                }, _callee63, this, [[5, 13]]);
+                }, _callee64, this, [[5, 13]]);
             }));
 
             function downloadFLV(_x88) {
-                return _ref83.apply(this, arguments);
+                return _ref85.apply(this, arguments);
             }
 
             return downloadFLV;
@@ -6977,12 +7052,12 @@ var UI = function () {
     }, {
         key: 'displayQuota',
         value: function () {
-            var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(td) {
-                return regeneratorRuntime.wrap(function _callee64$(_context66) {
+            var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(td) {
+                return regeneratorRuntime.wrap(function _callee65$(_context67) {
                     while (1) {
-                        switch (_context66.prev = _context66.next) {
+                        switch (_context67.prev = _context67.next) {
                             case 0:
-                                return _context66.abrupt('return', new Promise(function (resolve) {
+                                return _context67.abrupt('return', new Promise(function (resolve) {
                                     var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                     if (!temporaryStorage) return resolve(td.textContent = '这个浏览器不支持缓存呢~关掉标签页后，缓存马上就会消失哦');
                                     temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -6992,14 +7067,14 @@ var UI = function () {
 
                             case 1:
                             case 'end':
-                                return _context66.stop();
+                                return _context67.stop();
                         }
                     }
-                }, _callee64, this);
+                }, _callee65, this);
             }));
 
             function displayQuota(_x89) {
-                return _ref84.apply(this, arguments);
+                return _ref86.apply(this, arguments);
             }
 
             return displayQuota;
@@ -7036,17 +7111,17 @@ var UI = function () {
         value: function buildMonkeyMenu() {
             var _this47 = this;
 
-            var _ref85 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref85$playerWin = _ref85.playerWin,
-                playerWin = _ref85$playerWin === undefined ? this.twin.playerWin : _ref85$playerWin,
-                _ref85$BiliMonkey = _ref85.BiliMonkey,
-                BiliMonkey = _ref85$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref85$BiliMonkey,
-                _ref85$monkey = _ref85.monkey,
-                monkey = _ref85$monkey === undefined ? this.twin.monkey : _ref85$monkey,
-                _ref85$videoA = _ref85.videoA,
-                videoA = _ref85$videoA === undefined ? this.cidSessionDom.videoA : _ref85$videoA,
-                _ref85$assA = _ref85.assA,
-                assA = _ref85$assA === undefined ? this.cidSessionDom.assA : _ref85$assA;
+            var _ref87 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref87$playerWin = _ref87.playerWin,
+                playerWin = _ref87$playerWin === undefined ? this.twin.playerWin : _ref87$playerWin,
+                _ref87$BiliMonkey = _ref87.BiliMonkey,
+                BiliMonkey = _ref87$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref87$BiliMonkey,
+                _ref87$monkey = _ref87.monkey,
+                monkey = _ref87$monkey === undefined ? this.twin.monkey : _ref87$monkey,
+                _ref87$videoA = _ref87.videoA,
+                videoA = _ref87$videoA === undefined ? this.cidSessionDom.videoA : _ref87$videoA,
+                _ref87$assA = _ref87.assA,
+                assA = _ref87$assA === undefined ? this.cidSessionDom.assA : _ref87$assA;
 
             var context_menu_videoA = document.createElement('li');
 
@@ -7054,18 +7129,18 @@ var UI = function () {
                 context_menu_videoA.className = 'context-menu-function';
 
                 context_menu_videoA.onmouseover = function () {
-                    var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(_ref86) {
-                        var textNode = _ref86.target.lastChild;
-                        return regeneratorRuntime.wrap(function _callee65$(_context67) {
+                    var _ref89 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66(_ref88) {
+                        var textNode = _ref88.target.lastChild;
+                        return regeneratorRuntime.wrap(function _callee66$(_context68) {
                             while (1) {
-                                switch (_context67.prev = _context67.next) {
+                                switch (_context68.prev = _context68.next) {
                                     case 0:
                                         if (!videoA.onmouseover) {
-                                            _context67.next = 3;
+                                            _context68.next = 3;
                                             break;
                                         }
 
-                                        _context67.next = 3;
+                                        _context68.next = 3;
                                         return videoA.onmouseover();
 
                                     case 3:
@@ -7075,14 +7150,14 @@ var UI = function () {
 
                                     case 4:
                                     case 'end':
-                                        return _context67.stop();
+                                        return _context68.stop();
                                 }
                             }
-                        }, _callee65, _this47);
+                        }, _callee66, _this47);
                     }));
 
                     return function (_x92) {
-                        return _ref87.apply(this, arguments);
+                        return _ref89.apply(this, arguments);
                     };
                 }();
 
@@ -7111,27 +7186,27 @@ var UI = function () {
             var a1 = document.createElement('a');
             a1.className = 'context-menu-a';
             a1.append('BiliMonkey');
-            var span = document.createElement('span');
-            span.className = 'bpui-icon bpui-icon-arrow-down';
-            span.style = 'transform:rotate(-90deg);margin-top:3px;';
-            a1.append(span);
+            var span1 = document.createElement('span');
+            span1.className = 'bpui-icon bpui-icon-arrow-down';
+            span1.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a1.append(span1);
             li.append(a1);
             var ul1 = document.createElement('ul');
             ul1.append(context_menu_videoA);
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
-                return regeneratorRuntime.wrap(function _callee66$(_context68) {
+            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
+                return regeneratorRuntime.wrap(function _callee67$(_context69) {
                     while (1) {
-                        switch (_context68.prev = _context68.next) {
+                        switch (_context69.prev = _context69.next) {
                             case 0:
                                 if (!assA.onmouseover) {
-                                    _context68.next = 3;
+                                    _context69.next = 3;
                                     break;
                                 }
 
-                                _context68.next = 3;
+                                _context69.next = 3;
                                 return assA.onmouseover();
 
                             case 3:
@@ -7139,17 +7214,17 @@ var UI = function () {
 
                             case 4:
                             case 'end':
-                                return _context68.stop();
+                                return _context69.stop();
                         }
                     }
-                }, _callee66, _this47);
+                }, _callee67, _this47);
             }));
 
             var a2 = document.createElement('a');
             a2.className = 'context-menu-a';
-            var span1 = document.createElement('span');
-            span1.className = 'video-contextmenu-icon';
-            a2.append(span1);
+            var span2 = document.createElement('span');
+            span2.className = 'video-contextmenu-icon';
+            a2.append(span2);
             a2.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
             li1.append(a2);
             ul1.append(li1);
@@ -7162,66 +7237,29 @@ var UI = function () {
 
             var a3 = document.createElement('a');
             a3.className = 'context-menu-a';
-            var span2 = document.createElement('span');
-            span2.className = 'video-contextmenu-icon';
-            a3.append(span2);
+            var span3 = document.createElement('span');
+            span3.className = 'video-contextmenu-icon';
+            a3.append(span3);
             a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
             li2.append(a3);
             ul1.append(li2);
             var li3 = document.createElement('li');
             li3.className = 'context-menu-function';
 
-            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-                return regeneratorRuntime.wrap(function _callee67$(_context69) {
-                    while (1) {
-                        switch (_context69.prev = _context69.next) {
-                            case 0:
-                                _context69.t0 = UI;
-                                _context69.next = 3;
-                                return BiliMonkey.getAllPageDefaultFormats(playerWin);
-
-                            case 3:
-                                _context69.t1 = _context69.sent;
-                                return _context69.abrupt('return', _context69.t0.displayDownloadAllPageDefaultFormatsBody.call(_context69.t0, _context69.t1));
-
-                            case 5:
-                            case 'end':
-                                return _context69.stop();
-                        }
-                    }
-                }, _callee67, _this47);
-            }));
-
-            var a4 = document.createElement('a');
-            a4.className = 'context-menu-a';
-            var span3 = document.createElement('span');
-            span3.className = 'video-contextmenu-icon';
-            a4.append(span3);
-            a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
-            li3.append(a4);
-            ul1.append(li3);
-            var li4 = document.createElement('li');
-            li4.className = 'context-menu-function';
-
-            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
+            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
                 return regeneratorRuntime.wrap(function _callee68$(_context70) {
                     while (1) {
                         switch (_context70.prev = _context70.next) {
                             case 0:
-                                monkey.proxy = true;
-                                monkey.flvs = null;
-                                UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
-                                // Yes, I AM lazy.
-                                playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                _context70.next = 6;
-                                return new Promise(function (r) {
-                                    return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
-                                });
+                                _context70.t0 = UI;
+                                _context70.next = 3;
+                                return BiliMonkey.getAllPageDefaultFormats(playerWin);
 
-                            case 6:
-                                return _context70.abrupt('return', monkey.queryInfo('video'));
+                            case 3:
+                                _context70.t1 = _context70.sent;
+                                return _context70.abrupt('return', _context70.t0.displayDownloadAllPageDefaultFormatsBody.call(_context70.t0, _context70.t1));
 
-                            case 7:
+                            case 5:
                             case 'end':
                                 return _context70.stop();
                         }
@@ -7229,11 +7267,48 @@ var UI = function () {
                 }, _callee68, _this47);
             }));
 
-            var a5 = document.createElement('a');
-            a5.className = 'context-menu-a';
+            var a4 = document.createElement('a');
+            a4.className = 'context-menu-a';
             var span4 = document.createElement('span');
             span4.className = 'video-contextmenu-icon';
-            a5.append(span4);
+            a4.append(span4);
+            a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
+            li3.append(a4);
+            ul1.append(li3);
+            var li4 = document.createElement('li');
+            li4.className = 'context-menu-function';
+
+            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+                return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                    while (1) {
+                        switch (_context71.prev = _context71.next) {
+                            case 0:
+                                monkey.proxy = true;
+                                monkey.flvs = null;
+                                UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
+                                // Yes, I AM lazy.
+                                playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
+                                _context71.next = 6;
+                                return new Promise(function (r) {
+                                    return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
+                                });
+
+                            case 6:
+                                return _context71.abrupt('return', monkey.queryInfo('video'));
+
+                            case 7:
+                            case 'end':
+                                return _context71.stop();
+                        }
+                    }
+                }, _callee69, _this47);
+            }));
+
+            var a5 = document.createElement('a');
+            a5.className = 'context-menu-a';
+            var span5 = document.createElement('span');
+            span5.className = 'video-contextmenu-icon';
+            a5.append(span5);
             a5.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
             li4.append(a5);
             ul1.append(li4);
@@ -7246,9 +7321,9 @@ var UI = function () {
 
             var a6 = document.createElement('a');
             a6.className = 'context-menu-a';
-            var span5 = document.createElement('span');
-            span5.className = 'video-contextmenu-icon';
-            a6.append(span5);
+            var span6 = document.createElement('span');
+            span6.className = 'video-contextmenu-icon';
+            a6.append(span6);
             a6.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
             li5.append(a6);
             ul1.append(li5);
@@ -7261,9 +7336,9 @@ var UI = function () {
 
             var a7 = document.createElement('a');
             a7.className = 'context-menu-a';
-            var span6 = document.createElement('span');
-            span6.className = 'video-contextmenu-icon';
-            a7.append(span6);
+            var span7 = document.createElement('span');
+            span7.className = 'video-contextmenu-icon';
+            a7.append(span7);
             a7.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
             li6.append(a7);
             ul1.append(li6);
@@ -7276,9 +7351,9 @@ var UI = function () {
 
             var a8 = document.createElement('a');
             a8.className = 'context-menu-a';
-            var span7 = document.createElement('span');
-            span7.className = 'video-contextmenu-icon';
-            a8.append(span7);
+            var span8 = document.createElement('span');
+            span8.className = 'video-contextmenu-icon';
+            a8.append(span8);
             a8.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
             li7.append(a8);
             ul1.append(li7);
@@ -7290,13 +7365,13 @@ var UI = function () {
         value: function buildPolyfillMenu() {
             var _this48 = this;
 
-            var _ref91 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref91$playerWin = _ref91.playerWin,
-                playerWin = _ref91$playerWin === undefined ? this.twin.playerWin : _ref91$playerWin,
-                _ref91$BiliPolyfill = _ref91.BiliPolyfill,
-                BiliPolyfill = _ref91$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref91$BiliPolyfill,
-                _ref91$polyfill = _ref91.polyfill,
-                polyfill = _ref91$polyfill === undefined ? this.twin.polyfill : _ref91$polyfill;
+            var _ref93 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref93$playerWin = _ref93.playerWin,
+                playerWin = _ref93$playerWin === undefined ? this.twin.playerWin : _ref93$playerWin,
+                _ref93$BiliPolyfill = _ref93.BiliPolyfill,
+                BiliPolyfill = _ref93$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref93$BiliPolyfill,
+                _ref93$polyfill = _ref93.polyfill,
+                polyfill = _ref93$polyfill === undefined ? this.twin.polyfill : _ref93$polyfill;
 
             var oped = [];
             var refreshSession = new HookedFunction(function () {
@@ -7318,10 +7393,10 @@ var UI = function () {
 
             a1.append('BiliPolyfill');
             a1.append(!polyfill.option.betabeta ? '(到设置开启)' : '');
-            var span = document.createElement('span');
-            span.className = 'bpui-icon bpui-icon-arrow-down';
-            span.style = 'transform:rotate(-90deg);margin-top:3px;';
-            a1.append(span);
+            var span1 = document.createElement('span');
+            span1.className = 'bpui-icon bpui-icon-arrow-down';
+            span1.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a1.append(span1);
             li.append(a1);
             var ul1 = document.createElement('ul');
             var li1 = document.createElement('li');
@@ -7333,9 +7408,9 @@ var UI = function () {
 
             var a2 = document.createElement('a');
             a2.className = 'context-menu-a';
-            var span1 = document.createElement('span');
-            span1.className = 'video-contextmenu-icon';
-            a2.append(span1);
+            var span2 = document.createElement('span');
+            span2.className = 'video-contextmenu-icon';
+            a2.append(span2);
             a2.append(' \u83B7\u53D6\u5C01\u9762');
             li1.append(a2);
             ul1.append(li1);
@@ -7343,14 +7418,14 @@ var UI = function () {
             li2.className = 'context-menu-menu';
             var a3 = document.createElement('a');
             a3.className = 'context-menu-a';
-            var span2 = document.createElement('span');
-            span2.className = 'video-contextmenu-icon';
-            a3.append(span2);
-            a3.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
             var span3 = document.createElement('span');
-            span3.className = 'bpui-icon bpui-icon-arrow-down';
-            span3.style = 'transform:rotate(-90deg);margin-top:3px;';
+            span3.className = 'video-contextmenu-icon';
             a3.append(span3);
+            a3.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
+            var span4 = document.createElement('span');
+            span4.className = 'bpui-icon bpui-icon-arrow-down';
+            span4.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a3.append(span4);
             li2.append(a3);
             var ul2 = document.createElement('ul');
             var li3 = document.createElement('li');
@@ -7362,9 +7437,9 @@ var UI = function () {
 
             var a4 = document.createElement('a');
             a4.className = 'context-menu-a';
-            var span4 = document.createElement('span');
-            span4.className = 'video-contextmenu-icon';
-            a4.append(span4);
+            var span5 = document.createElement('span');
+            span5.className = 'video-contextmenu-icon';
+            a4.append(span5);
             a4.append(' 0.1');
             li3.append(a4);
             ul2.append(li3);
@@ -7377,9 +7452,9 @@ var UI = function () {
 
             var a5 = document.createElement('a');
             a5.className = 'context-menu-a';
-            var span5 = document.createElement('span');
-            span5.className = 'video-contextmenu-icon';
-            a5.append(span5);
+            var span6 = document.createElement('span');
+            span6.className = 'video-contextmenu-icon';
+            a5.append(span6);
             a5.append(' 3');
             li4.append(a5);
             ul2.append(li4);
@@ -7392,9 +7467,9 @@ var UI = function () {
 
             var a6 = document.createElement('a');
             a6.className = 'context-menu-a';
-            var span6 = document.createElement('span');
-            span6.className = 'video-contextmenu-icon';
-            a6.append(span6);
+            var span7 = document.createElement('span');
+            span7.className = 'video-contextmenu-icon';
+            a6.append(span7);
             a6.append(' \u70B9\u51FB\u786E\u8BA4');
             var input = document.createElement('input');
             input.type = 'text';
@@ -7419,14 +7494,14 @@ var UI = function () {
             li6.className = 'context-menu-menu';
             var a7 = document.createElement('a');
             a7.className = 'context-menu-a';
-            var span7 = document.createElement('span');
-            span7.className = 'video-contextmenu-icon';
-            a7.append(span7);
-            a7.append(' \u7247\u5934\u7247\u5C3E');
             var span8 = document.createElement('span');
-            span8.className = 'bpui-icon bpui-icon-arrow-down';
-            span8.style = 'transform:rotate(-90deg);margin-top:3px;';
+            span8.className = 'video-contextmenu-icon';
             a7.append(span8);
+            a7.append(' \u7247\u5934\u7247\u5C3E');
+            var span9 = document.createElement('span');
+            span9.className = 'bpui-icon bpui-icon-arrow-down';
+            span9.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a7.append(span9);
             li6.append(a7);
             var ul3 = document.createElement('ul');
             var li7 = document.createElement('li');
@@ -7438,19 +7513,19 @@ var UI = function () {
 
             var a8 = document.createElement('a');
             a8.className = 'context-menu-a';
-            var span9 = document.createElement('span');
-            span9.className = 'video-contextmenu-icon';
-            a8.append(span9);
-            a8.append(' \u7247\u5934\u5F00\u59CB:');
             var span10 = document.createElement('span');
+            span10.className = 'video-contextmenu-icon';
+            a8.append(span10);
+            a8.append(' \u7247\u5934\u5F00\u59CB:');
+            var span11 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
                 });
-            })(span10);
+            })(span11);
 
-            a8.append(span10);
+            a8.append(span11);
             li7.append(a8);
             ul3.append(li7);
             var li8 = document.createElement('li');
@@ -7462,19 +7537,19 @@ var UI = function () {
 
             var a9 = document.createElement('a');
             a9.className = 'context-menu-a';
-            var span11 = document.createElement('span');
-            span11.className = 'video-contextmenu-icon';
-            a9.append(span11);
-            a9.append(' \u7247\u5934\u7ED3\u675F:');
             var span12 = document.createElement('span');
+            span12.className = 'video-contextmenu-icon';
+            a9.append(span12);
+            a9.append(' \u7247\u5934\u7ED3\u675F:');
+            var span13 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
                 });
-            })(span12);
+            })(span13);
 
-            a9.append(span12);
+            a9.append(span13);
             li8.append(a9);
             ul3.append(li8);
             var li9 = document.createElement('li');
@@ -7486,19 +7561,19 @@ var UI = function () {
 
             var a10 = document.createElement('a');
             a10.className = 'context-menu-a';
-            var span13 = document.createElement('span');
-            span13.className = 'video-contextmenu-icon';
-            a10.append(span13);
-            a10.append(' \u7247\u5C3E\u5F00\u59CB:');
             var span14 = document.createElement('span');
+            span14.className = 'video-contextmenu-icon';
+            a10.append(span14);
+            a10.append(' \u7247\u5C3E\u5F00\u59CB:');
+            var span15 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无';
                 });
-            })(span14);
+            })(span15);
 
-            a10.append(span14);
+            a10.append(span15);
             li9.append(a10);
             ul3.append(li9);
             var li10 = document.createElement('li');
@@ -7510,19 +7585,19 @@ var UI = function () {
 
             var a11 = document.createElement('a');
             a11.className = 'context-menu-a';
-            var span15 = document.createElement('span');
-            span15.className = 'video-contextmenu-icon';
-            a11.append(span15);
-            a11.append(' \u7247\u5C3E\u7ED3\u675F:');
             var span16 = document.createElement('span');
+            span16.className = 'video-contextmenu-icon';
+            a11.append(span16);
+            a11.append(' \u7247\u5C3E\u7ED3\u675F:');
+            var span17 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无';
                 });
-            })(span16);
+            })(span17);
 
-            a11.append(span16);
+            a11.append(span17);
             li10.append(a11);
             ul3.append(li10);
             var li11 = document.createElement('li');
@@ -7534,9 +7609,9 @@ var UI = function () {
 
             var a12 = document.createElement('a');
             a12.className = 'context-menu-a';
-            var span17 = document.createElement('span');
-            span17.className = 'video-contextmenu-icon';
-            a12.append(span17);
+            var span18 = document.createElement('span');
+            span18.className = 'video-contextmenu-icon';
+            a12.append(span18);
             a12.append(' \u53D6\u6D88\u6807\u8BB0');
             li11.append(a12);
             ul3.append(li11);
@@ -7549,9 +7624,9 @@ var UI = function () {
 
             var a13 = document.createElement('a');
             a13.className = 'context-menu-a';
-            var span18 = document.createElement('span');
-            span18.className = 'video-contextmenu-icon';
-            a13.append(span18);
+            var span19 = document.createElement('span');
+            span19.className = 'video-contextmenu-icon';
+            a13.append(span19);
             a13.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
             li12.append(a13);
             ul3.append(li12);
@@ -7561,14 +7636,14 @@ var UI = function () {
             li13.className = 'context-menu-menu';
             var a14 = document.createElement('a');
             a14.className = 'context-menu-a';
-            var span19 = document.createElement('span');
-            span19.className = 'video-contextmenu-icon';
-            a14.append(span19);
-            a14.append(' \u627E\u4E0A\u4E0B\u96C6');
             var span20 = document.createElement('span');
-            span20.className = 'bpui-icon bpui-icon-arrow-down';
-            span20.style = 'transform:rotate(-90deg);margin-top:3px;';
+            span20.className = 'video-contextmenu-icon';
             a14.append(span20);
+            a14.append(' \u627E\u4E0A\u4E0B\u96C6');
+            var span21 = document.createElement('span');
+            span21.className = 'bpui-icon bpui-icon-arrow-down';
+            span21.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a14.append(span21);
             li13.append(a14);
             var ul4 = document.createElement('ul');
             var li14 = document.createElement('li');
@@ -7583,18 +7658,18 @@ var UI = function () {
             var a15 = document.createElement('a');
             a15.className = 'context-menu-a';
             a15.style.width = 'initial';
-            var span21 = document.createElement('span');
-            span21.className = 'video-contextmenu-icon';
-            a15.append(span21);
             var span22 = document.createElement('span');
+            span22.className = 'video-contextmenu-icon';
+            a15.append(span22);
+            var span23 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
                 });
-            })(span22);
+            })(span23);
 
-            a15.append(span22);
+            a15.append(span23);
             li14.append(a15);
             ul4.append(li14);
             var li15 = document.createElement('li');
@@ -7609,18 +7684,18 @@ var UI = function () {
             var a16 = document.createElement('a');
             a16.className = 'context-menu-a';
             a16.style.width = 'initial';
-            var span23 = document.createElement('span');
-            span23.className = 'video-contextmenu-icon';
-            a16.append(span23);
             var span24 = document.createElement('span');
+            span24.className = 'video-contextmenu-icon';
+            a16.append(span24);
+            var span25 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
                 });
-            })(span24);
+            })(span25);
 
-            a16.append(span24);
+            a16.append(span25);
             li15.append(a16);
             ul4.append(li15);
             li13.append(ul4);
@@ -7634,9 +7709,9 @@ var UI = function () {
 
             var a17 = document.createElement('a');
             a17.className = 'context-menu-a';
-            var span25 = document.createElement('span');
-            span25.className = 'video-contextmenu-icon';
-            a17.append(span25);
+            var span26 = document.createElement('span');
+            span26.className = 'video-contextmenu-icon';
+            a17.append(span26);
             a17.append(' \u5C0F\u7A97\u64AD\u653E');
             li16.append(a17);
             ul1.append(li16);
@@ -7649,9 +7724,9 @@ var UI = function () {
 
             var a18 = document.createElement('a');
             a18.className = 'context-menu-a';
-            var span26 = document.createElement('span');
-            span26.className = 'video-contextmenu-icon';
-            a18.append(span26);
+            var span27 = document.createElement('span');
+            span27.className = 'video-contextmenu-icon';
+            a18.append(span27);
             a18.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
             li17.append(a18);
             ul1.append(li17);
@@ -7664,9 +7739,9 @@ var UI = function () {
 
             var a19 = document.createElement('a');
             a19.className = 'context-menu-a';
-            var span27 = document.createElement('span');
-            span27.className = 'video-contextmenu-icon';
-            a19.append(span27);
+            var span28 = document.createElement('span');
+            span28.className = 'video-contextmenu-icon';
+            a19.append(span28);
             a19.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
             li18.append(a19);
             ul1.append(li18);
@@ -7680,9 +7755,9 @@ var UI = function () {
 
             var a20 = document.createElement('a');
             a20.className = 'context-menu-a';
-            var span28 = document.createElement('span');
-            span28.className = 'video-contextmenu-icon';
-            a20.append(span28);
+            var span29 = document.createElement('span');
+            span29.className = 'video-contextmenu-icon';
+            a20.append(span29);
             a20.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
             li19.append(a20);
             ul1.append(li19);
@@ -7799,10 +7874,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref92) {
-                var _ref93 = _slicedToArray(_ref92, 2),
-                    name = _ref93[0],
-                    description = _ref93[1];
+            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref94) {
+                var _ref95 = _slicedToArray(_ref94, 2),
+                    name = _ref95[0],
+                    description = _ref95[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -7876,10 +7951,10 @@ var UI = function () {
                     twin.saveOption(twin.option);
                 };
 
-                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref94) {
-                    var _ref95 = _slicedToArray(_ref94, 2),
-                        name = _ref95[0],
-                        value = _ref95[1];
+                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref96) {
+                    var _ref97 = _slicedToArray(_ref96, 2),
+                        name = _ref97[0],
+                        value = _ref97[1];
 
                     var option1 = document.createElement('option');
                     option1.value = value;
@@ -7918,11 +7993,11 @@ var UI = function () {
                 table.append(tr2);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref96) {
-                var _ref97 = _slicedToArray(_ref96, 3),
-                    name = _ref97[0],
-                    description = _ref97[1],
-                    disabled = _ref97[2];
+            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref98) {
+                var _ref99 = _slicedToArray(_ref98, 3),
+                    name = _ref99[0],
+                    description = _ref99[1],
+                    disabled = _ref99[2];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -7962,10 +8037,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref98) {
-                var _ref99 = _slicedToArray(_ref98, 2),
-                    name = _ref99[0],
-                    description = _ref99[1];
+            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref100) {
+                var _ref101 = _slicedToArray(_ref100, 2),
+                    name = _ref101[0],
+                    description = _ref101[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8273,9 +8348,9 @@ var UI = function () {
                 div1.className = 'bilibili-player-video-toast-item';
                 var div2 = document.createElement('div');
                 div2.className = 'bilibili-player-video-toast-item-text';
-                var span = document.createElement('span');
-                span.textContent = text;
-                div2.append(span);
+                var span1 = document.createElement('span');
+                span1.textContent = text;
+                div2.append(span1);
                 div1.append(div2);
                 div.append(div1);
             }
@@ -8366,40 +8441,40 @@ var BiliTwin = function (_BiliUserJS) {
     _createClass(BiliTwin, [{
         key: 'runCidSession',
         value: function () {
-            var _ref100 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+            var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
                 var _this50 = this;
 
-                var href, cidRefresh, video, videoA, _ref101;
+                var href, cidRefresh, video, videoA, _ref103;
 
-                return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                return regeneratorRuntime.wrap(function _callee70$(_context72) {
                     while (1) {
-                        switch (_context71.prev = _context71.next) {
+                        switch (_context72.prev = _context72.next) {
                             case 0:
-                                _context71.prev = 0;
-                                _context71.t0 = BiliUserJS.tryGetPlayerWinSync();
+                                _context72.prev = 0;
+                                _context72.t0 = BiliUserJS.tryGetPlayerWinSync();
 
-                                if (_context71.t0) {
-                                    _context71.next = 6;
+                                if (_context72.t0) {
+                                    _context72.next = 6;
                                     break;
                                 }
 
-                                _context71.next = 5;
+                                _context72.next = 5;
                                 return BiliTwin.getPlayerWin();
 
                             case 5:
-                                _context71.t0 = _context71.sent;
+                                _context72.t0 = _context72.sent;
 
                             case 6:
-                                this.playerWin = _context71.t0;
-                                _context71.next = 13;
+                                this.playerWin = _context72.t0;
+                                _context72.next = 13;
                                 break;
 
                             case 9:
-                                _context71.prev = 9;
-                                _context71.t1 = _context71['catch'](0);
+                                _context72.prev = 9;
+                                _context72.t1 = _context72['catch'](0);
 
-                                if (_context71.t1 == 'Need H5 Player') UI.requestH5Player();
-                                throw _context71.t1;
+                                if (_context72.t1 == 'Need H5 Player') UI.requestH5Player();
+                                throw _context72.t1;
 
                             case 13:
                                 href = location.href;
@@ -8428,7 +8503,7 @@ var BiliTwin = function (_BiliUserJS) {
                                         video.dispatchEvent(event);
                                     }, { once: true });
                                 }
-                                _context71.next = 23;
+                                _context72.next = 23;
                                 return this.polyfill.setFunctions();
 
                             case 23:
@@ -8447,13 +8522,13 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 // 4. debug
                                 if (this.option.debug) {
-                                    _ref101 = [this.monkey, this.polyfill];
-                                    (top.unsafeWindow || top).monkey = _ref101[0];
-                                    (top.unsafeWindow || top).polyfill = _ref101[1];
+                                    _ref103 = [this.monkey, this.polyfill];
+                                    (top.unsafeWindow || top).monkey = _ref103[0];
+                                    (top.unsafeWindow || top).polyfill = _ref103[1];
                                 }
 
                                 // 5. refresh => session expire
-                                _context71.next = 27;
+                                _context72.next = 27;
                                 return cidRefresh;
 
                             case 27:
@@ -8463,14 +8538,14 @@ var BiliTwin = function (_BiliUserJS) {
 
                             case 30:
                             case 'end':
-                                return _context71.stop();
+                                return _context72.stop();
                         }
                     }
-                }, _callee69, this, [[0, 9]]);
+                }, _callee70, this, [[0, 9]]);
             }));
 
             function runCidSession() {
-                return _ref100.apply(this, arguments);
+                return _ref102.apply(this, arguments);
             }
 
             return runCidSession;
@@ -8478,49 +8553,20 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'mergeFLVFiles',
         value: function () {
-            var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(files) {
-                return regeneratorRuntime.wrap(function _callee70$(_context72) {
-                    while (1) {
-                        switch (_context72.prev = _context72.next) {
-                            case 0:
-                                _context72.t0 = URL;
-                                _context72.next = 3;
-                                return FLV.mergeBlobs(files);
-
-                            case 3:
-                                _context72.t1 = _context72.sent;
-                                return _context72.abrupt('return', _context72.t0.createObjectURL.call(_context72.t0, _context72.t1));
-
-                            case 5:
-                            case 'end':
-                                return _context72.stop();
-                        }
-                    }
-                }, _callee70, this);
-            }));
-
-            function mergeFLVFiles(_x103) {
-                return _ref102.apply(this, arguments);
-            }
-
-            return mergeFLVFiles;
-        }()
-    }, {
-        key: 'clearCacheDB',
-        value: function () {
-            var _ref103 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71(cache) {
+            var _ref104 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71(files) {
                 return regeneratorRuntime.wrap(function _callee71$(_context73) {
                     while (1) {
                         switch (_context73.prev = _context73.next) {
                             case 0:
-                                if (!cache) {
-                                    _context73.next = 2;
-                                    break;
-                                }
+                                _context73.t0 = URL;
+                                _context73.next = 3;
+                                return FLV.mergeBlobs(files);
 
-                                return _context73.abrupt('return', cache.deleteEntireDB());
+                            case 3:
+                                _context73.t1 = _context73.sent;
+                                return _context73.abrupt('return', _context73.t0.createObjectURL.call(_context73.t0, _context73.t1));
 
-                            case 2:
+                            case 5:
                             case 'end':
                                 return _context73.stop();
                         }
@@ -8528,8 +8574,37 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee71, this);
             }));
 
+            function mergeFLVFiles(_x103) {
+                return _ref104.apply(this, arguments);
+            }
+
+            return mergeFLVFiles;
+        }()
+    }, {
+        key: 'clearCacheDB',
+        value: function () {
+            var _ref105 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72(cache) {
+                return regeneratorRuntime.wrap(function _callee72$(_context74) {
+                    while (1) {
+                        switch (_context74.prev = _context74.next) {
+                            case 0:
+                                if (!cache) {
+                                    _context74.next = 2;
+                                    break;
+                                }
+
+                                return _context74.abrupt('return', cache.deleteEntireDB());
+
+                            case 2:
+                            case 'end':
+                                return _context74.stop();
+                        }
+                    }
+                }, _callee72, this);
+            }));
+
             function clearCacheDB(_x104) {
-                return _ref103.apply(this, arguments);
+                return _ref105.apply(this, arguments);
             }
 
             return clearCacheDB;
@@ -8571,34 +8646,34 @@ var BiliTwin = function (_BiliUserJS) {
     }], [{
         key: 'init',
         value: function () {
-            var _ref104 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
-                var twin;
-                return regeneratorRuntime.wrap(function _callee72$(_context74) {
+            var _ref106 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+                var twin, vc_info;
+                return regeneratorRuntime.wrap(function _callee73$(_context75) {
                     while (1) {
-                        switch (_context74.prev = _context74.next) {
+                        switch (_context75.prev = _context75.next) {
                             case 0:
                                 if (document.body) {
-                                    _context74.next = 2;
+                                    _context75.next = 2;
                                     break;
                                 }
 
-                                return _context74.abrupt('return');
+                                return _context75.abrupt('return');
 
                             case 2:
-                                if (!location.href.includes("www.biligame.com")) {
-                                    _context74.next = 6;
+                                if (!(location.hostname == "www.biligame.com")) {
+                                    _context75.next = 6;
                                     break;
                                 }
 
-                                return _context74.abrupt('return', BiliPolyfill.biligameInit());
+                                return _context75.abrupt('return', BiliPolyfill.biligameInit());
 
                             case 6:
                                 if (!location.pathname.startsWith("/bangumi/media/md")) {
-                                    _context74.next = 8;
+                                    _context75.next = 8;
                                     break;
                                 }
 
-                                return _context74.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+                                return _context75.abrupt('return', BiliPolyfill.showBangumiCoverImage());
 
                             case 8:
 
@@ -8607,29 +8682,41 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 twin = new BiliTwin();
 
-                            case 11:
-                                if (!1) {
-                                    _context74.next = 16;
+                                if (!(location.hostname == "vc.bilibili.com")) {
+                                    _context75.next = 16;
                                     break;
                                 }
 
-                                _context74.next = 14;
-                                return twin.runCidSession();
+                                _context75.next = 14;
+                                return BiliMonkey.getBiliShortVideoInfo();
 
                             case 14:
-                                _context74.next = 11;
-                                break;
+                                vc_info = _context75.sent;
+                                return _context75.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
 
                             case 16:
+                                if (!1) {
+                                    _context75.next = 21;
+                                    break;
+                                }
+
+                                _context75.next = 19;
+                                return twin.runCidSession();
+
+                            case 19:
+                                _context75.next = 16;
+                                break;
+
+                            case 21:
                             case 'end':
-                                return _context74.stop();
+                                return _context75.stop();
                         }
                     }
-                }, _callee72, this);
+                }, _callee73, this);
             }));
 
             function init() {
-                return _ref104.apply(this, arguments);
+                return _ref106.apply(this, arguments);
             }
 
             return init;

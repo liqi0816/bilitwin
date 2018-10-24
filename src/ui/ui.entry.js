@@ -167,6 +167,8 @@ class UI {
         const videoA = <a style={{ fontSize, marginRight }} href={video_playurl} target="_blank">下载视频</a>;
         const coverA = <a style={{ fontSize }} href={cover_img} target="_blank">获取封面</a>;
 
+        videoA.onclick = (e) => { e.preventDefault(); alert("请使用右键另存为下载视频"); }
+
         const span = <span
             onClick={e => e.stopPropagation()}
             className="bilitwin"

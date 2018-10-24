@@ -513,7 +513,7 @@ class BiliMonkey {
         const data = (await req.json()).data
         const { video_playurl, first_pic: cover_img } = data.item
 
-        return { video_playurl, cover_img }
+        return { video_playurl: video_playurl.replace("http://", "https://"), cover_img }
     }
 
     static formatToValue(format) {
