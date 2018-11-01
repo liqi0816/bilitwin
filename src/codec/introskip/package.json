@@ -1,0 +1,20 @@
+{
+  "name": "introskip",
+  "version": "0.0.1",
+  "description": "video snapshot recurrence detector",
+  "repository": {
+    "private": true
+  },
+  "author": "qli5",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "http-server": "^0.11.1",
+    "typescript": "^3.1.5"
+  },
+  "engines": {
+    "node": "^8.10.0"
+  },
+  "scripts": {
+    "start": "start http://127.0.0.1:8080/demo.html | http-server -a 127.0.0.1 -p 8080 -t -1 | tsc -w"
+  }
+}
