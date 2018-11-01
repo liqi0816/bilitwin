@@ -70,9 +70,6 @@ gulp.task('clean', () => {
     fs.unlink('embedded.html', cb);
 });
 
-// const browserify = require('browserify');
-// const sourcemaps = require("gulp-sourcemaps");
-
 gulp.task('browserify-index.bundle.js', () => {
     const b = browserify({
         entries: './index.js',

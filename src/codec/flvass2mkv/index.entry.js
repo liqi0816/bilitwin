@@ -136,19 +136,17 @@ const FLVASS2MKV = class {
     }
 };
 
-// export { FLVASS2MKV };
+export { FLVASS2MKV };
 export default FLVASS2MKV;
 
 // if nodejs then test
-if (typeof window == 'undefined') {
-    if (require.main == module) {
-        (async () => {
-            const fs = require('fs');
-            const assFileName = process.argv.slice(1).find(e => e.includes('.ass')) || './samples/gen_case.ass';
-            const flvFileName = process.argv.slice(1).find(e => e.includes('.flv')) || './samples/gen_case.flv';
-            const assFile = fs.readFileSync(assFileName).buffer;
-            const flvFile = fs.readFileSync(flvFileName).buffer;
-            fs.writeFileSync('out.mkv', await new FLVASS2MKV({ onmkvprogress: console.log.bind(console) }).build(flvFile, assFile));
-        })();
-    }
+if (typeof require == 'function' && require.main == module) {
+    (async () => {
+        const fs = require('fs');
+        const assFileName = process.argv.slice(2).find(e => e.includes('.ass')) || './samples/gen_case.ass';
+        const flvFileName = process.argv.slice(2).find(e => e.includes('.flv')) || './samples/gen_case.flv';
+        const assFile = fs.readFileSync(assFileName).buffer;
+        const flvFile = fs.readFileSync(flvFileName).buffer;
+        fs.writeFileSync('out.mkv', await new FLVASS2MKV({ onmkvprogress: console.log.bind(console) }).build(flvFile, assFile));
+    })();
 }
