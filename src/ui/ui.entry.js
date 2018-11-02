@@ -410,7 +410,7 @@ class UI {
         </ul>;
 
         // 3. append to menu
-        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0];
         div.prepend(ul);
 
         // 4. save to cache
@@ -466,7 +466,7 @@ class UI {
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
                     </a>
                 </li>
-                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin))}>
+                <li class="context-menu-function" onclick={async () => { UI.displayDownloadAllPagePendingBody(); UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin)) }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)批量下载
                     </a>
@@ -865,7 +865,7 @@ class UI {
                         {i.name}
                     </td>
                     <td>
-                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].split("/").pop().split("?")[0]}</a>
+                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
                     </td>
                     <td>
                         <a href={i.danmuku} download={`${i.outputName}.ass`} referrerpolicy="origin">{`${i.outputName}.ass`}</a>
@@ -875,11 +875,14 @@ class UI {
                     <td>
                     </td>
                     <td>
-                        <a href={href} download referrerpolicy="origin">{href}</a>
+                        <a href={href} download referrerpolicy="origin">{href.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
                     </td>
                     <td>
                     </td>
-                </tr>)
+                </tr>),
+                <tr>
+                    <td>&nbsp;</td>
+                </tr>
             );
         }
 
@@ -922,6 +925,22 @@ class UI {
 
         top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
         return ret;
+    }
+
+    static displayDownloadAllPagePendingBody() {
+        top.document.open();
+        top.document.close();
+
+        top.document.body.append(
+            <fragment>
+                <h1>(测试) 批量抓取</h1>
+                <ul>
+                    <li>
+                        <p>抓取中，请稍候……</p>
+                    </li>
+                </ul>
+            </fragment>
+        );
     }
 
     static genDiv() {

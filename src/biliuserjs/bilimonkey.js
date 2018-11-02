@@ -265,7 +265,7 @@ class BiliMonkey {
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop().split("?")[0]
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -274,7 +274,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop().split("?")[0]
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -294,14 +294,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop().split("?")[0]
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop().split("?")[0]
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -309,7 +309,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].split("/").pop().split("?")[0]
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -372,7 +372,7 @@ class BiliMonkey {
 
         let ret = [];
         for (let flv of this.flvs) {
-            let name = flv.split("/").pop().split("?")[0]
+            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
             ret.push(await this.cache.deleteData(name));
             ret.push(await this.cache.deleteData('PC_' + name));
         }
@@ -419,13 +419,8 @@ class BiliMonkey {
     }
 
     static async getAllPageDefaultFormats(playerWin = top) {
-        const jq = playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        // 1. mutex => you must send requests one by one
-        const queryInfoMutex = new Mutex();
-
-        // 2. bilibili has a misconfigured lazy loading => keep trying
+        // bilibili has a misconfigured lazy loading => keep trying
+        /**@type {{cid: number; part?: string; index?: string; }[]} */
         const list = await new Promise(resolve => {
             const i = setInterval(() => {
                 const ret = playerWin.player.getPlaylist();
@@ -436,71 +431,36 @@ class BiliMonkey {
             }, 500);
         });
 
-        // 3. build {cid: information} dict
-        const index = list.reduce((acc, cur) => { acc[cur.cid] = cur; return acc }, {});
+        const retPromises = list.map((x) => (async (x) => {
+            const cid = x.cid
+            const danmuku = top.URL.createObjectURL(await new ASSConverter().genASSBlob(
+                await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
+            ))
 
-        // 4. find where to stop
-        const end = list[list.length - 1].cid.toString();
+            const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`
+            const r = await fetch(api_url, { credentials: 'include' })
+            const res = (await r.json()).data
 
-        // 5. collect information
-        const ret = [];
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined };
-            if (a.url.includes('comment.bilibili.com') || a.url.includes('interface.bilibili.com/player?') || a.url.includes('api.bilibili.com/x/player/playurl/token')) return _ajax.call(jq, a, c);
-            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                (async () => {
-                    // 5.1 suppress success handler
-                    a.success = undefined;
+            return ({
+                durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
+                danmuku,
+                name: x.part || x.index,
+                outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
+                    /***
+                     * see #28
+                     * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
+                     * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
+                     */
+                    res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '')
+                    : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
+                        res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
+                        : cid,
+                cid,
+                res,
+            });
+        })(x))
 
-                    // 5.2 find cid
-                    const cid = a.url.match(/cid=\d+/)[0].slice(4);
-
-                    // 5.3 grab information
-                    const [danmuku, res] = await Promise.all([
-                        // 5.3.1 grab danmuku
-                        (async () => top.URL.createObjectURL(await new ASSConverter().genASSBlob(
-                            await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
-                        )))(),
-
-                        // 5.3.2 grab download res
-                        _ajax.call(jq, a, c)
-                    ]);
-
-                    // 5.4 save information
-                    ret.push({
-                        durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
-                        danmuku,
-                        name: index[cid].part || index[cid].index,
-                        outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
-                            /***
-                             * see #28
-                             * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
-                             * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
-                             */
-                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '')
-                            : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
-                                res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
-                                : cid,
-                        cid,
-                        res,
-                    });
-
-                    // 5.5 finish job
-                    queryInfoMutex.unlock();
-                })();
-            }
-            return _ajax.call(jq, { url: '//0.0.0.0' });
-        };
-
-        // 6.1 from the first page
-        await queryInfoMutex.lock();
-        playerWin.player.next(1);
-        while (1) {
-            // 6.2 to the last page
-            await queryInfoMutex.lock();
-            if (ret[ret.length - 1].cid == end) break;
-            playerWin.player.next();
-        }
+        const ret = await Promise.all(retPromises)
 
         return ret;
     }
