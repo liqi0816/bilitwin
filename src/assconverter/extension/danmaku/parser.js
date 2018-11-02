@@ -77,7 +77,7 @@
       const text = typeof content === 'string' ? content : new TextDecoder('utf-8').decode(content);
       const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
       const data = (new DOMParser()).parseFromString(clean, 'text/xml');
-      const cid = +data.querySelector('chatid').textContent;
+      const cid = +data.querySelector('chatid,oid').textContent;
       /** @type {Array<Danmaku>} */
       const danmaku = Array.from(data.querySelectorAll('d')).map(d => {
         const p = d.getAttribute('p');
