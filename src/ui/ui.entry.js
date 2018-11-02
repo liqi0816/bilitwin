@@ -466,7 +466,7 @@ class UI {
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
                     </a>
                 </li>
-                <li class="context-menu-function" onclick={async () => { UI.displayDownloadAllPagePendingBody(); UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin)) }}>
+                <li class="context-menu-function" onclick={async () => { UI.displayDownloadAllPagePendingBody(); UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)) }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)批量下载
                     </a>
@@ -903,7 +903,7 @@ class UI {
             <h1>(测试) 批量抓取</h1>
             <ul>
                 <li>
-                    <p>只抓取默认清晰度</p>
+                    <p>抓取的视频的最高分辨率可在设置中自定义</p>
                 </li>
                 <li>
                     <p>复制链接地址无效，请左键单击/右键另存为/右键调用下载工具</p>

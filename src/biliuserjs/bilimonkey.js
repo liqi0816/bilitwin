@@ -418,7 +418,7 @@ class BiliMonkey {
         );
     }
 
-    static async getAllPageDefaultFormats(playerWin = top) {
+    static async getAllPageDefaultFormats(playerWin = top, monkey) {
         // bilibili has a misconfigured lazy loading => keep trying
         /**@type {{cid: number; part?: string; index?: string; }[]} */
         const list = await new Promise(resolve => {
@@ -437,7 +437,8 @@ class BiliMonkey {
                 await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
             ))
 
-            const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=116`
+            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116"
+            const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
             const r = await fetch(api_url, { credentials: 'include' })
             const res = (await r.json()).data
 
