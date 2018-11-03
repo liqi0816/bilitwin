@@ -410,7 +410,8 @@ class UI {
         </ul>;
 
         // 3. append to menu
-        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0];
+        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0]
+            || [...playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')].pop()
         div.prepend(ul);
 
         // 4. save to cache

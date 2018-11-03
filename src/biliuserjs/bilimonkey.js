@@ -242,7 +242,7 @@ class BiliMonkey {
 
                     this.flvs = flvs
 
-                    let video_format = data.format && data.format.slice(0, 3)
+                    let video_format = data.format && (data.format.match(/mp4|flv/) || [])[0]
 
                     this.video_format = video_format
 
