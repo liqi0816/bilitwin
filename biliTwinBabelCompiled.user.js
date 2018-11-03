@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.2
+// @version     1.19.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -182,7 +182,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.2
+// @version     1.19.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1724,7 +1724,7 @@ var parseNiconicoSize = function parseNiconicoSize(mail) {
  */
 parser.bilibili = function (content) {
     var text = typeof content === 'string' ? content : new TextDecoder('utf-8').decode(content);
-    var clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+    var clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '').replace(/.*?\?>/, "");
     var data = new DOMParser().parseFromString(clean, 'text/xml');
     var cid = +data.querySelector('chatid,oid').textContent;
     /** @type {Array<Danmaku>} */
@@ -3147,7 +3147,7 @@ var BiliMonkey = function () {
 
                                                     _this16.flvs = flvs;
 
-                                                    video_format = data.format && data.format.slice(0, 3);
+                                                    video_format = data.format && (data.format.match(/mp4|flv/) || [])[0];
 
 
                                                     _this16.video_format = video_format;
@@ -3882,7 +3882,7 @@ var BiliMonkey = function () {
 
                 var playerWin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : top;
                 var monkey = arguments[1];
-                var list, retPromises, ret;
+                var list, queryInfoMutex, retPromises, ret;
                 return regeneratorRuntime.wrap(function _callee46$(_context46) {
                     while (1) {
                         switch (_context46.prev = _context46.next) {
@@ -3900,81 +3900,125 @@ var BiliMonkey = function () {
 
                             case 2:
                                 list = _context46.sent;
-                                retPromises = list.map(function (x) {
-                                    return function () {
-                                        var _ref58 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45(x) {
-                                            var cid, danmuku, qn, api_url, r, res;
-                                            return regeneratorRuntime.wrap(function _callee45$(_context45) {
-                                                while (1) {
-                                                    switch (_context45.prev = _context45.next) {
-                                                        case 0:
-                                                            cid = x.cid;
-                                                            _context45.t0 = top.URL;
-                                                            _context45.t1 = new ASSConverter();
-                                                            _context45.next = 5;
-                                                            return BiliMonkey.fetchDanmaku(cid);
+                                queryInfoMutex = new Mutex();
 
-                                                        case 5:
-                                                            _context45.t2 = _context45.sent;
-                                                            _context45.t3 = top.document.title;
-                                                            _context45.t4 = top.location.href;
-                                                            _context45.next = 10;
-                                                            return _context45.t1.genASSBlob.call(_context45.t1, _context45.t2, _context45.t3, _context45.t4);
+                                // from the first page
 
-                                                        case 10:
-                                                            _context45.t5 = _context45.sent;
-                                                            danmuku = _context45.t0.createObjectURL.call(_context45.t0, _context45.t5);
-                                                            qn = monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution || "116";
-                                                            api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
-                                                            _context45.next = 16;
-                                                            return fetch(api_url, { credentials: 'include' });
+                                playerWin.player.next(1);
 
-                                                        case 16:
-                                                            r = _context45.sent;
-                                                            _context45.next = 19;
-                                                            return r.json();
+                                retPromises = list.map(function (x, n) {
+                                    return _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
+                                        var cid, danmuku, qn, api_url, r, res, _getDataList, data, _data_X;
 
-                                                        case 19:
-                                                            res = _context45.sent.data;
-                                                            return _context45.abrupt('return', {
-                                                                durl: res.durl.map(function (_ref59) {
-                                                                    var url = _ref59.url;
-                                                                    return url.replace('http:', playerWin.location.protocol);
-                                                                }),
-                                                                danmuku: danmuku,
-                                                                name: x.part || x.index,
-                                                                outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
-                                                                /***
-                                                                 * see #28
-                                                                 * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
-                                                                 * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
-                                                                 */
-                                                                res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '') : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ? res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] : cid,
-                                                                cid: cid,
-                                                                res: res
+                                        return regeneratorRuntime.wrap(function _callee45$(_context45) {
+                                            while (1) {
+                                                switch (_context45.prev = _context45.next) {
+                                                    case 0:
+                                                        _context45.next = 2;
+                                                        return queryInfoMutex.lock();
+
+                                                    case 2:
+                                                        cid = x.cid;
+                                                        _context45.t0 = new ASSConverter();
+                                                        _context45.next = 6;
+                                                        return BiliMonkey.fetchDanmaku(cid);
+
+                                                    case 6:
+                                                        _context45.t1 = _context45.sent;
+                                                        _context45.t2 = top.document.title;
+                                                        _context45.t3 = top.location.href;
+                                                        _context45.next = 11;
+                                                        return _context45.t0.genASSBlob.call(_context45.t0, _context45.t1, _context45.t2, _context45.t3);
+
+                                                    case 11:
+                                                        danmuku = _context45.sent;
+                                                        qn = monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution || "116";
+                                                        api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
+                                                        _context45.next = 16;
+                                                        return fetch(api_url, { credentials: 'include' });
+
+                                                    case 16:
+                                                        r = _context45.sent;
+                                                        _context45.next = 19;
+                                                        return r.json();
+
+                                                    case 19:
+                                                        res = _context45.sent.data;
+
+                                                        if (res.durl) {
+                                                            _context45.next = 27;
+                                                            break;
+                                                        }
+
+                                                        _getDataList = function _getDataList() {
+                                                            var _zc = playerWin.Gc || playerWin.zc || Object.values(playerWin).filter(function (x) {
+                                                                return typeof x == "string" && x.includes("[Info]");
+                                                            })[0];
+                                                            return _zc.split("\n").filter(function (x) {
+                                                                return x.startsWith("{");
                                                             });
+                                                        };
 
-                                                        case 21:
-                                                        case 'end':
-                                                            return _context45.stop();
-                                                    }
+                                                        _context45.next = 24;
+                                                        return new Promise(function (resolve) {
+                                                            var i = setInterval(function () {
+                                                                var dataSize = new Set(_getDataList()).size;
+
+                                                                if (list.length == 1 || dataSize == n + 2) {
+                                                                    clearInterval(i);
+                                                                    resolve();
+                                                                }
+                                                            }, 100);
+                                                        });
+
+                                                    case 24:
+                                                        data = JSON.parse(_getDataList().pop());
+                                                        _data_X = data.Y || data.X || Object.values(data).filter(function (x) {
+                                                            return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) == "object" && Object.prototype.toString.call(x) == "[object Object]";
+                                                        })[0];
+
+
+                                                        res.durl = _data_X.segments || [_data_X];
+
+                                                    case 27:
+
+                                                        queryInfoMutex.unlock();
+                                                        playerWin.player.next();
+
+                                                        return _context45.abrupt('return', {
+                                                            durl: res.durl.map(function (_ref59) {
+                                                                var url = _ref59.url;
+                                                                return url.replace('http:', playerWin.location.protocol);
+                                                            }),
+                                                            danmuku: danmuku,
+                                                            name: x.part || x.index || playerWin.document.title.replace("_哔哩哔哩 (゜-゜)つロ 干杯~-bilibili", ""),
+                                                            outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
+                                                            /***
+                                                             * see #28
+                                                             * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
+                                                             * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
+                                                             */
+                                                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '') : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ? res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] : cid,
+                                                            cid: cid,
+                                                            res: res
+                                                        });
+
+                                                    case 30:
+                                                    case 'end':
+                                                        return _context45.stop();
                                                 }
-                                            }, _callee45, _this19);
-                                        }));
-
-                                        return function (_x62) {
-                                            return _ref58.apply(this, arguments);
-                                        };
-                                    }()(x);
+                                            }
+                                        }, _callee45, _this19);
+                                    }))();
                                 });
-                                _context46.next = 6;
+                                _context46.next = 8;
                                 return Promise.all(retPromises);
 
-                            case 6:
+                            case 8:
                                 ret = _context46.sent;
                                 return _context46.abrupt('return', ret);
 
-                            case 8:
+                            case 10:
                             case 'end':
                                 return _context46.stop();
                         }
@@ -5664,7 +5708,7 @@ var Exporter = function () {
                 }, _callee57, this);
             }));
 
-            function sendToAria2RPC(_x74) {
+            function sendToAria2RPC(_x73) {
                 return _ref71.apply(this, arguments);
             }
 
@@ -6210,7 +6254,7 @@ var FLV = function () {
                 }, _callee58, this, [[11, 21, 25, 33], [26,, 28, 32]]);
             }));
 
-            function mergeBlobs(_x78) {
+            function mergeBlobs(_x77) {
                 return _ref73.apply(this, arguments);
             }
 
@@ -6697,7 +6741,7 @@ var UI = function () {
                     }, _callee61, _this45);
                 }));
 
-                return function (_x86) {
+                return function (_x85) {
                     return _ref78.apply(this, arguments);
                 };
             }();
@@ -6884,7 +6928,7 @@ var UI = function () {
                 }, _callee62, this);
             }));
 
-            function downloadAllFLVs(_x88) {
+            function downloadAllFLVs(_x87) {
                 return _ref80.apply(this, arguments);
             }
 
@@ -6965,7 +7009,7 @@ var UI = function () {
                 }, _callee63, this, [[5, 13]]);
             }));
 
-            function downloadFLV(_x89) {
+            function downloadFLV(_x88) {
                 return _ref82.apply(this, arguments);
             }
 
@@ -6995,7 +7039,7 @@ var UI = function () {
                 }, _callee64, this);
             }));
 
-            function displayQuota(_x90) {
+            function displayQuota(_x89) {
                 return _ref83.apply(this, arguments);
             }
 
@@ -7020,7 +7064,7 @@ var UI = function () {
             ul.className = 'bilitwin';
             ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
             ul.append.apply(ul, [monkeyMenu, polyfillMenu]);
-            var div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0];
+            var div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0] || [].concat(_toConsumableArray(playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black'))).pop();
             div.prepend(ul);
 
             // 4. save to cache
@@ -7078,7 +7122,7 @@ var UI = function () {
                         }, _callee65, _this47);
                     }));
 
-                    return function (_x93) {
+                    return function (_x92) {
                         return _ref86.apply(this, arguments);
                     };
                 }();
@@ -7173,16 +7217,15 @@ var UI = function () {
                     while (1) {
                         switch (_context69.prev = _context69.next) {
                             case 0:
-                                UI.displayDownloadAllPagePendingBody();_context69.t0 = UI;
-                                _context69.next = 4;
+                                _context69.t0 = UI;
+                                _context69.next = 3;
                                 return BiliMonkey.getAllPageDefaultFormats(playerWin, monkey);
 
-                            case 4:
+                            case 3:
                                 _context69.t1 = _context69.sent;
+                                return _context69.abrupt('return', _context69.t0.displayDownloadAllPageDefaultFormatsBody.call(_context69.t0, _context69.t1));
 
-                                _context69.t0.displayDownloadAllPageDefaultFormatsBody.call(_context69.t0, _context69.t1);
-
-                            case 6:
+                            case 5:
                             case 'end':
                                 return _context69.stop();
                         }
@@ -8114,7 +8157,7 @@ var UI = function () {
                     tr1.append(td2);
                     var td3 = document.createElement('td');
                     var a2 = document.createElement('a');
-                    a2.href = i.danmuku;
+                    a2.href = top.URL.createObjectURL(i.danmuku);
                     a2.download = i.outputName + '.ass';
                     a2.setAttribute('referrerpolicy', 'origin');
                     a2.textContent = i.outputName + '.ass';
@@ -8524,7 +8567,7 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee70, this);
             }));
 
-            function mergeFLVFiles(_x104) {
+            function mergeFLVFiles(_x103) {
                 return _ref101.apply(this, arguments);
             }
 
@@ -8553,7 +8596,7 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee71, this);
             }));
 
-            function clearCacheDB(_x105) {
+            function clearCacheDB(_x104) {
                 return _ref102.apply(this, arguments);
             }
 

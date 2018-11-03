@@ -420,7 +420,7 @@ class BiliMonkey {
 
     static async getAllPageDefaultFormats(playerWin = top, monkey) {
         // bilibili has a misconfigured lazy loading => keep trying
-        /**@type {{cid: number; part?: string; index?: string; }[]} */
+        /** @type {{cid: number; part?: string; index?: string; }[]} */
         const list = await new Promise(resolve => {
             const i = setInterval(() => {
                 const ret = playerWin.player.getPlaylist();
@@ -431,21 +431,67 @@ class BiliMonkey {
             }, 500);
         });
 
-        const retPromises = list.map((x) => (async (x) => {
+        const queryInfoMutex = new Mutex();
+
+        // from the first page
+        playerWin.player.next(1);
+
+        const retPromises = list.map((x, n) => (async () => {
+            await queryInfoMutex.lock();
+
             const cid = x.cid
-            const danmuku = top.URL.createObjectURL(await new ASSConverter().genASSBlob(
+            const danmuku = await new ASSConverter().genASSBlob(
                 await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
-            ))
+            )
 
             const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116"
             const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
             const r = await fetch(api_url, { credentials: 'include' })
             const res = (await r.json()).data
 
+            if (!res.durl) {
+                const _getDataList = () => {
+                    const _zc = playerWin.Gc || playerWin.zc ||
+                        Object.values(playerWin).filter(
+                            x => typeof x == "string" && x.includes("[Info]")
+                        )[0]
+                    return _zc.split("\n").filter(
+                        x => x.startsWith("{")
+                    )
+                }
+
+                await new Promise(resolve => {
+                    const i = setInterval(() => {
+                        const dataSize = new Set(
+                            _getDataList()
+                        ).size
+
+                        if (list.length == 1 || dataSize == n + 2) {
+                            clearInterval(i);
+                            resolve();
+                        }
+                    }, 100);
+                })
+
+                const data = JSON.parse(
+                    _getDataList().pop()
+                )
+
+                const _data_X = data.Y || data.X ||
+                    Object.values(data).filter(
+                        x => typeof x == "object" && Object.prototype.toString.call(x) == "[object Object]"
+                    )[0]
+
+                res.durl = _data_X.segments || [_data_X]
+            }
+
+            queryInfoMutex.unlock();
+            playerWin.player.next();
+
             return ({
                 durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
                 danmuku,
-                name: x.part || x.index,
+                name: x.part || x.index || playerWin.document.title.replace("_哔哩哔哩 (゜-゜)つロ 干杯~-bilibili", ""),
                 outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
                     /***
                      * see #28
@@ -459,7 +505,7 @@ class BiliMonkey {
                 cid,
                 res,
             });
-        })(x))
+        })())
 
         const ret = await Promise.all(retPromises)
 

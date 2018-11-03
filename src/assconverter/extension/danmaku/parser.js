@@ -75,7 +75,7 @@
      */
     parser.bilibili = function (content) {
       const text = typeof content === 'string' ? content : new TextDecoder('utf-8').decode(content);
-      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '').replace(/.*?\?>/,"");
       const data = (new DOMParser()).parseFromString(clean, 'text/xml');
       const cid = +data.querySelector('chatid,oid').textContent;
       /** @type {Array<Danmaku>} */

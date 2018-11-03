@@ -467,7 +467,7 @@ class UI {
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
                     </a>
                 </li>
-                <li class="context-menu-function" onclick={async () => { UI.displayDownloadAllPagePendingBody(); UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)) }}>
+                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey))}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)批量下载
                     </a>
@@ -869,7 +869,7 @@ class UI {
                         <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
                     </td>
                     <td>
-                        <a href={i.danmuku} download={`${i.outputName}.ass`} referrerpolicy="origin">{`${i.outputName}.ass`}</a>
+                        <a href={top.URL.createObjectURL(i.danmuku)} download={`${i.outputName}.ass`} referrerpolicy="origin">{`${i.outputName}.ass`}</a>
                     </td>
                 </tr>,
                 ...i.durl.slice(1).map(href => <tr>

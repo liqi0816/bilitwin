@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.2
+// @version     1.19.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -788,7 +788,7 @@ class Mutex {
      */
     parser.bilibili = function (content) {
       const text = typeof content === 'string' ? content : new TextDecoder('utf-8').decode(content);
-      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '').replace(/.*?\?>/,"");
       const data = (new DOMParser()).parseFromString(clean, 'text/xml');
       const cid = +data.querySelector('chatid,oid').textContent;
       /** @type {Array<Danmaku>} */
@@ -1833,7 +1833,7 @@ class BiliMonkey {
 
                     this.flvs = flvs;
 
-                    let video_format = data.format && data.format.slice(0, 3);
+                    let video_format = data.format && (data.format.match(/mp4|flv/) || [])[0];
 
                     this.video_format = video_format;
 
@@ -2011,7 +2011,7 @@ class BiliMonkey {
 
     static async getAllPageDefaultFormats(playerWin = top, monkey) {
         // bilibili has a misconfigured lazy loading => keep trying
-        /**@type {{cid: number; part?: string; index?: string; }[]} */
+        /** @type {{cid: number; part?: string; index?: string; }[]} */
         const list = await new Promise(resolve => {
             const i = setInterval(() => {
                 const ret = playerWin.player.getPlaylist();
@@ -2022,21 +2022,67 @@ class BiliMonkey {
             }, 500);
         });
 
-        const retPromises = list.map((x) => (async (x) => {
+        const queryInfoMutex = new Mutex();
+
+        // from the first page
+        playerWin.player.next(1);
+
+        const retPromises = list.map((x, n) => (async () => {
+            await queryInfoMutex.lock();
+
             const cid = x.cid;
-            const danmuku = top.URL.createObjectURL(await new ASSConverter().genASSBlob(
+            const danmuku = await new ASSConverter().genASSBlob(
                 await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
-            ));
+            );
 
             const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116";
             const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
             const r = await fetch(api_url, { credentials: 'include' });
             const res = (await r.json()).data;
 
+            if (!res.durl) {
+                const _getDataList = () => {
+                    const _zc = playerWin.Gc || playerWin.zc ||
+                        Object.values(playerWin).filter(
+                            x => typeof x == "string" && x.includes("[Info]")
+                        )[0];
+                    return _zc.split("\n").filter(
+                        x => x.startsWith("{")
+                    )
+                };
+
+                await new Promise(resolve => {
+                    const i = setInterval(() => {
+                        const dataSize = new Set(
+                            _getDataList()
+                        ).size;
+
+                        if (list.length == 1 || dataSize == n + 2) {
+                            clearInterval(i);
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+                const data = JSON.parse(
+                    _getDataList().pop()
+                );
+
+                const _data_X = data.Y || data.X ||
+                    Object.values(data).filter(
+                        x => typeof x == "object" && Object.prototype.toString.call(x) == "[object Object]"
+                    )[0];
+
+                res.durl = _data_X.segments || [_data_X];
+            }
+
+            queryInfoMutex.unlock();
+            playerWin.player.next();
+
             return ({
                 durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
                 danmuku,
-                name: x.part || x.index,
+                name: x.part || x.index || playerWin.document.title.replace("_哔哩哔哩 (゜-゜)つロ 干杯~-bilibili", ""),
                 outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
                     /***
                      * see #28
@@ -2050,7 +2096,7 @@ class BiliMonkey {
                 cid,
                 res,
             });
-        })(x));
+        })());
 
         const ret = await Promise.all(retPromises);
 
@@ -7801,7 +7847,7 @@ class UI {
         ul.className = 'bilitwin';
         ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
         ul.append(...[monkeyMenu, polyfillMenu]);
-        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0];
+        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0] || [...playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')].pop();
         div.prepend(ul);
 
         // 4. save to cache
@@ -7889,9 +7935,7 @@ class UI {
         const li3 = document.createElement('li');
         li3.className = 'context-menu-function';
 
-        li3.onclick = async () => {
-            UI.displayDownloadAllPagePendingBody();UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)));
-        };
+        li3.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)));
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
@@ -8683,7 +8727,7 @@ class UI {
                 tr1.append(td2);
                 const td3 = document.createElement('td');
                 const a2 = document.createElement('a');
-                a2.href = i.danmuku;
+                a2.href = top.URL.createObjectURL(i.danmuku);
                 a2.download = `${i.outputName}.ass`;
                 a2.setAttribute('referrerpolicy', 'origin');
                 a2.textContent = `${i.outputName}.ass`;
