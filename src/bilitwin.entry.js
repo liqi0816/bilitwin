@@ -57,17 +57,33 @@ class BiliTwin extends BiliUserJS {
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
-        const video = document.querySelector("video")
-        if (video) {
-            video.addEventListener('play', () => {
-                let event = new MouseEvent('contextmenu', {
-                    'bubbles': true
-                });
 
-                video.dispatchEvent(event)
-                video.dispatchEvent(event)
-            }, { once: true });
+        // 无需右键播放器就能显示下载按钮
+        const videoRightClick = (video) => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event)
+            video.dispatchEvent(event)
         }
+        // video.addEventListener('play', videoRightClick, { once: true });
+        await new Promise(resolve => {
+            const i = setInterval(() => {
+                const video = document.querySelector("video")
+                if (video) {
+                    videoRightClick(video)
+                    if (
+                        this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
+                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)
+                    ) {
+                        clearInterval(i);
+                        resolve();
+                    }
+                }
+            }, 10);
+        })
+
         await this.polyfill.setFunctions()
 
         // 3. async consistent => render UI
