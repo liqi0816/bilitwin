@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.3
+// @version     1.19.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -182,7 +182,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.3
+// @version     1.19.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3128,7 +3128,7 @@ var BiliMonkey = function () {
 
                                                         data = JSON.parse(_zc.split("\n").filter(function (x) {
                                                             return x.startsWith("{");
-                                                        })[0]);
+                                                        }).pop());
 
                                                         _data_X = data.Y || data.X || Object.values(data).filter(function (x) {
                                                             return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) == "object" && Object.prototype.toString.call(x) == "[object Object]";
@@ -3882,7 +3882,9 @@ var BiliMonkey = function () {
 
                 var playerWin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : top;
                 var monkey = arguments[1];
-                var list, queryInfoMutex, retPromises, ret;
+
+                var list, queryInfoMutex, _getDataList, initialDataSize, retPromises, ret;
+
                 return regeneratorRuntime.wrap(function _callee46$(_context46) {
                     while (1) {
                         switch (_context46.prev = _context46.next) {
@@ -3902,13 +3904,23 @@ var BiliMonkey = function () {
                                 list = _context46.sent;
                                 queryInfoMutex = new Mutex();
 
+                                _getDataList = function _getDataList() {
+                                    var _zc = playerWin.Gc || playerWin.zc || Object.values(playerWin).filter(function (x) {
+                                        return typeof x == "string" && x.includes("[Info]");
+                                    })[0];
+                                    return _zc.split("\n").filter(function (x) {
+                                        return x.startsWith("{");
+                                    });
+                                };
+
                                 // from the first page
 
-                                playerWin.player.next(1);
 
+                                playerWin.player.next(1);
+                                initialDataSize = new Set(_getDataList()).size;
                                 retPromises = list.map(function (x, n) {
                                     return _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
-                                        var cid, danmuku, qn, api_url, r, res, _getDataList, data, _data_X;
+                                        var cid, danmuku, qn, api_url, r, res, data, _data_X;
 
                                         return regeneratorRuntime.wrap(function _callee45$(_context45) {
                                             while (1) {
@@ -3946,32 +3958,23 @@ var BiliMonkey = function () {
                                                         res = _context45.sent.data;
 
                                                         if (res.durl) {
-                                                            _context45.next = 27;
+                                                            _context45.next = 26;
                                                             break;
                                                         }
 
-                                                        _getDataList = function _getDataList() {
-                                                            var _zc = playerWin.Gc || playerWin.zc || Object.values(playerWin).filter(function (x) {
-                                                                return typeof x == "string" && x.includes("[Info]");
-                                                            })[0];
-                                                            return _zc.split("\n").filter(function (x) {
-                                                                return x.startsWith("{");
-                                                            });
-                                                        };
-
-                                                        _context45.next = 24;
+                                                        _context45.next = 23;
                                                         return new Promise(function (resolve) {
                                                             var i = setInterval(function () {
                                                                 var dataSize = new Set(_getDataList()).size;
 
-                                                                if (list.length == 1 || dataSize == n + 2) {
+                                                                if (list.length == 1 || dataSize == n + initialDataSize + 1) {
                                                                     clearInterval(i);
                                                                     resolve();
                                                                 }
                                                             }, 100);
                                                         });
 
-                                                    case 24:
+                                                    case 23:
                                                         data = JSON.parse(_getDataList().pop());
                                                         _data_X = data.Y || data.X || Object.values(data).filter(function (x) {
                                                             return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) == "object" && Object.prototype.toString.call(x) == "[object Object]";
@@ -3980,7 +3983,7 @@ var BiliMonkey = function () {
 
                                                         res.durl = _data_X.segments || [_data_X];
 
-                                                    case 27:
+                                                    case 26:
 
                                                         queryInfoMutex.unlock();
                                                         playerWin.player.next();
@@ -4003,7 +4006,7 @@ var BiliMonkey = function () {
                                                             res: res
                                                         });
 
-                                                    case 30:
+                                                    case 29:
                                                     case 'end':
                                                         return _context45.stop();
                                                 }
@@ -4011,14 +4014,14 @@ var BiliMonkey = function () {
                                         }, _callee45, _this19);
                                     }))();
                                 });
-                                _context46.next = 8;
+                                _context46.next = 10;
                                 return Promise.all(retPromises);
 
-                            case 8:
+                            case 10:
                                 ret = _context46.sent;
                                 return _context46.abrupt('return', ret);
 
-                            case 10:
+                            case 12:
                             case 'end':
                                 return _context46.stop();
                         }
@@ -8437,7 +8440,7 @@ var BiliTwin = function (_BiliUserJS) {
             var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
                 var _this50 = this;
 
-                var href, cidRefresh, video, videoA, _ref100;
+                var href, cidRefresh, videoRightClick, videoA, _ref100;
 
                 return regeneratorRuntime.wrap(function _callee69$(_context71) {
                     while (1) {
@@ -8484,22 +8487,39 @@ var BiliTwin = function (_BiliUserJS) {
                                 });
 
                                 cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
-                                video = document.querySelector("video");
 
-                                if (video) {
-                                    video.addEventListener('play', function () {
-                                        var event = new MouseEvent('contextmenu', {
-                                            'bubbles': true
-                                        });
+                                // 无需右键播放器就能显示下载按钮
 
-                                        video.dispatchEvent(event);
-                                        video.dispatchEvent(event);
-                                    }, { once: true });
-                                }
-                                _context71.next = 23;
+                                videoRightClick = function videoRightClick(video) {
+                                    var event = new MouseEvent('contextmenu', {
+                                        'bubbles': true
+                                    });
+
+                                    video.dispatchEvent(event);
+                                    video.dispatchEvent(event);
+                                };
+                                // video.addEventListener('play', videoRightClick, { once: true });
+
+
+                                _context71.next = 22;
+                                return new Promise(function (resolve) {
+                                    var i = setInterval(function () {
+                                        var video = document.querySelector("video");
+                                        if (video) {
+                                            videoRightClick(video);
+                                            if (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this50.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)) {
+                                                clearInterval(i);
+                                                resolve();
+                                            }
+                                        }
+                                    }, 10);
+                                });
+
+                            case 22:
+                                _context71.next = 24;
                                 return this.polyfill.setFunctions();
 
-                            case 23:
+                            case 24:
 
                                 // 3. async consistent => render UI
                                 if (href == location.href) {
@@ -8521,15 +8541,15 @@ var BiliTwin = function (_BiliUserJS) {
                                 }
 
                                 // 5. refresh => session expire
-                                _context71.next = 27;
+                                _context71.next = 28;
                                 return cidRefresh;
 
-                            case 27:
+                            case 28:
                                 this.monkey.destroy();
                                 this.polyfill.destroy();
                                 this.ui.cidSessionDestroy();
 
-                            case 30:
+                            case 31:
                             case 'end':
                                 return _context71.stop();
                         }

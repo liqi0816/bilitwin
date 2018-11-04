@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.3
+// @version     1.19.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1816,7 +1816,7 @@ class BiliMonkey {
                         data = JSON.parse(
                             _zc.split("\n").filter(
                                 x => x.startsWith("{")
-                            )[0]
+                            ).pop()
                         );
 
                         const _data_X = data.Y || data.X ||
@@ -2024,8 +2024,19 @@ class BiliMonkey {
 
         const queryInfoMutex = new Mutex();
 
+        const _getDataList = () => {
+            const _zc = playerWin.Gc || playerWin.zc ||
+                Object.values(playerWin).filter(
+                    x => typeof x == "string" && x.includes("[Info]")
+                )[0];
+            return _zc.split("\n").filter(
+                x => x.startsWith("{")
+            )
+        };
+
         // from the first page
         playerWin.player.next(1);
+        const initialDataSize = new Set(_getDataList()).size;
 
         const retPromises = list.map((x, n) => (async () => {
             await queryInfoMutex.lock();
@@ -2041,23 +2052,13 @@ class BiliMonkey {
             const res = (await r.json()).data;
 
             if (!res.durl) {
-                const _getDataList = () => {
-                    const _zc = playerWin.Gc || playerWin.zc ||
-                        Object.values(playerWin).filter(
-                            x => typeof x == "string" && x.includes("[Info]")
-                        )[0];
-                    return _zc.split("\n").filter(
-                        x => x.startsWith("{")
-                    )
-                };
-
                 await new Promise(resolve => {
                     const i = setInterval(() => {
                         const dataSize = new Set(
                             _getDataList()
                         ).size;
 
-                        if (list.length == 1 || dataSize == n + 2) {
+                        if (list.length == 1 || dataSize == n + initialDataSize + 1) {
                             clearInterval(i);
                             resolve();
                         }
@@ -8984,17 +8985,33 @@ class BiliTwin extends BiliUserJS {
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
-        const video = document.querySelector("video");
-        if (video) {
-            video.addEventListener('play', () => {
-                let event = new MouseEvent('contextmenu', {
-                    'bubbles': true
-                });
 
-                video.dispatchEvent(event);
-                video.dispatchEvent(event);
-            }, { once: true });
-        }
+        // 无需右键播放器就能显示下载按钮
+        const videoRightClick = (video) => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event);
+            video.dispatchEvent(event);
+        };
+        // video.addEventListener('play', videoRightClick, { once: true });
+        await new Promise(resolve => {
+            const i = setInterval(() => {
+                const video = document.querySelector("video");
+                if (video) {
+                    videoRightClick(video);
+                    if (
+                        this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
+                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)
+                    ) {
+                        clearInterval(i);
+                        resolve();
+                    }
+                }
+            }, 10);
+        });
+
         await this.polyfill.setFunctions();
 
         // 3. async consistent => render UI
