@@ -225,7 +225,7 @@ class BiliMonkey {
                         data = JSON.parse(
                             _zc.split("\n").filter(
                                 x => x.startsWith("{")
-                            )[0]
+                            ).pop()
                         )
 
                         const _data_X = data.Y || data.X ||
@@ -433,8 +433,19 @@ class BiliMonkey {
 
         const queryInfoMutex = new Mutex();
 
+        const _getDataList = () => {
+            const _zc = playerWin.Gc || playerWin.zc ||
+                Object.values(playerWin).filter(
+                    x => typeof x == "string" && x.includes("[Info]")
+                )[0]
+            return _zc.split("\n").filter(
+                x => x.startsWith("{")
+            )
+        }
+
         // from the first page
         playerWin.player.next(1);
+        const initialDataSize = new Set(_getDataList()).size
 
         const retPromises = list.map((x, n) => (async () => {
             await queryInfoMutex.lock();
@@ -450,23 +461,13 @@ class BiliMonkey {
             const res = (await r.json()).data
 
             if (!res.durl) {
-                const _getDataList = () => {
-                    const _zc = playerWin.Gc || playerWin.zc ||
-                        Object.values(playerWin).filter(
-                            x => typeof x == "string" && x.includes("[Info]")
-                        )[0]
-                    return _zc.split("\n").filter(
-                        x => x.startsWith("{")
-                    )
-                }
-
                 await new Promise(resolve => {
                     const i = setInterval(() => {
                         const dataSize = new Set(
                             _getDataList()
                         ).size
 
-                        if (list.length == 1 || dataSize == n + 2) {
+                        if (list.length == 1 || dataSize == n + initialDataSize + 1) {
                             clearInterval(i);
                             resolve();
                         }
