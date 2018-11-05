@@ -510,6 +510,7 @@ class UI {
         polyfill = this.twin.polyfill,
     } = {}) {
         let oped = [];
+        const BiliDanmakuSettings = polyfill.BiliDanmakuSettings
         const refreshSession = new HookedFunction(() => oped = polyfill.userdata.oped[polyfill.getCollectionId()] || []); // as a convenient callback register
         return <li
             class="context-menu-menu bilitwin"
@@ -545,15 +546,48 @@ class UI {
                                 <span class="video-contextmenu-icon"></span> 3
                             </a>
                         </li>
-                        <li class="context-menu-function" onclick={e => polyfill.setVideoSpeed(e.children[0].children[1].value)}>
+                        <li class="context-menu-function" onclick={e => polyfill.setVideoSpeed(e.target.children[1].value)}>
                             <a class="context-menu-a">
                                 <span class="video-contextmenu-icon"></span> 点击确认
                                 <input
                                     type="text"
-                                    style="width: 35px; height: 70%"
+                                    style="width: 35px; height: 70%; color:black;"
                                     onclick={e => e.stopPropagation()}
                                     ref={e => refreshSession.addCallback(() => e.value = polyfill.video.playbackRate)}
                                 />
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="context-menu-menu">
+                    <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> 自定义弹幕字体
+                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
+                    </a>
+                    <ul>
+                        <li class="context-menu-function"
+                            onclick={e => {
+                                BiliDanmakuSettings.set('fontfamily', e.target.lastChild.value);
+                                playerWin.location.reload();
+                            }}
+                        >
+                            <a class="context-menu-a">
+                                <input
+                                    type="text"
+                                    style="width: 108px; height: 70%; color:black;"
+                                    onclick={e => e.stopPropagation()}
+                                    ref={e => refreshSession.addCallback(() => e.value = BiliDanmakuSettings.get('fontfamily'))}
+                                />
+                            </a>
+                        </li>
+                        <li class="context-menu-function"
+                            onclick={e => {
+                                BiliDanmakuSettings.set('fontfamily', e.target.parentElement.previousElementSibling.querySelector("input").value);
+                                playerWin.location.reload();
+                            }}
+                        >
+                            <a class="context-menu-a">
+                                点击确认并刷新
                             </a>
                         </li>
                     </ul>

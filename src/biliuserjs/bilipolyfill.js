@@ -30,6 +30,22 @@ class BiliPolyfill {
         this.destroy = new HookedFunction();
         this.playerWin.addEventListener('beforeunload', this.destroy);
         this.destroy.addCallback(() => this.playerWin.removeEventListener('beforeunload', this.destroy));
+
+        this.BiliDanmakuSettings =
+            class BiliDanmakuSettings {
+                static getPlayerSettings() {
+                    return playerWin.localStorage.bilibili_player_settings && JSON.parse(playerWin.localStorage.bilibili_player_settings)
+                }
+                static get(key) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings()
+                    return player_settings.setting_config && player_settings.setting_config[key]
+                }
+                static set(key, value) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings()
+                    player_settings.setting_config[key] = value
+                    playerWin.localStorage.bilibili_player_settings = JSON.stringify(player_settings)
+                }
+            }
     }
 
     saveUserdata() {

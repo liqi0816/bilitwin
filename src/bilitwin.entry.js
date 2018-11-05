@@ -75,7 +75,9 @@ class BiliTwin extends BiliUserJS {
                     videoRightClick(video)
                     if (
                         this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
-                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)
+                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
+                            || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
+                        )
                     ) {
                         clearInterval(i);
                         resolve();
