@@ -5,8 +5,8 @@ Demux FLV into H264 + AAC stream and ASS into line stream; then remux them into 
 ## Quick Start
 
 ```
-samples/gen_case.ass  
-samples/gen_case.flv
+static/samples/gen_case.ass  
+static/samples/gen_case.flv
 
 node index.js
 

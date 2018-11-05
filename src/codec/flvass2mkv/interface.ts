@@ -1,0 +1,1 @@
+export { FLVASS2MKV, FLVASS2MKVInit } from './src/flvass2mkv.js';

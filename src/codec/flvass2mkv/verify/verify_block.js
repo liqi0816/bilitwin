@@ -1,10 +1,10 @@
 const fs = require('fs');
-const ebml = require('ebml');
+const { Encoder, Decoder } = require('ebml');
 const ebmlBlock = require('ebml-block');
 
 const simplified = [];
-const encoder = new ebml.Encoder();
-const decoder = new ebml.Decoder();
+const encoder = new Encoder();
+const decoder = new Decoder();
 const mkv = fs.readFileSync('../out.mkv');
 
 decoder.write(mkv);

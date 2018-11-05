@@ -1,44 +1,46 @@
 import memoize from "lodash-es/memoize";
 export const numberToByteArray = (num, byteLength = getNumberByteLength(num)) => {
-    var byteArray;
-    if (byteLength == 1) {
+    let byteArray;
+    if (byteLength === 1) {
         byteArray = new DataView(new ArrayBuffer(1));
         byteArray.setUint8(0, num);
     }
-    else if (byteLength == 2) {
+    else if (byteLength === 2) {
         byteArray = new DataView(new ArrayBuffer(2));
         byteArray.setUint16(0, num);
     }
-    else if (byteLength == 3) {
+    else if (byteLength === 3) {
         byteArray = new DataView(new ArrayBuffer(3));
         byteArray.setUint8(0, num >> 16);
         byteArray.setUint16(1, num & 0xffff);
     }
-    else if (byteLength == 4) {
+    else if (byteLength === 4) {
         byteArray = new DataView(new ArrayBuffer(4));
         byteArray.setUint32(0, num);
     }
-    else if (num < 0xffffffff) {
+    else if ( /* byteLength === 5 && */num < 0xffffffff) {
+        // 4GB (upper limit for int32) should be enough in most cases
         byteArray = new DataView(new ArrayBuffer(5));
         byteArray.setUint32(1, num);
     }
-    else if (byteLength == 5) {
+    else if (byteLength === 5) {
+        // Naive emulations of int64 bitwise opreators
         byteArray = new DataView(new ArrayBuffer(5));
         byteArray.setUint8(0, num / 0x100000000 | 0);
         byteArray.setUint32(1, num % 0x100000000);
     }
-    else if (byteLength == 6) {
+    else if (byteLength === 6) {
         byteArray = new DataView(new ArrayBuffer(6));
         byteArray.setUint16(0, num / 0x100000000 | 0);
         byteArray.setUint32(2, num % 0x100000000);
     }
-    else if (byteLength == 7) {
+    else if (byteLength === 7) {
         byteArray = new DataView(new ArrayBuffer(7));
         byteArray.setUint8(0, num / 0x1000000000000 | 0);
         byteArray.setUint16(1, num / 0x100000000 & 0xffff);
         byteArray.setUint32(3, num % 0x100000000);
     }
-    else if (byteLength == 8) {
+    else if (byteLength === 8) {
         byteArray = new DataView(new ArrayBuffer(8));
         byteArray.setUint32(0, num / 0x100000000 | 0);
         byteArray.setUint32(4, num % 0x100000000);

@@ -8,33 +8,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' };
+const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' } as typeof navigator;
 
 const _Blob = typeof Blob === 'function' && Blob || class {
-    constructor(array) {
+    constructor(array: BlobPart[]) {
         return Buffer.concat(array.map(Buffer.from.bind(Buffer)));
     }
-};
+} as any as typeof Blob;
 
 const _TextEncoder = typeof TextEncoder === 'function' && TextEncoder || class {
-    /**
-     * @param {string} chunk 
-     * @returns {Uint8Array}
-     */
-    encode(chunk) {
+    encode(chunk: string) {
         return Buffer.from(chunk, 'utf-8');
     }
-};
+} as any as typeof TextEncoder;
 
 const _TextDecoder = typeof TextDecoder === 'function' && TextDecoder || class extends require('string_decoder').StringDecoder {
-    /**
-     * @param {ArrayBuffer} chunk 
-     * @returns {string}
-     */
-    decode(chunk) {
+    decode(chunk: ArrayBuffer) {
         return this.end(Buffer.from(chunk));
     }
-}
+} as any as typeof TextDecoder;
 
 export { _navigator as navigator, _Blob as Blob, _TextEncoder as TextEncoder, _TextDecoder as TextDecoder };
 export default { navigator: _navigator, Blob: _Blob, TextEncoder: _TextEncoder, TextDecoder: _TextDecoder };

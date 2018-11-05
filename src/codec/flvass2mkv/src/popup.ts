@@ -10,13 +10,14 @@
 
 // @ts-ignore: this import statement will be handled by rollup
 import embeddedHTML from './embedded.html';
+import { SimpleProgressEvent } from './util/common-types';
 
 declare const embeddedHTML: string
 
 interface WorkerWinInit {
-    onflvprogress?: (event: ProgressEvent) => void
-    onfileload?: (event: ProgressEvent) => void
-    onmkvprogress?: (event: ProgressEvent) => void
+    onflvprogress?: (event: SimpleProgressEvent) => void
+    onfileload?: (event: SimpleProgressEvent) => void
+    onmkvprogress?: (event: SimpleProgressEvent) => void
     name?: string
     flv: Blob | string | ArrayBuffer
     ass: Blob | string | ArrayBuffer
@@ -26,11 +27,11 @@ interface WorkerWin extends Window {
     exec(init: WorkerWinInit): Promise<string>
 }
 
-class MKVTransmuxer {
+class FLVASS2MKVBundle {
     workerWin: WorkerWin | null
     option?: Partial<WorkerWinInit>
 
-    constructor(option?: MKVTransmuxer['option']) {
+    constructor(option?: FLVASS2MKVBundle['option']) {
         this.workerWin = null;
         this.option = option;
     }
@@ -58,4 +59,4 @@ class MKVTransmuxer {
     }
 }
 
-export default MKVTransmuxer;
+export default FLVASS2MKVBundle;

@@ -9,34 +9,86 @@
 */
 
 import { TextEncoder, Blob } from '../util/shim.js';
+import { SimpleProgressEvent } from '../util/common-types.js';
 import EBML from '../util/ebml.js';
+import ASS from '../demuxer/ass.js';
+
+export interface MKVMetadata {
+    codecId: string
+    codecPrivate?: Uint8Array
+    defaultDuration?: number
+    pixelWidth?: number
+    pixelHeight?: number
+    displayWidth?: number
+    displayHeight?: number
+    samplingFrequence?: number
+    channels?: number
+}
+
+export interface MKVClusterBlock {
+    track: number
+    frame: Uint8Array
+    timestamp: number
+    simple?: boolean
+    isKeyframe?: boolean
+    discardable?: boolean
+    duration?: number
+    codecState?: Uint8Array
+}
+
+export interface MKVInit {
+    mininal?: boolean
+    onprogress?: (event: SimpleProgressEvent) => void
+    segmentUID?: Uint8Array
+    trackUIDBase?: number
+}
 
 class MKV {
-    constructor(config) {
-        this.min = true;
-        this.onprogress = null;
-        Object.assign(this, config);
-        this.segmentUID = MKV.randomBytes(16);
-        this.trackUIDBase = Math.trunc(Math.random() * 2 ** 16);
+    mininal: boolean
+    onprogress: ((event: SimpleProgressEvent) => void) | null
+    segmentUID: Uint8Array
+    trackUIDBase: number
+    trackMetadata: {
+        h264: MKVMetadata | null,
+        aac: MKVMetadata | null,
+        ass: MKVMetadata | null,
+    }
+    duration: number
+    blocks: {
+        h264: MKVClusterBlock[],
+        aac: MKVClusterBlock[],
+        ass: MKVClusterBlock[],
+    }
+
+    constructor({
+        mininal = true,
+        onprogress = null,
+        segmentUID = MKV.randomBytes(16),
+        trackUIDBase = Math.trunc(Math.random() * 2 ** 16),
+    } = {} as MKVInit) {
+        this.mininal = mininal;
+        this.onprogress = onprogress;
+        this.segmentUID = segmentUID;
+        this.trackUIDBase = trackUIDBase;
         this.trackMetadata = { h264: null, aac: null, ass: null };
         this.duration = 0;
         this.blocks = { h264: [], aac: [], ass: [] };
     }
 
-    static randomBytes(length) {
-        const ret = new Array(length);
+    static randomBytes(length: number) {
+        const ret = new Uint8Array(length);
         for (let i = 0; i < length; i++) {
             ret[i] = Math.trunc(Math.random() * 256);
         }
         return ret;
     }
 
-    static textToMS(str) {
-        const [, h, mm, ss, ms10] = str.match(/(\d+):(\d+):(\d+).(\d+)/);
-        return h * 3600000 + mm * 60000 + ss * 1000 + ms10 * 10;
+    static textToMS(str: string) {
+        const [, h, mm, ss, ms10] = str.match(/(\d+):(\d+):(\d+).\d{3}/)!;
+        return (h as unknown as number) * 3600000 + (mm as unknown as number) * 60000 + (ss as unknown as number) * 1000 + (ms10 as unknown as number) * 10;
     }
 
-    static mimeToCodecID(str) {
+    static mimeToCodecID(str: string) {
         if (str.startsWith('avc1')) {
             return 'V_MPEG4/ISO/AVC';
         }
@@ -44,11 +96,11 @@ class MKV {
             return 'A_AAC';
         }
         else {
-            throw new Error(`MKVRemuxer: unknown codec ${str}`);
+            throw new TypeError(`MKVRemuxer: unknown codec ${str}`);
         }
     }
 
-    static uint8ArrayConcat(...array) {
+    static uint8ArrayConcat(...array: Uint8Array[]) {
         // if (Array.isArray(array[0])) array = array[0];
         if (array.length === 1) return array[0];
         if (typeof Buffer !== 'undefined') return Buffer.concat(array);
@@ -61,8 +113,9 @@ class MKV {
         return ret;
     }
 
-    addH264Metadata(h264) {
-        this.trackMetadata.h264 = {
+    addH264Metadata(h264: any) {
+        this.duration = Math.max(this.duration, h264.duration);
+        return this.trackMetadata.h264 = {
             codecId: MKV.mimeToCodecID(h264.codec),
             codecPrivate: h264.avcc,
             defaultDuration: h264.refSampleDuration * 1000000,
@@ -71,31 +124,30 @@ class MKV {
             displayWidth: h264.presentWidth,
             displayHeight: h264.presentHeight
         };
-        this.duration = Math.max(this.duration, h264.duration);
     }
 
-    addAACMetadata(aac) {
-        this.trackMetadata.aac = {
+    addAACMetadata(aac: any) {
+        this.duration = Math.max(this.duration, aac.duration);
+        return this.trackMetadata.aac = {
             codecId: MKV.mimeToCodecID(aac.originalCodec),
             codecPrivate: aac.configRaw,
             defaultDuration: aac.refSampleDuration * 1000000,
             samplingFrequence: aac.audioSampleRate,
             channels: aac.channelCount
         };
-        this.duration = Math.max(this.duration, aac.duration);
     }
 
-    addASSMetadata(ass) {
-        this.trackMetadata.ass = {
+    addASSMetadata(ass: ASS) {
+        return this.trackMetadata.ass = {
             codecId: 'S_TEXT/ASS',
             codecPrivate: new TextEncoder().encode(ass.header)
         };
     }
 
-    addH264Stream(h264) {
-        this.blocks.h264 = this.blocks.h264.concat(h264.samples.map(e => ({
+    addH264Stream(h264: any) {
+        return this.blocks.h264 = this.blocks.h264.concat(h264.samples.map((e: any) => ({
             track: 1,
-            frame: MKV.uint8ArrayConcat(...e.units.map(i => i.data)),
+            frame: MKV.uint8ArrayConcat(...e.units.map(({ data }: { data: Uint8Array }) => data)),
             isKeyframe: e.isKeyframe,
             discardable: Boolean(e.refIdc),
             timestamp: e.pts,
@@ -103,8 +155,8 @@ class MKV {
         })));
     }
 
-    addAACStream(aac) {
-        this.blocks.aac = this.blocks.aac.concat(aac.samples.map(e => ({
+    addAACStream(aac: any) {
+        return this.blocks.aac = this.blocks.aac.concat(aac.samples.map((e: any) => ({
             track: 2,
             frame: e.unit,
             timestamp: e.pts,
@@ -112,8 +164,8 @@ class MKV {
         })));
     }
 
-    addASSStream(ass) {
-        this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({
+    addASSStream(ass: ASS) {
+        return this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({
             track: 3,
             frame: new TextEncoder().encode(`${i},${e['Layer'] || ''},${e['Style'] || ''},${e['Name'] || ''},${e['MarginL'] || ''},${e['MarginR'] || ''},${e['MarginV'] || ''},${e['Effect'] || ''},${e['Text'] || ''}`),
             timestamp: MKV.textToMS(e['Start']),
@@ -141,7 +193,7 @@ class MKV {
     }
 
     buildBody() {
-        if (this.min) {
+        if (this.mininal) {
             return new Blob([EBML.build(EBML.element(EBML.ID.Segment, [
                 this.getSegmentInfo(),
                 this.getTracks(),
@@ -196,6 +248,7 @@ class MKV {
     }
 
     getVideoTrackEntry() {
+        if (!this.trackMetadata.h264) throw new TypeError(`this.trackMetadata.h264 is empty`);
         return EBML.element(EBML.ID.TrackEntry, [
             EBML.element(EBML.ID.TrackNumber, EBML.number(1)),
             EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 1)),
@@ -215,6 +268,7 @@ class MKV {
     }
 
     getAudioTrackEntry() {
+        if (!this.trackMetadata.aac) throw new TypeError(`this.trackMetadata.aac is empty`);
         return EBML.element(EBML.ID.TrackEntry, [
             EBML.element(EBML.ID.TrackNumber, EBML.number(2)),
             EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 2)),
@@ -232,6 +286,7 @@ class MKV {
     }
 
     getSubtitleTrackEntry() {
+        if (!this.trackMetadata.ass) throw new TypeError(`this.trackMetadata.aac is empty`);
         return EBML.element(EBML.ID.TrackEntry, [
             EBML.element(EBML.ID.TrackNumber, EBML.number(3)),
             EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3)),
@@ -245,6 +300,7 @@ class MKV {
 
     getClusterArray() {
         // H264 codecState
+        if (!this.trackMetadata.h264) throw new TypeError(`this.trackMetadata.h264 is empty`);
         this.blocks.h264[0].simple = false;
         this.blocks.h264[0].codecState = this.trackMetadata.h264.codecPrivate;
 
@@ -253,7 +309,7 @@ class MKV {
         let k = 0;
         let clusterTimeCode = 0;
         let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
-        let ret = [clusterContent];
+        let clusterContentArr = [clusterContent];
         const progressThrottler = Math.pow(2, Math.floor(Math.log(this.blocks.h264.length >> 7) / Math.log(2))) - 1;
         for (i = 0; i < this.blocks.h264.length; i++) {
             const e = this.blocks.h264[i];
@@ -277,7 +333,7 @@ class MKV {
                 // start new cluster
                 clusterTimeCode = e.timestamp;
                 clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
-                ret.push(clusterContent);
+                clusterContentArr.push(clusterContent);
             }
             clusterContent.push(this.getBlocks(e, clusterTimeCode));
             if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });
@@ -285,33 +341,33 @@ class MKV {
         for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));
         for (; k < this.blocks.ass.length; k++) clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
         if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });
-        if (ret[0].length == 1) ret.shift();
-        ret = ret.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));
+        if (clusterContentArr[0].length == 1) clusterContentArr.shift();
+        const ret = clusterContentArr.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));
 
         return ret;
     }
 
-    getBlocks(e, clusterTimeCode) {
-        if (e.simple) {
+    getBlocks({ track, frame, timestamp, simple, isKeyframe, duration, codecState }: MKVClusterBlock, clusterTimeCode: number) {
+        if (simple) {
             return EBML.element(EBML.ID.SimpleBlock, [
-                EBML.vintEncodedNumber(e.track),
-                EBML.int16(e.timestamp - clusterTimeCode),
-                EBML.bytes(e.isKeyframe ? [128] : [0]),
-                EBML.bytes(e.frame)
+                EBML.vintEncodedNumber(track),
+                EBML.int16(timestamp - clusterTimeCode),
+                EBML.bytes(isKeyframe ? [128] : [0]),
+                EBML.bytes(frame)
             ]);
         }
         else {
             let blockGroupContent = [EBML.element(EBML.ID.Block, [
-                EBML.vintEncodedNumber(e.track),
-                EBML.int16(e.timestamp - clusterTimeCode),
+                EBML.vintEncodedNumber(track),
+                EBML.int16(timestamp - clusterTimeCode),
                 EBML.bytes([0]),
-                EBML.bytes(e.frame)
+                EBML.bytes(frame)
             ])];
-            if (typeof e.duration != 'undefined') {
-                blockGroupContent.push(EBML.element(EBML.ID.BlockDuration, EBML.number(e.duration)));
+            if (typeof duration != 'undefined') {
+                blockGroupContent.push(EBML.element(EBML.ID.BlockDuration, EBML.number(duration)));
             }
-            if (typeof e.codecState != 'undefined') {
-                blockGroupContent.push(EBML.element(EBML.ID.CodecState, EBML.bytes(e.codecState)));
+            if (typeof codecState != 'undefined') {
+                blockGroupContent.push(EBML.element(EBML.ID.CodecState, EBML.bytes(codecState)));
             }
             return EBML.element(EBML.ID.BlockGroup, blockGroupContent);
         }
