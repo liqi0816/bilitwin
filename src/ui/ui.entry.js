@@ -10,8 +10,11 @@
 
 import Exporter from './exporter.js';
 import HookedFunction from '../util/hooked-function.js';
+import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
+import CacheDB from '../util/cache-db.js'
 import FLV from '../flvparser/flv.js';
 import MKVTransmuxer from '../flvass2mkv/interface.js';
+import { WebWorker, BatchDownloadWorkerFn } from './webworker.js';
 
 class UI {
     constructor(twin, option = UI.optionDefaults) {
@@ -313,7 +316,7 @@ class UI {
                 table.rows[i].cells[1].children[0].click();
         }
 
-        // 4. set sprogress
+        // 4. set progress
         const progress = a.parentElement.nextElementSibling.children[0];
         progress.max = monkey.flvs.length + 1;
         progress.value = 0;
@@ -896,10 +899,93 @@ class UI {
     }
 
     // Common
-    static buildDownloadAllPageDefaultFormatsBody(ret) {
+    static buildDownloadAllPageDefaultFormatsBody(ret, worker) {
         const table = <table onclick={e => e.stopPropagation()}></table>;
 
-        for (const i of ret) {
+        let flvsBlob = [];
+        const loadFLVFromCache = async (name, partial = false) => {
+            if (partial) name = 'PC_' + name
+            const cache = new CacheDB()
+            let item = await cache.getData(name)
+            return item && item.data
+        }
+        const saveFLVToCache = async (name, blob) => {
+            const cache = new CacheDB()
+            return cache.addData({ name, data: blob });
+        }
+        const getFLVs = async (videoIndex) => {
+            if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = []
+
+            // add beforeUnloadHandler
+            const handler = e => UI.beforeUnloadHandler(e);
+            window.addEventListener('beforeunload', handler);
+
+            const { durl } = ret[videoIndex]
+
+            return await Promise.all(
+                durl.map((_, durlIndex) => {
+                    if (flvsBlob[videoIndex][durlIndex]) return flvsBlob[videoIndex][durlIndex];
+
+                    flvsBlob[videoIndex][durlIndex] = (async () => {
+                        let burl = durl[durlIndex];
+                        const outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
+
+                        const burlA = top.document.querySelector(`a[download][href="${burl}"]`)
+                        burlA.after(<progress value="0" max="100">进度条</progress>)
+                        const progress = burlA.parentElement.querySelector("progress")
+
+                        let flvCache = await loadFLVFromCache(outputName);
+                        if (flvCache) {
+                            progress.value = progress.max
+                            progress.after(
+                                <a
+                                    href={top.URL.createObjectURL(flvCache)}
+                                    download={outputName}
+                                >另存为</a>
+                            )
+                            return flvsBlob[videoIndex][durlIndex] = flvCache;
+                        }
+
+                        let partialFLVFromCache = await loadFLVFromCache(outputName, true);
+                        if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
+
+                        const opt = {
+                            method: 'GET',
+                            mode: 'cors',
+                            cache: 'default',
+                            referrerPolicy: 'no-referrer-when-downgrade',
+                            cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                            headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
+                        };
+
+                        opt.onprogress = (loaded, total) => {
+                            progress.value = loaded;
+                            progress.max = total;
+                        }
+
+                        const fch = new DetailedFetchBlob(burl, opt);
+                        let fullFLV = await fch.getBlob();
+                        if (partialFLVFromCache) {
+                            fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                        }
+                        saveFLVToCache(outputName, fullFLV);
+
+                        progress.after(
+                            <a
+                                href={top.URL.createObjectURL(fullFLV)}
+                                download={outputName}
+                            >另存为</a>
+                        )
+
+                        return (flvsBlob[videoIndex][durlIndex] = fullFLV);
+                    })();
+
+                    return flvsBlob[videoIndex][durlIndex]
+                })
+            )
+        }
+
+        ret.forEach((i, index) => {
             table.append(
                 <tr>
                     <td>
@@ -922,10 +1008,19 @@ class UI {
                     </td>
                 </tr>),
                 <tr>
+                    <td>
+                        <a onclick={async (e) => {
+                            console.log(await getFLVs(index))
+                        }} href="#">
+                            缓存+自动合并
+                        </a>
+                    </td>
+                </tr>,
+                <tr>
                     <td>&nbsp;</td>
                 </tr>
             );
-        }
+        })
 
         return <fragment>
             <style>{`
@@ -939,6 +1034,10 @@ class UI {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     text-align: center;
+                }
+
+                progress {
+                    margin-left: 15px;
                 }
             `}</style>
             <h1>(测试) 批量抓取</h1>
@@ -961,10 +1060,21 @@ class UI {
     }
 
     static displayDownloadAllPageDefaultFormatsBody(ret) {
+        const videoTitle = top.document.getElementsByTagName('h1')[0].textContent.trim()
+
+        if (top.player) top.player.destroy() // 销毁播放器
+
         top.document.open();
         top.document.close();
 
-        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
+        const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn)
+        worker.postMessage([
+            'init',
+            { videoTitle, ret }
+        ])
+
+        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, worker));
+
         return ret;
     }
 
