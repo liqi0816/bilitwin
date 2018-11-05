@@ -2,7 +2,7 @@ import * as constants from './constants.js';
 
 declare var OffscreenCanvas: HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
 
-interface FrameCollectorInit {
+export interface FrameCollectorInit {
     width?: number
     height?: number
 }

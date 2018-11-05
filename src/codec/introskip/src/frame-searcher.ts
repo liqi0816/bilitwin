@@ -3,7 +3,7 @@ import * as constants from './constants.js';
 declare var OffscreenCanvas: HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
 declare function requestIdleCallback(callback: () => void): number;
 
-interface FrameCollectorInit {
+export interface FrameCollectorInit {
     width?: number
     height?: number
     sampleInterval?: number

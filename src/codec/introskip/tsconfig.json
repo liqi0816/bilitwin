@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
+    "declaration": true,
     "sourceMap": false,
-    "allowJs": true,
     "strict": true,
     "noImplicitReturns": true,
     "importHelpers": true,

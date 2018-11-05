@@ -9,13 +9,16 @@ const secToReadable = (sec: number) => `${(sec / 60) | 0}'${sec % 60}"`;
     const video = document.getElementsByTagName('video')[0];
     const [collectButton, searchButton] = document.getElementsByTagName('button');
     const [collectCanvas, searchCanvas, diffCanvas] = document.getElementsByTagName('canvas');
-    const stdout = document.getElementsByTagName('pre')[0];
+    const stdout = document.getElementsByTagName('textarea')[0];
 
-    // canvas size reset
+    // canvas size = collector size
     collectCanvas.width = searchCanvas.width = constants.width;
     collectCanvas.height = searchCanvas.height = constants.height;
 
-    // demo drag-drop video files
+    // canvas comment
+    stdout.value +='↓差异度曲线(越低越像)\n';
+
+    // drag-drop video files
     document.body.addEventListener('dragover', e => e.preventDefault());
     document.body.addEventListener('drop', e => {
         e.preventDefault();
@@ -23,7 +26,7 @@ const secToReadable = (sec: number) => `${(sec / 60) | 0}'${sec % 60}"`;
         video.src = URL.createObjectURL(e.dataTransfer!.files[0]);
     });
 
-    // demo keypress shortcut
+    // keypress shortcut
     document.body.addEventListener('keypress', ({ key }) => {
         if (key === ' ') {
             if (video.paused) video.play();
@@ -31,7 +34,7 @@ const secToReadable = (sec: number) => `${(sec / 60) | 0}'${sec % 60}"`;
         }
     });
 
-    // demo actions
+    // actions
     const collector = new FrameCollector(video);
     collectButton.addEventListener('click', () => {
         const frame = collector.capture();
@@ -65,6 +68,7 @@ const secToReadable = (sec: number) => `${(sec / 60) | 0}'${sec % 60}"`;
             const log = searcher.diffLog!;
             const max = Math.max(...log);
             const context = diffCanvas.getContext('2d')!;
+            context.clearRect(0, 0, width, height);
             context.beginPath();
             context.strokeStyle = 'blue';
             context.moveTo(0, 0);
@@ -75,13 +79,13 @@ const secToReadable = (sec: number) => `${(sec / 60) | 0}'${sec % 60}"`;
         }
     });
     searcher.addEventListener('load', ({ detail }: any) => {
-        stdout.textContent += `发现片头 ${secToReadable(video.currentTime | 0)}\n`;
+        stdout.value += `发现片头 ${secToReadable(video.currentTime | 0)}\n`;
         const imageData = new ImageData(detail, collector.width, collector.height);
         const context = searchCanvas.getContext('2d')!;
         context.putImageData(imageData, 0, 0);
     })
 
-    // develop cycle
+    // developer shortcut
     const develop = true;
     if (develop) {
         video.currentTime = 2 * 60 + 15;
