@@ -23,10 +23,12 @@ import FLVASS2MKV from './flvass2mkv.js';
 if (typeof require == 'function' && require.main == module) {
     (async () => {
         const fs = require('fs');
-        const flvFileName = process.argv.slice(2).find(e => e.includes('.flv')) || '../static/samples/gen_case.flv';
-        const assFileName = process.argv.slice(2).find(e => e.includes('.ass')) || '../static/samples/gen_case.ass';
+        const flvFileName = process.argv.slice(2).find(e => e.includes('.flv')) || 'static/samples/gen_case.flv';
+        const assFileName = process.argv.slice(2).find(e => e.includes('.ass')) || 'static/samples/gen_case.ass';
         const flvFile = fs.readFileSync(flvFileName).buffer;
         const assFile = fs.readFileSync(assFileName).buffer;
         fs.writeFileSync('out.mkv', await new FLVASS2MKV({ onmkvprogress: console.log.bind(console) }).build(flvFile, assFile));
     })();
 }
+
+export default FLVASS2MKV;

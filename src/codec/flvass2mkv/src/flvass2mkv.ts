@@ -64,15 +64,14 @@ class FLVASS2MKV {
      * Demux FLV into H264 + AAC stream and ASS into line stream; then
      * remux them into a MKV file.
      */
-    async build(flvSource: Blob | string | ArrayBuffer = '../static/samples/gen_case.flv', assSource: Blob | string | ArrayBuffer = '../static/samples/gen_case.ass') {
+    async build(flvSource: Blob | string | ArrayBuffer = 'static/samples/gen_case.flv', assSource: Blob | string | ArrayBuffer = 'static/samples/gen_case.ass') {
         // load flv and ass as arraybuffer
-        let flvBuffer!: ArrayBuffer, assBuffer!: ArrayBuffer;
-        await Promise.all([
-            new Promise((resolve, reject) => {
+        const [flvBuffer, assBuffer] = await Promise.all([
+            new Promise<ArrayBuffer>((resolve, reject) => {
                 if (flvSource instanceof Blob) {
                     const e = new FileReader();
                     e.onprogress = this.onflvprogress;
-                    e.onload = () => resolve(flvBuffer = e.result as unknown as ArrayBuffer);
+                    e.onload = () => resolve(e.result as ArrayBuffer);
                     e.onerror = reject;
                     e.readAsArrayBuffer(flvSource);
                 }
@@ -80,11 +79,10 @@ class FLVASS2MKV {
                     const e = new XMLHttpRequest();
                     e.responseType = 'arraybuffer';
                     e.onprogress = this.onflvprogress;
-                    e.onload = () => resolve(flvSource = e.response);
+                    e.onload = () => resolve(e.response);
                     e.onerror = reject;
                     e.open('get', flvSource);
                     e.send();
-                    flvSource = '';
                 }
                 else if (flvSource instanceof ArrayBuffer) {
                     resolve(flvSource);
@@ -92,13 +90,13 @@ class FLVASS2MKV {
                 else {
                     reject(new TypeError('flvass2mkv: flvSource {Blob|string|ArrayBuffer}'));
                 }
-                if (!assSource && this.onurlrevokesafe) this.onurlrevokesafe();
+                if (typeof assSource !== 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
             }),
-            new Promise((resolve, reject) => {
+            new Promise<ArrayBuffer>((resolve, reject) => {
                 if (assSource instanceof Blob) {
                     const e = new FileReader();
                     e.onprogress = this.onassprogress;
-                    e.onload = () => resolve(assBuffer = e.result as unknown as ArrayBuffer);
+                    e.onload = () => resolve(e.result as ArrayBuffer);
                     e.onerror = reject;
                     e.readAsArrayBuffer(assSource);
                 }
@@ -106,11 +104,10 @@ class FLVASS2MKV {
                     const e = new XMLHttpRequest();
                     e.responseType = 'arraybuffer';
                     e.onprogress = this.onassprogress;
-                    e.onload = () => resolve(assSource = e.response);
+                    e.onload = () => resolve(e.response);
                     e.onerror = reject;
                     e.open('get', assSource);
                     e.send();
-                    assSource = '';
                 }
                 else if (assSource instanceof ArrayBuffer) {
                     resolve(assSource);
@@ -118,7 +115,7 @@ class FLVASS2MKV {
                 else {
                     reject(new TypeError('flvass2mkv: assSource {Blob|string|ArrayBuffer}'));
                 }
-                if (!flvSource && this.onurlrevokesafe) this.onurlrevokesafe();
+                if (this.onurlrevokesafe) this.onurlrevokesafe();
             }),
         ]);
         if (this.onfileload) this.onfileload();

@@ -84,7 +84,7 @@ class MKV {
     }
 
     static textToMS(str: string) {
-        const [, h, mm, ss, ms10] = str.match(/(\d+):(\d+):(\d+).\d{3}/)!;
+        const [, h, mm, ss, ms10] = str.match(/(\d+):(\d{2}):(\d{2})\.(\d{2})/)!;
         return (h as unknown as number) * 3600000 + (mm as unknown as number) * 60000 + (ss as unknown as number) * 1000 + (ms10 as unknown as number) * 10;
     }
 
