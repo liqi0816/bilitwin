@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.4
+// @version     1.20.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -182,7 +182,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.4
+// @version     1.20.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -4232,6 +4232,34 @@ var BiliPolyfill = function () {
         this.destroy.addCallback(function () {
             return _this21.playerWin.removeEventListener('beforeunload', _this21.destroy);
         });
+
+        this.BiliDanmakuSettings = function () {
+            function BiliDanmakuSettings() {
+                _classCallCheck(this, BiliDanmakuSettings);
+            }
+
+            _createClass(BiliDanmakuSettings, null, [{
+                key: 'getPlayerSettings',
+                value: function getPlayerSettings() {
+                    return playerWin.localStorage.bilibili_player_settings && JSON.parse(playerWin.localStorage.bilibili_player_settings);
+                }
+            }, {
+                key: 'get',
+                value: function get(key) {
+                    var player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    return player_settings.setting_config && player_settings.setting_config[key];
+                }
+            }, {
+                key: 'set',
+                value: function set(key, value) {
+                    var player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    player_settings.setting_config[key] = value;
+                    playerWin.localStorage.bilibili_player_settings = JSON.stringify(player_settings);
+                }
+            }]);
+
+            return BiliDanmakuSettings;
+        }();
     }
 
     _createClass(BiliPolyfill, [{
@@ -6819,7 +6847,7 @@ var UI = function () {
                     _ref79$table = _ref79.table,
                     table = _ref79$table === undefined ? this.cidSessionDom.flvTable : _ref79$table;
 
-                var i, progress, _i2, files, href, ass, outputName;
+                var i, progress, _i2, files, href, ass, outputName, pageNameElement, pageName;
 
                 return regeneratorRuntime.wrap(function _callee62$(_context64) {
                     while (1) {
@@ -6879,9 +6907,15 @@ var UI = function () {
                             case 18:
                                 ass = _context64.sent;
                                 outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+                                pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
+
+                                if (pageNameElement) {
+                                    pageName = pageNameElement.textContent;
+
+                                    if (pageName && pageName != outputName) outputName += ' - ' + pageName;
+                                }
 
                                 // 6. build download all ui
-
                                 progress.value++;
                                 table.prepend(function () {
                                     var tr1 = document.createElement('tr');
@@ -6923,7 +6957,7 @@ var UI = function () {
 
                                 return _context64.abrupt('return', href);
 
-                            case 23:
+                            case 25:
                             case 'end':
                                 return _context64.stop();
                         }
@@ -7343,6 +7377,7 @@ var UI = function () {
                 polyfill = _ref90$polyfill === undefined ? this.twin.polyfill : _ref90$polyfill;
 
             var oped = [];
+            var BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
             var refreshSession = new HookedFunction(function () {
                 return oped = polyfill.userdata.oped[polyfill.getCollectionId()] || [];
             }); // as a convenient callback register
@@ -7431,7 +7466,7 @@ var UI = function () {
             li5.className = 'context-menu-function';
 
             li5.onclick = function (e) {
-                return polyfill.setVideoSpeed(e.children[0].children[1].value);
+                return polyfill.setVideoSpeed(e.target.children[1].value);
             };
 
             var a6 = document.createElement('a');
@@ -7442,7 +7477,7 @@ var UI = function () {
             a6.append(' \u70B9\u51FB\u786E\u8BA4');
             var input = document.createElement('input');
             input.type = 'text';
-            input.style = 'width: 35px; height: 70%';
+            input.style = 'width: 35px; height: 70%; color:black;';
 
             input.onclick = function (e) {
                 return e.stopPropagation();
@@ -7466,7 +7501,7 @@ var UI = function () {
             var span8 = document.createElement('span');
             span8.className = 'video-contextmenu-icon';
             a7.append(span8);
-            a7.append(' \u7247\u5934\u7247\u5C3E');
+            a7.append(' \u81EA\u5B9A\u4E49\u5F39\u5E55\u5B57\u4F53');
             var span9 = document.createElement('span');
             span9.className = 'bpui-icon bpui-icon-arrow-down';
             span9.style = 'transform:rotate(-90deg);margin-top:3px;';
@@ -7476,260 +7511,316 @@ var UI = function () {
             var li7 = document.createElement('li');
             li7.className = 'context-menu-function';
 
-            li7.onclick = function () {
-                return polyfill.markOPEDPosition(0);
+            li7.onclick = function (e) {
+                BiliDanmakuSettings.set('fontfamily', e.target.lastChild.value);
+                playerWin.location.reload();
             };
 
             var a8 = document.createElement('a');
             a8.className = 'context-menu-a';
-            var span10 = document.createElement('span');
-            span10.className = 'video-contextmenu-icon';
-            a8.append(span10);
-            a8.append(' \u7247\u5934\u5F00\u59CB:');
-            var span11 = document.createElement('span');
+            var input1 = document.createElement('input');
+            input1.type = 'text';
+            input1.style = 'width: 108px; height: 70%; color:black;';
+
+            input1.onclick = function (e) {
+                return e.stopPropagation();
+            };
 
             (function (e) {
                 return refreshSession.addCallback(function () {
-                    return e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
+                    return e.value = BiliDanmakuSettings.get('fontfamily');
                 });
-            })(span11);
+            })(input1);
 
-            a8.append(span11);
+            a8.append(input1);
             li7.append(a8);
             ul3.append(li7);
             var li8 = document.createElement('li');
             li8.className = 'context-menu-function';
 
-            li8.onclick = function () {
-                return polyfill.markOPEDPosition(1);
+            li8.onclick = function (e) {
+                BiliDanmakuSettings.set('fontfamily', e.target.parentElement.previousElementSibling.querySelector("input").value);
+                playerWin.location.reload();
             };
 
             var a9 = document.createElement('a');
             a9.className = 'context-menu-a';
+            a9.textContent = '\n                                \u70B9\u51FB\u786E\u8BA4\u5E76\u5237\u65B0\n                            ';
+            li8.append(a9);
+            ul3.append(li8);
+            li6.append(ul3);
+            ul1.append(li6);
+            var li9 = document.createElement('li');
+            li9.className = 'context-menu-menu';
+            var a10 = document.createElement('a');
+            a10.className = 'context-menu-a';
+            var span10 = document.createElement('span');
+            span10.className = 'video-contextmenu-icon';
+            a10.append(span10);
+            a10.append(' \u7247\u5934\u7247\u5C3E');
+            var span11 = document.createElement('span');
+            span11.className = 'bpui-icon bpui-icon-arrow-down';
+            span11.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a10.append(span11);
+            li9.append(a10);
+            var ul4 = document.createElement('ul');
+            var li10 = document.createElement('li');
+            li10.className = 'context-menu-function';
+
+            li10.onclick = function () {
+                return polyfill.markOPEDPosition(0);
+            };
+
+            var a11 = document.createElement('a');
+            a11.className = 'context-menu-a';
             var span12 = document.createElement('span');
             span12.className = 'video-contextmenu-icon';
-            a9.append(span12);
-            a9.append(' \u7247\u5934\u7ED3\u675F:');
+            a11.append(span12);
+            a11.append(' \u7247\u5934\u5F00\u59CB:');
             var span13 = document.createElement('span');
+
+            (function (e) {
+                return refreshSession.addCallback(function () {
+                    return e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无';
+                });
+            })(span13);
+
+            a11.append(span13);
+            li10.append(a11);
+            ul4.append(li10);
+            var li11 = document.createElement('li');
+            li11.className = 'context-menu-function';
+
+            li11.onclick = function () {
+                return polyfill.markOPEDPosition(1);
+            };
+
+            var a12 = document.createElement('a');
+            a12.className = 'context-menu-a';
+            var span14 = document.createElement('span');
+            span14.className = 'video-contextmenu-icon';
+            a12.append(span14);
+            a12.append(' \u7247\u5934\u7ED3\u675F:');
+            var span15 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无';
                 });
-            })(span13);
+            })(span15);
 
-            a9.append(span13);
-            li8.append(a9);
-            ul3.append(li8);
-            var li9 = document.createElement('li');
-            li9.className = 'context-menu-function';
+            a12.append(span15);
+            li11.append(a12);
+            ul4.append(li11);
+            var li12 = document.createElement('li');
+            li12.className = 'context-menu-function';
 
-            li9.onclick = function () {
+            li12.onclick = function () {
                 return polyfill.markOPEDPosition(2);
             };
 
-            var a10 = document.createElement('a');
-            a10.className = 'context-menu-a';
-            var span14 = document.createElement('span');
-            span14.className = 'video-contextmenu-icon';
-            a10.append(span14);
-            a10.append(' \u7247\u5C3E\u5F00\u59CB:');
-            var span15 = document.createElement('span');
+            var a13 = document.createElement('a');
+            a13.className = 'context-menu-a';
+            var span16 = document.createElement('span');
+            span16.className = 'video-contextmenu-icon';
+            a13.append(span16);
+            a13.append(' \u7247\u5C3E\u5F00\u59CB:');
+            var span17 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无';
                 });
-            })(span15);
+            })(span17);
 
-            a10.append(span15);
-            li9.append(a10);
-            ul3.append(li9);
-            var li10 = document.createElement('li');
-            li10.className = 'context-menu-function';
+            a13.append(span17);
+            li12.append(a13);
+            ul4.append(li12);
+            var li13 = document.createElement('li');
+            li13.className = 'context-menu-function';
 
-            li10.onclick = function () {
+            li13.onclick = function () {
                 return polyfill.markOPEDPosition(3);
             };
 
-            var a11 = document.createElement('a');
-            a11.className = 'context-menu-a';
-            var span16 = document.createElement('span');
-            span16.className = 'video-contextmenu-icon';
-            a11.append(span16);
-            a11.append(' \u7247\u5C3E\u7ED3\u675F:');
-            var span17 = document.createElement('span');
+            var a14 = document.createElement('a');
+            a14.className = 'context-menu-a';
+            var span18 = document.createElement('span');
+            span18.className = 'video-contextmenu-icon';
+            a14.append(span18);
+            a14.append(' \u7247\u5C3E\u7ED3\u675F:');
+            var span19 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无';
                 });
-            })(span17);
+            })(span19);
 
-            a11.append(span17);
-            li10.append(a11);
-            ul3.append(li10);
-            var li11 = document.createElement('li');
-            li11.className = 'context-menu-function';
-
-            li11.onclick = function () {
-                return polyfill.clearOPEDPosition();
-            };
-
-            var a12 = document.createElement('a');
-            a12.className = 'context-menu-a';
-            var span18 = document.createElement('span');
-            span18.className = 'video-contextmenu-icon';
-            a12.append(span18);
-            a12.append(' \u53D6\u6D88\u6807\u8BB0');
-            li11.append(a12);
-            ul3.append(li11);
-            var li12 = document.createElement('li');
-            li12.className = 'context-menu-function';
-
-            li12.onclick = function () {
-                return _this48.displayPolyfillDataDiv();
-            };
-
-            var a13 = document.createElement('a');
-            a13.className = 'context-menu-a';
-            var span19 = document.createElement('span');
-            span19.className = 'video-contextmenu-icon';
-            a13.append(span19);
-            a13.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
-            li12.append(a13);
-            ul3.append(li12);
-            li6.append(ul3);
-            ul1.append(li6);
-            var li13 = document.createElement('li');
-            li13.className = 'context-menu-menu';
-            var a14 = document.createElement('a');
-            a14.className = 'context-menu-a';
-            var span20 = document.createElement('span');
-            span20.className = 'video-contextmenu-icon';
-            a14.append(span20);
-            a14.append(' \u627E\u4E0A\u4E0B\u96C6');
-            var span21 = document.createElement('span');
-            span21.className = 'bpui-icon bpui-icon-arrow-down';
-            span21.style = 'transform:rotate(-90deg);margin-top:3px;';
-            a14.append(span21);
+            a14.append(span19);
             li13.append(a14);
-            var ul4 = document.createElement('ul');
+            ul4.append(li13);
             var li14 = document.createElement('li');
             li14.className = 'context-menu-function';
 
             li14.onclick = function () {
-                if (polyfill.series[0]) {
-                    top.window.open('https://www.bilibili.com/video/av' + polyfill.series[0].aid, '_blank');
-                }
+                return polyfill.clearOPEDPosition();
             };
 
             var a15 = document.createElement('a');
             a15.className = 'context-menu-a';
-            a15.style.width = 'initial';
-            var span22 = document.createElement('span');
-            span22.className = 'video-contextmenu-icon';
-            a15.append(span22);
-            var span23 = document.createElement('span');
-
-            (function (e) {
-                return refreshSession.addCallback(function () {
-                    return e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
-                });
-            })(span23);
-
-            a15.append(span23);
+            var span20 = document.createElement('span');
+            span20.className = 'video-contextmenu-icon';
+            a15.append(span20);
+            a15.append(' \u53D6\u6D88\u6807\u8BB0');
             li14.append(a15);
             ul4.append(li14);
             var li15 = document.createElement('li');
             li15.className = 'context-menu-function';
 
             li15.onclick = function () {
+                return _this48.displayPolyfillDataDiv();
+            };
+
+            var a16 = document.createElement('a');
+            a16.className = 'context-menu-a';
+            var span21 = document.createElement('span');
+            span21.className = 'video-contextmenu-icon';
+            a16.append(span21);
+            a16.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
+            li15.append(a16);
+            ul4.append(li15);
+            li9.append(ul4);
+            ul1.append(li9);
+            var li16 = document.createElement('li');
+            li16.className = 'context-menu-menu';
+            var a17 = document.createElement('a');
+            a17.className = 'context-menu-a';
+            var span22 = document.createElement('span');
+            span22.className = 'video-contextmenu-icon';
+            a17.append(span22);
+            a17.append(' \u627E\u4E0A\u4E0B\u96C6');
+            var span23 = document.createElement('span');
+            span23.className = 'bpui-icon bpui-icon-arrow-down';
+            span23.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a17.append(span23);
+            li16.append(a17);
+            var ul5 = document.createElement('ul');
+            var li17 = document.createElement('li');
+            li17.className = 'context-menu-function';
+
+            li17.onclick = function () {
+                if (polyfill.series[0]) {
+                    top.window.open('https://www.bilibili.com/video/av' + polyfill.series[0].aid, '_blank');
+                }
+            };
+
+            var a18 = document.createElement('a');
+            a18.className = 'context-menu-a';
+            a18.style.width = 'initial';
+            var span24 = document.createElement('span');
+            span24.className = 'video-contextmenu-icon';
+            a18.append(span24);
+            var span25 = document.createElement('span');
+
+            (function (e) {
+                return refreshSession.addCallback(function () {
+                    return e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到';
+                });
+            })(span25);
+
+            a18.append(span25);
+            li17.append(a18);
+            ul5.append(li17);
+            var li18 = document.createElement('li');
+            li18.className = 'context-menu-function';
+
+            li18.onclick = function () {
                 if (polyfill.series[1]) {
                     top.window.open('https://www.bilibili.com/video/av' + polyfill.series[1].aid, '_blank');
                 }
             };
 
-            var a16 = document.createElement('a');
-            a16.className = 'context-menu-a';
-            a16.style.width = 'initial';
-            var span24 = document.createElement('span');
-            span24.className = 'video-contextmenu-icon';
-            a16.append(span24);
-            var span25 = document.createElement('span');
+            var a19 = document.createElement('a');
+            a19.className = 'context-menu-a';
+            a19.style.width = 'initial';
+            var span26 = document.createElement('span');
+            span26.className = 'video-contextmenu-icon';
+            a19.append(span26);
+            var span27 = document.createElement('span');
 
             (function (e) {
                 return refreshSession.addCallback(function () {
                     return e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到';
                 });
-            })(span25);
+            })(span27);
 
-            a16.append(span25);
-            li15.append(a16);
-            ul4.append(li15);
-            li13.append(ul4);
-            ul1.append(li13);
-            var li16 = document.createElement('li');
-            li16.className = 'context-menu-function';
-
-            li16.onclick = function () {
-                return BiliPolyfill.openMinimizedPlayer();
-            };
-
-            var a17 = document.createElement('a');
-            a17.className = 'context-menu-a';
-            var span26 = document.createElement('span');
-            span26.className = 'video-contextmenu-icon';
-            a17.append(span26);
-            a17.append(' \u5C0F\u7A97\u64AD\u653E');
-            li16.append(a17);
-            ul1.append(li16);
-            var li17 = document.createElement('li');
-            li17.className = 'context-menu-function';
-
-            li17.onclick = function () {
-                return _this48.displayOptionDiv();
-            };
-
-            var a18 = document.createElement('a');
-            a18.className = 'context-menu-a';
-            var span27 = document.createElement('span');
-            span27.className = 'video-contextmenu-icon';
-            a18.append(span27);
-            a18.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-            li17.append(a18);
-            ul1.append(li17);
-            var li18 = document.createElement('li');
-            li18.className = 'context-menu-function';
-
-            li18.onclick = function () {
-                return polyfill.saveUserdata();
-            };
-
-            var a19 = document.createElement('a');
-            a19.className = 'context-menu-a';
-            var span28 = document.createElement('span');
-            span28.className = 'video-contextmenu-icon';
-            a19.append(span28);
-            a19.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
+            a19.append(span27);
             li18.append(a19);
-            ul1.append(li18);
+            ul5.append(li18);
+            li16.append(ul5);
+            ul1.append(li16);
             var li19 = document.createElement('li');
             li19.className = 'context-menu-function';
 
             li19.onclick = function () {
-                BiliPolyfill.clearAllUserdata(playerWin);
-                polyfill.retrieveUserdata();
+                return BiliPolyfill.openMinimizedPlayer();
             };
 
             var a20 = document.createElement('a');
             a20.className = 'context-menu-a';
-            var span29 = document.createElement('span');
-            span29.className = 'video-contextmenu-icon';
-            a20.append(span29);
-            a20.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
+            var span28 = document.createElement('span');
+            span28.className = 'video-contextmenu-icon';
+            a20.append(span28);
+            a20.append(' \u5C0F\u7A97\u64AD\u653E');
             li19.append(a20);
             ul1.append(li19);
+            var li20 = document.createElement('li');
+            li20.className = 'context-menu-function';
+
+            li20.onclick = function () {
+                return _this48.displayOptionDiv();
+            };
+
+            var a21 = document.createElement('a');
+            a21.className = 'context-menu-a';
+            var span29 = document.createElement('span');
+            span29.className = 'video-contextmenu-icon';
+            a21.append(span29);
+            a21.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+            li20.append(a21);
+            ul1.append(li20);
+            var li21 = document.createElement('li');
+            li21.className = 'context-menu-function';
+
+            li21.onclick = function () {
+                return polyfill.saveUserdata();
+            };
+
+            var a22 = document.createElement('a');
+            a22.className = 'context-menu-a';
+            var span30 = document.createElement('span');
+            span30.className = 'video-contextmenu-icon';
+            a22.append(span30);
+            a22.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
+            li21.append(a22);
+            ul1.append(li21);
+            var li22 = document.createElement('li');
+            li22.className = 'context-menu-function';
+
+            li22.onclick = function () {
+                BiliPolyfill.clearAllUserdata(playerWin);
+                polyfill.retrieveUserdata();
+            };
+
+            var a23 = document.createElement('a');
+            a23.className = 'context-menu-a';
+            var span31 = document.createElement('span');
+            span31.className = 'video-contextmenu-icon';
+            a23.append(span31);
+            a23.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
+            li22.append(a23);
+            ul1.append(li22);
             li.append(ul1);
             return li;
         }
@@ -8507,7 +8598,7 @@ var BiliTwin = function (_BiliUserJS) {
                                         var video = document.querySelector("video");
                                         if (video) {
                                             videoRightClick(video);
-                                            if (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this50.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)) {
+                                            if (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this50.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this50.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")) {
                                                 clearInterval(i);
                                                 resolve();
                                             }

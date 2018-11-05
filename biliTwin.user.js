@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.19.4
+// @version     1.20.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2248,6 +2248,22 @@ class BiliPolyfill {
         this.destroy = new HookedFunction();
         this.playerWin.addEventListener('beforeunload', this.destroy);
         this.destroy.addCallback(() => this.playerWin.removeEventListener('beforeunload', this.destroy));
+
+        this.BiliDanmakuSettings =
+            class BiliDanmakuSettings {
+                static getPlayerSettings() {
+                    return playerWin.localStorage.bilibili_player_settings && JSON.parse(playerWin.localStorage.bilibili_player_settings)
+                }
+                static get(key) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    return player_settings.setting_config && player_settings.setting_config[key]
+                }
+                static set(key, value) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    player_settings.setting_config[key] = value;
+                    playerWin.localStorage.bilibili_player_settings = JSON.stringify(player_settings);
+                }
+            };
     }
 
     saveUserdata() {
@@ -7747,7 +7763,13 @@ class UI {
         const files = await monkey.getAllFLVs();
         const href = await this.twin.mergeFLVFiles(files);
         const ass = await monkey.ass;
-        const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+        const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
+        if (pageNameElement) {
+            const pageName = pageNameElement.textContent;
+            if (pageName && pageName != outputName) outputName += ` - ${pageName}`;
+        }
 
         // 6. build download all ui
         progress.value++;
@@ -8016,6 +8038,7 @@ class UI {
         polyfill = this.twin.polyfill
     } = {}) {
         let oped = [];
+        const BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
         const refreshSession = new HookedFunction(() => oped = polyfill.userdata.oped[polyfill.getCollectionId()] || []); // as a convenient callback register
         const li = document.createElement('li');
         li.className = 'context-menu-menu bilitwin';
@@ -8095,7 +8118,7 @@ class UI {
         const li5 = document.createElement('li');
         li5.className = 'context-menu-function';
 
-        li5.onclick = e => polyfill.setVideoSpeed(e.children[0].children[1].value);
+        li5.onclick = e => polyfill.setVideoSpeed(e.target.children[1].value);
 
         const a6 = document.createElement('a');
         a6.className = 'context-menu-a';
@@ -8105,7 +8128,7 @@ class UI {
         a6.append(' \u70B9\u51FB\u786E\u8BA4');
         const input = document.createElement('input');
         input.type = 'text';
-        input.style = 'width: 35px; height: 70%';
+        input.style = 'width: 35px; height: 70%; color:black;';
 
         input.onclick = e => e.stopPropagation();
 
@@ -8123,7 +8146,7 @@ class UI {
         const span8 = document.createElement('span');
         span8.className = 'video-contextmenu-icon';
         a7.append(span8);
-        a7.append(' \u7247\u5934\u7247\u5C3E');
+        a7.append(' \u81EA\u5B9A\u4E49\u5F39\u5E55\u5B57\u4F53');
         const span9 = document.createElement('span');
         span9.className = 'bpui-icon bpui-icon-arrow-down';
         span9.style = 'transform:rotate(-90deg);margin-top:3px;';
@@ -8133,218 +8156,270 @@ class UI {
         const li7 = document.createElement('li');
         li7.className = 'context-menu-function';
 
-        li7.onclick = () => polyfill.markOPEDPosition(0);
+        li7.onclick = e => {
+            BiliDanmakuSettings.set('fontfamily', e.target.lastChild.value);
+            playerWin.location.reload();
+        };
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
-        const span10 = document.createElement('span');
-        span10.className = 'video-contextmenu-icon';
-        a8.append(span10);
-        a8.append(' \u7247\u5934\u5F00\u59CB:');
-        const span11 = document.createElement('span');
+        const input1 = document.createElement('input');
+        input1.type = 'text';
+        input1.style = 'width: 108px; height: 70%; color:black;';
 
-        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span11);
+        input1.onclick = e => e.stopPropagation();
 
-        a8.append(span11);
+        (e => refreshSession.addCallback(() => e.value = BiliDanmakuSettings.get('fontfamily')))(input1);
+
+        a8.append(input1);
         li7.append(a8);
         ul3.append(li7);
         const li8 = document.createElement('li');
         li8.className = 'context-menu-function';
 
-        li8.onclick = () => polyfill.markOPEDPosition(1);
+        li8.onclick = e => {
+            BiliDanmakuSettings.set('fontfamily', e.target.parentElement.previousElementSibling.querySelector("input").value);
+            playerWin.location.reload();
+        };
 
         const a9 = document.createElement('a');
         a9.className = 'context-menu-a';
-        const span12 = document.createElement('span');
-        span12.className = 'video-contextmenu-icon';
-        a9.append(span12);
-        a9.append(' \u7247\u5934\u7ED3\u675F:');
-        const span13 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span13);
-
-        a9.append(span13);
+        a9.textContent = `
+                                点击确认并刷新
+                            `;
         li8.append(a9);
         ul3.append(li8);
+        li6.append(ul3);
+        ul1.append(li6);
         const li9 = document.createElement('li');
-        li9.className = 'context-menu-function';
-
-        li9.onclick = () => polyfill.markOPEDPosition(2);
-
+        li9.className = 'context-menu-menu';
         const a10 = document.createElement('a');
         a10.className = 'context-menu-a';
-        const span14 = document.createElement('span');
-        span14.className = 'video-contextmenu-icon';
-        a10.append(span14);
-        a10.append(' \u7247\u5C3E\u5F00\u59CB:');
-        const span15 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span15);
-
-        a10.append(span15);
+        const span10 = document.createElement('span');
+        span10.className = 'video-contextmenu-icon';
+        a10.append(span10);
+        a10.append(' \u7247\u5934\u7247\u5C3E');
+        const span11 = document.createElement('span');
+        span11.className = 'bpui-icon bpui-icon-arrow-down';
+        span11.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a10.append(span11);
         li9.append(a10);
-        ul3.append(li9);
+        const ul4 = document.createElement('ul');
         const li10 = document.createElement('li');
         li10.className = 'context-menu-function';
 
-        li10.onclick = () => polyfill.markOPEDPosition(3);
+        li10.onclick = () => polyfill.markOPEDPosition(0);
 
         const a11 = document.createElement('a');
         a11.className = 'context-menu-a';
-        const span16 = document.createElement('span');
-        span16.className = 'video-contextmenu-icon';
-        a11.append(span16);
-        a11.append(' \u7247\u5C3E\u7ED3\u675F:');
-        const span17 = document.createElement('span');
+        const span12 = document.createElement('span');
+        span12.className = 'video-contextmenu-icon';
+        a11.append(span12);
+        a11.append(' \u7247\u5934\u5F00\u59CB:');
+        const span13 = document.createElement('span');
 
-        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span17);
+        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span13);
 
-        a11.append(span17);
+        a11.append(span13);
         li10.append(a11);
-        ul3.append(li10);
+        ul4.append(li10);
         const li11 = document.createElement('li');
         li11.className = 'context-menu-function';
 
-        li11.onclick = () => polyfill.clearOPEDPosition();
+        li11.onclick = () => polyfill.markOPEDPosition(1);
 
         const a12 = document.createElement('a');
         a12.className = 'context-menu-a';
-        const span18 = document.createElement('span');
-        span18.className = 'video-contextmenu-icon';
-        a12.append(span18);
-        a12.append(' \u53D6\u6D88\u6807\u8BB0');
+        const span14 = document.createElement('span');
+        span14.className = 'video-contextmenu-icon';
+        a12.append(span14);
+        a12.append(' \u7247\u5934\u7ED3\u675F:');
+        const span15 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span15);
+
+        a12.append(span15);
         li11.append(a12);
-        ul3.append(li11);
+        ul4.append(li11);
         const li12 = document.createElement('li');
         li12.className = 'context-menu-function';
 
-        li12.onclick = () => this.displayPolyfillDataDiv();
+        li12.onclick = () => polyfill.markOPEDPosition(2);
 
         const a13 = document.createElement('a');
         a13.className = 'context-menu-a';
-        const span19 = document.createElement('span');
-        span19.className = 'video-contextmenu-icon';
-        a13.append(span19);
-        a13.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
+        const span16 = document.createElement('span');
+        span16.className = 'video-contextmenu-icon';
+        a13.append(span16);
+        a13.append(' \u7247\u5C3E\u5F00\u59CB:');
+        const span17 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span17);
+
+        a13.append(span17);
         li12.append(a13);
-        ul3.append(li12);
-        li6.append(ul3);
-        ul1.append(li6);
+        ul4.append(li12);
         const li13 = document.createElement('li');
-        li13.className = 'context-menu-menu';
+        li13.className = 'context-menu-function';
+
+        li13.onclick = () => polyfill.markOPEDPosition(3);
+
         const a14 = document.createElement('a');
         a14.className = 'context-menu-a';
-        const span20 = document.createElement('span');
-        span20.className = 'video-contextmenu-icon';
-        a14.append(span20);
-        a14.append(' \u627E\u4E0A\u4E0B\u96C6');
-        const span21 = document.createElement('span');
-        span21.className = 'bpui-icon bpui-icon-arrow-down';
-        span21.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a14.append(span21);
+        const span18 = document.createElement('span');
+        span18.className = 'video-contextmenu-icon';
+        a14.append(span18);
+        a14.append(' \u7247\u5C3E\u7ED3\u675F:');
+        const span19 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span19);
+
+        a14.append(span19);
         li13.append(a14);
-        const ul4 = document.createElement('ul');
+        ul4.append(li13);
         const li14 = document.createElement('li');
         li14.className = 'context-menu-function';
 
-        li14.onclick = () => {
-            if (polyfill.series[0]) {
-                top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank');
-            }
-        };
+        li14.onclick = () => polyfill.clearOPEDPosition();
 
         const a15 = document.createElement('a');
         a15.className = 'context-menu-a';
-        a15.style.width = 'initial';
-        const span22 = document.createElement('span');
-        span22.className = 'video-contextmenu-icon';
-        a15.append(span22);
-        const span23 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span23);
-
-        a15.append(span23);
+        const span20 = document.createElement('span');
+        span20.className = 'video-contextmenu-icon';
+        a15.append(span20);
+        a15.append(' \u53D6\u6D88\u6807\u8BB0');
         li14.append(a15);
         ul4.append(li14);
         const li15 = document.createElement('li');
         li15.className = 'context-menu-function';
 
-        li15.onclick = () => {
+        li15.onclick = () => this.displayPolyfillDataDiv();
+
+        const a16 = document.createElement('a');
+        a16.className = 'context-menu-a';
+        const span21 = document.createElement('span');
+        span21.className = 'video-contextmenu-icon';
+        a16.append(span21);
+        a16.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
+        li15.append(a16);
+        ul4.append(li15);
+        li9.append(ul4);
+        ul1.append(li9);
+        const li16 = document.createElement('li');
+        li16.className = 'context-menu-menu';
+        const a17 = document.createElement('a');
+        a17.className = 'context-menu-a';
+        const span22 = document.createElement('span');
+        span22.className = 'video-contextmenu-icon';
+        a17.append(span22);
+        a17.append(' \u627E\u4E0A\u4E0B\u96C6');
+        const span23 = document.createElement('span');
+        span23.className = 'bpui-icon bpui-icon-arrow-down';
+        span23.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a17.append(span23);
+        li16.append(a17);
+        const ul5 = document.createElement('ul');
+        const li17 = document.createElement('li');
+        li17.className = 'context-menu-function';
+
+        li17.onclick = () => {
+            if (polyfill.series[0]) {
+                top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank');
+            }
+        };
+
+        const a18 = document.createElement('a');
+        a18.className = 'context-menu-a';
+        a18.style.width = 'initial';
+        const span24 = document.createElement('span');
+        span24.className = 'video-contextmenu-icon';
+        a18.append(span24);
+        const span25 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span25);
+
+        a18.append(span25);
+        li17.append(a18);
+        ul5.append(li17);
+        const li18 = document.createElement('li');
+        li18.className = 'context-menu-function';
+
+        li18.onclick = () => {
             if (polyfill.series[1]) {
                 top.window.open(`https://www.bilibili.com/video/av${polyfill.series[1].aid}`, '_blank');
             }
         };
 
-        const a16 = document.createElement('a');
-        a16.className = 'context-menu-a';
-        a16.style.width = 'initial';
-        const span24 = document.createElement('span');
-        span24.className = 'video-contextmenu-icon';
-        a16.append(span24);
-        const span25 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span25);
-
-        a16.append(span25);
-        li15.append(a16);
-        ul4.append(li15);
-        li13.append(ul4);
-        ul1.append(li13);
-        const li16 = document.createElement('li');
-        li16.className = 'context-menu-function';
-
-        li16.onclick = () => BiliPolyfill.openMinimizedPlayer();
-
-        const a17 = document.createElement('a');
-        a17.className = 'context-menu-a';
-        const span26 = document.createElement('span');
-        span26.className = 'video-contextmenu-icon';
-        a17.append(span26);
-        a17.append(' \u5C0F\u7A97\u64AD\u653E');
-        li16.append(a17);
-        ul1.append(li16);
-        const li17 = document.createElement('li');
-        li17.className = 'context-menu-function';
-
-        li17.onclick = () => this.displayOptionDiv();
-
-        const a18 = document.createElement('a');
-        a18.className = 'context-menu-a';
-        const span27 = document.createElement('span');
-        span27.className = 'video-contextmenu-icon';
-        a18.append(span27);
-        a18.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-        li17.append(a18);
-        ul1.append(li17);
-        const li18 = document.createElement('li');
-        li18.className = 'context-menu-function';
-
-        li18.onclick = () => polyfill.saveUserdata();
-
         const a19 = document.createElement('a');
         a19.className = 'context-menu-a';
-        const span28 = document.createElement('span');
-        span28.className = 'video-contextmenu-icon';
-        a19.append(span28);
-        a19.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
+        a19.style.width = 'initial';
+        const span26 = document.createElement('span');
+        span26.className = 'video-contextmenu-icon';
+        a19.append(span26);
+        const span27 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span27);
+
+        a19.append(span27);
         li18.append(a19);
-        ul1.append(li18);
+        ul5.append(li18);
+        li16.append(ul5);
+        ul1.append(li16);
         const li19 = document.createElement('li');
         li19.className = 'context-menu-function';
 
-        li19.onclick = () => {
+        li19.onclick = () => BiliPolyfill.openMinimizedPlayer();
+
+        const a20 = document.createElement('a');
+        a20.className = 'context-menu-a';
+        const span28 = document.createElement('span');
+        span28.className = 'video-contextmenu-icon';
+        a20.append(span28);
+        a20.append(' \u5C0F\u7A97\u64AD\u653E');
+        li19.append(a20);
+        ul1.append(li19);
+        const li20 = document.createElement('li');
+        li20.className = 'context-menu-function';
+
+        li20.onclick = () => this.displayOptionDiv();
+
+        const a21 = document.createElement('a');
+        a21.className = 'context-menu-a';
+        const span29 = document.createElement('span');
+        span29.className = 'video-contextmenu-icon';
+        a21.append(span29);
+        a21.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+        li20.append(a21);
+        ul1.append(li20);
+        const li21 = document.createElement('li');
+        li21.className = 'context-menu-function';
+
+        li21.onclick = () => polyfill.saveUserdata();
+
+        const a22 = document.createElement('a');
+        a22.className = 'context-menu-a';
+        const span30 = document.createElement('span');
+        span30.className = 'video-contextmenu-icon';
+        a22.append(span30);
+        a22.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
+        li21.append(a22);
+        ul1.append(li21);
+        const li22 = document.createElement('li');
+        li22.className = 'context-menu-function';
+
+        li22.onclick = () => {
             BiliPolyfill.clearAllUserdata(playerWin);
             polyfill.retrieveUserdata();
         };
 
-        const a20 = document.createElement('a');
-        a20.className = 'context-menu-a';
-        const span29 = document.createElement('span');
-        span29.className = 'video-contextmenu-icon';
-        a20.append(span29);
-        a20.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
-        li19.append(a20);
-        ul1.append(li19);
+        const a23 = document.createElement('a');
+        a23.className = 'context-menu-a';
+        const span31 = document.createElement('span');
+        span31.className = 'video-contextmenu-icon';
+        a23.append(span31);
+        a23.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
+        li22.append(a23);
+        ul1.append(li22);
         li.append(ul1);
         return li;
     }
@@ -9003,7 +9078,9 @@ class BiliTwin extends BiliUserJS {
                     videoRightClick(video);
                     if (
                         this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
-                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4)
+                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
+                            || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
+                        )
                     ) {
                         clearInterval(i);
                         resolve();
