@@ -323,7 +323,13 @@ class UI {
         const files = await monkey.getAllFLVs();
         const href = await this.twin.mergeFLVFiles(files);
         const ass = await monkey.ass;
-        const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim()
+        const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on")
+        if (pageNameElement) {
+            const pageName = pageNameElement.textContent
+            if (pageName && pageName != outputName) outputName += ` - ${pageName}`
+        }
 
         // 6. build download all ui
         progress.value++;
