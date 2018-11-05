@@ -944,7 +944,7 @@ class UI {
             <h1>(测试) 批量抓取</h1>
             <ul>
                 <li>
-                    <p>抓取的视频的最高分辨率可在设置中自定义</p>
+                    <p>抓取的视频的最高分辨率可在设置中自定义，番剧只能抓取到当前清晰度</p>
                 </li>
                 <li>
                     <p>复制链接地址无效，请左键单击/右键另存为/右键调用下载工具</p>
@@ -1041,6 +1041,7 @@ class UI {
             // 2. user interface
             ['title', '在视频标题旁添加链接'],
             ['menu', '在视频菜单栏添加链接'],
+            ['autoDisplayDownloadBtn', '(测)无需右键播放器就能显示下载按钮'],
 
             // 3. download
             ['aria2', '导出aria2'],
@@ -1058,6 +1059,7 @@ class UI {
             // 2. user interface
             title: true,
             menu: true,
+            autoDisplayDownloadBtn: true,
 
             // 3. download
             aria2: false,

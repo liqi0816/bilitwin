@@ -58,7 +58,6 @@ class BiliTwin extends BiliUserJS {
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
 
-        // 无需右键播放器就能显示下载按钮
         const videoRightClick = (video) => {
             let event = new MouseEvent('contextmenu', {
                 'bubbles': true
@@ -67,24 +66,31 @@ class BiliTwin extends BiliUserJS {
             video.dispatchEvent(event)
             video.dispatchEvent(event)
         }
-        // video.addEventListener('play', videoRightClick, { once: true });
-        await new Promise(resolve => {
-            const i = setInterval(() => {
-                const video = document.querySelector("video")
-                if (video) {
-                    videoRightClick(video)
-                    if (
-                        this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
-                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
-                            || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
-                        )
-                    ) {
-                        clearInterval(i);
-                        resolve();
+        if (this.option.autoDisplayDownloadBtn) {
+            // 无需右键播放器就能显示下载按钮
+            await new Promise(resolve => {
+                const i = setInterval(() => {
+                    const video = document.querySelector("video")
+                    if (video) {
+                        videoRightClick(video)
+                        if (
+                            this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
+                            && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
+                                || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
+                            )
+                        ) {
+                            clearInterval(i);
+                            resolve();
+                        }
                     }
-                }
-            }, 10);
-        })
+                }, 10);
+            })
+        } else {
+            const video = document.querySelector("video")
+            if (video) {
+                video.addEventListener('play', () => videoRightClick(video), { once: true });
+            }
+        }
 
         await this.polyfill.setFunctions()
 
