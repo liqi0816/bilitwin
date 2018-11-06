@@ -8,6 +8,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+import TwentyFourDataView from '../util/twenty-four-dataview.js';
+import FLVTag from '../flvparser/flv-tag.js';
+import FLV from '../flvparser/flv.js';
+
 export class WebWorker extends Worker {
     constructor(stringUrl) {
         super(stringUrl)
@@ -19,6 +23,10 @@ export class WebWorker extends Worker {
                 })
             })
         })
+
+        this.importFnAsAScript(TwentyFourDataView)
+        this.importFnAsAScript(FLVTag)
+        this.importFnAsAScript(FLV)
     }
 
     /**
@@ -49,6 +57,14 @@ export class WebWorker extends Worker {
     }
 
     /**
+     * @param {Function | ClassDecorator} c 
+     */
+    importFnAsAScript(c) {
+        const blob = new Blob([c.toString()], { type: 'application/javascript' })
+        return this.getReturnValue("importScripts", URL.createObjectURL(blob))
+    }
+
+    /**
      * @param {() => void} fn 
      */
     static fromAFunction(fn) {
@@ -65,12 +81,32 @@ export const BatchDownloadWorkerFn = () => {
             this.videoTitle = incomingData.videoTitle
             this.ret = incomingData.ret
 
-            console.log(this.videoTitle)
-            console.log(this.ret)
+            console.debug(this.videoTitle)
+            console.debug(this.ret)
         }
 
         getInfo(index) {
             return this.ret[index]
+        }
+
+        getVideoTitle() {
+            return this.videoTitle
+        }
+
+        async mergeFLVFiles([files, format]) {
+            if (format == "flv") {
+                return URL.createObjectURL(await FLV.mergeBlobs(files));
+            } else {
+                return URL.createObjectURL(files[0]);
+            }
+        }
+
+        /**
+         * 引入脚本与库
+         * @param  {string[]} scripts 
+         */
+        importScripts(...scripts) {
+            importScripts(...scripts)
         }
 
         getAllMethods() {
@@ -84,7 +120,7 @@ export const BatchDownloadWorkerFn = () => {
         const [method, incomingData, callbackNum] = e.data
 
         try {
-            const returnValue = (incomingData instanceof Array) ? await worker[method](...incomingData) : await worker[method](incomingData)
+            const returnValue = await worker[method](incomingData)
             if (returnValue) {
                 postMessage([
                     method,

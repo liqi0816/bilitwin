@@ -916,10 +916,6 @@ class UI {
         const getFLVs = async (videoIndex) => {
             if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = []
 
-            // add beforeUnloadHandler
-            const handler = e => UI.beforeUnloadHandler(e);
-            window.addEventListener('beforeunload', handler);
-
             const { durl } = ret[videoIndex]
 
             return await Promise.all(
@@ -990,6 +986,45 @@ class UI {
                 <tr>
                     <td>
                         {i.name}
+                        <br />
+                        <a onclick={async (e) => {
+                            // add beforeUnloadHandler
+                            const handler = e => UI.beforeUnloadHandler(e);
+                            window.addEventListener('beforeunload', handler);
+
+                            const format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1]
+                            const flvs = await getFLVs(index)
+
+                            const href = await worker.getReturnValue(
+                                "mergeFLVFiles",
+                                [flvs, format]
+                            )
+
+                            const videoTitle = await worker.getVideoTitle()
+                            const outputName = videoTitle.match(/：第\d+话 .+?$/)
+                                ? videoTitle.replace(/：第\d+话 .+?$/, `：第${i.name}话`)
+                                : `${videoTitle} - ${i.name}`
+
+                            const mergedFlvA = e.target
+                            mergedFlvA.href = href
+                            mergedFlvA.download = `${outputName}.flv`
+                            mergedFlvA.textContent = "保存合并后FLV"
+                            mergedFlvA.style["margin-right"] = "20px"
+                            mergedFlvA.title = ""
+                            mergedFlvA.onclick = null
+
+                            const ass = top.URL.createObjectURL(i.danmuku)
+                            mergedFlvA.after(
+                                <a href="javascript:;" onclick={(e) => {
+                                    new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)
+                                }}>打包MKV(软字幕封装)</a>
+                            )
+
+                            window.removeEventListener('beforeunload', handler);
+
+                        }} href="javascript:;" title="缓存所有分段+自动合并">
+                            缓存所有分段+自动合并
+                        </a>
                     </td>
                     <td>
                         <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
@@ -1008,15 +1043,6 @@ class UI {
                     </td>
                 </tr>),
                 <tr>
-                    <td>
-                        <a onclick={async (e) => {
-                            console.log(await getFLVs(index))
-                        }} href="#">
-                            缓存+自动合并
-                        </a>
-                    </td>
-                </tr>,
-                <tr>
                     <td>&nbsp;</td>
                 </tr>
             );
@@ -1034,6 +1060,7 @@ class UI {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     text-align: center;
+                    vertical-align: bottom;
                 }
 
                 progress {
@@ -1050,6 +1077,14 @@ class UI {
                     <p><em>开发者：需要校验referrer和user agent</em></p>
                 </li>
                 <li>
+                    <p>(测)
+                        <a
+                            href="javascript:;"
+                            onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"]').forEach(a => a.click())}
+                        >
+                            一键开始缓存+自动合并所有视频
+                        </a>
+                    </p>
                     <p>flv合并 <a href='http://www.flvcd.com/teacher2.htm'>硕鼠</a></p>
                     <p>批量合并对单标签页负荷太大</p>
                     <p><em>开发者：可以用webworker，但是我没需求，又懒</em></p>
