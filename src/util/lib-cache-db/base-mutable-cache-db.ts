@@ -106,9 +106,9 @@ abstract class BaseMutableCacheDB implements CommonCacheDB {
 
     static get isSupported() { return false }
 
-    static async cloneBlob(file: Blob & { name: USVString, type?: string, lastModified?: number }): Promise<File>
+    static async cloneBlob(file: Blob & { name: string, type?: string, lastModified?: number }): Promise<File>
     static async cloneBlob(file: Blob): Promise<Blob>
-    static async cloneBlob(file: Blob & { name?: USVString, type?: string, lastModified?: number }) {
+    static async cloneBlob(file: Blob & { name?: string, type?: string, lastModified?: number }) {
         const ret = new Response(file).blob();
         if (file.name) {
             return new File([await ret], file.name, file)

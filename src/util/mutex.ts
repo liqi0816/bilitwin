@@ -44,16 +44,16 @@ class Mutex {
      * a convenient method for
      * lock -> ret = await async -> unlock -> return ret
      * 
-     * @param promise async function or promise to wait for
+     * @param callback function to call once lock is acquired
      */
-    async lockAndAwait<T>(promise: (() => Promise<T>) | (() => T) | Promise<T> | T) {
+    async lockAndAwait<T>(callback: (() => Promise<T>) | (() => T) | T) {
         await this.lock();
         try {
-            if (typeof promise == 'function') {
-                return await promise();
+            if (typeof callback === 'function') {
+                return await (callback as () => T)();
             }
             else {
-                return await promise;
+                return await callback;
             }
         }
         finally {
@@ -95,4 +95,3 @@ const _UNIT_TEST = () => {
 };
 
 export default Mutex;
-export const sql = 1

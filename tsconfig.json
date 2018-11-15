@@ -17,7 +17,7 @@
       "dom.iterable",
       "scripthost"
     ],
-    "outDir": "./tsout"
+    "outDir": "./build"
   },
   "include": [
     "src/**/*.ts",

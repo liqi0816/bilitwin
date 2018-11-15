@@ -20,7 +20,7 @@ const sleep = (ms = 0) => {
  * Creates a Promise that resolves when the current macrotask queue has been
  * emptied
  */
-const yieldThread = () => new Promise<void>(setTimeout);
+const yieldThread = () => new Promise<void>(setTimeout as any);
 
 /**
  * Creates a function that invokes `originalFunction`, with the `this` binding

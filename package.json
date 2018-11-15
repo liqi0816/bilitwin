@@ -11,17 +11,17 @@
     "vue": "^2.5.17"
   },
   "devDependencies": {
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
-    "babel-plugin-macros": "^2.4.0",
     "@types/filesystem": "^0.0.29",
-    "@types/jquery": "^3.3.5",
-    "@vue/cli-plugin-babel": "^3.0.0",
-    "@vue/cli-plugin-typescript": "^3.0.0",
-    "@vue/cli-service": "^3.0.0",
-    "vue-template-compiler": "^2.5.17",
+    "@types/jquery": "^3.3.22",
+    "@vue/cli-plugin-babel": "^3.1.1",
+    "@vue/cli-plugin-typescript": "^3.1.1",
+    "@vue/cli-service": "^3.1.4",
+    "babel-plugin-macros": "^2.4.2",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "http-server": "^0.11.1",
-    "rollup": "^0.65.2",
-    "typescript": "^3.0.3"
+    "rollup": "^0.67.1",
+    "typescript": "^3.1.6",
+    "vue-template-compiler": "^2.5.17"
   },
   "browserslist": [
     "> 1%",
