@@ -919,10 +919,10 @@ class UI {
             const { durl } = ret[videoIndex]
 
             return await Promise.all(
-                durl.map((_, durlIndex) => {
-                    if (flvsBlob[videoIndex][durlIndex]) return flvsBlob[videoIndex][durlIndex];
-
-                    flvsBlob[videoIndex][durlIndex] = (async () => {
+                durl.map(async (_, durlIndex) => {
+                    if (flvsBlob[videoIndex][durlIndex]) {
+                        return flvsBlob[videoIndex][durlIndex];
+                    } else {
                         let burl = durl[durlIndex];
                         const outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
 
@@ -974,9 +974,7 @@ class UI {
                         )
 
                         return (flvsBlob[videoIndex][durlIndex] = fullFLV);
-                    })();
-
-                    return flvsBlob[videoIndex][durlIndex]
+                    }
                 })
             )
         }
@@ -1099,8 +1097,8 @@ class UI {
 
         if (top.player) top.player.destroy() // 销毁播放器
 
-        top.document.open();
-        top.document.close();
+        top.document.head.remove()
+        top.document.body.replaceWith(document.createElement("body"))
 
         const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn)
         worker.postMessage([
@@ -1111,22 +1109,6 @@ class UI {
         top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, worker));
 
         return ret;
-    }
-
-    static displayDownloadAllPagePendingBody() {
-        top.document.open();
-        top.document.close();
-
-        top.document.body.append(
-            <fragment>
-                <h1>(测试) 批量抓取</h1>
-                <ul>
-                    <li>
-                        <p>抓取中，请稍候……</p>
-                    </li>
-                </ul>
-            </fragment>
-        );
     }
 
     static genDiv() {

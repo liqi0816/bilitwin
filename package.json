@@ -36,6 +36,7 @@
   "scripts": {
     "install": "gulp",
     "build": "gulp",
+    "watch": "gulp watch",
     "dev": "gulp && http-server --cors -p 8081 -c-1",
     "release-minor": "gulp release-minor",
     "release-patch": "gulp release-patch"
