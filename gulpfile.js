@@ -151,5 +151,5 @@ gulp.task('release-minor', ['bump-minor-version', 'build'])
 gulp.task('release-patch', ['bump-patch-version', 'build'])
 
 gulp.task('watch', () => {
-    return gulp.watch(['./src/ui/ui.entry.js'], { delay: 5000 }, ['build']);
+    return gulp.watch(['./src/ui/ui.entry.js'], { delay: 5000 }, ['./src/ui/ui.js']);
 });

@@ -899,7 +899,7 @@ class UI {
     }
 
     // Common
-    static buildDownloadAllPageDefaultFormatsBody(ret, worker) {
+    static buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
         const table = <table onclick={e => e.stopPropagation()}></table>;
 
         let flvsBlob = [];
@@ -990,37 +990,43 @@ class UI {
                             const handler = e => UI.beforeUnloadHandler(e);
                             window.addEventListener('beforeunload', handler);
 
+                            const targetA = e.target
+                            targetA.title = ""
+                            targetA.onclick = null
+                            targetA.textContent = "缓存中……"
+
                             const format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1]
                             const flvs = await getFLVs(index)
 
-                            const href = await worker.getReturnValue(
-                                "mergeFLVFiles",
-                                [flvs, format]
+                            targetA.textContent = "合并中……"
+                            const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn)
+                            await worker.registerAllMethods()
+                            const href = URL.createObjectURL(
+                                format == "flv"
+                                    ? await worker.mergeFLVFiles(flvs)
+                                    : flvs[0]
                             )
+                            worker.terminate()
 
-                            const videoTitle = await worker.getVideoTitle()
                             const outputName = videoTitle.match(/：第\d+话 .+?$/)
                                 ? videoTitle.replace(/：第\d+话 .+?$/, `：第${i.name}话`)
                                 : `${videoTitle} - ${i.name}`
 
-                            const mergedFlvA = e.target
-                            mergedFlvA.href = href
-                            mergedFlvA.download = `${outputName}.flv`
-                            mergedFlvA.textContent = "保存合并后FLV"
-                            mergedFlvA.style["margin-right"] = "20px"
-                            mergedFlvA.title = ""
-                            mergedFlvA.onclick = null
+                            targetA.href = href
+                            targetA.download = `${outputName}.flv`
+                            targetA.textContent = "保存合并后FLV"
+                            targetA.style["margin-right"] = "20px"
 
                             const ass = top.URL.createObjectURL(i.danmuku)
-                            mergedFlvA.after(
-                                <a href="javascript:;" onclick={(e) => {
+                            targetA.after(
+                                <a onclick={(e) => {
                                     new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)
                                 }}>打包MKV(软字幕封装)</a>
                             )
 
                             window.removeEventListener('beforeunload', handler);
 
-                        }} href="javascript:;" title="缓存所有分段+自动合并">
+                        }} title="缓存所有分段+自动合并">
                             缓存所有分段+自动合并
                         </a>
                     </td>
@@ -1064,6 +1070,15 @@ class UI {
                 progress {
                     margin-left: 15px;
                 }
+
+                a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+        
+                a:hover {
+                    color: #f25d8e;
+                }
             `}</style>
             <h1>(测试) 批量抓取</h1>
             <ul>
@@ -1076,11 +1091,8 @@ class UI {
                 </li>
                 <li>
                     <p>(测)
-                        <a
-                            href="javascript:;"
-                            onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"]').forEach(a => a.click())}
-                        >
-                            一键开始缓存+自动合并所有视频
+                        <a onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"]').forEach(a => a.click())}>
+                            一键开始缓存+批量合并
                         </a>
                     </p>
                     <p>flv合并 <a href='http://www.flvcd.com/teacher2.htm'>硕鼠</a></p>
@@ -1100,13 +1112,7 @@ class UI {
         top.document.head.remove()
         top.document.body.replaceWith(document.createElement("body"))
 
-        const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn)
-        worker.postMessage([
-            'init',
-            { videoTitle, ret }
-        ])
-
-        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, worker));
+        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, videoTitle));
 
         return ret;
     }

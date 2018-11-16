@@ -16,14 +16,6 @@ export class WebWorker extends Worker {
     constructor(stringUrl) {
         super(stringUrl)
 
-        this.getReturnValue("getAllMethods").then(methods => {
-            methods.forEach(method => {
-                Object.defineProperty(this, method, {
-                    value: async (...args) => this.getReturnValue(method, args)
-                })
-            })
-        })
-
         this.importFnAsAScript(TwentyFourDataView)
         this.importFnAsAScript(FLVTag)
         this.importFnAsAScript(FLV)
@@ -49,9 +41,20 @@ export class WebWorker extends Worker {
                     if (_method == method) {
                         resolve(incomingData)
                     } else if (_method == "error") {
+                        console.error(incomingData)
                         reject(new Error("Web Worker 内部错误"))
                     }
                 }
+            })
+        })
+    }
+
+    async registerAllMethods() {
+        const methods = await this.getReturnValue("getAllMethods")
+
+        methods.forEach(method => {
+            Object.defineProperty(this, method, {
+                value: (arg) => this.getReturnValue(method, arg)
             })
         })
     }
@@ -77,28 +80,8 @@ export class WebWorker extends Worker {
 export const BatchDownloadWorkerFn = () => {
 
     class BatchDownloadWorker {
-        init(incomingData) {
-            this.videoTitle = incomingData.videoTitle
-            this.ret = incomingData.ret
-
-            console.debug(this.videoTitle)
-            console.debug(this.ret)
-        }
-
-        getInfo(index) {
-            return this.ret[index]
-        }
-
-        getVideoTitle() {
-            return this.videoTitle
-        }
-
-        async mergeFLVFiles([files, format]) {
-            if (format == "flv") {
-                return URL.createObjectURL(await FLV.mergeBlobs(files));
-            } else {
-                return URL.createObjectURL(files[0]);
-            }
+        async mergeFLVFiles(files) {
+            return await FLV.mergeBlobs(files);
         }
 
         /**
