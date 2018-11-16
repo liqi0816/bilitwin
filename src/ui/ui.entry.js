@@ -978,8 +978,27 @@ class UI {
                 })
             )
         }
+        const getSize = async (videoIndex) => {
+            const { durl } = ret[videoIndex]
+
+            /** @type {number[]} */
+            const sizes = await Promise.all(
+                durl.map(async (burl) => {
+                    const r = await fetch(burl, { method: "HEAD" })
+                    return +r.headers.get("content-length")
+                })
+            )
+
+            return sizes.reduce((total, _size) => total + _size)
+        }
 
         ret.forEach((i, index) => {
+            const sizeSpan = <span></span>
+            getSize(index).then(size => {
+                const sizeMB = (size / 1024) / 1024
+                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MB)`
+            })
+
             table.append(
                 <tr>
                     <td>
@@ -990,7 +1009,7 @@ class UI {
                             const handler = e => UI.beforeUnloadHandler(e);
                             window.addEventListener('beforeunload', handler);
 
-                            const targetA = e.target
+                            const targetA = e.target.parentElement 
                             targetA.title = ""
                             targetA.onclick = null
                             targetA.textContent = "缓存中……"
@@ -1027,7 +1046,7 @@ class UI {
                             window.removeEventListener('beforeunload', handler);
 
                         }} title="缓存所有分段+自动合并">
-                            缓存所有分段+自动合并
+                            <span>缓存所有分段+自动合并</span> {sizeSpan}
                         </a>
                     </td>
                     <td>
