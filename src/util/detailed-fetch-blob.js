@@ -112,7 +112,12 @@ class DetailedFetchBlob {
             xhr.onabort = e => this.onabort({ target: this, type: 'abort' });
             xhr.onerror = e => { this.onerror({ target: this, type: e.type }); reject(e); };
             this.abort = xhr.abort.bind(xhr);
-            xhr.open('get', input);
+            xhr.open(init.method || 'get', input);
+            if (init.headers) {
+                Object.entries(init.headers).forEach(([header, value]) => {
+                    xhr.setRequestHeader(header, value)
+                });
+            }
             xhr.send();
         });
         this.promise = this.blobPromise;

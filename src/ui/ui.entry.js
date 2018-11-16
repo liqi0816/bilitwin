@@ -913,6 +913,11 @@ class UI {
             const cache = new CacheDB()
             return cache.addData({ name, data: blob });
         }
+        const cleanPartialFLVInCache = async (name) => {
+            const cache = new CacheDB()
+            name = 'PC_' + name;
+            return cache.deleteData(name);
+        }
         const getFLVs = async (videoIndex) => {
             if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = []
 
@@ -963,6 +968,7 @@ class UI {
                         let fullFLV = await fch.getBlob();
                         if (partialFLVFromCache) {
                             fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                            cleanPartialFLVInCache(outputName)
                         }
                         saveFLVToCache(outputName, fullFLV);
 
