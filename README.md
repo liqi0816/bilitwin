@@ -6,7 +6,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 如果有bug，请直接使用[Github Issues](https://github.com/Xmader/bilitwin/issues)向我反馈
 
-## 由于B站限制，右键一下播放器 或 开始播放 才能显示下载按钮
+## ~~由于B站限制，右键一下播放器 或 开始播放 才能显示下载按钮~~ (从`v1.19.4 `版本开始不需要了)
 
 **使用`发送到aria2 RPC`功能，请自行解决浏览器默认阻止加载[混合活动内容](https://developer.mozilla.org/zh-CN/docs/Security/MixedContent#Mixed_active_content)的问题 (推荐解决方法: 为aria2开启https支持)**
 
@@ -59,6 +59,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
         * 获取番剧封面 <sub>在番剧详情页面(如[这里](https://www.bilibili.com/bangumi/media/md134912))点击左侧的封面图片就能获取大图</sub>
         * 小窗播放
         * 自定义播放速度
+        * 让新版播放器支持自定义弹幕字体 (功能在右键菜单→`BiliPolyfill`中)
     * 彩蛋
 * 不能
     * 破解地区限制
@@ -126,7 +127,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
 
 模拟用户用原生鉴权方式加载视频，再也不怕B站改appkey或appsecret，该走哪个CDN就走哪个。
 
-脚本用到了大量ES6功能和一些ES7功能。用着最新浏览器的同学，请把脚本从babel中解放出来！
+脚本用到了大量ES6功能和一些ES7、ES8功能。用着最新浏览器的同学，请把脚本从babel中解放出来！
 
 懒得加的功能：
 * 边看边下载  
