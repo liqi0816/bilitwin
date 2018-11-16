@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.20.0
+// @version     1.21.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -111,14 +111,13 @@ function load() {
             req.send();
         }).then(function (script) {
             top.eval(script);
+            _babelPolyfill = false;
         }).then(function () {
             script();
-            _babelPolyfill = false;
         });
     }
     else {
         script();
-        _babelPolyfill = false;
     }
 }
 
@@ -182,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.20.0
+// @version     1.21.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -6355,6 +6354,268 @@ var MKVTransmuxer = function () {
 }();
 
 /***
+ * Copyright (C) 2018 Xmader. All Rights Reserved.
+ * 
+ * @author Xmader
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+var WebWorker = function (_Worker) {
+    _inherits(WebWorker, _Worker);
+
+    function WebWorker(stringUrl) {
+        _classCallCheck(this, WebWorker);
+
+        var _this43 = _possibleConstructorReturn(this, (WebWorker.__proto__ || Object.getPrototypeOf(WebWorker)).call(this, stringUrl));
+
+        _this43.importFnAsAScript(TwentyFourDataView);
+        _this43.importFnAsAScript(FLVTag);
+        _this43.importFnAsAScript(FLV);
+        return _this43;
+    }
+
+    /**
+     * @param {string} method 
+     * @param {*} data 
+     */
+
+
+    _createClass(WebWorker, [{
+        key: 'getReturnValue',
+        value: function () {
+            var _ref74 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(method, data) {
+                var _this44 = this;
+
+                var callbackNum;
+                return regeneratorRuntime.wrap(function _callee59$(_context61) {
+                    while (1) {
+                        switch (_context61.prev = _context61.next) {
+                            case 0:
+                                callbackNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+
+
+                                this.postMessage([method, data, callbackNum]);
+
+                                _context61.next = 4;
+                                return new Promise(function (resolve, reject) {
+                                    _this44.addEventListener("message", function (e) {
+                                        var _e$data = _slicedToArray(e.data, 3),
+                                            _method = _e$data[0],
+                                            incomingData = _e$data[1],
+                                            _callbackNum = _e$data[2];
+
+                                        if (_callbackNum == callbackNum) {
+                                            if (_method == method) {
+                                                resolve(incomingData);
+                                            } else if (_method == "error") {
+                                                console.error(incomingData);
+                                                reject(new Error("Web Worker 内部错误"));
+                                            }
+                                        }
+                                    });
+                                });
+
+                            case 4:
+                                return _context61.abrupt('return', _context61.sent);
+
+                            case 5:
+                            case 'end':
+                                return _context61.stop();
+                        }
+                    }
+                }, _callee59, this);
+            }));
+
+            function getReturnValue(_x78, _x79) {
+                return _ref74.apply(this, arguments);
+            }
+
+            return getReturnValue;
+        }()
+    }, {
+        key: 'registerAllMethods',
+        value: function () {
+            var _ref75 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
+                var _this45 = this;
+
+                var methods;
+                return regeneratorRuntime.wrap(function _callee60$(_context62) {
+                    while (1) {
+                        switch (_context62.prev = _context62.next) {
+                            case 0:
+                                _context62.next = 2;
+                                return this.getReturnValue("getAllMethods");
+
+                            case 2:
+                                methods = _context62.sent;
+
+
+                                methods.forEach(function (method) {
+                                    Object.defineProperty(_this45, method, {
+                                        value: function value(arg) {
+                                            return _this45.getReturnValue(method, arg);
+                                        }
+                                    });
+                                });
+
+                            case 4:
+                            case 'end':
+                                return _context62.stop();
+                        }
+                    }
+                }, _callee60, this);
+            }));
+
+            function registerAllMethods() {
+                return _ref75.apply(this, arguments);
+            }
+
+            return registerAllMethods;
+        }()
+
+        /**
+         * @param {Function | ClassDecorator} c 
+         */
+
+    }, {
+        key: 'importFnAsAScript',
+        value: function importFnAsAScript(c) {
+            var blob = new Blob([c.toString()], { type: 'application/javascript' });
+            return this.getReturnValue("importScripts", URL.createObjectURL(blob));
+        }
+
+        /**
+         * @param {() => void} fn 
+         */
+
+    }], [{
+        key: 'fromAFunction',
+        value: function fromAFunction(fn) {
+            var blob = new Blob(['(' + fn.toString() + ')()'], { type: 'application/javascript' });
+            return new WebWorker(URL.createObjectURL(blob));
+        }
+    }]);
+
+    return WebWorker;
+}(Worker);
+
+// 用于批量下载的 Web Worker , 请将函数中的内容想象成一个独立的js文件
+
+
+var BatchDownloadWorkerFn = function BatchDownloadWorkerFn() {
+    var BatchDownloadWorker = function () {
+        function BatchDownloadWorker() {
+            _classCallCheck(this, BatchDownloadWorker);
+        }
+
+        _createClass(BatchDownloadWorker, [{
+            key: 'mergeFLVFiles',
+            value: function () {
+                var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(files) {
+                    return regeneratorRuntime.wrap(function _callee61$(_context63) {
+                        while (1) {
+                            switch (_context63.prev = _context63.next) {
+                                case 0:
+                                    _context63.next = 2;
+                                    return FLV.mergeBlobs(files);
+
+                                case 2:
+                                    return _context63.abrupt('return', _context63.sent);
+
+                                case 3:
+                                case 'end':
+                                    return _context63.stop();
+                            }
+                        }
+                    }, _callee61, this);
+                }));
+
+                function mergeFLVFiles(_x80) {
+                    return _ref76.apply(this, arguments);
+                }
+
+                return mergeFLVFiles;
+            }()
+
+            /**
+             * 引入脚本与库
+             * @param  {string[]} scripts 
+             */
+
+        }, {
+            key: 'importScripts',
+            value: function (_importScripts) {
+                function importScripts() {
+                    return _importScripts.apply(this, arguments);
+                }
+
+                importScripts.toString = function () {
+                    return _importScripts.toString();
+                };
+
+                return importScripts;
+            }(function () {
+                importScripts.apply(undefined, arguments);
+            })
+        }, {
+            key: 'getAllMethods',
+            value: function getAllMethods() {
+                return Object.getOwnPropertyNames(BatchDownloadWorker.prototype).slice(1, -1);
+            }
+        }]);
+
+        return BatchDownloadWorker;
+    }();
+
+    var worker = new BatchDownloadWorker();
+
+    onmessage = function () {
+        var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(e) {
+            var _e$data2, method, incomingData, callbackNum, returnValue;
+
+            return regeneratorRuntime.wrap(function _callee62$(_context64) {
+                while (1) {
+                    switch (_context64.prev = _context64.next) {
+                        case 0:
+                            _e$data2 = _slicedToArray(e.data, 3), method = _e$data2[0], incomingData = _e$data2[1], callbackNum = _e$data2[2];
+                            _context64.prev = 1;
+                            _context64.next = 4;
+                            return worker[method](incomingData);
+
+                        case 4:
+                            returnValue = _context64.sent;
+
+                            if (returnValue) {
+                                postMessage([method, returnValue, callbackNum]);
+                            }
+                            _context64.next = 12;
+                            break;
+
+                        case 8:
+                            _context64.prev = 8;
+                            _context64.t0 = _context64['catch'](1);
+
+                            postMessage(["error", _context64.t0.message, callbackNum]);
+                            throw _context64.t0;
+
+                        case 12:
+                        case 'end':
+                            return _context64.stop();
+                    }
+                }
+            }, _callee62, undefined, [[1, 8]]);
+        }));
+
+        return function onmessage(_x81) {
+            return _ref77.apply(this, arguments);
+        };
+    }();
+};
+
+/***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
  * 
  * @author qli5 <goodlq11[at](163|gmail).com>
@@ -6366,7 +6627,7 @@ var MKVTransmuxer = function () {
 
 var UI = function () {
     function UI(twin) {
-        var _this43 = this;
+        var _this46 = this;
 
         var option = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : UI.optionDefaults;
 
@@ -6383,16 +6644,16 @@ var UI = function () {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(function () {
-            Object.values(_this43.dom).forEach(function (e) {
+            Object.values(_this46.dom).forEach(function (e) {
                 return e.remove();
             });
-            _this43.dom = {};
+            _this46.dom = {};
         });
         this.cidSessionDestroy.addCallback(function () {
-            Object.values(_this43.cidSessionDom).forEach(function (e) {
+            Object.values(_this46.cidSessionDom).forEach(function (e) {
                 return e.remove();
             });
-            _this43.cidSessionDom = {};
+            _this46.cidSessionDom = {};
         });
 
         this.styleClearance();
@@ -6424,7 +6685,7 @@ var UI = function () {
     }, {
         key: 'buildTitle',
         value: function buildTitle() {
-            var _this44 = this;
+            var _this47 = this;
 
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
 
@@ -6438,54 +6699,54 @@ var UI = function () {
             // 1.1 build videoA
             assA.style.fontSize = fontSize;
             assA.textContent = '\u5F39\u5E55ASS';
-            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59() {
+            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
                 var video_format;
-                return regeneratorRuntime.wrap(function _callee59$(_context61) {
+                return regeneratorRuntime.wrap(function _callee63$(_context65) {
                     while (1) {
-                        switch (_context61.prev = _context61.next) {
+                        switch (_context65.prev = _context65.next) {
                             case 0:
                                 // 1.1.1 give processing hint
                                 videoA.textContent = '正在FLV';
                                 videoA.onmouseover = null;
 
                                 // 1.1.2 query video
-                                _context61.next = 4;
+                                _context65.next = 4;
                                 return monkey.queryInfo('video');
 
                             case 4:
-                                video_format = _context61.sent;
+                                video_format = _context65.sent;
 
 
                                 // 1.1.3 display video
                                 videoA.textContent = '\u89C6\u9891' + (video_format ? video_format.toUpperCase() : 'FLV');
                                 videoA.onclick = function () {
-                                    return _this44.displayFLVDiv();
+                                    return _this47.displayFLVDiv();
                                 };
 
                             case 7:
                             case 'end':
-                                return _context61.stop();
+                                return _context65.stop();
                         }
                     }
-                }, _callee59, _this44);
+                }, _callee63, _this47);
             }));
 
             // 1.2 build assA
-            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
-                return regeneratorRuntime.wrap(function _callee60$(_context62) {
+            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+                return regeneratorRuntime.wrap(function _callee64$(_context66) {
                     while (1) {
-                        switch (_context62.prev = _context62.next) {
+                        switch (_context66.prev = _context66.next) {
                             case 0:
                                 // 1.2.1 give processing hint
                                 assA.textContent = '正在ASS';
                                 assA.onmouseover = null;
 
                                 // 1.2.2 query flv
-                                _context62.next = 4;
+                                _context66.next = 4;
                                 return monkey.queryInfo('ass');
 
                             case 4:
-                                assA.href = _context62.sent;
+                                assA.href = _context66.sent;
 
 
                                 // 1.2.3 response mp4
@@ -6498,10 +6759,10 @@ var UI = function () {
 
                             case 7:
                             case 'end':
-                                return _context62.stop();
+                                return _context66.stop();
                         }
                     }
-                }, _callee60, _this44);
+                }, _callee64, _this47);
             }));
 
             // 2. save to cache
@@ -6511,9 +6772,9 @@ var UI = function () {
     }, {
         key: 'appendTitle',
         value: function appendTitle() {
-            var _ref76 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
-                videoA = _ref76.videoA,
-                assA = _ref76.assA;
+            var _ref80 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
+                videoA = _ref80.videoA,
+                assA = _ref80.assA;
 
             // 1. build div
             var div = document.createElement('div');
@@ -6535,9 +6796,9 @@ var UI = function () {
         }
     }, {
         key: 'appendShortVideoTitle',
-        value: function appendShortVideoTitle(_ref77) {
-            var video_playurl = _ref77.video_playurl,
-                cover_img = _ref77.cover_img;
+        value: function appendShortVideoTitle(_ref81) {
+            var video_playurl = _ref81.video_playurl,
+                cover_img = _ref81.cover_img;
 
             var fontSize = '15px';
             var marginRight = '15px';
@@ -6573,7 +6834,7 @@ var UI = function () {
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
             var flvs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.flvs;
 
-            var _this45 = this;
+            var _this48 = this;
 
             var cache = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : monkey.cache;
             var format = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : monkey.video_format;
@@ -6593,7 +6854,7 @@ var UI = function () {
                     var a2 = document.createElement('a');
 
                     a2.onclick = function (e) {
-                        return _this45.downloadFLV({
+                        return _this48.downloadFLV({
                             monkey: monkey,
                             index: index,
                             a: e.target,
@@ -6654,7 +6915,7 @@ var UI = function () {
                 var a1 = document.createElement('a');
 
                 a1.onclick = function (e) {
-                    return format != "mp4" ? _this45.downloadAllFLVs({
+                    return format != "mp4" ? _this48.downloadAllFLVs({
                         a: e.target,
                         monkey: monkey,
                         table: table
@@ -6697,7 +6958,7 @@ var UI = function () {
                 var tr1 = document.createElement('tr');
                 var td1 = document.createElement('td');
                 td1.colSpan = '3';
-                _this45.displayQuota.bind(_this45)(td1);
+                _this48.displayQuota.bind(_this48)(td1);
                 tr1.append(td1);
                 return tr1;
             }()]));
@@ -6709,11 +6970,11 @@ var UI = function () {
                 return UI.allowDrag(e);
             };
             div.ondrop = function () {
-                var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(e) {
+                var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(e) {
                     var files, outputName, href;
-                    return regeneratorRuntime.wrap(function _callee61$(_context63) {
+                    return regeneratorRuntime.wrap(function _callee65$(_context67) {
                         while (1) {
-                            switch (_context63.prev = _context63.next) {
+                            switch (_context67.prev = _context67.next) {
                                 case 0:
                                     // 4.1 allow drag
                                     UI.allowDrag(e);
@@ -6745,11 +7006,11 @@ var UI = function () {
                                     if (outputName) outputName = outputName[0].replace(/-\d/, "");else outputName = 'merge_' + files[0].name;
 
                                     // 4.5 build output ui
-                                    _context63.next = 8;
-                                    return _this45.twin.mergeFLVFiles(files);
+                                    _context67.next = 8;
+                                    return _this48.twin.mergeFLVFiles(files);
 
                                 case 8:
-                                    href = _context63.sent;
+                                    href = _context67.sent;
 
                                     table.append(function () {
                                         var tr1 = document.createElement('tr');
@@ -6766,14 +7027,14 @@ var UI = function () {
 
                                 case 10:
                                 case 'end':
-                                    return _context63.stop();
+                                    return _context67.stop();
                             }
                         }
-                    }, _callee61, _this45);
+                    }, _callee65, _this48);
                 }));
 
-                return function (_x85) {
-                    return _ref78.apply(this, arguments);
+                return function (_x89) {
+                    return _ref82.apply(this, arguments);
                 };
             }();
 
@@ -6806,7 +7067,7 @@ var UI = function () {
                 button.style.margin = '0.2em';
 
                 button.onclick = function () {
-                    return _this45.twin.clearCacheDB(cache);
+                    return _this48.twin.clearCacheDB(cache);
                 };
 
                 button.textContent = '\u6E05\u7A7A\u6240\u6709\u89C6\u9891\u7684\u7F13\u5B58';
@@ -6838,27 +7099,27 @@ var UI = function () {
     }, {
         key: 'downloadAllFLVs',
         value: function () {
-            var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(_ref79) {
-                var _this46 = this;
+            var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66(_ref83) {
+                var _this49 = this;
 
-                var a = _ref79.a,
-                    _ref79$monkey = _ref79.monkey,
-                    monkey = _ref79$monkey === undefined ? this.twin.monkey : _ref79$monkey,
-                    _ref79$table = _ref79.table,
-                    table = _ref79$table === undefined ? this.cidSessionDom.flvTable : _ref79$table;
+                var a = _ref83.a,
+                    _ref83$monkey = _ref83.monkey,
+                    monkey = _ref83$monkey === undefined ? this.twin.monkey : _ref83$monkey,
+                    _ref83$table = _ref83.table,
+                    table = _ref83$table === undefined ? this.cidSessionDom.flvTable : _ref83$table;
 
                 var i, progress, _i2, files, href, ass, outputName, pageNameElement, pageName;
 
-                return regeneratorRuntime.wrap(function _callee62$(_context64) {
+                return regeneratorRuntime.wrap(function _callee66$(_context68) {
                     while (1) {
-                        switch (_context64.prev = _context64.next) {
+                        switch (_context68.prev = _context68.next) {
                             case 0:
                                 if (!this.cidSessionDom.downloadAllTr) {
-                                    _context64.next = 2;
+                                    _context68.next = 2;
                                     break;
                                 }
 
-                                return _context64.abrupt('return');
+                                return _context68.abrupt('return');
 
                             case 2:
 
@@ -6881,7 +7142,7 @@ var UI = function () {
                                     if (table.rows[i].cells[1].children[0].textContent == '缓存本段') table.rows[i].cells[1].children[0].click();
                                 }
 
-                                // 4. set sprogress
+                                // 4. set progress
                                 progress = a.parentElement.nextElementSibling.children[0];
 
                                 progress.max = monkey.flvs.length + 1;
@@ -6891,21 +7152,21 @@ var UI = function () {
                                         return progress.value++;
                                     });
                                 } // 5. merge splits
-                                _context64.next = 12;
+                                _context68.next = 12;
                                 return monkey.getAllFLVs();
 
                             case 12:
-                                files = _context64.sent;
-                                _context64.next = 15;
+                                files = _context68.sent;
+                                _context68.next = 15;
                                 return this.twin.mergeFLVFiles(files);
 
                             case 15:
-                                href = _context64.sent;
-                                _context64.next = 18;
+                                href = _context68.sent;
+                                _context68.next = 18;
                                 return monkey.ass;
 
                             case 18:
-                                ass = _context64.sent;
+                                ass = _context68.sent;
                                 outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
                                 pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
 
@@ -6927,7 +7188,7 @@ var UI = function () {
                                     a1.download = outputName + '.flv';
 
                                     (function (a) {
-                                        if (_this46.option.autoDanmaku) a.onclick = function () {
+                                        if (_this49.option.autoDanmaku) a.onclick = function () {
                                             return a.nextElementSibling.click();
                                         };
                                     })(a1);
@@ -6955,18 +7216,18 @@ var UI = function () {
                                     return tr1;
                                 }());
 
-                                return _context64.abrupt('return', href);
+                                return _context68.abrupt('return', href);
 
                             case 25:
                             case 'end':
-                                return _context64.stop();
+                                return _context68.stop();
                         }
                     }
-                }, _callee62, this);
+                }, _callee66, this);
             }));
 
-            function downloadAllFLVs(_x87) {
-                return _ref80.apply(this, arguments);
+            function downloadAllFLVs(_x91) {
+                return _ref84.apply(this, arguments);
             }
 
             return downloadAllFLVs;
@@ -6974,17 +7235,17 @@ var UI = function () {
     }, {
         key: 'downloadFLV',
         value: function () {
-            var _ref82 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(_ref81) {
-                var a = _ref81.a,
-                    _ref81$monkey = _ref81.monkey,
-                    monkey = _ref81$monkey === undefined ? this.twin.monkey : _ref81$monkey,
-                    index = _ref81.index,
-                    _ref81$progress = _ref81.progress,
-                    progress = _ref81$progress === undefined ? {} : _ref81$progress;
+            var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67(_ref85) {
+                var a = _ref85.a,
+                    _ref85$monkey = _ref85.monkey,
+                    monkey = _ref85$monkey === undefined ? this.twin.monkey : _ref85$monkey,
+                    index = _ref85.index,
+                    _ref85$progress = _ref85.progress,
+                    progress = _ref85$progress === undefined ? {} : _ref85$progress;
                 var handler, url;
-                return regeneratorRuntime.wrap(function _callee63$(_context65) {
+                return regeneratorRuntime.wrap(function _callee67$(_context69) {
                     while (1) {
-                        switch (_context65.prev = _context65.next) {
+                        switch (_context69.prev = _context69.next) {
                             case 0:
                                 // 1. add beforeUnloadHandler
                                 handler = function handler(e) {
@@ -7004,29 +7265,29 @@ var UI = function () {
 
                                 // 3. try download
                                 url = void 0;
-                                _context65.prev = 5;
-                                _context65.next = 8;
+                                _context69.prev = 5;
+                                _context69.next = 8;
                                 return monkey.getFLV(index, function (loaded, total) {
                                     progress.value = loaded;
                                     progress.max = total;
                                 });
 
                             case 8:
-                                url = _context65.sent;
+                                url = _context69.sent;
 
                                 url = URL.createObjectURL(url);
                                 if (progress.value == 0) progress.value = progress.max = 1;
-                                _context65.next = 19;
+                                _context69.next = 19;
                                 break;
 
                             case 13:
-                                _context65.prev = 13;
-                                _context65.t0 = _context65['catch'](5);
+                                _context69.prev = 13;
+                                _context69.t0 = _context69['catch'](5);
 
                                 a.onclick = null;
                                 window.removeEventListener('beforeunload', handler);
                                 a.textContent = '错误';
-                                throw _context65.t0;
+                                throw _context69.t0;
 
                             case 19:
 
@@ -7036,18 +7297,18 @@ var UI = function () {
                                 a.textContent = '另存为';
                                 a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
                                 a.href = url;
-                                return _context65.abrupt('return', url);
+                                return _context69.abrupt('return', url);
 
                             case 25:
                             case 'end':
-                                return _context65.stop();
+                                return _context69.stop();
                         }
                     }
-                }, _callee63, this, [[5, 13]]);
+                }, _callee67, this, [[5, 13]]);
             }));
 
-            function downloadFLV(_x88) {
-                return _ref82.apply(this, arguments);
+            function downloadFLV(_x92) {
+                return _ref86.apply(this, arguments);
             }
 
             return downloadFLV;
@@ -7055,12 +7316,12 @@ var UI = function () {
     }, {
         key: 'displayQuota',
         value: function () {
-            var _ref83 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64(td) {
-                return regeneratorRuntime.wrap(function _callee64$(_context66) {
+            var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68(td) {
+                return regeneratorRuntime.wrap(function _callee68$(_context70) {
                     while (1) {
-                        switch (_context66.prev = _context66.next) {
+                        switch (_context70.prev = _context70.next) {
                             case 0:
-                                return _context66.abrupt('return', new Promise(function (resolve) {
+                                return _context70.abrupt('return', new Promise(function (resolve) {
                                     var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                     if (!temporaryStorage) return resolve(td.textContent = '这个浏览器不支持缓存呢~关掉标签页后，缓存马上就会消失哦');
                                     temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -7070,14 +7331,14 @@ var UI = function () {
 
                             case 1:
                             case 'end':
-                                return _context66.stop();
+                                return _context70.stop();
                         }
                     }
-                }, _callee64, this);
+                }, _callee68, this);
             }));
 
-            function displayQuota(_x89) {
-                return _ref83.apply(this, arguments);
+            function displayQuota(_x93) {
+                return _ref87.apply(this, arguments);
             }
 
             return displayQuota;
@@ -7112,19 +7373,19 @@ var UI = function () {
     }, {
         key: 'buildMonkeyMenu',
         value: function buildMonkeyMenu() {
-            var _this47 = this;
+            var _this50 = this;
 
-            var _ref84 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref84$playerWin = _ref84.playerWin,
-                playerWin = _ref84$playerWin === undefined ? this.twin.playerWin : _ref84$playerWin,
-                _ref84$BiliMonkey = _ref84.BiliMonkey,
-                BiliMonkey = _ref84$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref84$BiliMonkey,
-                _ref84$monkey = _ref84.monkey,
-                monkey = _ref84$monkey === undefined ? this.twin.monkey : _ref84$monkey,
-                _ref84$videoA = _ref84.videoA,
-                videoA = _ref84$videoA === undefined ? this.cidSessionDom.videoA : _ref84$videoA,
-                _ref84$assA = _ref84.assA,
-                assA = _ref84$assA === undefined ? this.cidSessionDom.assA : _ref84$assA;
+            var _ref88 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref88$playerWin = _ref88.playerWin,
+                playerWin = _ref88$playerWin === undefined ? this.twin.playerWin : _ref88$playerWin,
+                _ref88$BiliMonkey = _ref88.BiliMonkey,
+                BiliMonkey = _ref88$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref88$BiliMonkey,
+                _ref88$monkey = _ref88.monkey,
+                monkey = _ref88$monkey === undefined ? this.twin.monkey : _ref88$monkey,
+                _ref88$videoA = _ref88.videoA,
+                videoA = _ref88$videoA === undefined ? this.cidSessionDom.videoA : _ref88$videoA,
+                _ref88$assA = _ref88.assA,
+                assA = _ref88$assA === undefined ? this.cidSessionDom.assA : _ref88$assA;
 
             var context_menu_videoA = document.createElement('li');
 
@@ -7132,18 +7393,18 @@ var UI = function () {
                 context_menu_videoA.className = 'context-menu-function';
 
                 context_menu_videoA.onmouseover = function () {
-                    var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(_ref85) {
-                        var textNode = _ref85.target.lastChild;
-                        return regeneratorRuntime.wrap(function _callee65$(_context67) {
+                    var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69(_ref89) {
+                        var textNode = _ref89.target.lastChild;
+                        return regeneratorRuntime.wrap(function _callee69$(_context71) {
                             while (1) {
-                                switch (_context67.prev = _context67.next) {
+                                switch (_context71.prev = _context71.next) {
                                     case 0:
                                         if (!videoA.onmouseover) {
-                                            _context67.next = 3;
+                                            _context71.next = 3;
                                             break;
                                         }
 
-                                        _context67.next = 3;
+                                        _context71.next = 3;
                                         return videoA.onmouseover();
 
                                     case 3:
@@ -7153,14 +7414,14 @@ var UI = function () {
 
                                     case 4:
                                     case 'end':
-                                        return _context67.stop();
+                                        return _context71.stop();
                                 }
                             }
-                        }, _callee65, _this47);
+                        }, _callee69, _this50);
                     }));
 
-                    return function (_x92) {
-                        return _ref86.apply(this, arguments);
+                    return function (_x96) {
+                        return _ref90.apply(this, arguments);
                     };
                 }();
 
@@ -7199,17 +7460,17 @@ var UI = function () {
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66() {
-                return regeneratorRuntime.wrap(function _callee66$(_context68) {
+            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
+                return regeneratorRuntime.wrap(function _callee70$(_context72) {
                     while (1) {
-                        switch (_context68.prev = _context68.next) {
+                        switch (_context72.prev = _context72.next) {
                             case 0:
                                 if (!assA.onmouseover) {
-                                    _context68.next = 3;
+                                    _context72.next = 3;
                                     break;
                                 }
 
-                                _context68.next = 3;
+                                _context72.next = 3;
                                 return assA.onmouseover();
 
                             case 3:
@@ -7217,10 +7478,10 @@ var UI = function () {
 
                             case 4:
                             case 'end':
-                                return _context68.stop();
+                                return _context72.stop();
                         }
                     }
-                }, _callee66, _this47);
+                }, _callee70, _this50);
             }));
 
             var a2 = document.createElement('a');
@@ -7235,7 +7496,7 @@ var UI = function () {
             li2.className = 'context-menu-function';
 
             li2.onclick = function () {
-                return _this47.displayOptionDiv();
+                return _this50.displayOptionDiv();
             };
 
             var a3 = document.createElement('a');
@@ -7249,25 +7510,25 @@ var UI = function () {
             var li3 = document.createElement('li');
             li3.className = 'context-menu-function';
 
-            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67() {
-                return regeneratorRuntime.wrap(function _callee67$(_context69) {
+            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
+                return regeneratorRuntime.wrap(function _callee71$(_context73) {
                     while (1) {
-                        switch (_context69.prev = _context69.next) {
+                        switch (_context73.prev = _context73.next) {
                             case 0:
-                                _context69.t0 = UI;
-                                _context69.next = 3;
+                                _context73.t0 = UI;
+                                _context73.next = 3;
                                 return BiliMonkey.getAllPageDefaultFormats(playerWin, monkey);
 
                             case 3:
-                                _context69.t1 = _context69.sent;
-                                return _context69.abrupt('return', _context69.t0.displayDownloadAllPageDefaultFormatsBody.call(_context69.t0, _context69.t1));
+                                _context73.t1 = _context73.sent;
+                                return _context73.abrupt('return', _context73.t0.displayDownloadAllPageDefaultFormatsBody.call(_context73.t0, _context73.t1));
 
                             case 5:
                             case 'end':
-                                return _context69.stop();
+                                return _context73.stop();
                         }
                     }
-                }, _callee67, _this47);
+                }, _callee71, _this50);
             }));
 
             var a4 = document.createElement('a');
@@ -7281,30 +7542,30 @@ var UI = function () {
             var li4 = document.createElement('li');
             li4.className = 'context-menu-function';
 
-            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68() {
-                return regeneratorRuntime.wrap(function _callee68$(_context70) {
+            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+                return regeneratorRuntime.wrap(function _callee72$(_context74) {
                     while (1) {
-                        switch (_context70.prev = _context70.next) {
+                        switch (_context74.prev = _context74.next) {
                             case 0:
                                 monkey.proxy = true;
                                 monkey.flvs = null;
                                 UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                 // Yes, I AM lazy.
                                 playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                _context70.next = 6;
+                                _context74.next = 6;
                                 return new Promise(function (r) {
                                     return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                 });
 
                             case 6:
-                                return _context70.abrupt('return', monkey.queryInfo('video'));
+                                return _context74.abrupt('return', monkey.queryInfo('video'));
 
                             case 7:
                             case 'end':
-                                return _context70.stop();
+                                return _context74.stop();
                         }
                     }
-                }, _callee68, _this47);
+                }, _callee72, _this50);
             }));
 
             var a5 = document.createElement('a');
@@ -7334,7 +7595,7 @@ var UI = function () {
             li6.className = 'context-menu-function';
 
             li6.onclick = function () {
-                return _this47.cidSessionDestroy() && _this47.cidSessionRender();
+                return _this50.cidSessionDestroy() && _this50.cidSessionRender();
             };
 
             var a7 = document.createElement('a');
@@ -7366,15 +7627,15 @@ var UI = function () {
     }, {
         key: 'buildPolyfillMenu',
         value: function buildPolyfillMenu() {
-            var _this48 = this;
+            var _this51 = this;
 
-            var _ref90 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref90$playerWin = _ref90.playerWin,
-                playerWin = _ref90$playerWin === undefined ? this.twin.playerWin : _ref90$playerWin,
-                _ref90$BiliPolyfill = _ref90.BiliPolyfill,
-                BiliPolyfill = _ref90$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref90$BiliPolyfill,
-                _ref90$polyfill = _ref90.polyfill,
-                polyfill = _ref90$polyfill === undefined ? this.twin.polyfill : _ref90$polyfill;
+            var _ref94 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref94$playerWin = _ref94.playerWin,
+                playerWin = _ref94$playerWin === undefined ? this.twin.playerWin : _ref94$playerWin,
+                _ref94$BiliPolyfill = _ref94.BiliPolyfill,
+                BiliPolyfill = _ref94$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref94$BiliPolyfill,
+                _ref94$polyfill = _ref94.polyfill,
+                polyfill = _ref94$polyfill === undefined ? this.twin.polyfill : _ref94$polyfill;
 
             var oped = [];
             var BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
@@ -7679,7 +7940,7 @@ var UI = function () {
             li15.className = 'context-menu-function';
 
             li15.onclick = function () {
-                return _this48.displayPolyfillDataDiv();
+                return _this51.displayPolyfillDataDiv();
             };
 
             var a16 = document.createElement('a');
@@ -7779,7 +8040,7 @@ var UI = function () {
             li20.className = 'context-menu-function';
 
             li20.onclick = function () {
-                return _this48.displayOptionDiv();
+                return _this51.displayOptionDiv();
             };
 
             var a21 = document.createElement('a');
@@ -7934,10 +8195,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref91) {
-                var _ref92 = _slicedToArray(_ref91, 2),
-                    name = _ref92[0],
-                    description = _ref92[1];
+            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref95) {
+                var _ref96 = _slicedToArray(_ref95, 2),
+                    name = _ref96[0],
+                    description = _ref96[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8011,10 +8272,10 @@ var UI = function () {
                     twin.saveOption(twin.option);
                 };
 
-                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref93) {
-                    var _ref94 = _slicedToArray(_ref93, 2),
-                        name = _ref94[0],
-                        value = _ref94[1];
+                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref97) {
+                    var _ref98 = _slicedToArray(_ref97, 2),
+                        name = _ref98[0],
+                        value = _ref98[1];
 
                     var option1 = document.createElement('option');
                     option1.value = value;
@@ -8053,11 +8314,11 @@ var UI = function () {
                 table.append(tr2);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref95) {
-                var _ref96 = _slicedToArray(_ref95, 3),
-                    name = _ref96[0],
-                    description = _ref96[1],
-                    disabled = _ref96[2];
+            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref99) {
+                var _ref100 = _slicedToArray(_ref99, 3),
+                    name = _ref100[0],
+                    description = _ref100[1],
+                    disabled = _ref100[2];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8097,10 +8358,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref97) {
-                var _ref98 = _slicedToArray(_ref97, 2),
-                    name = _ref98[0],
-                    description = _ref98[1];
+            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref101) {
+                var _ref102 = _slicedToArray(_ref101, 2),
+                    name = _ref102[0],
+                    description = _ref102[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8228,34 +8489,408 @@ var UI = function () {
 
     }], [{
         key: 'buildDownloadAllPageDefaultFormatsBody',
-        value: function buildDownloadAllPageDefaultFormatsBody(ret) {
+        value: function buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
+            var _this52 = this;
+
             var table = document.createElement('table');
 
             table.onclick = function (e) {
                 return e.stopPropagation();
             };
 
-            var _loop3 = function _loop3(i) {
+            var flvsBlob = [];
+            var loadFLVFromCache = function () {
+                var _ref103 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73(name) {
+                    var partial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+                    var cache, item;
+                    return regeneratorRuntime.wrap(function _callee73$(_context75) {
+                        while (1) {
+                            switch (_context75.prev = _context75.next) {
+                                case 0:
+                                    if (partial) name = 'PC_' + name;
+                                    cache = new CacheDB();
+                                    _context75.next = 4;
+                                    return cache.getData(name);
+
+                                case 4:
+                                    item = _context75.sent;
+                                    return _context75.abrupt('return', item && item.data);
+
+                                case 6:
+                                case 'end':
+                                    return _context75.stop();
+                            }
+                        }
+                    }, _callee73, _this52);
+                }));
+
+                return function loadFLVFromCache(_x107) {
+                    return _ref103.apply(this, arguments);
+                };
+            }();
+            var saveFLVToCache = function () {
+                var _ref104 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74(name, blob) {
+                    var cache;
+                    return regeneratorRuntime.wrap(function _callee74$(_context76) {
+                        while (1) {
+                            switch (_context76.prev = _context76.next) {
+                                case 0:
+                                    cache = new CacheDB();
+                                    return _context76.abrupt('return', cache.addData({ name: name, data: blob }));
+
+                                case 2:
+                                case 'end':
+                                    return _context76.stop();
+                            }
+                        }
+                    }, _callee74, _this52);
+                }));
+
+                return function saveFLVToCache(_x108, _x109) {
+                    return _ref104.apply(this, arguments);
+                };
+            }();
+            var getFLVs = function () {
+                var _ref105 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(videoIndex) {
+                    var durl;
+                    return regeneratorRuntime.wrap(function _callee76$(_context78) {
+                        while (1) {
+                            switch (_context78.prev = _context78.next) {
+                                case 0:
+                                    if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
+
+                                    durl = ret[videoIndex].durl;
+                                    _context78.next = 4;
+                                    return Promise.all(durl.map(function () {
+                                        var _ref106 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(_, durlIndex) {
+                                            var burl, outputName, burlA, progress, flvCache, partialFLVFromCache, opt, fch, fullFLV;
+                                            return regeneratorRuntime.wrap(function _callee75$(_context77) {
+                                                while (1) {
+                                                    switch (_context77.prev = _context77.next) {
+                                                        case 0:
+                                                            if (!flvsBlob[videoIndex][durlIndex]) {
+                                                                _context77.next = 4;
+                                                                break;
+                                                            }
+
+                                                            return _context77.abrupt('return', flvsBlob[videoIndex][durlIndex]);
+
+                                                        case 4:
+                                                            burl = durl[durlIndex];
+                                                            outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+                                                            burlA = top.document.querySelector('a[download][href="' + burl + '"]');
+
+                                                            burlA.after(function () {
+                                                                var progress1 = document.createElement('progress');
+                                                                progress1.setAttribute('value', '0');
+                                                                progress1.setAttribute('max', '100');
+                                                                progress1.textContent = '\u8FDB\u5EA6\u6761';
+                                                                return progress1;
+                                                            }());
+                                                            progress = burlA.parentElement.querySelector("progress");
+                                                            _context77.next = 11;
+                                                            return loadFLVFromCache(outputName);
+
+                                                        case 11:
+                                                            flvCache = _context77.sent;
+
+                                                            if (!flvCache) {
+                                                                _context77.next = 16;
+                                                                break;
+                                                            }
+
+                                                            progress.value = progress.max;
+                                                            progress.after(function () {
+                                                                var a1 = document.createElement('a');
+                                                                a1.href = top.URL.createObjectURL(flvCache);
+                                                                a1.download = outputName;
+                                                                a1.textContent = '\u53E6\u5B58\u4E3A';
+                                                                return a1;
+                                                            }());
+                                                            return _context77.abrupt('return', flvsBlob[videoIndex][durlIndex] = flvCache);
+
+                                                        case 16:
+                                                            _context77.next = 18;
+                                                            return loadFLVFromCache(outputName, true);
+
+                                                        case 18:
+                                                            partialFLVFromCache = _context77.sent;
+
+                                                            if (partialFLVFromCache) burl += '&bstart=' + partialFLVFromCache.size;
+
+                                                            opt = {
+                                                                method: 'GET',
+                                                                mode: 'cors',
+                                                                cache: 'default',
+                                                                referrerPolicy: 'no-referrer-when-downgrade',
+                                                                cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                                                                headers: partialFLVFromCache && !burl.includes('wsTime') ? { Range: 'bytes=' + partialFLVFromCache.size + '-' } : undefined
+                                                            };
+
+
+                                                            opt.onprogress = function (loaded, total) {
+                                                                progress.value = loaded;
+                                                                progress.max = total;
+                                                            };
+
+                                                            fch = new DetailedFetchBlob(burl, opt);
+                                                            _context77.next = 25;
+                                                            return fch.getBlob();
+
+                                                        case 25:
+                                                            fullFLV = _context77.sent;
+
+                                                            if (partialFLVFromCache) {
+                                                                fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                                                            }
+                                                            saveFLVToCache(outputName, fullFLV);
+
+                                                            progress.after(function () {
+                                                                var a1 = document.createElement('a');
+                                                                a1.href = top.URL.createObjectURL(fullFLV);
+                                                                a1.download = outputName;
+                                                                a1.textContent = '\u53E6\u5B58\u4E3A';
+                                                                return a1;
+                                                            }());
+
+                                                            return _context77.abrupt('return', flvsBlob[videoIndex][durlIndex] = fullFLV);
+
+                                                        case 30:
+                                                        case 'end':
+                                                            return _context77.stop();
+                                                    }
+                                                }
+                                            }, _callee75, _this52);
+                                        }));
+
+                                        return function (_x111, _x112) {
+                                            return _ref106.apply(this, arguments);
+                                        };
+                                    }()));
+
+                                case 4:
+                                    return _context78.abrupt('return', _context78.sent);
+
+                                case 5:
+                                case 'end':
+                                    return _context78.stop();
+                            }
+                        }
+                    }, _callee76, _this52);
+                }));
+
+                return function getFLVs(_x110) {
+                    return _ref105.apply(this, arguments);
+                };
+            }();
+            var getSize = function () {
+                var _ref107 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(videoIndex) {
+                    var durlObjects, totalSize, durl, sizes;
+                    return regeneratorRuntime.wrap(function _callee78$(_context80) {
+                        while (1) {
+                            switch (_context80.prev = _context80.next) {
+                                case 0:
+                                    durlObjects = ret[videoIndex].res.durl;
+
+                                    if (!(durlObjects && durlObjects[0].size)) {
+                                        _context80.next = 5;
+                                        break;
+                                    }
+
+                                    totalSize = durlObjects.reduce(function (total, burlObj) {
+                                        return total + parseInt(burlObj.size);
+                                    }, 0);
+
+                                    if (!totalSize) {
+                                        _context80.next = 5;
+                                        break;
+                                    }
+
+                                    return _context80.abrupt('return', totalSize);
+
+                                case 5:
+                                    durl = ret[videoIndex].durl;
+
+                                    /** @type {number[]} */
+
+                                    _context80.next = 8;
+                                    return Promise.all(durl.map(function () {
+                                        var _ref108 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(burl) {
+                                            var r;
+                                            return regeneratorRuntime.wrap(function _callee77$(_context79) {
+                                                while (1) {
+                                                    switch (_context79.prev = _context79.next) {
+                                                        case 0:
+                                                            _context79.next = 2;
+                                                            return fetch(burl, { method: "HEAD" });
+
+                                                        case 2:
+                                                            r = _context79.sent;
+                                                            return _context79.abrupt('return', +r.headers.get("content-length"));
+
+                                                        case 4:
+                                                        case 'end':
+                                                            return _context79.stop();
+                                                    }
+                                                }
+                                            }, _callee77, _this52);
+                                        }));
+
+                                        return function (_x114) {
+                                            return _ref108.apply(this, arguments);
+                                        };
+                                    }()));
+
+                                case 8:
+                                    sizes = _context80.sent;
+                                    return _context80.abrupt('return', sizes.reduce(function (total, _size) {
+                                        return total + _size;
+                                    }));
+
+                                case 10:
+                                case 'end':
+                                    return _context80.stop();
+                            }
+                        }
+                    }, _callee78, _this52);
+                }));
+
+                return function getSize(_x113) {
+                    return _ref107.apply(this, arguments);
+                };
+            }();
+
+            ret.forEach(function (i, index) {
+                var sizeSpan = document.createElement('span');
+                getSize(index).then(function (size) {
+                    var sizeMB = size / 1024 / 1024;
+                    sizeSpan.textContent = '  (' + sizeMB.toFixed(1) + ' MiB)';
+                });
+
                 table.append.apply(table, [function () {
                     var tr1 = document.createElement('tr');
                     var td1 = document.createElement('td');
-                    td1.textContent = '\n                        ' + i.name + '\n                    ';
+                    td1.append(i.name);
+                    var br = document.createElement('br');
+                    td1.append(br);
+                    var a1 = document.createElement('a');
+
+                    a1.onclick = function () {
+                        var _ref109 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(e) {
+                            var handler, targetA, format, flvs, worker, href, outputName, ass;
+                            return regeneratorRuntime.wrap(function _callee79$(_context81) {
+                                while (1) {
+                                    switch (_context81.prev = _context81.next) {
+                                        case 0:
+                                            // add beforeUnloadHandler
+                                            handler = function handler(e) {
+                                                return UI.beforeUnloadHandler(e);
+                                            };
+
+                                            window.addEventListener('beforeunload', handler);
+
+                                            targetA = e.target.parentElement;
+
+                                            targetA.title = "";
+                                            targetA.onclick = null;
+                                            targetA.textContent = "缓存中……";
+
+                                            format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1];
+                                            _context81.next = 9;
+                                            return getFLVs(index);
+
+                                        case 9:
+                                            flvs = _context81.sent;
+
+
+                                            targetA.textContent = "合并中……";
+                                            worker = WebWorker.fromAFunction(BatchDownloadWorkerFn);
+                                            _context81.next = 14;
+                                            return worker.registerAllMethods();
+
+                                        case 14:
+                                            _context81.t0 = URL;
+
+                                            if (!(format == "flv")) {
+                                                _context81.next = 21;
+                                                break;
+                                            }
+
+                                            _context81.next = 18;
+                                            return worker.mergeFLVFiles(flvs);
+
+                                        case 18:
+                                            _context81.t1 = _context81.sent;
+                                            _context81.next = 22;
+                                            break;
+
+                                        case 21:
+                                            _context81.t1 = flvs[0];
+
+                                        case 22:
+                                            _context81.t2 = _context81.t1;
+                                            href = _context81.t0.createObjectURL.call(_context81.t0, _context81.t2);
+
+                                            worker.terminate();
+
+                                            outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, '\uFF1A\u7B2C' + i.name + '\u8BDD') : videoTitle + ' - ' + i.name;
+
+
+                                            targetA.href = href;
+                                            targetA.download = outputName + '.flv';
+                                            targetA.textContent = "保存合并后FLV";
+                                            targetA.style["margin-right"] = "20px";
+
+                                            ass = top.URL.createObjectURL(i.danmuku);
+
+                                            targetA.after(function () {
+                                                var a2 = document.createElement('a');
+
+                                                a2.onclick = function (e) {
+                                                    new MKVTransmuxer().exec(href, ass, outputName + '.mkv', e.target);
+                                                };
+
+                                                a2.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+                                                return a2;
+                                            }());
+
+                                            window.removeEventListener('beforeunload', handler);
+
+                                        case 33:
+                                        case 'end':
+                                            return _context81.stop();
+                                    }
+                                }
+                            }, _callee79, _this52);
+                        }));
+
+                        return function (_x115) {
+                            return _ref109.apply(this, arguments);
+                        };
+                    }();
+
+                    a1.title = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                    var span1 = document.createElement('span');
+                    span1.textContent = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                    a1.append(span1);
+                    a1.append(sizeSpan);
+                    td1.append(a1);
                     tr1.append(td1);
                     var td2 = document.createElement('td');
-                    var a1 = document.createElement('a');
-                    a1.href = i.durl[0];
-                    a1.download = '';
-                    a1.setAttribute('referrerpolicy', 'origin');
-                    a1.textContent = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
-                    td2.append(a1);
+                    var a2 = document.createElement('a');
+                    a2.href = i.durl[0];
+                    a2.download = '';
+                    a2.setAttribute('referrerpolicy', 'origin');
+                    a2.textContent = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+                    td2.append(a2);
                     tr1.append(td2);
                     var td3 = document.createElement('td');
-                    var a2 = document.createElement('a');
-                    a2.href = top.URL.createObjectURL(i.danmuku);
-                    a2.download = i.outputName + '.ass';
-                    a2.setAttribute('referrerpolicy', 'origin');
-                    a2.textContent = i.outputName + '.ass';
-                    td3.append(a2);
+                    var a3 = document.createElement('a');
+                    a3.href = top.URL.createObjectURL(i.danmuku);
+                    a3.download = i.outputName + '.ass';
+                    a3.setAttribute('referrerpolicy', 'origin');
+                    a3.textContent = i.outputName + '.ass';
+                    td3.append(a3);
                     tr1.append(td3);
                     return tr1;
                 }()].concat(_toConsumableArray(i.durl.slice(1).map(function (href) {
@@ -8282,44 +8917,19 @@ var UI = function () {
                     tr1.append(td1);
                     return tr1;
                 }()]));
-            };
-
-            var _iteratorNormalCompletion7 = true;
-            var _didIteratorError7 = false;
-            var _iteratorError7 = undefined;
-
-            try {
-                for (var _iterator7 = ret[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                    var i = _step7.value;
-
-                    _loop3(i);
-                }
-            } catch (err) {
-                _didIteratorError7 = true;
-                _iteratorError7 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion7 && _iterator7.return) {
-                        _iterator7.return();
-                    }
-                } finally {
-                    if (_didIteratorError7) {
-                        throw _iteratorError7;
-                    }
-                }
-            }
+            });
 
             var fragment = document.createDocumentFragment();
             var style1 = document.createElement('style');
-            style1.textContent = '\n                table {\n                    width: 100%;\n                    table-layout: fixed;\n                }\n            \n                td {\n                    overflow: hidden;\n                    white-space: nowrap;\n                    text-overflow: ellipsis;\n                    text-align: center;\n                }\n            ';
+            style1.textContent = '\n                table {\n                    width: 100%;\n                    table-layout: fixed;\n                }\n            \n                td {\n                    overflow: hidden;\n                    white-space: nowrap;\n                    text-overflow: ellipsis;\n                    text-align: center;\n                    vertical-align: bottom;\n                }\n\n                progress {\n                    margin-left: 15px;\n                }\n\n                a {\n                    cursor: pointer;\n                    color: #00a1d6;\n                }\n        \n                a:hover {\n                    color: #f25d8e;\n                }\n            ';
             fragment.append(style1);
             var h1 = document.createElement('h1');
-            h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u6293\u53D6';
+            h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u4E0B\u8F7D';
             fragment.append(h1);
             var ul1 = document.createElement('ul');
             var li = document.createElement('li');
             var p = document.createElement('p');
-            p.textContent = '\u6293\u53D6\u7684\u89C6\u9891\u7684\u6700\u9AD8\u5206\u8FA8\u7387\u53EF\u5728\u8BBE\u7F6E\u4E2D\u81EA\u5B9A\u4E49';
+            p.textContent = '\u6293\u53D6\u7684\u89C6\u9891\u7684\u6700\u9AD8\u5206\u8FA8\u7387\u53EF\u5728\u8BBE\u7F6E\u4E2D\u81EA\u5B9A\u4E49\uFF0C\u756A\u5267\u53EA\u80FD\u6293\u53D6\u5230\u5F53\u524D\u6E05\u6670\u5EA6';
             li.append(p);
             ul1.append(li);
             var li1 = document.createElement('li');
@@ -8334,20 +8944,18 @@ var UI = function () {
             ul1.append(li1);
             var li2 = document.createElement('li');
             var p3 = document.createElement('p');
-            p3.append('flv\u5408\u5E76');
+            p3.append('(\u6D4B)');
             var a1 = document.createElement('a');
-            a1.href = 'http://www.flvcd.com/teacher2.htm';
-            a1.textContent = '\u7855\u9F20';
+
+            a1.onclick = function (e) {
+                return document.querySelectorAll('a[title="缓存所有分段+自动合并"] span:first-child').forEach(function (a) {
+                    return a.click();
+                });
+            };
+
+            a1.textContent = '\n                            \u4E00\u952E\u5F00\u59CB\u7F13\u5B58+\u6279\u91CF\u5408\u5E76\n                        ';
             p3.append(a1);
             li2.append(p3);
-            var p4 = document.createElement('p');
-            p4.textContent = '\u6279\u91CF\u5408\u5E76\u5BF9\u5355\u6807\u7B7E\u9875\u8D1F\u8377\u592A\u5927';
-            li2.append(p4);
-            var p5 = document.createElement('p');
-            var em1 = document.createElement('em');
-            em1.textContent = '\u5F00\u53D1\u8005\uFF1A\u53EF\u4EE5\u7528webworker\uFF0C\u4F46\u662F\u6211\u6CA1\u9700\u6C42\uFF0C\u53C8\u61D2';
-            p5.append(em1);
-            li2.append(p5);
             ul1.append(li2);
             fragment.append(ul1);
             fragment.append(table);
@@ -8356,32 +8964,16 @@ var UI = function () {
     }, {
         key: 'displayDownloadAllPageDefaultFormatsBody',
         value: function displayDownloadAllPageDefaultFormatsBody(ret) {
-            top.document.open();
-            top.document.close();
+            var videoTitle = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-            top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
+            if (top.player) top.player.destroy(); // 销毁播放器
+
+            top.document.head.remove();
+            top.document.body.replaceWith(document.createElement("body"));
+
+            top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, videoTitle));
+
             return ret;
-        }
-    }, {
-        key: 'displayDownloadAllPagePendingBody',
-        value: function displayDownloadAllPagePendingBody() {
-            top.document.open();
-            top.document.close();
-
-            top.document.body.append(function () {
-                var fragment = document.createDocumentFragment();
-                var h1 = document.createElement('h1');
-                h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u6293\u53D6';
-                fragment.append(h1);
-                var ul1 = document.createElement('ul');
-                var li = document.createElement('li');
-                var p = document.createElement('p');
-                p.textContent = '\u6293\u53D6\u4E2D\uFF0C\u8BF7\u7A0D\u5019\u2026\u2026';
-                li.append(p);
-                ul1.append(li);
-                fragment.append(ul1);
-                return fragment;
-            }());
         }
     }, {
         key: 'genDiv',
@@ -8454,7 +9046,7 @@ var UI = function () {
             ['autoDanmaku', '下载视频也触发下载弹幕'],
 
             // 2. user interface
-            ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'],
+            ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'], ['autoDisplayDownloadBtn', '(测)无需右键播放器就能显示下载按钮'],
 
             // 3. download
             ['aria2', '导出aria2'], ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
@@ -8469,6 +9061,7 @@ var UI = function () {
                 // 2. user interface
                 title: true,
                 menu: true,
+                autoDisplayDownloadBtn: true,
 
                 // 3. download
                 aria2: false,
@@ -8513,55 +9106,55 @@ var BiliTwin = function (_BiliUserJS) {
 
         _classCallCheck(this, BiliTwin);
 
-        var _this49 = _possibleConstructorReturn(this, (BiliTwin.__proto__ || Object.getPrototypeOf(BiliTwin)).call(this));
+        var _this53 = _possibleConstructorReturn(this, (BiliTwin.__proto__ || Object.getPrototypeOf(BiliTwin)).call(this));
 
-        _this49.BiliMonkey = BiliMonkey;
-        _this49.BiliPolyfill = BiliPolyfill;
-        _this49.playerWin = null;
-        _this49.monkey = null;
-        _this49.polifill = null;
-        _this49.ui = ui || new UI(_this49);
-        _this49.option = option;
-        return _this49;
+        _this53.BiliMonkey = BiliMonkey;
+        _this53.BiliPolyfill = BiliPolyfill;
+        _this53.playerWin = null;
+        _this53.monkey = null;
+        _this53.polifill = null;
+        _this53.ui = ui || new UI(_this53);
+        _this53.option = option;
+        return _this53;
     }
 
     _createClass(BiliTwin, [{
         key: 'runCidSession',
         value: function () {
-            var _ref99 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
-                var _this50 = this;
+            var _ref110 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80() {
+                var _this54 = this;
 
-                var href, cidRefresh, videoRightClick, videoA, _ref100;
+                var href, cidRefresh, videoRightClick, video, videoA, _ref111;
 
-                return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                return regeneratorRuntime.wrap(function _callee80$(_context82) {
                     while (1) {
-                        switch (_context71.prev = _context71.next) {
+                        switch (_context82.prev = _context82.next) {
                             case 0:
-                                _context71.prev = 0;
-                                _context71.t0 = BiliUserJS.tryGetPlayerWinSync();
+                                _context82.prev = 0;
+                                _context82.t0 = BiliUserJS.tryGetPlayerWinSync();
 
-                                if (_context71.t0) {
-                                    _context71.next = 6;
+                                if (_context82.t0) {
+                                    _context82.next = 6;
                                     break;
                                 }
 
-                                _context71.next = 5;
+                                _context82.next = 5;
                                 return BiliTwin.getPlayerWin();
 
                             case 5:
-                                _context71.t0 = _context71.sent;
+                                _context82.t0 = _context82.sent;
 
                             case 6:
-                                this.playerWin = _context71.t0;
-                                _context71.next = 13;
+                                this.playerWin = _context82.t0;
+                                _context82.next = 13;
                                 break;
 
                             case 9:
-                                _context71.prev = 9;
-                                _context71.t1 = _context71['catch'](0);
+                                _context82.prev = 9;
+                                _context82.t1 = _context82['catch'](0);
 
-                                if (_context71.t1 == 'Need H5 Player') UI.requestH5Player();
-                                throw _context71.t1;
+                                if (_context82.t1 == 'Need H5 Player') UI.requestH5Player();
+                                throw _context82.t1;
 
                             case 13:
                                 href = location.href;
@@ -8574,12 +9167,10 @@ var BiliTwin = function (_BiliUserJS) {
                                 // 2. monkey and polyfill
                                 this.monkey = new BiliMonkey(this.playerWin, this.option);
                                 this.polyfill = new BiliPolyfill(this.playerWin, this.option, function (t) {
-                                    return UI.hintInfo(t, _this50.playerWin);
+                                    return UI.hintInfo(t, _this54.playerWin);
                                 });
 
                                 cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
-
-                                // 无需右键播放器就能显示下载按钮
 
                                 videoRightClick = function videoRightClick(video) {
                                     var event = new MouseEvent('contextmenu', {
@@ -8589,16 +9180,19 @@ var BiliTwin = function (_BiliUserJS) {
                                     video.dispatchEvent(event);
                                     video.dispatchEvent(event);
                                 };
-                                // video.addEventListener('play', videoRightClick, { once: true });
 
+                                if (!this.option.autoDisplayDownloadBtn) {
+                                    _context82.next = 25;
+                                    break;
+                                }
 
-                                _context71.next = 22;
+                                _context82.next = 23;
                                 return new Promise(function (resolve) {
                                     var i = setInterval(function () {
                                         var video = document.querySelector("video");
                                         if (video) {
                                             videoRightClick(video);
-                                            if (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this50.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this50.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this50.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")) {
+                                            if (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this54.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this54.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")) {
                                                 clearInterval(i);
                                                 resolve();
                                             }
@@ -8606,11 +9200,24 @@ var BiliTwin = function (_BiliUserJS) {
                                     }, 10);
                                 });
 
-                            case 22:
-                                _context71.next = 24;
+                            case 23:
+                                _context82.next = 27;
+                                break;
+
+                            case 25:
+                                video = document.querySelector("video");
+
+                                if (video) {
+                                    video.addEventListener('play', function () {
+                                        return videoRightClick(video);
+                                    }, { once: true });
+                                }
+
+                            case 27:
+                                _context82.next = 29;
                                 return this.polyfill.setFunctions();
 
-                            case 24:
+                            case 29:
 
                                 // 3. async consistent => render UI
                                 if (href == location.href) {
@@ -8626,30 +9233,30 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 // 4. debug
                                 if (this.option.debug) {
-                                    _ref100 = [this.monkey, this.polyfill];
-                                    (top.unsafeWindow || top).monkey = _ref100[0];
-                                    (top.unsafeWindow || top).polyfill = _ref100[1];
+                                    _ref111 = [this.monkey, this.polyfill];
+                                    (top.unsafeWindow || top).monkey = _ref111[0];
+                                    (top.unsafeWindow || top).polyfill = _ref111[1];
                                 }
 
                                 // 5. refresh => session expire
-                                _context71.next = 28;
+                                _context82.next = 33;
                                 return cidRefresh;
 
-                            case 28:
+                            case 33:
                                 this.monkey.destroy();
                                 this.polyfill.destroy();
                                 this.ui.cidSessionDestroy();
 
-                            case 31:
+                            case 36:
                             case 'end':
-                                return _context71.stop();
+                                return _context82.stop();
                         }
                     }
-                }, _callee69, this, [[0, 9]]);
+                }, _callee80, this, [[0, 9]]);
             }));
 
             function runCidSession() {
-                return _ref99.apply(this, arguments);
+                return _ref110.apply(this, arguments);
             }
 
             return runCidSession;
@@ -8657,29 +9264,29 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'mergeFLVFiles',
         value: function () {
-            var _ref101 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(files) {
-                return regeneratorRuntime.wrap(function _callee70$(_context72) {
+            var _ref112 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(files) {
+                return regeneratorRuntime.wrap(function _callee81$(_context83) {
                     while (1) {
-                        switch (_context72.prev = _context72.next) {
+                        switch (_context83.prev = _context83.next) {
                             case 0:
-                                _context72.t0 = URL;
-                                _context72.next = 3;
+                                _context83.t0 = URL;
+                                _context83.next = 3;
                                 return FLV.mergeBlobs(files);
 
                             case 3:
-                                _context72.t1 = _context72.sent;
-                                return _context72.abrupt('return', _context72.t0.createObjectURL.call(_context72.t0, _context72.t1));
+                                _context83.t1 = _context83.sent;
+                                return _context83.abrupt('return', _context83.t0.createObjectURL.call(_context83.t0, _context83.t1));
 
                             case 5:
                             case 'end':
-                                return _context72.stop();
+                                return _context83.stop();
                         }
                     }
-                }, _callee70, this);
+                }, _callee81, this);
             }));
 
-            function mergeFLVFiles(_x103) {
-                return _ref101.apply(this, arguments);
+            function mergeFLVFiles(_x117) {
+                return _ref112.apply(this, arguments);
             }
 
             return mergeFLVFiles;
@@ -8687,28 +9294,28 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'clearCacheDB',
         value: function () {
-            var _ref102 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71(cache) {
-                return regeneratorRuntime.wrap(function _callee71$(_context73) {
+            var _ref113 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(cache) {
+                return regeneratorRuntime.wrap(function _callee82$(_context84) {
                     while (1) {
-                        switch (_context73.prev = _context73.next) {
+                        switch (_context84.prev = _context84.next) {
                             case 0:
                                 if (!cache) {
-                                    _context73.next = 2;
+                                    _context84.next = 2;
                                     break;
                                 }
 
-                                return _context73.abrupt('return', cache.deleteEntireDB());
+                                return _context84.abrupt('return', cache.deleteEntireDB());
 
                             case 2:
                             case 'end':
-                                return _context73.stop();
+                                return _context84.stop();
                         }
                     }
-                }, _callee71, this);
+                }, _callee82, this);
             }));
 
-            function clearCacheDB(_x104) {
-                return _ref102.apply(this, arguments);
+            function clearCacheDB(_x118) {
+                return _ref113.apply(this, arguments);
             }
 
             return clearCacheDB;
@@ -8750,34 +9357,34 @@ var BiliTwin = function (_BiliUserJS) {
     }], [{
         key: 'init',
         value: function () {
-            var _ref103 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+            var _ref114 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83() {
                 var twin, vc_info;
-                return regeneratorRuntime.wrap(function _callee72$(_context74) {
+                return regeneratorRuntime.wrap(function _callee83$(_context85) {
                     while (1) {
-                        switch (_context74.prev = _context74.next) {
+                        switch (_context85.prev = _context85.next) {
                             case 0:
                                 if (document.body) {
-                                    _context74.next = 2;
+                                    _context85.next = 2;
                                     break;
                                 }
 
-                                return _context74.abrupt('return');
+                                return _context85.abrupt('return');
 
                             case 2:
                                 if (!(location.hostname == "www.biligame.com")) {
-                                    _context74.next = 6;
+                                    _context85.next = 6;
                                     break;
                                 }
 
-                                return _context74.abrupt('return', BiliPolyfill.biligameInit());
+                                return _context85.abrupt('return', BiliPolyfill.biligameInit());
 
                             case 6:
                                 if (!location.pathname.startsWith("/bangumi/media/md")) {
-                                    _context74.next = 8;
+                                    _context85.next = 8;
                                     break;
                                 }
 
-                                return _context74.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+                                return _context85.abrupt('return', BiliPolyfill.showBangumiCoverImage());
 
                             case 8:
 
@@ -8787,40 +9394,40 @@ var BiliTwin = function (_BiliUserJS) {
                                 twin = new BiliTwin();
 
                                 if (!(location.hostname == "vc.bilibili.com")) {
-                                    _context74.next = 16;
+                                    _context85.next = 16;
                                     break;
                                 }
 
-                                _context74.next = 14;
+                                _context85.next = 14;
                                 return BiliMonkey.getBiliShortVideoInfo();
 
                             case 14:
-                                vc_info = _context74.sent;
-                                return _context74.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
+                                vc_info = _context85.sent;
+                                return _context85.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
 
                             case 16:
                                 if (!1) {
-                                    _context74.next = 21;
+                                    _context85.next = 21;
                                     break;
                                 }
 
-                                _context74.next = 19;
+                                _context85.next = 19;
                                 return twin.runCidSession();
 
                             case 19:
-                                _context74.next = 16;
+                                _context85.next = 16;
                                 break;
 
                             case 21:
                             case 'end':
-                                return _context74.stop();
+                                return _context85.stop();
                         }
                     }
-                }, _callee72, this);
+                }, _callee83, this);
             }));
 
             function init() {
-                return _ref103.apply(this, arguments);
+                return _ref114.apply(this, arguments);
             }
 
             return init;

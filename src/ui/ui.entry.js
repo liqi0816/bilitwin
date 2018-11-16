@@ -979,6 +979,13 @@ class UI {
             )
         }
         const getSize = async (videoIndex) => {
+            const { res: { durl: durlObjects } } = ret[videoIndex]
+
+            if (durlObjects && durlObjects[0].size) {
+                const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0)
+                if (totalSize) return totalSize
+            }
+
             const { durl } = ret[videoIndex]
 
             /** @type {number[]} */
@@ -996,7 +1003,7 @@ class UI {
             const sizeSpan = <span></span>
             getSize(index).then(size => {
                 const sizeMB = (size / 1024) / 1024
-                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MB)`
+                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`
             })
 
             table.append(
@@ -1009,7 +1016,7 @@ class UI {
                             const handler = e => UI.beforeUnloadHandler(e);
                             window.addEventListener('beforeunload', handler);
 
-                            const targetA = e.target.parentElement 
+                            const targetA = e.target.parentElement
                             targetA.title = ""
                             targetA.onclick = null
                             targetA.textContent = "缓存中……"
@@ -1099,7 +1106,7 @@ class UI {
                     color: #f25d8e;
                 }
             `}</style>
-            <h1>(测试) 批量抓取</h1>
+            <h1>(测试) 批量下载</h1>
             <ul>
                 <li>
                     <p>抓取的视频的最高分辨率可在设置中自定义，番剧只能抓取到当前清晰度</p>
@@ -1110,13 +1117,10 @@ class UI {
                 </li>
                 <li>
                     <p>(测)
-                        <a onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"]').forEach(a => a.click())}>
+                        <a onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"] span:first-child').forEach(a => a.click())}>
                             一键开始缓存+批量合并
                         </a>
                     </p>
-                    <p>flv合并 <a href='http://www.flvcd.com/teacher2.htm'>硕鼠</a></p>
-                    <p>批量合并对单标签页负荷太大</p>
-                    <p><em>开发者：可以用webworker，但是我没需求，又懒</em></p>
                 </li>
             </ul>
             {table}

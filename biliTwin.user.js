@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.20.0
+// @version     1.21.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -7330,6 +7330,126 @@ class MKVTransmuxer {
 }
 
 /***
+ * Copyright (C) 2018 Xmader. All Rights Reserved.
+ * 
+ * @author Xmader
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+class WebWorker extends Worker {
+    constructor(stringUrl) {
+        super(stringUrl);
+
+        this.importFnAsAScript(TwentyFourDataView);
+        this.importFnAsAScript(FLVTag);
+        this.importFnAsAScript(FLV);
+    }
+
+    /**
+     * @param {string} method 
+     * @param {*} data 
+     */
+    async getReturnValue(method, data) {
+        const callbackNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+
+        this.postMessage([
+            method,
+            data,
+            callbackNum
+        ]);
+
+        return await new Promise((resolve, reject) => {
+            this.addEventListener("message", (e) => {
+                const [_method, incomingData, _callbackNum] = e.data;
+                if (_callbackNum == callbackNum) {
+                    if (_method == method) {
+                        resolve(incomingData);
+                    } else if (_method == "error") {
+                        console.error(incomingData);
+                        reject(new Error("Web Worker 内部错误"));
+                    }
+                }
+            });
+        })
+    }
+
+    async registerAllMethods() {
+        const methods = await this.getReturnValue("getAllMethods");
+
+        methods.forEach(method => {
+            Object.defineProperty(this, method, {
+                value: (arg) => this.getReturnValue(method, arg)
+            });
+        });
+    }
+
+    /**
+     * @param {Function | ClassDecorator} c 
+     */
+    importFnAsAScript(c) {
+        const blob = new Blob([c.toString()], { type: 'application/javascript' });
+        return this.getReturnValue("importScripts", URL.createObjectURL(blob))
+    }
+
+    /**
+     * @param {() => void} fn 
+     */
+    static fromAFunction(fn) {
+        const blob = new Blob(['(' + fn.toString() + ')()'], { type: 'application/javascript' });
+        return new WebWorker(URL.createObjectURL(blob))
+    }
+}
+
+// 用于批量下载的 Web Worker , 请将函数中的内容想象成一个独立的js文件
+const BatchDownloadWorkerFn = () => {
+
+    class BatchDownloadWorker {
+        async mergeFLVFiles(files) {
+            return await FLV.mergeBlobs(files);
+        }
+
+        /**
+         * 引入脚本与库
+         * @param  {string[]} scripts 
+         */
+        importScripts(...scripts) {
+            importScripts(...scripts);
+        }
+
+        getAllMethods() {
+            return Object.getOwnPropertyNames(BatchDownloadWorker.prototype).slice(1, -1)
+        }
+    }
+
+    const worker = new BatchDownloadWorker();
+
+    onmessage = async (e) => {
+        const [method, incomingData, callbackNum] = e.data;
+
+        try {
+            const returnValue = await worker[method](incomingData);
+            if (returnValue) {
+                postMessage([
+                    method,
+                    returnValue,
+                    callbackNum
+                ]);
+            }
+        } catch (e) {
+            postMessage([
+                "error",
+                e.message,
+                callbackNum
+            ]);
+            throw e
+        }
+    };
+};
+
+/***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
  * 
  * @author qli5 <goodlq11[at](163|gmail).com>
@@ -7753,7 +7873,7 @@ class UI {
             if (table.rows[i].cells[1].children[0].textContent == '缓存本段') table.rows[i].cells[1].children[0].click();
         }
 
-        // 4. set sprogress
+        // 4. set progress
         const progress = a.parentElement.nextElementSibling.children[0];
         progress.max = monkey.flvs.length + 1;
         progress.value = 0;
@@ -8780,34 +8900,190 @@ class UI {
     }
 
     // Common
-    static buildDownloadAllPageDefaultFormatsBody(ret) {
+    static buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
         const table = document.createElement('table');
 
         table.onclick = e => e.stopPropagation();
 
-        for (const i of ret) {
+        let flvsBlob = [];
+        const loadFLVFromCache = async (name, partial = false) => {
+            if (partial) name = 'PC_' + name;
+            const cache = new CacheDB();
+            let item = await cache.getData(name);
+            return item && item.data;
+        };
+        const saveFLVToCache = async (name, blob) => {
+            const cache = new CacheDB();
+            return cache.addData({ name, data: blob });
+        };
+        const getFLVs = async videoIndex => {
+            if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
+
+            const { durl } = ret[videoIndex];
+
+            return await Promise.all(durl.map(async (_, durlIndex) => {
+                if (flvsBlob[videoIndex][durlIndex]) {
+                    return flvsBlob[videoIndex][durlIndex];
+                } else {
+                    let burl = durl[durlIndex];
+                    const outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+
+                    const burlA = top.document.querySelector(`a[download][href="${burl}"]`);
+                    burlA.after((() => {
+                        const progress1 = document.createElement('progress');
+                        progress1.setAttribute('value', '0');
+                        progress1.setAttribute('max', '100');
+                        progress1.textContent = '\u8FDB\u5EA6\u6761';
+                        return progress1;
+                    })());
+                    const progress = burlA.parentElement.querySelector("progress");
+
+                    let flvCache = await loadFLVFromCache(outputName);
+                    if (flvCache) {
+                        progress.value = progress.max;
+                        progress.after((() => {
+                            const a1 = document.createElement('a');
+                            a1.href = top.URL.createObjectURL(flvCache);
+                            a1.download = outputName;
+                            a1.textContent = '\u53E6\u5B58\u4E3A';
+                            return a1;
+                        })());
+                        return flvsBlob[videoIndex][durlIndex] = flvCache;
+                    }
+
+                    let partialFLVFromCache = await loadFLVFromCache(outputName, true);
+                    if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
+
+                    const opt = {
+                        method: 'GET',
+                        mode: 'cors',
+                        cache: 'default',
+                        referrerPolicy: 'no-referrer-when-downgrade',
+                        cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                        headers: partialFLVFromCache && !burl.includes('wsTime') ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
+                    };
+
+                    opt.onprogress = (loaded, total) => {
+                        progress.value = loaded;
+                        progress.max = total;
+                    };
+
+                    const fch = new DetailedFetchBlob(burl, opt);
+                    let fullFLV = await fch.getBlob();
+                    if (partialFLVFromCache) {
+                        fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                    }
+                    saveFLVToCache(outputName, fullFLV);
+
+                    progress.after((() => {
+                        const a1 = document.createElement('a');
+                        a1.href = top.URL.createObjectURL(fullFLV);
+                        a1.download = outputName;
+                        a1.textContent = '\u53E6\u5B58\u4E3A';
+                        return a1;
+                    })());
+
+                    return flvsBlob[videoIndex][durlIndex] = fullFLV;
+                }
+            }));
+        };
+        const getSize = async videoIndex => {
+            const { res: { durl: durlObjects } } = ret[videoIndex];
+
+            if (durlObjects && durlObjects[0].size) {
+                const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0);
+                if (totalSize) return totalSize;
+            }
+
+            const { durl } = ret[videoIndex];
+
+            /** @type {number[]} */
+            const sizes = await Promise.all(durl.map(async burl => {
+                const r = await fetch(burl, { method: "HEAD" });
+                return +r.headers.get("content-length");
+            }));
+
+            return sizes.reduce((total, _size) => total + _size);
+        };
+
+        ret.forEach((i, index) => {
+            const sizeSpan = document.createElement('span');
+            getSize(index).then(size => {
+                const sizeMB = size / 1024 / 1024;
+                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`;
+            });
+
             table.append((() => {
                 const tr1 = document.createElement('tr');
                 const td1 = document.createElement('td');
-                td1.textContent = `
-                        ${i.name}
-                    `;
+                td1.append(i.name);
+                const br = document.createElement('br');
+                td1.append(br);
+                const a1 = document.createElement('a');
+
+                a1.onclick = async e => {
+                    // add beforeUnloadHandler
+                    const handler = e => UI.beforeUnloadHandler(e);
+                    window.addEventListener('beforeunload', handler);
+
+                    const targetA = e.target.parentElement;
+                    targetA.title = "";
+                    targetA.onclick = null;
+                    targetA.textContent = "缓存中……";
+
+                    const format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1];
+                    const flvs = await getFLVs(index);
+
+                    targetA.textContent = "合并中……";
+                    const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn);
+                    await worker.registerAllMethods();
+                    const href = URL.createObjectURL(format == "flv" ? await worker.mergeFLVFiles(flvs) : flvs[0]);
+                    worker.terminate();
+
+                    const outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, `：第${i.name}话`) : `${videoTitle} - ${i.name}`;
+
+                    targetA.href = href;
+                    targetA.download = `${outputName}.flv`;
+                    targetA.textContent = "保存合并后FLV";
+                    targetA.style["margin-right"] = "20px";
+
+                    const ass = top.URL.createObjectURL(i.danmuku);
+                    targetA.after((() => {
+                        const a2 = document.createElement('a');
+
+                        a2.onclick = e => {
+                            new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target);
+                        };
+
+                        a2.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+                        return a2;
+                    })());
+
+                    window.removeEventListener('beforeunload', handler);
+                };
+
+                a1.title = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                const span1 = document.createElement('span');
+                span1.textContent = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                a1.append(span1);
+                a1.append(sizeSpan);
+                td1.append(a1);
                 tr1.append(td1);
                 const td2 = document.createElement('td');
-                const a1 = document.createElement('a');
-                a1.href = i.durl[0];
-                a1.download = '';
-                a1.setAttribute('referrerpolicy', 'origin');
-                a1.textContent = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
-                td2.append(a1);
+                const a2 = document.createElement('a');
+                a2.href = i.durl[0];
+                a2.download = '';
+                a2.setAttribute('referrerpolicy', 'origin');
+                a2.textContent = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+                td2.append(a2);
                 tr1.append(td2);
                 const td3 = document.createElement('td');
-                const a2 = document.createElement('a');
-                a2.href = top.URL.createObjectURL(i.danmuku);
-                a2.download = `${i.outputName}.ass`;
-                a2.setAttribute('referrerpolicy', 'origin');
-                a2.textContent = `${i.outputName}.ass`;
-                td3.append(a2);
+                const a3 = document.createElement('a');
+                a3.href = top.URL.createObjectURL(i.danmuku);
+                a3.download = `${i.outputName}.ass`;
+                a3.setAttribute('referrerpolicy', 'origin');
+                a3.textContent = `${i.outputName}.ass`;
+                td3.append(a3);
                 tr1.append(td3);
                 return tr1;
             })(), ...i.durl.slice(1).map(href => {
@@ -8836,7 +9112,7 @@ class UI {
                 tr1.append(td1);
                 return tr1;
             })());
-        }
+        });
 
         const fragment = document.createDocumentFragment();
         const style1 = document.createElement('style');
@@ -8851,16 +9127,30 @@ class UI {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     text-align: center;
+                    vertical-align: bottom;
+                }
+
+                progress {
+                    margin-left: 15px;
+                }
+
+                a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+        
+                a:hover {
+                    color: #f25d8e;
                 }
             `;
         fragment.append(style1);
         const h1 = document.createElement('h1');
-        h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u6293\u53D6';
+        h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u4E0B\u8F7D';
         fragment.append(h1);
         const ul1 = document.createElement('ul');
         const li = document.createElement('li');
         const p = document.createElement('p');
-        p.textContent = '\u6293\u53D6\u7684\u89C6\u9891\u7684\u6700\u9AD8\u5206\u8FA8\u7387\u53EF\u5728\u8BBE\u7F6E\u4E2D\u81EA\u5B9A\u4E49';
+        p.textContent = '\u6293\u53D6\u7684\u89C6\u9891\u7684\u6700\u9AD8\u5206\u8FA8\u7387\u53EF\u5728\u8BBE\u7F6E\u4E2D\u81EA\u5B9A\u4E49\uFF0C\u756A\u5267\u53EA\u80FD\u6293\u53D6\u5230\u5F53\u524D\u6E05\u6670\u5EA6';
         li.append(p);
         ul1.append(li);
         const li1 = document.createElement('li');
@@ -8875,20 +9165,16 @@ class UI {
         ul1.append(li1);
         const li2 = document.createElement('li');
         const p3 = document.createElement('p');
-        p3.append('flv\u5408\u5E76');
+        p3.append('(\u6D4B)');
         const a1 = document.createElement('a');
-        a1.href = 'http://www.flvcd.com/teacher2.htm';
-        a1.textContent = '\u7855\u9F20';
+
+        a1.onclick = e => document.querySelectorAll('a[title="缓存所有分段+自动合并"] span:first-child').forEach(a => a.click());
+
+        a1.textContent = `
+                            一键开始缓存+批量合并
+                        `;
         p3.append(a1);
         li2.append(p3);
-        const p4 = document.createElement('p');
-        p4.textContent = '\u6279\u91CF\u5408\u5E76\u5BF9\u5355\u6807\u7B7E\u9875\u8D1F\u8377\u592A\u5927';
-        li2.append(p4);
-        const p5 = document.createElement('p');
-        const em1 = document.createElement('em');
-        em1.textContent = '\u5F00\u53D1\u8005\uFF1A\u53EF\u4EE5\u7528webworker\uFF0C\u4F46\u662F\u6211\u6CA1\u9700\u6C42\uFF0C\u53C8\u61D2';
-        p5.append(em1);
-        li2.append(p5);
         ul1.append(li2);
         fragment.append(ul1);
         fragment.append(table);
@@ -8896,31 +9182,16 @@ class UI {
     }
 
     static displayDownloadAllPageDefaultFormatsBody(ret) {
-        top.document.open();
-        top.document.close();
+        const videoTitle = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
+        if (top.player) top.player.destroy(); // 销毁播放器
+
+        top.document.head.remove();
+        top.document.body.replaceWith(document.createElement("body"));
+
+        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, videoTitle));
+
         return ret;
-    }
-
-    static displayDownloadAllPagePendingBody() {
-        top.document.open();
-        top.document.close();
-
-        top.document.body.append((() => {
-            const fragment = document.createDocumentFragment();
-            const h1 = document.createElement('h1');
-            h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u6293\u53D6';
-            fragment.append(h1);
-            const ul1 = document.createElement('ul');
-            const li = document.createElement('li');
-            const p = document.createElement('p');
-            p.textContent = '\u6293\u53D6\u4E2D\uFF0C\u8BF7\u7A0D\u5019\u2026\u2026';
-            li.append(p);
-            ul1.append(li);
-            fragment.append(ul1);
-            return fragment;
-        })());
     }
 
     static genDiv() {
@@ -8983,7 +9254,7 @@ class UI {
         ['autoDanmaku', '下载视频也触发下载弹幕'],
 
         // 2. user interface
-        ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'],
+        ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'], ['autoDisplayDownloadBtn', '(测)无需右键播放器就能显示下载按钮'],
 
         // 3. download
         ['aria2', '导出aria2'], ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
@@ -8997,6 +9268,7 @@ class UI {
             // 2. user interface
             title: true,
             menu: true,
+            autoDisplayDownloadBtn: true,
 
             // 3. download
             aria2: false,
@@ -9061,7 +9333,6 @@ class BiliTwin extends BiliUserJS {
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
 
-        // 无需右键播放器就能显示下载按钮
         const videoRightClick = (video) => {
             let event = new MouseEvent('contextmenu', {
                 'bubbles': true
@@ -9070,24 +9341,31 @@ class BiliTwin extends BiliUserJS {
             video.dispatchEvent(event);
             video.dispatchEvent(event);
         };
-        // video.addEventListener('play', videoRightClick, { once: true });
-        await new Promise(resolve => {
-            const i = setInterval(() => {
-                const video = document.querySelector("video");
-                if (video) {
-                    videoRightClick(video);
-                    if (
-                        this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
-                        && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
-                            || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
-                        )
-                    ) {
-                        clearInterval(i);
-                        resolve();
+        if (this.option.autoDisplayDownloadBtn) {
+            // 无需右键播放器就能显示下载按钮
+            await new Promise(resolve => {
+                const i = setInterval(() => {
+                    const video = document.querySelector("video");
+                    if (video) {
+                        videoRightClick(video);
+                        if (
+                            this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
+                            && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
+                                || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
+                            )
+                        ) {
+                            clearInterval(i);
+                            resolve();
+                        }
                     }
-                }
-            }, 10);
-        });
+                }, 10);
+            });
+        } else {
+            const video = document.querySelector("video");
+            if (video) {
+                video.addEventListener('play', () => videoRightClick(video), { once: true });
+            }
+        }
 
         await this.polyfill.setFunctions();
 

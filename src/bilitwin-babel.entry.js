@@ -34,14 +34,13 @@ function load() {
             req.send();
         }).then(function (script) {
             top.eval(script);
+            _babelPolyfill = false;
         }).then(function () {
             script();
-            _babelPolyfill = false;
         });
     }
     else {
         script();
-        _babelPolyfill = false;
     }
 }
 
