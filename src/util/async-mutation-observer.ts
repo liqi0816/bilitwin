@@ -34,7 +34,7 @@ class MutationGenerator extends MutationObserver implements AsyncIterable<Mutati
 
     return() {
         this.disconnect();
-        return Promise.resolve({ value: undefined as any as MutationRecord[], done: true });
+        return Promise.resolve({ value: undefined as unknown as MutationRecord[], done: true });
     }
 
     get throw() {

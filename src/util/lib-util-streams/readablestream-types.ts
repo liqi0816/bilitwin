@@ -8,7 +8,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { TransformStream } from './transformstream-types.js';
-import { WritableStream } from './writablestream-types.js';
 import { ForceOverride } from '../common-types.js';
 
 export interface PipeOptions {

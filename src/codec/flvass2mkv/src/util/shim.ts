@@ -14,19 +14,19 @@ const _Blob = typeof Blob === 'function' && Blob || class {
     constructor(array: BlobPart[]) {
         return Buffer.concat(array.map(Buffer.from.bind(Buffer)));
     }
-} as any as typeof Blob;
+} as unknown as typeof Blob;
 
 const _TextEncoder = typeof TextEncoder === 'function' && TextEncoder || class {
     encode(chunk: string) {
         return Buffer.from(chunk, 'utf-8');
     }
-} as any as typeof TextEncoder;
+} as unknown as typeof TextEncoder;
 
 const _TextDecoder = typeof TextDecoder === 'function' && TextDecoder || class extends require('string_decoder').StringDecoder {
     decode(chunk: ArrayBuffer) {
         return this.end(Buffer.from(chunk));
     }
-} as any as typeof TextDecoder;
+} as unknown as typeof TextDecoder;
 
 export { _navigator as navigator, _Blob as Blob, _TextEncoder as TextEncoder, _TextDecoder as TextDecoder };
 export default { navigator: _navigator, Blob: _Blob, TextEncoder: _TextEncoder, TextDecoder: _TextDecoder };

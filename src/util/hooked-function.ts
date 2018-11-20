@@ -74,7 +74,7 @@ class HookedFunction<TArgs extends Array<any>, TRet> extends Function {
                 new Promise(() => hook.call(this, context));
             }
             return context.ret as TRet;
-        } as any as HookedFunction<TArgs, TRet>;
+        } as unknown as HookedFunction<TArgs, TRet>;
         self.raw = raw;
         self.pre = new Set(pre!);
         self.post = new Set(post!);

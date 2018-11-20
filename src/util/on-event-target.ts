@@ -97,7 +97,7 @@ function mixinOnEventTarget<EventMap extends SimpleEventMap, OnEventMap extends 
     (prototype.constructor as any) = {};
     Object.defineProperties(OnEventTarget.prototype, prototype);
 
-    return OnEventTarget as any as OnEventTargetMixinConstructor<EventMap, OnEventMap> & T;
+    return OnEventTarget as unknown as OnEventTargetMixinConstructor<EventMap, OnEventMap> & T;
 }
 
 /**
@@ -148,7 +148,7 @@ function OnEventTargetFactory<EventMap extends SimpleEventMap = SimpleEventMap, 
     }
 
     // 3. return new class
-    return OnEventTarget as any as OnEventTargetConstructor<EventMap, OnEventMap>;
+    return OnEventTarget as unknown as OnEventTargetConstructor<EventMap, OnEventMap>;
 }
 
 const __UNIT_TEST = () => {

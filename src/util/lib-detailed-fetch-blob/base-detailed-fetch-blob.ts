@@ -8,7 +8,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import OnEventTargetFactory from '../on-event-target.js';
-import { SimpleEventListener } from '../simple-event-target.js';
 
 export interface BaseDetailedFetchBlobInit {
     onprogress?: BaseDetailedFetchBlob['onprogress']

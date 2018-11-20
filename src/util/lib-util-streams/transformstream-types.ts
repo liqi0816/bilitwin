@@ -8,7 +8,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { ReadableStream } from './readablestream-types.js';
-import { WritableStream } from './writablestream-types.js';
 
 export interface TransformStream {
     readable: ReadableStream

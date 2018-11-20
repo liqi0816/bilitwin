@@ -1,6 +1,6 @@
 import * as constants from './constants.js';
 
-declare var OffscreenCanvas: HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
+declare var OffscreenCanvas: typeof HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
 declare function requestIdleCallback(callback: () => void): number;
 
 export interface FrameCollectorInit {
@@ -61,20 +61,22 @@ class FrameSearcher extends EventTarget {
         }
     }
 
-    async start() {
+    start() {
         this.video.addEventListener('playing', this.resume);
         this.video.addEventListener('stalled', this.pause);
         this.video.addEventListener('pause', this.pause);
-        await this.video.play();
-        return this.status = FrameSearcherStatus.running;
+        this.status = FrameSearcherStatus.running;
+        if (!this.video.paused) this.resume();
+        this.dispatchEvent(new CustomEvent('start'));
     }
 
     stop() {
         this.video.removeEventListener('playing', this.resume);
         this.video.removeEventListener('stalled', this.pause);
         this.video.removeEventListener('pause', this.pause);
+        this.status = FrameSearcherStatus.stopped;
         this.pause();
-        return this.status = FrameSearcherStatus.stopped;
+        this.dispatchEvent(new CustomEvent('stop'));
     }
 
     resume = () => {
@@ -90,7 +92,7 @@ class FrameSearcher extends EventTarget {
                     this.sampleMutex = SampleMutexStatus.free;
                 });
             }
-        }, this.sampleInterval) as any as number;
+        }, this.sampleInterval) as unknown as number;
     }
 
     pause = () => {
@@ -112,7 +114,7 @@ class FrameSearcher extends EventTarget {
             difference += ijAbs;
         }
         if (this.diffLog) {
-            this.diffLog.push(difference);
+            this.diffLog!.push(difference);
             this.timeLog!.push(this.video.currentTime);
         }
 

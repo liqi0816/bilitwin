@@ -16,6 +16,7 @@ import CachedDOMStorage from '../util/lib-cached-storage/cached-dom-storage.js';
 import { yieldThread, sleep } from '../util/async-control.js';
 import { asyncOnce } from '../util/on-event-target.js';
 import { int, str } from '../util/type-conversion.macro.js';
+import { FrameSearcher } from '../codec/introskip/interface.js';
 
 export type BiliPolyfillInit = Partial<typeof BiliPolyfill.OPTIONS_DEFAULT>
 
@@ -31,6 +32,16 @@ export interface SubDomainSpecificSettings<T> {
     bangumi?: T
 }
 
+export interface VideoSkipSettings {
+    anchor: Uint8Array
+    duration: number
+}
+
+export interface OPEDData {
+    op?: VideoSkipSettings
+    ed?: VideoSkipSettings
+}
+
 export interface UserData {
     restore: {
         preventShade: SubDomainSpecificSettings<boolean>
@@ -41,10 +52,9 @@ export interface UserData {
         speed: SubDomainSpecificSettings<number>
         wideScreen: SubDomainSpecificSettings<boolean>
     }
-}
-
-export interface State {
-    series: any[]
+    oped: {
+        [collectionId: string]: OPEDData | undefined
+    }
 }
 
 class BiliPolyFillException extends Error { }
@@ -56,7 +66,6 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     options: typeof BiliPolyfill.OPTIONS_DEFAULT
     storage: CommonCachedStorage | null
     userdata: UserData | null
-    state: State
 
     static readonly OPTIONS_DEFAULT = {
         // 1. user interface
@@ -92,12 +101,13 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         this.userjs = userjs;
 
         this.options = {} as typeof BiliPolyfill.OPTIONS_DEFAULT;
+        type OPTIONS_KEY = keyof typeof BiliPolyfill.OPTIONS_DEFAULT;
         for (const e in BiliPolyfill.OPTIONS_DEFAULT) {
-            if (typeof options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT] === 'undefined') {
-                this.options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT] = BiliPolyfill.OPTIONS_DEFAULT[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT];
+            if (typeof options[e as OPTIONS_KEY] === 'undefined') {
+                this.options[e as OPTIONS_KEY] = BiliPolyfill.OPTIONS_DEFAULT[e as OPTIONS_KEY];
             }
             else {
-                this.options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT] = Boolean(options[e as keyof typeof BiliPolyfill.OPTIONS_DEFAULT]);
+                this.options[e as OPTIONS_KEY] = Boolean(options[e as OPTIONS_KEY]);
             }
         }
         if (typeof options.storage === 'object') {
@@ -110,7 +120,6 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
             this.storage = null;
         }
         this.userdata = null;
-        this.state = { series: [] };
     }
 
     static readonly USERDATA_SIZE_LIMIT = 1048576
@@ -140,6 +149,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
             speed: {},
             wideScreen: {},
         };
+        if (typeof this.userdata.oped !== 'object') this.userdata.oped = {};
         return this.userdata;
     }
 
@@ -169,7 +179,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         await hook;
 
         // 3. exceptional watchlater panel structure => throw
-        if (li.children[1].children[0].children[0].className !== 'm-w-loading') {
+        if (li.children[1].children[0].children[0].className !== 'm-w-loading' as string) {
             throw new BiliPolyFillException('BiliPolyfill.badgeWatchLater: cannot find m-w-loading panel');
         }
 
@@ -256,14 +266,16 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     }
 
     // multiple-times
-    menuFocus() {
+    focusMenu() {
         this[inputSocketSymbol].addEventListener('menuclose', () => this.focus());
     }
 
     // once
     restorePrevent() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
         // 1. restore option
-        const preventShade = this.userdata!.restore.preventShade[this.userjs.subdomain];
+        const preventShade = this.userdata.restore.preventShade[this.userjs.subdomain];
 
         // 2. MUST initialize setting panel before click
         this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
@@ -279,17 +291,21 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
         // 5. memorize option
         this.addEventListener('close', () => {
-            this.userdata!.restore.preventShade[this.userjs.subdomain] = !input.nextElementSibling!.classList.contains('bpui-state-active');
+            if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
+            this.userdata.restore.preventShade[this.userjs.subdomain] = !input.nextElementSibling!.classList.contains('bpui-state-active');
         });
     }
 
     // once
     restoreDanmuku() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
         // 1. restore option
-        const danmukuSwitch = this.userdata!.restore.danmukuSwitch[this.userjs.subdomain];
-        const danmukuTopSwitch = this.userdata!.restore.danmukuTopSwitch[this.userjs.subdomain];
-        const danmukuBottomSwitch = this.userdata!.restore.danmukuBottomSwitch[this.userjs.subdomain];
-        const danmukuScrollSwitch = this.userdata!.restore.danmukuScrollSwitch[this.userjs.subdomain];
+        const danmukuSwitch = this.userdata.restore.danmukuSwitch[this.userjs.subdomain];
+        const danmukuTopSwitch = this.userdata.restore.danmukuTopSwitch[this.userjs.subdomain];
+        const danmukuBottomSwitch = this.userdata.restore.danmukuBottomSwitch[this.userjs.subdomain];
+        const danmukuScrollSwitch = this.userdata.restore.danmukuScrollSwitch[this.userjs.subdomain];
 
         // 2. MUST initialize setting panel before click
         this.userjs.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
@@ -302,7 +318,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         }
 
         // 3.2 danmukuTopSwitch danmukuBottomSwitch danmukuScrollSwitch
-        const [danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuScrollSwitchDiv] = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children as any as Iterable<HTMLElement>;
+        const [danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuScrollSwitchDiv] = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children as unknown as Iterable<HTMLElement>;
         if (danmukuTopSwitch && !danmukuTopSwitchDiv.classList.contains('disabled')) {
             danmukuTopSwitchDiv.click();
         }
@@ -326,13 +342,18 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     }
 
     // once
-    restoreSpeed() {
+    async restoreSpeed() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
+        // 1. get video
+        const video = this.userjs.video || (await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this[inputSocketSymbol], 'videochange')).detail;
+
         // 1. restore option
-        const speed = this.userdata!.restore.speed[this.userjs.subdomain];
+        const speed = this.userdata.restore.speed[this.userjs.subdomain];
 
         // 2. restore if different
-        if (speed && speed != this.userjs.video!.playbackRate) {
-            this.userjs.video!.playbackRate = speed;
+        if (speed && speed != video.playbackRate) {
+            video.playbackRate = speed;
         }
 
         // 3. memorize option
@@ -343,8 +364,10 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
     // once
     restoreWide() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
         // 1. restore option
-        const wideScreen = this.userdata!.restore.wideScreen[this.userjs.subdomain];
+        const wideScreen = this.userdata.restore.wideScreen[this.userjs.subdomain];
 
         // 2. restore if different
         const i = this.userjs.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0] as HTMLElement;
@@ -362,7 +385,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     // once
     async autoResume() {
         // 1. get resume popup
-        if (!this.userjs.video || this.userjs.video.readyState < (HTMLVideoElement as any as typeof HTMLVideoElementEnum).HAVE_FUTURE_DATA) {
+        if (!this.userjs.video || this.userjs.video.readyState < (HTMLVideoElement as unknown as typeof HTMLVideoElementEnum).HAVE_FUTURE_DATA) {
             await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this[inputSocketSymbol], 'videocanplay');
         }
         const span = this.userjs.player!.querySelector('div.bilibili-player-video-toast-bottom div.bilibili-player-video-toast-item-text span:nth-child(2)');
@@ -412,7 +435,7 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
     }
 
     // once
-    async  autoFullScreen() {
+    async autoFullScreen() {
         // 1. get player
         const player = this.userjs.player || (await asyncOnce<SimpleCustomEvent<HTMLDivElement>>(this[inputSocketSymbol], 'playerchange')).detail;
 
@@ -422,9 +445,67 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
         }
     }
 
+    getCollectionId() {
+        {
+            const match = top.location.pathname.match(/av\d+/);
+            if (match) return match[0];
+        }
+        {
+            const match = top.location.hash.match(/av\d+/);
+            if (match) return match[0];
+        }
+        {
+            const match = top.document.querySelector('div.bangumi-info a') as HTMLAnchorElement;
+            if (match) return match.href;
+        }
+        return null;
+    }
+
+    // triggered
+    setOPED(oped: keyof OPEDData, { anchor, duration }: VideoSkipSettings) {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
+        const id = this.getCollectionId();
+        if (!id) throw new BiliPolyFillException('BiliPolyFill: cannot find collection id');
+
+        if (!this.userdata.oped[id]) this.userdata.oped[id] = {};
+        this.userdata.oped[id]![oped] = { anchor, duration };
+    }
+
+    clearOPED() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
+        const id = this.getCollectionId();
+        if (!id) throw new BiliPolyFillException('BiliPolyFill: cannot find collection id');
+        this.userdata.oped[id] = undefined;
+    }
+
     // multiple-times
-    oped() {
-        console.warn(new BiliPolyFillException('bilipolyfill.oped not implemented yet'));
+    async skipOPED() {
+        if (!this.userdata) throw new BiliPolyFillException('BiliPolyFill: userdata not initialized');
+
+        const id = this.getCollectionId();
+        if (!id) throw new BiliPolyFillException('BiliPolyFill: cannot find collection id');
+
+        const video = this.userjs.video || (await asyncOnce<SimpleCustomEvent<HTMLVideoElement>>(this[inputSocketSymbol], 'videochange')).detail;
+        const oped = this.userdata.oped[id]
+        if (oped) {
+            const { op, ed } = oped;
+            if (op) {
+                const { anchor, duration } = op;
+                const searcher = new FrameSearcher(video, Uint8Array.from(anchor));
+                searcher.addEventListener('load', () => video.currentTime += duration);
+                searcher.start();
+                this.addEventListener('close', () => searcher.stop());
+            }
+            if (ed) {
+                const { anchor, duration } = ed;
+                const searcher = new FrameSearcher(video, Uint8Array.from(anchor));
+                searcher.addEventListener('load', () => video.currentTime += duration);
+                searcher.start();
+                this.addEventListener('close', () => searcher.stop());
+            }
+        }
     }
 
     // multiple-times
@@ -450,11 +531,6 @@ class BiliPolyfill extends OnEventDuplexFactory<InEventMap>() {
 
     // multiple-times
     dblclickFull() {
-
-    }
-
-    // multiple-times
-    speech() {
 
     }
 }

@@ -1,20 +1,19 @@
 import * as constants from './constants.js';
 
-declare var OffscreenCanvas: HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
+declare var OffscreenCanvas: typeof HTMLCanvasElement & { new(width: number, height: number): HTMLCanvasElement }
 
 export interface FrameCollectorInit {
     width?: number
     height?: number
 }
 
-class FrameCollector extends EventTarget {
+class FrameCollector {
     video: HTMLVideoElement
     width: number
     height: number
     result: Uint8Array
 
     constructor(video: HTMLVideoElement, { width = constants.width, height = constants.height } = {} as FrameCollectorInit) {
-        super();
         this.video = video;
         this.width = width;
         this.height = height;

@@ -126,13 +126,14 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
         this.defaultFormatPromise = null;
         this.readyState = BiliMonkeyReadyState.inactive;
 
-        this.options = {} as typeof BiliMonkey.OPTIONS_DEFAULT
+        this.options = {} as typeof BiliMonkey.OPTIONS_DEFAULT;
+        type OPTIONS_KEY = keyof typeof BiliMonkey.OPTIONS_DEFAULT;
         for (const e in BiliMonkey.OPTIONS_DEFAULT) {
-            if (typeof options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] === 'undefined') {
-                this.options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] = BiliMonkey.OPTIONS_DEFAULT[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT];
+            if (typeof options[e as OPTIONS_KEY] === 'undefined') {
+                this.options[e as OPTIONS_KEY] = BiliMonkey.OPTIONS_DEFAULT[e as OPTIONS_KEY];
             }
             else {
-                this.options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT] = Boolean(options[e as keyof typeof BiliMonkey.OPTIONS_DEFAULT]);
+                this.options[e as OPTIONS_KEY] = Boolean(options[e as OPTIONS_KEY]);
             }
         }
         if (options.cache) {
@@ -293,7 +294,7 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
         get_accept_quality: {
             // 2.1 response available => extract from response
             if (response) {
-                accept_quality = response.accept_quality as any as typeof accept_quality;
+                accept_quality = response.accept_quality as unknown as typeof accept_quality;
                 break get_accept_quality;
             }
 
@@ -417,7 +418,7 @@ class BiliMonkey extends OnEventDuplexFactory<InEventMap, EventMap, OnEventMap>(
                 getResponse: {
                     // 1.1 search for window.__playinfo__
                     const anchor = 'window.__playinfo__=';
-                    for (const script of this.userjs.playerWin.document.head.getElementsByTagName('script')) {
+                    for (const script of this.userjs.playerWin.document.head!.getElementsByTagName('script')) {
                         const nodeValue = script.childNodes[0] && script.childNodes[0].nodeValue;
                         if (nodeValue && nodeValue.startsWith(anchor)) {
                             response = JSON.parse(nodeValue.slice(anchor.length));
