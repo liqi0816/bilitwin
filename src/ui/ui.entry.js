@@ -987,7 +987,7 @@ class UI {
         const getSize = async (videoIndex) => {
             const { res: { durl: durlObjects } } = ret[videoIndex]
 
-            if (durlObjects && durlObjects[0].size) {
+            if (durlObjects && durlObjects[0] && durlObjects[0].size) {
                 const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0)
                 if (totalSize) return totalSize
             }

@@ -214,7 +214,7 @@ class BiliMonkey {
 
                     let data = (await re.json()).data
                     // console.log(data)
-                    let durls = data.durl
+                    let durls = data && data.durl
 
                     if (!durls) {
                         const _zc = window.Gc || window.zc ||
