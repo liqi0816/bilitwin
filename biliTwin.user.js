@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.0
+// @version     1.21.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -611,7 +611,12 @@ class DetailedFetchBlob {
             xhr.onabort = e => this.onabort({ target: this, type: 'abort' });
             xhr.onerror = e => { this.onerror({ target: this, type: e.type }); reject(e); };
             this.abort = xhr.abort.bind(xhr);
-            xhr.open('get', input);
+            xhr.open(init.method || 'get', input);
+            if (init.headers) {
+                Object.entries(init.headers).forEach(([header, value]) => {
+                    xhr.setRequestHeader(header, value);
+                });
+            }
             xhr.send();
         });
         this.promise = this.blobPromise;
@@ -1805,7 +1810,7 @@ class BiliMonkey {
 
                     let data = (await re.json()).data;
                     // console.log(data)
-                    let durls = data.durl;
+                    let durls = data && data.durl;
 
                     if (!durls) {
                         const _zc = window.Gc || window.zc ||
@@ -8916,6 +8921,11 @@ class UI {
             const cache = new CacheDB();
             return cache.addData({ name, data: blob });
         };
+        const cleanPartialFLVInCache = async name => {
+            const cache = new CacheDB();
+            name = 'PC_' + name;
+            return cache.deleteData(name);
+        };
         const getFLVs = async videoIndex => {
             if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
 
@@ -8972,6 +8982,7 @@ class UI {
                     let fullFLV = await fch.getBlob();
                     if (partialFLVFromCache) {
                         fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                        cleanPartialFLVInCache(outputName);
                     }
                     saveFLVToCache(outputName, fullFLV);
 
@@ -8990,7 +9001,7 @@ class UI {
         const getSize = async videoIndex => {
             const { res: { durl: durlObjects } } = ret[videoIndex];
 
-            if (durlObjects && durlObjects[0].size) {
+            if (durlObjects && durlObjects[0] && durlObjects[0].size) {
                 const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0);
                 if (totalSize) return totalSize;
             }
