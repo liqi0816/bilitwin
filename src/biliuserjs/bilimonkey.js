@@ -46,7 +46,7 @@ class BiliMonkey {
         this.mp4FormatName = null;
         this.fallbackFormatName = null;
         this.cidAsyncContainer = new AsyncContainer();
-        this.cidAsyncContainer.then(cid => { this.cid = cid; this.ass = this.getASS(); });
+        this.cidAsyncContainer.then(cid => { this.cid = cid; /** this.ass = this.getASS(); */ });
         if (typeof top.cid === 'string') this.cidAsyncContainer.resolve(top.cid);
 
         /***

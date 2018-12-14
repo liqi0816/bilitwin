@@ -105,7 +105,9 @@ class UI {
     buildTitle(monkey = this.twin.monkey) {
         // 1. build videoA, assA
         const fontSize = '15px';
+        /** @type {HTMLAnchorElement} */
         const videoA = <a style={{ fontSize }}>视频FLV</a>;
+        /** @type {HTMLAnchorElement} */
         const assA = <a style={{ fontSize }}>弹幕ASS</a>;
 
         // 1.1 build videoA
@@ -128,6 +130,11 @@ class UI {
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
+            let clicked = false
+            assA.addEventListener("click", () => {
+                clicked = true
+            }, { once: true, })
+
             // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
@@ -138,6 +145,10 @@ class UI {
             }
             else {
                 assA.download = monkey.cid + '.ass';
+            }
+            
+            if (clicked) {
+                assA.click()
             }
         };
 
