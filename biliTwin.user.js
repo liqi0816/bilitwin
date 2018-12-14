@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.1
+// @version     1.21.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -730,6 +730,7 @@ class Mutex {
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     const parser = {};
@@ -808,6 +809,7 @@ class Mutex {
           size: +size,
           color: parseRgb256IntegerColor(color),
           bottom: bottom > 0,
+          sender,
         };
       }).filter(danmakuFilter);
       return { cid, danmaku };
@@ -1436,6 +1438,7 @@ class ASSConverter {
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     /**
@@ -1642,7 +1645,7 @@ class BiliMonkey {
         this.mp4FormatName = null;
         this.fallbackFormatName = null;
         this.cidAsyncContainer = new AsyncContainer();
-        this.cidAsyncContainer.then(cid => { this.cid = cid; this.ass = this.getASS(); });
+        this.cidAsyncContainer.then(cid => { this.cid = cid; /** this.ass = this.getASS(); */ });
         if (typeof top.cid === 'string') this.cidAsyncContainer.resolve(top.cid);
 
         /***
@@ -1768,7 +1771,7 @@ class BiliMonkey {
                 const i = bilibili_player_settings.block.list.map(e => e.v).join('|');
                 if (i) {
                     const regexp = new RegExp(i);
-                    danmaku = danmaku.filter(e => !regexp.test(e.text));
+                    danmaku = danmaku.filter(e => !regexp.test(e.text) && !regexp.test(e.sender));
                 }
             }
 
@@ -7555,7 +7558,9 @@ class UI {
     buildTitle(monkey = this.twin.monkey) {
         // 1. build videoA, assA
         const fontSize = '15px';
+        /** @type {HTMLAnchorElement} */
         const videoA = document.createElement('a');
+        /** @type {HTMLAnchorElement} */
         videoA.style.fontSize = fontSize;
         videoA.textContent = '\u89C6\u9891FLV';
         const assA = document.createElement('a');
@@ -7582,6 +7587,11 @@ class UI {
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
+            let clicked = false;
+            assA.addEventListener("click", () => {
+                clicked = true;
+            }, { once: true });
+
             // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
@@ -7591,6 +7601,10 @@ class UI {
                 assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
             } else {
                 assA.download = monkey.cid + '.ass';
+            }
+
+            if (clicked) {
+                assA.click();
             }
         };
 

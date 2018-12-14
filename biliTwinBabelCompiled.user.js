@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.1
+// @version     1.21.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.1
+// @version     1.21.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1667,6 +1667,7 @@ var Mutex = function () {
  * @property {number} size
  * @property {DanmakuColor} color
  * @property {boolean} bottom
+ * @property {string=} sender
  */
 
 var parser = {};
@@ -1757,7 +1758,8 @@ parser.bilibili = function (content) {
             mode: [null, 'RTL', 'RTL', 'RTL', 'BOTTOM', 'TOP'][+mode],
             size: +size,
             color: parseRgb256IntegerColor(color),
-            bottom: bottom > 0
+            bottom: bottom > 0,
+            sender: sender
         };
     }).filter(danmakuFilter);
     return { cid: cid, danmaku: danmaku };
@@ -2537,6 +2539,7 @@ var ASSConverter = function () {
          * @property {number} size
          * @property {DanmakuColor} color
          * @property {boolean} bottom
+         * @property {string=} sender
          */
 
         /**
@@ -2849,7 +2852,7 @@ var BiliMonkey = function () {
         this.fallbackFormatName = null;
         this.cidAsyncContainer = new AsyncContainer();
         this.cidAsyncContainer.then(function (cid) {
-            _this13.cid = cid;_this13.ass = _this13.getASS();
+            _this13.cid = cid; /** this.ass = this.getASS(); */
         });
         if (typeof top.cid === 'string') this.cidAsyncContainer.resolve(top.cid);
 
@@ -3020,7 +3023,7 @@ var BiliMonkey = function () {
                                                                 regexp = new RegExp(i);
 
                                                                 danmaku = danmaku.filter(function (e) {
-                                                                    return !regexp.test(e.text);
+                                                                    return !regexp.test(e.text) && !regexp.test(e.sender);
                                                                 });
                                                             }
                                                         }
@@ -6700,7 +6703,9 @@ var UI = function () {
 
             // 1. build videoA, assA
             var fontSize = '15px';
+            /** @type {HTMLAnchorElement} */
             var videoA = document.createElement('a');
+            /** @type {HTMLAnchorElement} */
             videoA.style.fontSize = fontSize;
             videoA.textContent = '\u89C6\u9891FLV';
             var assA = document.createElement('a');
@@ -6742,6 +6747,7 @@ var UI = function () {
 
             // 1.2 build assA
             assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+                var clicked;
                 return regeneratorRuntime.wrap(function _callee64$(_context66) {
                     while (1) {
                         switch (_context66.prev = _context66.next) {
@@ -6750,11 +6756,17 @@ var UI = function () {
                                 assA.textContent = '正在ASS';
                                 assA.onmouseover = null;
 
+                                clicked = false;
+
+                                assA.addEventListener("click", function () {
+                                    clicked = true;
+                                }, { once: true });
+
                                 // 1.2.2 query flv
-                                _context66.next = 4;
+                                _context66.next = 6;
                                 return monkey.queryInfo('ass');
 
-                            case 4:
+                            case 6:
                                 assA.href = _context66.sent;
 
 
@@ -6766,7 +6778,11 @@ var UI = function () {
                                     assA.download = monkey.cid + '.ass';
                                 }
 
-                            case 7:
+                                if (clicked) {
+                                    assA.click();
+                                }
+
+                            case 10:
                             case 'end':
                                 return _context66.stop();
                         }
