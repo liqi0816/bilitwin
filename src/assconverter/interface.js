@@ -85,6 +85,7 @@ class ASSConverter {
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     /**

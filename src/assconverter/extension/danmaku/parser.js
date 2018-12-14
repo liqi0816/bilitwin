@@ -12,6 +12,7 @@
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     const parser = {};
@@ -90,6 +91,7 @@
           size: +size,
           color: parseRgb256IntegerColor(color),
           bottom: bottom > 0,
+          sender,
         };
       }).filter(danmakuFilter);
       return { cid, danmaku };

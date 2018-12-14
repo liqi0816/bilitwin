@@ -172,7 +172,7 @@ class BiliMonkey {
                 const i = bilibili_player_settings.block.list.map(e => e.v).join('|');
                 if (i) {
                     const regexp = new RegExp(i);
-                    danmaku = danmaku.filter(e => !regexp.test(e.text));
+                    danmaku = danmaku.filter(e => !regexp.test(e.text) && !regexp.test(e.sender));
                 }
             }
 
