@@ -207,12 +207,16 @@ class BiliMonkey {
                     if (this.flvs)
                         return this.video_format;
 
+                    const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi")
+                    const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
+
                     const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "116"
-                    const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
+                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
 
-                    let re = await fetch(api_url, { credentials: 'include' })
+                    const re = await fetch(api_url, { credentials: 'include' })
+                    const apiJson = await re.json()
 
-                    let data = (await re.json()).data
+                    let data = apiJson.data || apiJson.result
                     // console.log(data)
                     let durls = data && data.durl
 
@@ -455,10 +459,15 @@ class BiliMonkey {
                 await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
             )
 
+            const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi")
+            const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
+
             const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116"
-            const api_url = `https://api.bilibili.com/x/player/playurl?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
+            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
             const r = await fetch(api_url, { credentials: 'include' })
-            const res = (await r.json()).data
+
+            const apiJson = await r.json()
+            const res = apiJson.data || apiJson.result
 
             if (!res.durl) {
                 await new Promise(resolve => {
