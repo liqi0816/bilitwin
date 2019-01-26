@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.2
+// @version     1.21.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.2
+// @version     1.21.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3095,14 +3095,14 @@ var BiliMonkey = function () {
                         switch (_context31.prev = _context31.next) {
                             case 0:
                                 return _context31.abrupt('return', this.queryInfoMutex.lockAndAwait(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee30() {
-                                    var qn, api_url, re, data, durls, _zc, _data_X, flvs, video_format;
+                                    var isBangumi, apiPath, qn, api_url, re, apiJson, data, durls, _zc, _data_X, flvs, video_format;
 
                                     return regeneratorRuntime.wrap(function _callee30$(_context30) {
                                         while (1) {
                                             switch (_context30.prev = _context30.next) {
                                                 case 0:
                                                     _context30.t0 = format;
-                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 20 : 25;
+                                                    _context30.next = _context30.t0 === 'video' ? 3 : _context30.t0 === 'ass' ? 23 : 28;
                                                     break;
 
                                                 case 3:
@@ -3114,20 +3114,23 @@ var BiliMonkey = function () {
                                                     return _context30.abrupt('return', _this16.video_format);
 
                                                 case 5:
+                                                    isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
+                                                    apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
                                                     qn = _this16.option.enableVideoMaxResolution && _this16.option.videoMaxResolution || "116";
-                                                    api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
-                                                    _context30.next = 9;
+                                                    api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
+                                                    _context30.next = 11;
                                                     return fetch(api_url, { credentials: 'include' });
 
-                                                case 9:
+                                                case 11:
                                                     re = _context30.sent;
-                                                    _context30.next = 12;
+                                                    _context30.next = 14;
                                                     return re.json();
 
-                                                case 12:
-                                                    data = _context30.sent.data;
-
+                                                case 14:
+                                                    apiJson = _context30.sent;
+                                                    data = apiJson.data || apiJson.result;
                                                     // console.log(data)
+
                                                     durls = data && data.durl;
 
 
@@ -3165,21 +3168,21 @@ var BiliMonkey = function () {
 
                                                     return _context30.abrupt('return', video_format);
 
-                                                case 20:
+                                                case 23:
                                                     if (!_this16.ass) {
-                                                        _context30.next = 24;
+                                                        _context30.next = 27;
                                                         break;
                                                     }
 
                                                     return _context30.abrupt('return', _this16.ass);
 
-                                                case 24:
+                                                case 27:
                                                     return _context30.abrupt('return', _this16.getASS(_this16.flvFormatName));
 
-                                                case 25:
+                                                case 28:
                                                     throw 'Bilimonkey: What is format ' + format + '?';
 
-                                                case 26:
+                                                case 29:
                                                 case 'end':
                                                     return _context30.stop();
                                             }
@@ -3931,7 +3934,7 @@ var BiliMonkey = function () {
                                 initialDataSize = new Set(_getDataList()).size;
                                 retPromises = list.map(function (x, n) {
                                     return _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee45() {
-                                        var cid, danmuku, qn, api_url, r, res, data, _data_X;
+                                        var cid, danmuku, isBangumi, apiPath, qn, api_url, r, apiJson, res, data, _data_X;
 
                                         return regeneratorRuntime.wrap(function _callee45$(_context45) {
                                             while (1) {
@@ -3955,25 +3958,28 @@ var BiliMonkey = function () {
 
                                                     case 11:
                                                         danmuku = _context45.sent;
+                                                        isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
+                                                        apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
                                                         qn = monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution || "116";
-                                                        api_url = 'https://api.bilibili.com/x/player/playurl?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
-                                                        _context45.next = 16;
+                                                        api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
+                                                        _context45.next = 18;
                                                         return fetch(api_url, { credentials: 'include' });
 
-                                                    case 16:
+                                                    case 18:
                                                         r = _context45.sent;
-                                                        _context45.next = 19;
+                                                        _context45.next = 21;
                                                         return r.json();
 
-                                                    case 19:
-                                                        res = _context45.sent.data;
+                                                    case 21:
+                                                        apiJson = _context45.sent;
+                                                        res = apiJson.data || apiJson.result;
 
                                                         if (res.durl) {
-                                                            _context45.next = 26;
+                                                            _context45.next = 29;
                                                             break;
                                                         }
 
-                                                        _context45.next = 23;
+                                                        _context45.next = 26;
                                                         return new Promise(function (resolve) {
                                                             var i = setInterval(function () {
                                                                 var dataSize = new Set(_getDataList()).size;
@@ -3985,7 +3991,7 @@ var BiliMonkey = function () {
                                                             }, 100);
                                                         });
 
-                                                    case 23:
+                                                    case 26:
                                                         data = JSON.parse(_getDataList().pop());
                                                         _data_X = data.Y || data.X || Object.values(data).filter(function (x) {
                                                             return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) == "object" && Object.prototype.toString.call(x) == "[object Object]";
@@ -3994,7 +4000,7 @@ var BiliMonkey = function () {
 
                                                         res.durl = _data_X.segments || [_data_X];
 
-                                                    case 26:
+                                                    case 29:
 
                                                         queryInfoMutex.unlock();
                                                         playerWin.player.next();
@@ -4017,7 +4023,7 @@ var BiliMonkey = function () {
                                                             res: res
                                                         });
 
-                                                    case 29:
+                                                    case 32:
                                                     case 'end':
                                                         return _context45.stop();
                                                 }
