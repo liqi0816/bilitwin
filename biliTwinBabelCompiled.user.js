@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.3
+// @version     1.21.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.3
+// @version     1.21.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -6816,9 +6816,14 @@ var UI = function () {
             });
             div.className = 'bilitwin';
             div.append.apply(div, [videoA, ' ', assA]);
-            var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
+            var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module");
             tminfo.style.float = 'none';
             tminfo.after(div);
+
+            var h1_module = document.querySelector("#h1_module");
+            if (h1_module) {
+                h1_module.style.marginBottom = "0px";
+            }
 
             // 3. save to cache
             this.cidSessionDom.titleDiv = div;
@@ -7379,44 +7384,90 @@ var UI = function () {
 
     }, {
         key: 'appendMenu',
-        value: function appendMenu() {
-            var playerWin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.playerWin;
+        value: function () {
+            var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+                var playerWin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.playerWin;
+                var monkeyMenu, polyfillMenu, ul, menus0, div;
+                return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                    while (1) {
+                        switch (_context71.prev = _context71.next) {
+                            case 0:
+                                // 1. build monkey menu and polyfill menu
+                                monkeyMenu = this.buildMonkeyMenu();
+                                polyfillMenu = this.buildPolyfillMenu();
 
-            // 1. build monkey menu and polyfill menu
-            var monkeyMenu = this.buildMonkeyMenu();
-            var polyfillMenu = this.buildPolyfillMenu();
+                                // 2. build ul
 
-            // 2. build ul
-            var ul = document.createElement('ul');
+                                ul = document.createElement('ul');
 
-            // 3. append to menu
-            ul.className = 'bilitwin';
-            ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
-            ul.append.apply(ul, [monkeyMenu, polyfillMenu]);
-            var div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0] || [].concat(_toConsumableArray(playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black'))).pop();
-            div.prepend(ul);
+                                // 3. append to menu
 
-            // 4. save to cache
-            this.cidSessionDom.menuUl = ul;
+                                ul.className = 'bilitwin';
+                                ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
+                                ul.append.apply(ul, [monkeyMenu, polyfillMenu]);
+                                menus0 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
 
-            return ul;
-        }
+                                if (!(menus0.length == 0)) {
+                                    _context71.next = 10;
+                                    break;
+                                }
+
+                                _context71.next = 10;
+                                return new Promise(function (resolve) {
+                                    var observer = new MutationObserver(function () {
+                                        var menus1 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
+                                        var menus2 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black');
+                                        if (menus1.length > 0 || menus2.length >= 2) {
+                                            observer.disconnect();
+                                            resolve();
+                                        }
+                                    });
+                                    observer.observe(playerWin.document.querySelector("#bilibiliPlayer"), {
+                                        childList: true,
+                                        attributeFilter: ["class"]
+                                    });
+                                });
+
+                            case 10:
+                                div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0] || [].concat(_toConsumableArray(playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black'))).pop();
+
+                                div.prepend(ul);
+
+                                // 4. save to cache
+                                this.cidSessionDom.menuUl = ul;
+
+                                return _context71.abrupt('return', ul);
+
+                            case 14:
+                            case 'end':
+                                return _context71.stop();
+                        }
+                    }
+                }, _callee69, this);
+            }));
+
+            function appendMenu() {
+                return _ref90.apply(this, arguments);
+            }
+
+            return appendMenu;
+        }()
     }, {
         key: 'buildMonkeyMenu',
         value: function buildMonkeyMenu() {
             var _this50 = this;
 
-            var _ref90 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref90$playerWin = _ref90.playerWin,
-                playerWin = _ref90$playerWin === undefined ? this.twin.playerWin : _ref90$playerWin,
-                _ref90$BiliMonkey = _ref90.BiliMonkey,
-                BiliMonkey = _ref90$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref90$BiliMonkey,
-                _ref90$monkey = _ref90.monkey,
-                monkey = _ref90$monkey === undefined ? this.twin.monkey : _ref90$monkey,
-                _ref90$videoA = _ref90.videoA,
-                videoA = _ref90$videoA === undefined ? this.cidSessionDom.videoA : _ref90$videoA,
-                _ref90$assA = _ref90.assA,
-                assA = _ref90$assA === undefined ? this.cidSessionDom.assA : _ref90$assA;
+            var _ref91 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref91$playerWin = _ref91.playerWin,
+                playerWin = _ref91$playerWin === undefined ? this.twin.playerWin : _ref91$playerWin,
+                _ref91$BiliMonkey = _ref91.BiliMonkey,
+                BiliMonkey = _ref91$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref91$BiliMonkey,
+                _ref91$monkey = _ref91.monkey,
+                monkey = _ref91$monkey === undefined ? this.twin.monkey : _ref91$monkey,
+                _ref91$videoA = _ref91.videoA,
+                videoA = _ref91$videoA === undefined ? this.cidSessionDom.videoA : _ref91$videoA,
+                _ref91$assA = _ref91.assA,
+                assA = _ref91$assA === undefined ? this.cidSessionDom.assA : _ref91$assA;
 
             var context_menu_videoA = document.createElement('li');
 
@@ -7424,18 +7475,18 @@ var UI = function () {
                 context_menu_videoA.className = 'context-menu-function';
 
                 context_menu_videoA.onmouseover = function () {
-                    var _ref92 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69(_ref91) {
-                        var textNode = _ref91.target.lastChild;
-                        return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                    var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(_ref92) {
+                        var textNode = _ref92.target.lastChild;
+                        return regeneratorRuntime.wrap(function _callee70$(_context72) {
                             while (1) {
-                                switch (_context71.prev = _context71.next) {
+                                switch (_context72.prev = _context72.next) {
                                     case 0:
                                         if (!videoA.onmouseover) {
-                                            _context71.next = 3;
+                                            _context72.next = 3;
                                             break;
                                         }
 
-                                        _context71.next = 3;
+                                        _context72.next = 3;
                                         return videoA.onmouseover();
 
                                     case 3:
@@ -7445,14 +7496,14 @@ var UI = function () {
 
                                     case 4:
                                     case 'end':
-                                        return _context71.stop();
+                                        return _context72.stop();
                                 }
                             }
-                        }, _callee69, _this50);
+                        }, _callee70, _this50);
                     }));
 
                     return function (_x96) {
-                        return _ref92.apply(this, arguments);
+                        return _ref93.apply(this, arguments);
                     };
                 }();
 
@@ -7491,17 +7542,17 @@ var UI = function () {
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
-                return regeneratorRuntime.wrap(function _callee70$(_context72) {
+            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
+                return regeneratorRuntime.wrap(function _callee71$(_context73) {
                     while (1) {
-                        switch (_context72.prev = _context72.next) {
+                        switch (_context73.prev = _context73.next) {
                             case 0:
                                 if (!assA.onmouseover) {
-                                    _context72.next = 3;
+                                    _context73.next = 3;
                                     break;
                                 }
 
-                                _context72.next = 3;
+                                _context73.next = 3;
                                 return assA.onmouseover();
 
                             case 3:
@@ -7509,10 +7560,10 @@ var UI = function () {
 
                             case 4:
                             case 'end':
-                                return _context72.stop();
+                                return _context73.stop();
                         }
                     }
-                }, _callee70, _this50);
+                }, _callee71, _this50);
             }));
 
             var a2 = document.createElement('a');
@@ -7541,25 +7592,25 @@ var UI = function () {
             var li3 = document.createElement('li');
             li3.className = 'context-menu-function';
 
-            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
-                return regeneratorRuntime.wrap(function _callee71$(_context73) {
+            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+                return regeneratorRuntime.wrap(function _callee72$(_context74) {
                     while (1) {
-                        switch (_context73.prev = _context73.next) {
+                        switch (_context74.prev = _context74.next) {
                             case 0:
-                                _context73.t0 = UI;
-                                _context73.next = 3;
+                                _context74.t0 = UI;
+                                _context74.next = 3;
                                 return BiliMonkey.getAllPageDefaultFormats(playerWin, monkey);
 
                             case 3:
-                                _context73.t1 = _context73.sent;
-                                return _context73.abrupt('return', _context73.t0.displayDownloadAllPageDefaultFormatsBody.call(_context73.t0, _context73.t1));
+                                _context74.t1 = _context74.sent;
+                                return _context74.abrupt('return', _context74.t0.displayDownloadAllPageDefaultFormatsBody.call(_context74.t0, _context74.t1));
 
                             case 5:
                             case 'end':
-                                return _context73.stop();
+                                return _context74.stop();
                         }
                     }
-                }, _callee71, _this50);
+                }, _callee72, _this50);
             }));
 
             var a4 = document.createElement('a');
@@ -7573,30 +7624,30 @@ var UI = function () {
             var li4 = document.createElement('li');
             li4.className = 'context-menu-function';
 
-            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
-                return regeneratorRuntime.wrap(function _callee72$(_context74) {
+            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+                return regeneratorRuntime.wrap(function _callee73$(_context75) {
                     while (1) {
-                        switch (_context74.prev = _context74.next) {
+                        switch (_context75.prev = _context75.next) {
                             case 0:
                                 monkey.proxy = true;
                                 monkey.flvs = null;
                                 UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                 // Yes, I AM lazy.
                                 playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                _context74.next = 6;
+                                _context75.next = 6;
                                 return new Promise(function (r) {
                                     return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                 });
 
                             case 6:
-                                return _context74.abrupt('return', monkey.queryInfo('video'));
+                                return _context75.abrupt('return', monkey.queryInfo('video'));
 
                             case 7:
                             case 'end':
-                                return _context74.stop();
+                                return _context75.stop();
                         }
                     }
-                }, _callee72, _this50);
+                }, _callee73, _this50);
             }));
 
             var a5 = document.createElement('a');
@@ -7660,13 +7711,13 @@ var UI = function () {
         value: function buildPolyfillMenu() {
             var _this51 = this;
 
-            var _ref96 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref96$playerWin = _ref96.playerWin,
-                playerWin = _ref96$playerWin === undefined ? this.twin.playerWin : _ref96$playerWin,
-                _ref96$BiliPolyfill = _ref96.BiliPolyfill,
-                BiliPolyfill = _ref96$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref96$BiliPolyfill,
-                _ref96$polyfill = _ref96.polyfill,
-                polyfill = _ref96$polyfill === undefined ? this.twin.polyfill : _ref96$polyfill;
+            var _ref97 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref97$playerWin = _ref97.playerWin,
+                playerWin = _ref97$playerWin === undefined ? this.twin.playerWin : _ref97$playerWin,
+                _ref97$BiliPolyfill = _ref97.BiliPolyfill,
+                BiliPolyfill = _ref97$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref97$BiliPolyfill,
+                _ref97$polyfill = _ref97.polyfill,
+                polyfill = _ref97$polyfill === undefined ? this.twin.polyfill : _ref97$polyfill;
 
             var oped = [];
             var BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
@@ -8226,10 +8277,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref97) {
-                var _ref98 = _slicedToArray(_ref97, 2),
-                    name = _ref98[0],
-                    description = _ref98[1];
+            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref98) {
+                var _ref99 = _slicedToArray(_ref98, 2),
+                    name = _ref99[0],
+                    description = _ref99[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8303,10 +8354,10 @@ var UI = function () {
                     twin.saveOption(twin.option);
                 };
 
-                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref99) {
-                    var _ref100 = _slicedToArray(_ref99, 2),
-                        name = _ref100[0],
-                        value = _ref100[1];
+                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref100) {
+                    var _ref101 = _slicedToArray(_ref100, 2),
+                        name = _ref101[0],
+                        value = _ref101[1];
 
                     var option1 = document.createElement('option');
                     option1.value = value;
@@ -8345,11 +8396,11 @@ var UI = function () {
                 table.append(tr2);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref101) {
-                var _ref102 = _slicedToArray(_ref101, 3),
-                    name = _ref102[0],
-                    description = _ref102[1],
-                    disabled = _ref102[2];
+            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref102) {
+                var _ref103 = _slicedToArray(_ref102, 3),
+                    name = _ref103[0],
+                    description = _ref103[1],
+                    disabled = _ref103[2];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8389,10 +8440,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref103) {
-                var _ref104 = _slicedToArray(_ref103, 2),
-                    name = _ref104[0],
-                    description = _ref104[1];
+            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref104) {
+                var _ref105 = _slicedToArray(_ref104, 2),
+                    name = _ref105[0],
+                    description = _ref105[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8531,45 +8582,23 @@ var UI = function () {
 
             var flvsBlob = [];
             var loadFLVFromCache = function () {
-                var _ref105 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73(name) {
+                var _ref106 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74(name) {
                     var partial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
                     var cache, item;
-                    return regeneratorRuntime.wrap(function _callee73$(_context75) {
-                        while (1) {
-                            switch (_context75.prev = _context75.next) {
-                                case 0:
-                                    if (partial) name = 'PC_' + name;
-                                    cache = new CacheDB();
-                                    _context75.next = 4;
-                                    return cache.getData(name);
-
-                                case 4:
-                                    item = _context75.sent;
-                                    return _context75.abrupt('return', item && item.data);
-
-                                case 6:
-                                case 'end':
-                                    return _context75.stop();
-                            }
-                        }
-                    }, _callee73, _this52);
-                }));
-
-                return function loadFLVFromCache(_x107) {
-                    return _ref105.apply(this, arguments);
-                };
-            }();
-            var saveFLVToCache = function () {
-                var _ref106 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74(name, blob) {
-                    var cache;
                     return regeneratorRuntime.wrap(function _callee74$(_context76) {
                         while (1) {
                             switch (_context76.prev = _context76.next) {
                                 case 0:
+                                    if (partial) name = 'PC_' + name;
                                     cache = new CacheDB();
-                                    return _context76.abrupt('return', cache.addData({ name: name, data: blob }));
+                                    _context76.next = 4;
+                                    return cache.getData(name);
 
-                                case 2:
+                                case 4:
+                                    item = _context76.sent;
+                                    return _context76.abrupt('return', item && item.data);
+
+                                case 6:
                                 case 'end':
                                     return _context76.stop();
                             }
@@ -8577,23 +8606,21 @@ var UI = function () {
                     }, _callee74, _this52);
                 }));
 
-                return function saveFLVToCache(_x108, _x109) {
+                return function loadFLVFromCache(_x107) {
                     return _ref106.apply(this, arguments);
                 };
             }();
-            var cleanPartialFLVInCache = function () {
-                var _ref107 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(name) {
+            var saveFLVToCache = function () {
+                var _ref107 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(name, blob) {
                     var cache;
                     return regeneratorRuntime.wrap(function _callee75$(_context77) {
                         while (1) {
                             switch (_context77.prev = _context77.next) {
                                 case 0:
                                     cache = new CacheDB();
+                                    return _context77.abrupt('return', cache.addData({ name: name, data: blob }));
 
-                                    name = 'PC_' + name;
-                                    return _context77.abrupt('return', cache.deleteData(name));
-
-                                case 3:
+                                case 2:
                                 case 'end':
                                     return _context77.stop();
                             }
@@ -8601,34 +8628,58 @@ var UI = function () {
                     }, _callee75, _this52);
                 }));
 
-                return function cleanPartialFLVInCache(_x110) {
+                return function saveFLVToCache(_x108, _x109) {
                     return _ref107.apply(this, arguments);
                 };
             }();
-            var getFLVs = function () {
-                var _ref108 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(videoIndex) {
-                    var durl;
-                    return regeneratorRuntime.wrap(function _callee77$(_context79) {
+            var cleanPartialFLVInCache = function () {
+                var _ref108 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(name) {
+                    var cache;
+                    return regeneratorRuntime.wrap(function _callee76$(_context78) {
                         while (1) {
-                            switch (_context79.prev = _context79.next) {
+                            switch (_context78.prev = _context78.next) {
+                                case 0:
+                                    cache = new CacheDB();
+
+                                    name = 'PC_' + name;
+                                    return _context78.abrupt('return', cache.deleteData(name));
+
+                                case 3:
+                                case 'end':
+                                    return _context78.stop();
+                            }
+                        }
+                    }, _callee76, _this52);
+                }));
+
+                return function cleanPartialFLVInCache(_x110) {
+                    return _ref108.apply(this, arguments);
+                };
+            }();
+            var getFLVs = function () {
+                var _ref109 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(videoIndex) {
+                    var durl;
+                    return regeneratorRuntime.wrap(function _callee78$(_context80) {
+                        while (1) {
+                            switch (_context80.prev = _context80.next) {
                                 case 0:
                                     if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
 
                                     durl = ret[videoIndex].durl;
-                                    _context79.next = 4;
+                                    _context80.next = 4;
                                     return Promise.all(durl.map(function () {
-                                        var _ref109 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(_, durlIndex) {
+                                        var _ref110 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(_, durlIndex) {
                                             var burl, outputName, burlA, progress, flvCache, partialFLVFromCache, opt, fch, fullFLV;
-                                            return regeneratorRuntime.wrap(function _callee76$(_context78) {
+                                            return regeneratorRuntime.wrap(function _callee77$(_context79) {
                                                 while (1) {
-                                                    switch (_context78.prev = _context78.next) {
+                                                    switch (_context79.prev = _context79.next) {
                                                         case 0:
                                                             if (!flvsBlob[videoIndex][durlIndex]) {
-                                                                _context78.next = 4;
+                                                                _context79.next = 4;
                                                                 break;
                                                             }
 
-                                                            return _context78.abrupt('return', flvsBlob[videoIndex][durlIndex]);
+                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex]);
 
                                                         case 4:
                                                             burl = durl[durlIndex];
@@ -8643,14 +8694,14 @@ var UI = function () {
                                                                 return progress1;
                                                             }());
                                                             progress = burlA.parentElement.querySelector("progress");
-                                                            _context78.next = 11;
+                                                            _context79.next = 11;
                                                             return loadFLVFromCache(outputName);
 
                                                         case 11:
-                                                            flvCache = _context78.sent;
+                                                            flvCache = _context79.sent;
 
                                                             if (!flvCache) {
-                                                                _context78.next = 16;
+                                                                _context79.next = 16;
                                                                 break;
                                                             }
 
@@ -8662,14 +8713,14 @@ var UI = function () {
                                                                 a1.textContent = '\u53E6\u5B58\u4E3A';
                                                                 return a1;
                                                             }());
-                                                            return _context78.abrupt('return', flvsBlob[videoIndex][durlIndex] = flvCache);
+                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex] = flvCache);
 
                                                         case 16:
-                                                            _context78.next = 18;
+                                                            _context79.next = 18;
                                                             return loadFLVFromCache(outputName, true);
 
                                                         case 18:
-                                                            partialFLVFromCache = _context78.sent;
+                                                            partialFLVFromCache = _context79.sent;
 
                                                             if (partialFLVFromCache) burl += '&bstart=' + partialFLVFromCache.size;
 
@@ -8689,11 +8740,11 @@ var UI = function () {
                                                             };
 
                                                             fch = new DetailedFetchBlob(burl, opt);
-                                                            _context78.next = 25;
+                                                            _context79.next = 25;
                                                             return fch.getBlob();
 
                                                         case 25:
-                                                            fullFLV = _context78.sent;
+                                                            fullFLV = _context79.sent;
 
                                                             if (partialFLVFromCache) {
                                                                 fullFLV = new Blob([partialFLVFromCache, fullFLV]);
@@ -8709,47 +8760,47 @@ var UI = function () {
                                                                 return a1;
                                                             }());
 
-                                                            return _context78.abrupt('return', flvsBlob[videoIndex][durlIndex] = fullFLV);
+                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex] = fullFLV);
 
                                                         case 30:
                                                         case 'end':
-                                                            return _context78.stop();
+                                                            return _context79.stop();
                                                     }
                                                 }
-                                            }, _callee76, _this52);
+                                            }, _callee77, _this52);
                                         }));
 
                                         return function (_x112, _x113) {
-                                            return _ref109.apply(this, arguments);
+                                            return _ref110.apply(this, arguments);
                                         };
                                     }()));
 
                                 case 4:
-                                    return _context79.abrupt('return', _context79.sent);
+                                    return _context80.abrupt('return', _context80.sent);
 
                                 case 5:
                                 case 'end':
-                                    return _context79.stop();
+                                    return _context80.stop();
                             }
                         }
-                    }, _callee77, _this52);
+                    }, _callee78, _this52);
                 }));
 
                 return function getFLVs(_x111) {
-                    return _ref108.apply(this, arguments);
+                    return _ref109.apply(this, arguments);
                 };
             }();
             var getSize = function () {
-                var _ref110 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(videoIndex) {
+                var _ref111 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(videoIndex) {
                     var durlObjects, totalSize, durl, sizes;
-                    return regeneratorRuntime.wrap(function _callee79$(_context81) {
+                    return regeneratorRuntime.wrap(function _callee80$(_context82) {
                         while (1) {
-                            switch (_context81.prev = _context81.next) {
+                            switch (_context82.prev = _context82.next) {
                                 case 0:
                                     durlObjects = ret[videoIndex].res.durl;
 
                                     if (!(durlObjects && durlObjects[0] && durlObjects[0].size)) {
-                                        _context81.next = 5;
+                                        _context82.next = 5;
                                         break;
                                     }
 
@@ -8758,61 +8809,61 @@ var UI = function () {
                                     }, 0);
 
                                     if (!totalSize) {
-                                        _context81.next = 5;
+                                        _context82.next = 5;
                                         break;
                                     }
 
-                                    return _context81.abrupt('return', totalSize);
+                                    return _context82.abrupt('return', totalSize);
 
                                 case 5:
                                     durl = ret[videoIndex].durl;
 
                                     /** @type {number[]} */
 
-                                    _context81.next = 8;
+                                    _context82.next = 8;
                                     return Promise.all(durl.map(function () {
-                                        var _ref111 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(burl) {
+                                        var _ref112 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(burl) {
                                             var r;
-                                            return regeneratorRuntime.wrap(function _callee78$(_context80) {
+                                            return regeneratorRuntime.wrap(function _callee79$(_context81) {
                                                 while (1) {
-                                                    switch (_context80.prev = _context80.next) {
+                                                    switch (_context81.prev = _context81.next) {
                                                         case 0:
-                                                            _context80.next = 2;
+                                                            _context81.next = 2;
                                                             return fetch(burl, { method: "HEAD" });
 
                                                         case 2:
-                                                            r = _context80.sent;
-                                                            return _context80.abrupt('return', +r.headers.get("content-length"));
+                                                            r = _context81.sent;
+                                                            return _context81.abrupt('return', +r.headers.get("content-length"));
 
                                                         case 4:
                                                         case 'end':
-                                                            return _context80.stop();
+                                                            return _context81.stop();
                                                     }
                                                 }
-                                            }, _callee78, _this52);
+                                            }, _callee79, _this52);
                                         }));
 
                                         return function (_x115) {
-                                            return _ref111.apply(this, arguments);
+                                            return _ref112.apply(this, arguments);
                                         };
                                     }()));
 
                                 case 8:
-                                    sizes = _context81.sent;
-                                    return _context81.abrupt('return', sizes.reduce(function (total, _size) {
+                                    sizes = _context82.sent;
+                                    return _context82.abrupt('return', sizes.reduce(function (total, _size) {
                                         return total + _size;
                                     }));
 
                                 case 10:
                                 case 'end':
-                                    return _context81.stop();
+                                    return _context82.stop();
                             }
                         }
-                    }, _callee79, _this52);
+                    }, _callee80, _this52);
                 }));
 
                 return function getSize(_x114) {
-                    return _ref110.apply(this, arguments);
+                    return _ref111.apply(this, arguments);
                 };
             }();
 
@@ -8832,11 +8883,11 @@ var UI = function () {
                     var a1 = document.createElement('a');
 
                     a1.onclick = function () {
-                        var _ref112 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(e) {
+                        var _ref113 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(e) {
                             var handler, targetA, format, flvs, worker, href, outputName, ass;
-                            return regeneratorRuntime.wrap(function _callee80$(_context82) {
+                            return regeneratorRuntime.wrap(function _callee81$(_context83) {
                                 while (1) {
-                                    switch (_context82.prev = _context82.next) {
+                                    switch (_context83.prev = _context83.next) {
                                         case 0:
                                             // add beforeUnloadHandler
                                             handler = function handler(e) {
@@ -8852,40 +8903,40 @@ var UI = function () {
                                             targetA.textContent = "缓存中……";
 
                                             format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1];
-                                            _context82.next = 9;
+                                            _context83.next = 9;
                                             return getFLVs(index);
 
                                         case 9:
-                                            flvs = _context82.sent;
+                                            flvs = _context83.sent;
 
 
                                             targetA.textContent = "合并中……";
                                             worker = WebWorker.fromAFunction(BatchDownloadWorkerFn);
-                                            _context82.next = 14;
+                                            _context83.next = 14;
                                             return worker.registerAllMethods();
 
                                         case 14:
-                                            _context82.t0 = URL;
+                                            _context83.t0 = URL;
 
                                             if (!(format == "flv")) {
-                                                _context82.next = 21;
+                                                _context83.next = 21;
                                                 break;
                                             }
 
-                                            _context82.next = 18;
+                                            _context83.next = 18;
                                             return worker.mergeFLVFiles(flvs);
 
                                         case 18:
-                                            _context82.t1 = _context82.sent;
-                                            _context82.next = 22;
+                                            _context83.t1 = _context83.sent;
+                                            _context83.next = 22;
                                             break;
 
                                         case 21:
-                                            _context82.t1 = flvs[0];
+                                            _context83.t1 = flvs[0];
 
                                         case 22:
-                                            _context82.t2 = _context82.t1;
-                                            href = _context82.t0.createObjectURL.call(_context82.t0, _context82.t2);
+                                            _context83.t2 = _context83.t1;
+                                            href = _context83.t0.createObjectURL.call(_context83.t0, _context83.t2);
 
                                             worker.terminate();
 
@@ -8914,14 +8965,14 @@ var UI = function () {
 
                                         case 33:
                                         case 'end':
-                                            return _context82.stop();
+                                            return _context83.stop();
                                     }
                                 }
-                            }, _callee80, _this52);
+                            }, _callee81, _this52);
                         }));
 
                         return function (_x116) {
-                            return _ref112.apply(this, arguments);
+                            return _ref113.apply(this, arguments);
                         };
                     }();
 
@@ -9177,40 +9228,40 @@ var BiliTwin = function (_BiliUserJS) {
     _createClass(BiliTwin, [{
         key: 'runCidSession',
         value: function () {
-            var _ref113 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81() {
+            var _ref114 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82() {
                 var _this54 = this;
 
-                var href, cidRefresh, videoRightClick, video, videoA, _ref114;
+                var href, cidRefresh, videoRightClick, video, videoA, _ref115;
 
-                return regeneratorRuntime.wrap(function _callee81$(_context83) {
+                return regeneratorRuntime.wrap(function _callee82$(_context84) {
                     while (1) {
-                        switch (_context83.prev = _context83.next) {
+                        switch (_context84.prev = _context84.next) {
                             case 0:
-                                _context83.prev = 0;
-                                _context83.t0 = BiliUserJS.tryGetPlayerWinSync();
+                                _context84.prev = 0;
+                                _context84.t0 = BiliUserJS.tryGetPlayerWinSync();
 
-                                if (_context83.t0) {
-                                    _context83.next = 6;
+                                if (_context84.t0) {
+                                    _context84.next = 6;
                                     break;
                                 }
 
-                                _context83.next = 5;
+                                _context84.next = 5;
                                 return BiliTwin.getPlayerWin();
 
                             case 5:
-                                _context83.t0 = _context83.sent;
+                                _context84.t0 = _context84.sent;
 
                             case 6:
-                                this.playerWin = _context83.t0;
-                                _context83.next = 13;
+                                this.playerWin = _context84.t0;
+                                _context84.next = 13;
                                 break;
 
                             case 9:
-                                _context83.prev = 9;
-                                _context83.t1 = _context83['catch'](0);
+                                _context84.prev = 9;
+                                _context84.t1 = _context84['catch'](0);
 
-                                if (_context83.t1 == 'Need H5 Player') UI.requestH5Player();
-                                throw _context83.t1;
+                                if (_context84.t1 == 'Need H5 Player') UI.requestH5Player();
+                                throw _context84.t1;
 
                             case 13:
                                 href = location.href;
@@ -9238,17 +9289,17 @@ var BiliTwin = function (_BiliUserJS) {
                                 };
 
                                 if (!this.option.autoDisplayDownloadBtn) {
-                                    _context83.next = 25;
+                                    _context84.next = 25;
                                     break;
                                 }
 
-                                _context83.next = 23;
+                                _context84.next = 23;
                                 return new Promise(function (resolve) {
                                     var i = setInterval(function () {
                                         var video = document.querySelector("video");
                                         if (video) {
                                             videoRightClick(video);
-                                            if (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this54.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this54.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")) {
+                                            if (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this54.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this54.playerWin.document.querySelector(".video-data .view") && _this54.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--" || _this54.playerWin.document.querySelector(".bilibili-player-video-sendbar").children.length > 0 && _this54.playerWin.document.querySelector("#media_module .media-cover img"))) {
                                                 clearInterval(i);
                                                 resolve();
                                             }
@@ -9257,7 +9308,7 @@ var BiliTwin = function (_BiliUserJS) {
                                 });
 
                             case 23:
-                                _context83.next = 27;
+                                _context84.next = 27;
                                 break;
 
                             case 25:
@@ -9270,7 +9321,7 @@ var BiliTwin = function (_BiliUserJS) {
                                 }
 
                             case 27:
-                                _context83.next = 29;
+                                _context84.next = 29;
                                 return this.polyfill.setFunctions();
 
                             case 29:
@@ -9289,13 +9340,13 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 // 4. debug
                                 if (this.option.debug) {
-                                    _ref114 = [this.monkey, this.polyfill];
-                                    (top.unsafeWindow || top).monkey = _ref114[0];
-                                    (top.unsafeWindow || top).polyfill = _ref114[1];
+                                    _ref115 = [this.monkey, this.polyfill];
+                                    (top.unsafeWindow || top).monkey = _ref115[0];
+                                    (top.unsafeWindow || top).polyfill = _ref115[1];
                                 }
 
                                 // 5. refresh => session expire
-                                _context83.next = 33;
+                                _context84.next = 33;
                                 return cidRefresh;
 
                             case 33:
@@ -9305,14 +9356,14 @@ var BiliTwin = function (_BiliUserJS) {
 
                             case 36:
                             case 'end':
-                                return _context83.stop();
+                                return _context84.stop();
                         }
                     }
-                }, _callee81, this, [[0, 9]]);
+                }, _callee82, this, [[0, 9]]);
             }));
 
             function runCidSession() {
-                return _ref113.apply(this, arguments);
+                return _ref114.apply(this, arguments);
             }
 
             return runCidSession;
@@ -9320,49 +9371,20 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'mergeFLVFiles',
         value: function () {
-            var _ref115 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(files) {
-                return regeneratorRuntime.wrap(function _callee82$(_context84) {
-                    while (1) {
-                        switch (_context84.prev = _context84.next) {
-                            case 0:
-                                _context84.t0 = URL;
-                                _context84.next = 3;
-                                return FLV.mergeBlobs(files);
-
-                            case 3:
-                                _context84.t1 = _context84.sent;
-                                return _context84.abrupt('return', _context84.t0.createObjectURL.call(_context84.t0, _context84.t1));
-
-                            case 5:
-                            case 'end':
-                                return _context84.stop();
-                        }
-                    }
-                }, _callee82, this);
-            }));
-
-            function mergeFLVFiles(_x118) {
-                return _ref115.apply(this, arguments);
-            }
-
-            return mergeFLVFiles;
-        }()
-    }, {
-        key: 'clearCacheDB',
-        value: function () {
-            var _ref116 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(cache) {
+            var _ref116 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(files) {
                 return regeneratorRuntime.wrap(function _callee83$(_context85) {
                     while (1) {
                         switch (_context85.prev = _context85.next) {
                             case 0:
-                                if (!cache) {
-                                    _context85.next = 2;
-                                    break;
-                                }
+                                _context85.t0 = URL;
+                                _context85.next = 3;
+                                return FLV.mergeBlobs(files);
 
-                                return _context85.abrupt('return', cache.deleteEntireDB());
+                            case 3:
+                                _context85.t1 = _context85.sent;
+                                return _context85.abrupt('return', _context85.t0.createObjectURL.call(_context85.t0, _context85.t1));
 
-                            case 2:
+                            case 5:
                             case 'end':
                                 return _context85.stop();
                         }
@@ -9370,8 +9392,37 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee83, this);
             }));
 
-            function clearCacheDB(_x119) {
+            function mergeFLVFiles(_x118) {
                 return _ref116.apply(this, arguments);
+            }
+
+            return mergeFLVFiles;
+        }()
+    }, {
+        key: 'clearCacheDB',
+        value: function () {
+            var _ref117 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(cache) {
+                return regeneratorRuntime.wrap(function _callee84$(_context86) {
+                    while (1) {
+                        switch (_context86.prev = _context86.next) {
+                            case 0:
+                                if (!cache) {
+                                    _context86.next = 2;
+                                    break;
+                                }
+
+                                return _context86.abrupt('return', cache.deleteEntireDB());
+
+                            case 2:
+                            case 'end':
+                                return _context86.stop();
+                        }
+                    }
+                }, _callee84, this);
+            }));
+
+            function clearCacheDB(_x119) {
+                return _ref117.apply(this, arguments);
             }
 
             return clearCacheDB;
@@ -9413,34 +9464,34 @@ var BiliTwin = function (_BiliUserJS) {
     }], [{
         key: 'init',
         value: function () {
-            var _ref117 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84() {
+            var _ref118 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85() {
                 var twin, vc_info;
-                return regeneratorRuntime.wrap(function _callee84$(_context86) {
+                return regeneratorRuntime.wrap(function _callee85$(_context87) {
                     while (1) {
-                        switch (_context86.prev = _context86.next) {
+                        switch (_context87.prev = _context87.next) {
                             case 0:
                                 if (document.body) {
-                                    _context86.next = 2;
+                                    _context87.next = 2;
                                     break;
                                 }
 
-                                return _context86.abrupt('return');
+                                return _context87.abrupt('return');
 
                             case 2:
                                 if (!(location.hostname == "www.biligame.com")) {
-                                    _context86.next = 6;
+                                    _context87.next = 6;
                                     break;
                                 }
 
-                                return _context86.abrupt('return', BiliPolyfill.biligameInit());
+                                return _context87.abrupt('return', BiliPolyfill.biligameInit());
 
                             case 6:
                                 if (!location.pathname.startsWith("/bangumi/media/md")) {
-                                    _context86.next = 8;
+                                    _context87.next = 8;
                                     break;
                                 }
 
-                                return _context86.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+                                return _context87.abrupt('return', BiliPolyfill.showBangumiCoverImage());
 
                             case 8:
 
@@ -9450,40 +9501,40 @@ var BiliTwin = function (_BiliUserJS) {
                                 twin = new BiliTwin();
 
                                 if (!(location.hostname == "vc.bilibili.com")) {
-                                    _context86.next = 16;
+                                    _context87.next = 16;
                                     break;
                                 }
 
-                                _context86.next = 14;
+                                _context87.next = 14;
                                 return BiliMonkey.getBiliShortVideoInfo();
 
                             case 14:
-                                vc_info = _context86.sent;
-                                return _context86.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
+                                vc_info = _context87.sent;
+                                return _context87.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
 
                             case 16:
                                 if (!1) {
-                                    _context86.next = 21;
+                                    _context87.next = 21;
                                     break;
                                 }
 
-                                _context86.next = 19;
+                                _context87.next = 19;
                                 return twin.runCidSession();
 
                             case 19:
-                                _context86.next = 16;
+                                _context87.next = 16;
                                 break;
 
                             case 21:
                             case 'end':
-                                return _context86.stop();
+                                return _context87.stop();
                         }
                     }
-                }, _callee84, this);
+                }, _callee85, this);
             }));
 
             function init() {
-                return _ref117.apply(this, arguments);
+                return _ref118.apply(this, arguments);
             }
 
             return init;

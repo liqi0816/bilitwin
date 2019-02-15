@@ -146,7 +146,7 @@ class UI {
             else {
                 assA.download = monkey.cid + '.ass';
             }
-            
+
             if (clicked) {
                 assA.click()
             }
@@ -165,9 +165,14 @@ class UI {
         >{...[videoA, ' ', assA]}</div>;
 
         // 2. append to title
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data');
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module");
         tminfo.style.float = 'none';
         tminfo.after(div);
+
+        const h1_module = document.querySelector("#h1_module")
+        if (h1_module) {
+            h1_module.style.marginBottom = "0px"
+        }
 
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;
@@ -419,7 +424,7 @@ class UI {
     }
 
     // Menu Append
-    appendMenu(playerWin = this.twin.playerWin) {
+    async appendMenu(playerWin = this.twin.playerWin) {
         // 1. build monkey menu and polyfill menu
         const monkeyMenu = this.buildMonkeyMenu();
         const polyfillMenu = this.buildPolyfillMenu();
@@ -430,6 +435,24 @@ class UI {
         </ul>;
 
         // 3. append to menu
+        const menus0 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')
+        if (menus0.length == 0) {
+            await new Promise((resolve) => {
+                const observer = new MutationObserver(() => {
+                    const menus1 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')
+                    const menus2 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')
+                    if (menus1.length > 0 || menus2.length >= 2) {
+                        observer.disconnect();
+                        resolve()
+                    }
+                });
+                observer.observe(playerWin.document.querySelector("#bilibiliPlayer"), {
+                    childList: true,
+                    attributeFilter: ["class"],
+                });
+            })
+        }
+
         const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0]
             || [...playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')].pop()
         div.prepend(ul);
