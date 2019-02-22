@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.4
+// @version     1.21.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9117,6 +9117,8 @@ class UI {
                     })());
 
                     window.removeEventListener('beforeunload', handler);
+
+                    targetA.click();
                 };
 
                 a1.title = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';

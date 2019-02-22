@@ -1092,6 +1092,8 @@ class UI {
 
                             window.removeEventListener('beforeunload', handler);
 
+                            targetA.click()
+
                         }} title="缓存所有分段+自动合并">
                             <span>缓存所有分段+自动合并</span> {sizeSpan}
                         </a>
