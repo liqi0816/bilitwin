@@ -23,7 +23,7 @@ class CacheDB {
 
     async getDB() {
         if (this.db) return this.db;
-        this.db = new Promise((resolve, reject) => {
+        this.db = await new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(this.dbName);
             openRequest.onupgradeneeded = e => {
                 const db = e.target.result;
@@ -32,7 +32,7 @@ class CacheDB {
                 }
             }
             openRequest.onsuccess = e => {
-                return resolve(this.db = e.target.result);
+                return resolve(e.target.result);
             }
             openRequest.onerror = reject;
         });

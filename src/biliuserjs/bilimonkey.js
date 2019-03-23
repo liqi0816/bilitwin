@@ -157,7 +157,7 @@ class BiliMonkey {
         }
     }
 
-    async getASS(clickableFormat) {
+    async getASS() {
         if (this.ass) return this.ass;
         this.ass = await new Promise(async resolve => {
             // 1. cid

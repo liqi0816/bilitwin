@@ -341,8 +341,9 @@ class UI {
 
         // 5. merge splits
         const files = await monkey.getAllFLVs();
-        const href = await this.twin.mergeFLVFiles(files);
-        const ass = await monkey.ass;
+        const flv = await FLV.mergeBlobs(files);
+        const href = URL.createObjectURL(flv);
+        const ass = await monkey.getASS();
 
         let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim()
         const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on")
@@ -364,7 +365,7 @@ class UI {
                     {' '}
                     <a download={`${outputName}.aac`} onclick={e => {
                         const aacA = e.target
-                        FLV2AAC(href).then((aacData) => {
+                        FLV2AAC(flv).then((aacData) => {
                             const blob = new Blob([aacData])
                             aacA.href = URL.createObjectURL(blob)
                             aacA.onclick = null
