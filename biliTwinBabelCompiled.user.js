@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.5
+// @version     1.22.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.21.5
+// @version     1.22.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -668,6 +668,29 @@ var BiliUserJS = function () {
     return BiliUserJS;
 }();
 
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * @template T
+ * @param {Promise<T>} promise 
+ * @param {number} ms 
+ * @returns {Promise< T | null >}
+ */
+
+
+var setTimeoutDo = function setTimeoutDo(promise, ms) {
+    /** @type {Promise<null>} */
+    var t = new Promise(function (resolve) {
+        setTimeout(function () {
+            return resolve(null);
+        }, ms);
+    });
+    return Promise.race([promise, t]);
+};
+
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
  * 
@@ -681,7 +704,6 @@ var BiliUserJS = function () {
 /**
  * A promisified indexedDB with large file(>100MB) support
  */
-
 
 var CacheDB = function () {
     function CacheDB() {
@@ -718,7 +740,8 @@ var CacheDB = function () {
                                 return _context5.abrupt('return', this.db);
 
                             case 2:
-                                this.db = new Promise(function (resolve, reject) {
+                                _context5.next = 4;
+                                return new Promise(function (resolve, reject) {
                                     var openRequest = indexedDB.open(_this2.dbName);
                                     openRequest.onupgradeneeded = function (e) {
                                         var db = e.target.result;
@@ -727,13 +750,16 @@ var CacheDB = function () {
                                         }
                                     };
                                     openRequest.onsuccess = function (e) {
-                                        return resolve(_this2.db = e.target.result);
+                                        return resolve(e.target.result);
                                     };
                                     openRequest.onerror = reject;
                                 });
-                                return _context5.abrupt('return', this.db);
 
                             case 4:
+                                this.db = _context5.sent;
+                                return _context5.abrupt('return', this.db);
+
+                            case 6:
                             case 'end':
                                 return _context5.stop();
                         }
@@ -939,6 +965,7 @@ var CacheDB = function () {
 
                                                     case 3:
                                                         db = _context10.sent;
+                                                        // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，这一步会超时
                                                         objectStore = db.transaction([_this5.osName], 'readwrite').objectStore(_this5.osName);
                                                         probe = objectStore.get(name + '/part_0');
 
@@ -974,8 +1001,11 @@ var CacheDB = function () {
                                         return _ref11.apply(this, arguments);
                                     };
                                 }());
+
+                                // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，添加超时
+
                                 _context11.next = 3;
-                                return reqCascade;
+                                return setTimeoutDo(reqCascade, 5 * 1000);
 
                             case 3:
                                 dataChunks = _context11.sent;
@@ -2978,7 +3008,7 @@ var BiliMonkey = function () {
     }, {
         key: 'getASS',
         value: function () {
-            var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29(clickableFormat) {
+            var _ref41 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee29() {
                 var _this15 = this;
 
                 return regeneratorRuntime.wrap(function _callee29$(_context29) {
@@ -2993,9 +3023,10 @@ var BiliMonkey = function () {
                                 return _context29.abrupt('return', this.ass);
 
                             case 2:
-                                this.ass = new Promise(function () {
+                                _context29.next = 4;
+                                return new Promise(function () {
                                     var _ref42 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee28(resolve) {
-                                        var bilibili_player_settings, danmaku, i, regexp, option;
+                                        var bilibili_player_settings, danmaku, i, regexp, option, data;
                                         return regeneratorRuntime.wrap(function _callee28$(_context28) {
                                             while (1) {
                                                 switch (_context28.prev = _context28.next) {
@@ -3046,17 +3077,15 @@ var BiliMonkey = function () {
                                                         }
 
                                                         // 3. generate
-                                                        _context28.t0 = resolve;
-                                                        _context28.t1 = top.URL;
-                                                        _context28.next = 12;
+                                                        _context28.next = 10;
                                                         return new ASSConverter(option).genASSBlob(danmaku, top.document.title, top.location.href);
 
-                                                    case 12:
-                                                        _context28.t2 = _context28.sent;
-                                                        _context28.t3 = _this15.ass = _context28.t1.createObjectURL.call(_context28.t1, _context28.t2);
-                                                        (0, _context28.t0)(_context28.t3);
+                                                    case 10:
+                                                        data = _context28.sent;
 
-                                                    case 15:
+                                                        resolve(top.URL.createObjectURL(data));
+
+                                                    case 12:
                                                     case 'end':
                                                         return _context28.stop();
                                                 }
@@ -3064,13 +3093,16 @@ var BiliMonkey = function () {
                                         }, _callee28, _this15);
                                     }));
 
-                                    return function (_x45) {
+                                    return function (_x44) {
                                         return _ref42.apply(this, arguments);
                                     };
                                 }());
-                                return _context29.abrupt('return', this.ass);
 
                             case 4:
+                                this.ass = _context29.sent;
+                                return _context29.abrupt('return', this.ass);
+
+                            case 6:
                             case 'end':
                                 return _context29.stop();
                         }
@@ -3078,7 +3110,7 @@ var BiliMonkey = function () {
                 }, _callee29, this);
             }));
 
-            function getASS(_x44) {
+            function getASS() {
                 return _ref41.apply(this, arguments);
             }
 
@@ -3198,7 +3230,7 @@ var BiliMonkey = function () {
                 }, _callee31, this);
             }));
 
-            function queryInfo(_x46) {
+            function queryInfo(_x45) {
                 return _ref43.apply(this, arguments);
             }
 
@@ -3259,7 +3291,7 @@ var BiliMonkey = function () {
                 }, _callee32, this);
             }));
 
-            function loadFLVFromCache(_x47) {
+            function loadFLVFromCache(_x46) {
                 return _ref45.apply(this, arguments);
             }
 
@@ -3317,7 +3349,7 @@ var BiliMonkey = function () {
                 }, _callee33, this);
             }));
 
-            function loadPartialFLVFromCache(_x48) {
+            function loadPartialFLVFromCache(_x47) {
                 return _ref46.apply(this, arguments);
             }
 
@@ -3404,7 +3436,7 @@ var BiliMonkey = function () {
                 }, _callee35, this);
             }));
 
-            function saveFLVToCache(_x49, _x50) {
+            function saveFLVToCache(_x48, _x49) {
                 return _ref48.apply(this, arguments);
             }
 
@@ -3448,7 +3480,7 @@ var BiliMonkey = function () {
                 }, _callee36, this);
             }));
 
-            function savePartialFLVToCache(_x51, _x52) {
+            function savePartialFLVToCache(_x50, _x51) {
                 return _ref49.apply(this, arguments);
             }
 
@@ -3492,7 +3524,7 @@ var BiliMonkey = function () {
                 }, _callee37, this);
             }));
 
-            function cleanPartialFLVInCache(_x53) {
+            function cleanPartialFLVInCache(_x52) {
                 return _ref50.apply(this, arguments);
             }
 
@@ -3606,7 +3638,7 @@ var BiliMonkey = function () {
                 }, _callee39, this);
             }));
 
-            function getFLV(_x54, _x55) {
+            function getFLV(_x53, _x54) {
                 return _ref51.apply(this, arguments);
             }
 
@@ -3635,7 +3667,7 @@ var BiliMonkey = function () {
                 }, _callee40, this);
             }));
 
-            function abortFLV(_x56) {
+            function abortFLV(_x55) {
                 return _ref54.apply(this, arguments);
             }
 
@@ -3672,7 +3704,7 @@ var BiliMonkey = function () {
                 }, _callee41, this);
             }));
 
-            function getAllFLVs(_x57) {
+            function getAllFLVs(_x56) {
                 return _ref55.apply(this, arguments);
             }
 
@@ -3844,7 +3876,7 @@ var BiliMonkey = function () {
                 }, _callee43, this);
             }));
 
-            function setupProxy(_x58, _x59) {
+            function setupProxy(_x57, _x58) {
                 return _ref57.apply(this, arguments);
             }
 
@@ -3882,7 +3914,7 @@ var BiliMonkey = function () {
                 }, _callee44, this);
             }));
 
-            function fetchDanmaku(_x60) {
+            function fetchDanmaku(_x59) {
                 return _ref58.apply(this, arguments);
             }
 
@@ -5756,7 +5788,7 @@ var Exporter = function () {
                 }, _callee57, this);
             }));
 
-            function sendToAria2RPC(_x73) {
+            function sendToAria2RPC(_x72) {
                 return _ref73.apply(this, arguments);
             }
 
@@ -6302,7 +6334,7 @@ var FLV = function () {
                 }, _callee58, this, [[11, 21, 25, 33], [26,, 28, 32]]);
             }));
 
-            function mergeBlobs(_x77) {
+            function mergeBlobs(_x76) {
                 return _ref75.apply(this, arguments);
             }
 
@@ -6372,6 +6404,2219 @@ var MKVTransmuxer = function () {
 }();
 
 /***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+var _navigator = (typeof navigator === 'undefined' ? 'undefined' : _typeof(navigator)) === 'object' && navigator || { userAgent: 'chrome' };
+
+var _TextDecoder = typeof TextDecoder === 'function' && TextDecoder || function (_require$StringDecode) {
+    _inherits(_class, _require$StringDecode);
+
+    function _class() {
+        _classCallCheck(this, _class);
+
+        return _possibleConstructorReturn(this, (_class.__proto__ || Object.getPrototypeOf(_class)).apply(this, arguments));
+    }
+
+    _createClass(_class, [{
+        key: 'decode',
+
+        /**
+         * @param {ArrayBuffer} chunk 
+         * @returns {string}
+         */
+        value: function decode(chunk) {
+            return this.end(Buffer.from(chunk));
+        }
+    }]);
+
+    return _class;
+}(require('string_decoder').StringDecoder);
+
+/***
+ * The FLV demuxer is from flv.js
+ * 
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// import FLVDemuxer from 'flv.js/src/demux/flv-demuxer.js';
+// ..import Log from '../utils/logger.js';
+var Log = {
+    e: console.error.bind(console),
+    w: console.warn.bind(console),
+    i: console.log.bind(console),
+    v: console.log.bind(console)
+};
+
+// ..import AMF from './amf-parser.js';
+// ....import Log from '../utils/logger.js';
+// ....import decodeUTF8 from '../utils/utf8-conv.js';
+function checkContinuation(uint8array, start, checkLength) {
+    var array = uint8array;
+    if (start + checkLength < array.length) {
+        while (checkLength--) {
+            if ((array[++start] & 0xC0) !== 0x80) return false;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function decodeUTF8(uint8array) {
+    var out = [];
+    var input = uint8array;
+    var i = 0;
+    var length = uint8array.length;
+
+    while (i < length) {
+        if (input[i] < 0x80) {
+            out.push(String.fromCharCode(input[i]));
+            ++i;
+            continue;
+        } else if (input[i] < 0xC0) {
+            // fallthrough
+        } else if (input[i] < 0xE0) {
+            if (checkContinuation(input, i, 1)) {
+                var ucs4 = (input[i] & 0x1F) << 6 | input[i + 1] & 0x3F;
+                if (ucs4 >= 0x80) {
+                    out.push(String.fromCharCode(ucs4 & 0xFFFF));
+                    i += 2;
+                    continue;
+                }
+            }
+        } else if (input[i] < 0xF0) {
+            if (checkContinuation(input, i, 2)) {
+                var _ucs = (input[i] & 0xF) << 12 | (input[i + 1] & 0x3F) << 6 | input[i + 2] & 0x3F;
+                if (_ucs >= 0x800 && (_ucs & 0xF800) !== 0xD800) {
+                    out.push(String.fromCharCode(_ucs & 0xFFFF));
+                    i += 3;
+                    continue;
+                }
+            }
+        } else if (input[i] < 0xF8) {
+            if (checkContinuation(input, i, 3)) {
+                var _ucs2 = (input[i] & 0x7) << 18 | (input[i + 1] & 0x3F) << 12 | (input[i + 2] & 0x3F) << 6 | input[i + 3] & 0x3F;
+                if (_ucs2 > 0x10000 && _ucs2 < 0x110000) {
+                    _ucs2 -= 0x10000;
+                    out.push(String.fromCharCode(_ucs2 >>> 10 | 0xD800));
+                    out.push(String.fromCharCode(_ucs2 & 0x3FF | 0xDC00));
+                    i += 4;
+                    continue;
+                }
+            }
+        }
+        out.push(String.fromCharCode(0xFFFD));
+        ++i;
+    }
+
+    return out.join('');
+}
+
+// ....import {IllegalStateException} from '../utils/exception.js';
+
+var IllegalStateException = function (_Error) {
+    _inherits(IllegalStateException, _Error);
+
+    function IllegalStateException() {
+        _classCallCheck(this, IllegalStateException);
+
+        return _possibleConstructorReturn(this, (IllegalStateException.__proto__ || Object.getPrototypeOf(IllegalStateException)).apply(this, arguments));
+    }
+
+    return IllegalStateException;
+}(Error);
+
+var le = function () {
+    var buf = new ArrayBuffer(2);
+    new DataView(buf).setInt16(0, 256, true); // little-endian write
+    return new Int16Array(buf)[0] === 256; // platform-spec read, if equal then LE
+}();
+
+var AMF = function () {
+    function AMF() {
+        _classCallCheck(this, AMF);
+    }
+
+    _createClass(AMF, null, [{
+        key: 'parseScriptData',
+        value: function parseScriptData(arrayBuffer, dataOffset, dataSize) {
+            var data = {};
+
+            try {
+                var name = AMF.parseValue(arrayBuffer, dataOffset, dataSize);
+                var value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);
+
+                data[name.data] = value.data;
+            } catch (e) {
+                Log.e('AMF', e.toString());
+            }
+
+            return data;
+        }
+    }, {
+        key: 'parseObject',
+        value: function parseObject(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 3) {
+                throw new IllegalStateException('Data not enough when parse ScriptDataObject');
+            }
+            var name = AMF.parseString(arrayBuffer, dataOffset, dataSize);
+            var value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);
+            var isObjectEnd = value.objectEnd;
+
+            return {
+                data: {
+                    name: name.data,
+                    value: value.data
+                },
+                size: name.size + value.size,
+                objectEnd: isObjectEnd
+            };
+        }
+    }, {
+        key: 'parseVariable',
+        value: function parseVariable(arrayBuffer, dataOffset, dataSize) {
+            return AMF.parseObject(arrayBuffer, dataOffset, dataSize);
+        }
+    }, {
+        key: 'parseString',
+        value: function parseString(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 2) {
+                throw new IllegalStateException('Data not enough when parse String');
+            }
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+            var length = v.getUint16(0, !le);
+
+            var str = void 0;
+            if (length > 0) {
+                str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 2, length));
+            } else {
+                str = '';
+            }
+
+            return {
+                data: str,
+                size: 2 + length
+            };
+        }
+    }, {
+        key: 'parseLongString',
+        value: function parseLongString(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 4) {
+                throw new IllegalStateException('Data not enough when parse LongString');
+            }
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+            var length = v.getUint32(0, !le);
+
+            var str = void 0;
+            if (length > 0) {
+                str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 4, length));
+            } else {
+                str = '';
+            }
+
+            return {
+                data: str,
+                size: 4 + length
+            };
+        }
+    }, {
+        key: 'parseDate',
+        value: function parseDate(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 10) {
+                throw new IllegalStateException('Data size invalid when parse Date');
+            }
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+            var timestamp = v.getFloat64(0, !le);
+            var localTimeOffset = v.getInt16(8, !le);
+            timestamp += localTimeOffset * 60 * 1000; // get UTC time
+
+            return {
+                data: new Date(timestamp),
+                size: 8 + 2
+            };
+        }
+    }, {
+        key: 'parseValue',
+        value: function parseValue(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 1) {
+                throw new IllegalStateException('Data not enough when parse Value');
+            }
+
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+            var offset = 1;
+            var type = v.getUint8(0);
+            var value = void 0;
+            var objectEnd = false;
+
+            try {
+                switch (type) {
+                    case 0:
+                        // Number(Double) type
+                        value = v.getFloat64(1, !le);
+                        offset += 8;
+                        break;
+                    case 1:
+                        {
+                            // Boolean type
+                            var b = v.getUint8(1);
+                            value = b ? true : false;
+                            offset += 1;
+                            break;
+                        }
+                    case 2:
+                        {
+                            // String type
+                            var amfstr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);
+                            value = amfstr.data;
+                            offset += amfstr.size;
+                            break;
+                        }
+                    case 3:
+                        {
+                            // Object(s) type
+                            value = {};
+                            var terminal = 0; // workaround for malformed Objects which has missing ScriptDataObjectEnd
+                            if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {
+                                terminal = 3;
+                            }
+                            while (offset < dataSize - 4) {
+                                // 4 === type(UI8) + ScriptDataObjectEnd(UI24)
+                                var amfobj = AMF.parseObject(arrayBuffer, dataOffset + offset, dataSize - offset - terminal);
+                                if (amfobj.objectEnd) break;
+                                value[amfobj.data.name] = amfobj.data.value;
+                                offset += amfobj.size;
+                            }
+                            if (offset <= dataSize - 3) {
+                                var marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;
+                                if (marker === 9) {
+                                    offset += 3;
+                                }
+                            }
+                            break;
+                        }
+                    case 8:
+                        {
+                            // ECMA array type (Mixed array)
+                            value = {};
+                            offset += 4; // ECMAArrayLength(UI32)
+                            var _terminal = 0; // workaround for malformed MixedArrays which has missing ScriptDataObjectEnd
+                            if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {
+                                _terminal = 3;
+                            }
+                            while (offset < dataSize - 8) {
+                                // 8 === type(UI8) + ECMAArrayLength(UI32) + ScriptDataVariableEnd(UI24)
+                                var amfvar = AMF.parseVariable(arrayBuffer, dataOffset + offset, dataSize - offset - _terminal);
+                                if (amfvar.objectEnd) break;
+                                value[amfvar.data.name] = amfvar.data.value;
+                                offset += amfvar.size;
+                            }
+                            if (offset <= dataSize - 3) {
+                                var _marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;
+                                if (_marker === 9) {
+                                    offset += 3;
+                                }
+                            }
+                            break;
+                        }
+                    case 9:
+                        // ScriptDataObjectEnd
+                        value = undefined;
+                        offset = 1;
+                        objectEnd = true;
+                        break;
+                    case 10:
+                        {
+                            // Strict array type
+                            // ScriptDataValue[n]. NOTE: according to video_file_format_spec_v10_1.pdf
+                            value = [];
+                            var strictArrayLength = v.getUint32(1, !le);
+                            offset += 4;
+                            for (var i = 0; i < strictArrayLength; i++) {
+                                var val = AMF.parseValue(arrayBuffer, dataOffset + offset, dataSize - offset);
+                                value.push(val.data);
+                                offset += val.size;
+                            }
+                            break;
+                        }
+                    case 11:
+                        {
+                            // Date type
+                            var date = AMF.parseDate(arrayBuffer, dataOffset + 1, dataSize - 1);
+                            value = date.data;
+                            offset += date.size;
+                            break;
+                        }
+                    case 12:
+                        {
+                            // Long string type
+                            var amfLongStr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);
+                            value = amfLongStr.data;
+                            offset += amfLongStr.size;
+                            break;
+                        }
+                    default:
+                        // ignore and skip
+                        offset = dataSize;
+                        Log.w('AMF', 'Unsupported AMF value type ' + type);
+                }
+            } catch (e) {
+                Log.e('AMF', e.toString());
+            }
+
+            return {
+                data: value,
+                size: offset,
+                objectEnd: objectEnd
+            };
+        }
+    }]);
+
+    return AMF;
+}();
+
+// ..import SPSParser from './sps-parser.js';
+// ....import ExpGolomb from './exp-golomb.js';
+// ......import {IllegalStateException, InvalidArgumentException} from '../utils/exception.js';
+
+
+var InvalidArgumentException = function (_Error2) {
+    _inherits(InvalidArgumentException, _Error2);
+
+    function InvalidArgumentException() {
+        _classCallCheck(this, InvalidArgumentException);
+
+        return _possibleConstructorReturn(this, (InvalidArgumentException.__proto__ || Object.getPrototypeOf(InvalidArgumentException)).apply(this, arguments));
+    }
+
+    return InvalidArgumentException;
+}(Error);
+
+var ExpGolomb = function () {
+    function ExpGolomb(uint8array) {
+        _classCallCheck(this, ExpGolomb);
+
+        this.TAG = 'ExpGolomb';
+
+        this._buffer = uint8array;
+        this._buffer_index = 0;
+        this._total_bytes = uint8array.byteLength;
+        this._total_bits = uint8array.byteLength * 8;
+        this._current_word = 0;
+        this._current_word_bits_left = 0;
+    }
+
+    _createClass(ExpGolomb, [{
+        key: 'destroy',
+        value: function destroy() {
+            this._buffer = null;
+        }
+    }, {
+        key: '_fillCurrentWord',
+        value: function _fillCurrentWord() {
+            var buffer_bytes_left = this._total_bytes - this._buffer_index;
+            if (buffer_bytes_left <= 0) throw new IllegalStateException('ExpGolomb: _fillCurrentWord() but no bytes available');
+
+            var bytes_read = Math.min(4, buffer_bytes_left);
+            var word = new Uint8Array(4);
+            word.set(this._buffer.subarray(this._buffer_index, this._buffer_index + bytes_read));
+            this._current_word = new DataView(word.buffer).getUint32(0, false);
+
+            this._buffer_index += bytes_read;
+            this._current_word_bits_left = bytes_read * 8;
+        }
+    }, {
+        key: 'readBits',
+        value: function readBits(bits) {
+            if (bits > 32) throw new InvalidArgumentException('ExpGolomb: readBits() bits exceeded max 32bits!');
+
+            if (bits <= this._current_word_bits_left) {
+                var _result = this._current_word >>> 32 - bits;
+                this._current_word <<= bits;
+                this._current_word_bits_left -= bits;
+                return _result;
+            }
+
+            var result = this._current_word_bits_left ? this._current_word : 0;
+            result = result >>> 32 - this._current_word_bits_left;
+            var bits_need_left = bits - this._current_word_bits_left;
+
+            this._fillCurrentWord();
+            var bits_read_next = Math.min(bits_need_left, this._current_word_bits_left);
+
+            var result2 = this._current_word >>> 32 - bits_read_next;
+            this._current_word <<= bits_read_next;
+            this._current_word_bits_left -= bits_read_next;
+
+            result = result << bits_read_next | result2;
+            return result;
+        }
+    }, {
+        key: 'readBool',
+        value: function readBool() {
+            return this.readBits(1) === 1;
+        }
+    }, {
+        key: 'readByte',
+        value: function readByte() {
+            return this.readBits(8);
+        }
+    }, {
+        key: '_skipLeadingZero',
+        value: function _skipLeadingZero() {
+            var zero_count = void 0;
+            for (zero_count = 0; zero_count < this._current_word_bits_left; zero_count++) {
+                if (0 !== (this._current_word & 0x80000000 >>> zero_count)) {
+                    this._current_word <<= zero_count;
+                    this._current_word_bits_left -= zero_count;
+                    return zero_count;
+                }
+            }
+            this._fillCurrentWord();
+            return zero_count + this._skipLeadingZero();
+        }
+    }, {
+        key: 'readUEG',
+        value: function readUEG() {
+            // unsigned exponential golomb
+            var leading_zeros = this._skipLeadingZero();
+            return this.readBits(leading_zeros + 1) - 1;
+        }
+    }, {
+        key: 'readSEG',
+        value: function readSEG() {
+            // signed exponential golomb
+            var value = this.readUEG();
+            if (value & 0x01) {
+                return value + 1 >>> 1;
+            } else {
+                return -1 * (value >>> 1);
+            }
+        }
+    }]);
+
+    return ExpGolomb;
+}();
+
+var SPSParser = function () {
+    function SPSParser() {
+        _classCallCheck(this, SPSParser);
+    }
+
+    _createClass(SPSParser, null, [{
+        key: '_ebsp2rbsp',
+        value: function _ebsp2rbsp(uint8array) {
+            var src = uint8array;
+            var src_length = src.byteLength;
+            var dst = new Uint8Array(src_length);
+            var dst_idx = 0;
+
+            for (var i = 0; i < src_length; i++) {
+                if (i >= 2) {
+                    // Unescape: Skip 0x03 after 00 00
+                    if (src[i] === 0x03 && src[i - 1] === 0x00 && src[i - 2] === 0x00) {
+                        continue;
+                    }
+                }
+                dst[dst_idx] = src[i];
+                dst_idx++;
+            }
+
+            return new Uint8Array(dst.buffer, 0, dst_idx);
+        }
+    }, {
+        key: 'parseSPS',
+        value: function parseSPS(uint8array) {
+            var rbsp = SPSParser._ebsp2rbsp(uint8array);
+            var gb = new ExpGolomb(rbsp);
+
+            gb.readByte();
+            var profile_idc = gb.readByte(); // profile_idc
+            gb.readByte(); // constraint_set_flags[5] + reserved_zero[3]
+            var level_idc = gb.readByte(); // level_idc
+            gb.readUEG(); // seq_parameter_set_id
+
+            var profile_string = SPSParser.getProfileString(profile_idc);
+            var level_string = SPSParser.getLevelString(level_idc);
+            var chroma_format_idc = 1;
+            var chroma_format = 420;
+            var chroma_format_table = [0, 420, 422, 444];
+            var bit_depth = 8;
+
+            if (profile_idc === 100 || profile_idc === 110 || profile_idc === 122 || profile_idc === 244 || profile_idc === 44 || profile_idc === 83 || profile_idc === 86 || profile_idc === 118 || profile_idc === 128 || profile_idc === 138 || profile_idc === 144) {
+
+                chroma_format_idc = gb.readUEG();
+                if (chroma_format_idc === 3) {
+                    gb.readBits(1); // separate_colour_plane_flag
+                }
+                if (chroma_format_idc <= 3) {
+                    chroma_format = chroma_format_table[chroma_format_idc];
+                }
+
+                bit_depth = gb.readUEG() + 8; // bit_depth_luma_minus8
+                gb.readUEG(); // bit_depth_chroma_minus8
+                gb.readBits(1); // qpprime_y_zero_transform_bypass_flag
+                if (gb.readBool()) {
+                    // seq_scaling_matrix_present_flag
+                    var scaling_list_count = chroma_format_idc !== 3 ? 8 : 12;
+                    for (var i = 0; i < scaling_list_count; i++) {
+                        if (gb.readBool()) {
+                            // seq_scaling_list_present_flag
+                            if (i < 6) {
+                                SPSParser._skipScalingList(gb, 16);
+                            } else {
+                                SPSParser._skipScalingList(gb, 64);
+                            }
+                        }
+                    }
+                }
+            }
+            gb.readUEG(); // log2_max_frame_num_minus4
+            var pic_order_cnt_type = gb.readUEG();
+            if (pic_order_cnt_type === 0) {
+                gb.readUEG(); // log2_max_pic_order_cnt_lsb_minus_4
+            } else if (pic_order_cnt_type === 1) {
+                gb.readBits(1); // delta_pic_order_always_zero_flag
+                gb.readSEG(); // offset_for_non_ref_pic
+                gb.readSEG(); // offset_for_top_to_bottom_field
+                var num_ref_frames_in_pic_order_cnt_cycle = gb.readUEG();
+                for (var _i2 = 0; _i2 < num_ref_frames_in_pic_order_cnt_cycle; _i2++) {
+                    gb.readSEG(); // offset_for_ref_frame
+                }
+            }
+            gb.readUEG(); // max_num_ref_frames
+            gb.readBits(1); // gaps_in_frame_num_value_allowed_flag
+
+            var pic_width_in_mbs_minus1 = gb.readUEG();
+            var pic_height_in_map_units_minus1 = gb.readUEG();
+
+            var frame_mbs_only_flag = gb.readBits(1);
+            if (frame_mbs_only_flag === 0) {
+                gb.readBits(1); // mb_adaptive_frame_field_flag
+            }
+            gb.readBits(1); // direct_8x8_inference_flag
+
+            var frame_crop_left_offset = 0;
+            var frame_crop_right_offset = 0;
+            var frame_crop_top_offset = 0;
+            var frame_crop_bottom_offset = 0;
+
+            var frame_cropping_flag = gb.readBool();
+            if (frame_cropping_flag) {
+                frame_crop_left_offset = gb.readUEG();
+                frame_crop_right_offset = gb.readUEG();
+                frame_crop_top_offset = gb.readUEG();
+                frame_crop_bottom_offset = gb.readUEG();
+            }
+
+            var sar_width = 1,
+                sar_height = 1;
+            var fps = 0,
+                fps_fixed = true,
+                fps_num = 0,
+                fps_den = 0;
+
+            var vui_parameters_present_flag = gb.readBool();
+            if (vui_parameters_present_flag) {
+                if (gb.readBool()) {
+                    // aspect_ratio_info_present_flag
+                    var aspect_ratio_idc = gb.readByte();
+                    var sar_w_table = [1, 12, 10, 16, 40, 24, 20, 32, 80, 18, 15, 64, 160, 4, 3, 2];
+                    var sar_h_table = [1, 11, 11, 11, 33, 11, 11, 11, 33, 11, 11, 33, 99, 3, 2, 1];
+
+                    if (aspect_ratio_idc > 0 && aspect_ratio_idc < 16) {
+                        sar_width = sar_w_table[aspect_ratio_idc - 1];
+                        sar_height = sar_h_table[aspect_ratio_idc - 1];
+                    } else if (aspect_ratio_idc === 255) {
+                        sar_width = gb.readByte() << 8 | gb.readByte();
+                        sar_height = gb.readByte() << 8 | gb.readByte();
+                    }
+                }
+
+                if (gb.readBool()) {
+                    // overscan_info_present_flag
+                    gb.readBool(); // overscan_appropriate_flag
+                }
+                if (gb.readBool()) {
+                    // video_signal_type_present_flag
+                    gb.readBits(4); // video_format & video_full_range_flag
+                    if (gb.readBool()) {
+                        // colour_description_present_flag
+                        gb.readBits(24); // colour_primaries & transfer_characteristics & matrix_coefficients
+                    }
+                }
+                if (gb.readBool()) {
+                    // chroma_loc_info_present_flag
+                    gb.readUEG(); // chroma_sample_loc_type_top_field
+                    gb.readUEG(); // chroma_sample_loc_type_bottom_field
+                }
+                if (gb.readBool()) {
+                    // timing_info_present_flag
+                    var num_units_in_tick = gb.readBits(32);
+                    var time_scale = gb.readBits(32);
+                    fps_fixed = gb.readBool(); // fixed_frame_rate_flag
+
+                    fps_num = time_scale;
+                    fps_den = num_units_in_tick * 2;
+                    fps = fps_num / fps_den;
+                }
+            }
+
+            var sarScale = 1;
+            if (sar_width !== 1 || sar_height !== 1) {
+                sarScale = sar_width / sar_height;
+            }
+
+            var crop_unit_x = 0,
+                crop_unit_y = 0;
+            if (chroma_format_idc === 0) {
+                crop_unit_x = 1;
+                crop_unit_y = 2 - frame_mbs_only_flag;
+            } else {
+                var sub_wc = chroma_format_idc === 3 ? 1 : 2;
+                var sub_hc = chroma_format_idc === 1 ? 2 : 1;
+                crop_unit_x = sub_wc;
+                crop_unit_y = sub_hc * (2 - frame_mbs_only_flag);
+            }
+
+            var codec_width = (pic_width_in_mbs_minus1 + 1) * 16;
+            var codec_height = (2 - frame_mbs_only_flag) * ((pic_height_in_map_units_minus1 + 1) * 16);
+
+            codec_width -= (frame_crop_left_offset + frame_crop_right_offset) * crop_unit_x;
+            codec_height -= (frame_crop_top_offset + frame_crop_bottom_offset) * crop_unit_y;
+
+            var present_width = Math.ceil(codec_width * sarScale);
+
+            gb.destroy();
+            gb = null;
+
+            return {
+                profile_string: profile_string, // baseline, high, high10, ...
+                level_string: level_string, // 3, 3.1, 4, 4.1, 5, 5.1, ...
+                bit_depth: bit_depth, // 8bit, 10bit, ...
+                chroma_format: chroma_format, // 4:2:0, 4:2:2, ...
+                chroma_format_string: SPSParser.getChromaFormatString(chroma_format),
+
+                frame_rate: {
+                    fixed: fps_fixed,
+                    fps: fps,
+                    fps_den: fps_den,
+                    fps_num: fps_num
+                },
+
+                sar_ratio: {
+                    width: sar_width,
+                    height: sar_height
+                },
+
+                codec_size: {
+                    width: codec_width,
+                    height: codec_height
+                },
+
+                present_size: {
+                    width: present_width,
+                    height: codec_height
+                }
+            };
+        }
+    }, {
+        key: '_skipScalingList',
+        value: function _skipScalingList(gb, count) {
+            var last_scale = 8,
+                next_scale = 8;
+            var delta_scale = 0;
+            for (var i = 0; i < count; i++) {
+                if (next_scale !== 0) {
+                    delta_scale = gb.readSEG();
+                    next_scale = (last_scale + delta_scale + 256) % 256;
+                }
+                last_scale = next_scale === 0 ? last_scale : next_scale;
+            }
+        }
+    }, {
+        key: 'getProfileString',
+        value: function getProfileString(profile_idc) {
+            switch (profile_idc) {
+                case 66:
+                    return 'Baseline';
+                case 77:
+                    return 'Main';
+                case 88:
+                    return 'Extended';
+                case 100:
+                    return 'High';
+                case 110:
+                    return 'High10';
+                case 122:
+                    return 'High422';
+                case 244:
+                    return 'High444';
+                default:
+                    return 'Unknown';
+            }
+        }
+    }, {
+        key: 'getLevelString',
+        value: function getLevelString(level_idc) {
+            return (level_idc / 10).toFixed(1);
+        }
+    }, {
+        key: 'getChromaFormatString',
+        value: function getChromaFormatString(chroma) {
+            switch (chroma) {
+                case 420:
+                    return '4:2:0';
+                case 422:
+                    return '4:2:2';
+                case 444:
+                    return '4:4:4';
+                default:
+                    return 'Unknown';
+            }
+        }
+    }]);
+
+    return SPSParser;
+}();
+
+// ..import DemuxErrors from './demux-errors.js';
+
+
+var DemuxErrors = {
+    OK: 'OK',
+    FORMAT_ERROR: 'FormatError',
+    FORMAT_UNSUPPORTED: 'FormatUnsupported',
+    CODEC_UNSUPPORTED: 'CodecUnsupported'
+};
+
+// ..import MediaInfo from '../core/media-info.js';
+
+var MediaInfo = function () {
+    function MediaInfo() {
+        _classCallCheck(this, MediaInfo);
+
+        this.mimeType = null;
+        this.duration = null;
+
+        this.hasAudio = null;
+        this.hasVideo = null;
+        this.audioCodec = null;
+        this.videoCodec = null;
+        this.audioDataRate = null;
+        this.videoDataRate = null;
+
+        this.audioSampleRate = null;
+        this.audioChannelCount = null;
+
+        this.width = null;
+        this.height = null;
+        this.fps = null;
+        this.profile = null;
+        this.level = null;
+        this.chromaFormat = null;
+        this.sarNum = null;
+        this.sarDen = null;
+
+        this.metadata = null;
+        this.segments = null; // MediaInfo[]
+        this.segmentCount = null;
+        this.hasKeyframesIndex = null;
+        this.keyframesIndex = null;
+    }
+
+    _createClass(MediaInfo, [{
+        key: 'isComplete',
+        value: function isComplete() {
+            var audioInfoComplete = this.hasAudio === false || this.hasAudio === true && this.audioCodec != null && this.audioSampleRate != null && this.audioChannelCount != null;
+
+            var videoInfoComplete = this.hasVideo === false || this.hasVideo === true && this.videoCodec != null && this.width != null && this.height != null && this.fps != null && this.profile != null && this.level != null && this.chromaFormat != null && this.sarNum != null && this.sarDen != null;
+
+            // keyframesIndex may not be present
+            return this.mimeType != null && this.duration != null && this.metadata != null && this.hasKeyframesIndex != null && audioInfoComplete && videoInfoComplete;
+        }
+    }, {
+        key: 'isSeekable',
+        value: function isSeekable() {
+            return this.hasKeyframesIndex === true;
+        }
+    }, {
+        key: 'getNearestKeyframe',
+        value: function getNearestKeyframe(milliseconds) {
+            if (this.keyframesIndex == null) {
+                return null;
+            }
+
+            var table = this.keyframesIndex;
+            var keyframeIdx = this._search(table.times, milliseconds);
+
+            return {
+                index: keyframeIdx,
+                milliseconds: table.times[keyframeIdx],
+                fileposition: table.filepositions[keyframeIdx]
+            };
+        }
+    }, {
+        key: '_search',
+        value: function _search(list, value) {
+            var idx = 0;
+
+            var last = list.length - 1;
+            var mid = 0;
+            var lbound = 0;
+            var ubound = last;
+
+            if (value < list[0]) {
+                idx = 0;
+                lbound = ubound + 1; // skip search
+            }
+
+            while (lbound <= ubound) {
+                mid = lbound + Math.floor((ubound - lbound) / 2);
+                if (mid === last || value >= list[mid] && value < list[mid + 1]) {
+                    idx = mid;
+                    break;
+                } else if (list[mid] < value) {
+                    lbound = mid + 1;
+                } else {
+                    ubound = mid - 1;
+                }
+            }
+
+            return idx;
+        }
+    }]);
+
+    return MediaInfo;
+}();
+
+function ReadBig32(array, index) {
+    return array[index] << 24 | array[index + 1] << 16 | array[index + 2] << 8 | array[index + 3];
+}
+
+var FLVDemuxer = function () {
+
+    /**
+     * Create a new FLV demuxer
+     * @param {Object} probeData
+     * @param {boolean} probeData.match
+     * @param {number} probeData.consumed
+     * @param {number} probeData.dataOffset
+     * @param {boolean} probeData.hasAudioTrack
+     * @param {boolean} probeData.hasVideoTrack
+     */
+    function FLVDemuxer(probeData) {
+        _classCallCheck(this, FLVDemuxer);
+
+        this.TAG = 'FLVDemuxer';
+
+        this._onError = null;
+        this._onMediaInfo = null;
+        this._onTrackMetadata = null;
+        this._onDataAvailable = null;
+
+        this._dataOffset = probeData.dataOffset;
+        this._firstParse = true;
+        this._dispatch = false;
+
+        this._hasAudio = probeData.hasAudioTrack;
+        this._hasVideo = probeData.hasVideoTrack;
+
+        this._hasAudioFlagOverrided = false;
+        this._hasVideoFlagOverrided = false;
+
+        this._audioInitialMetadataDispatched = false;
+        this._videoInitialMetadataDispatched = false;
+
+        this._mediaInfo = new MediaInfo();
+        this._mediaInfo.hasAudio = this._hasAudio;
+        this._mediaInfo.hasVideo = this._hasVideo;
+        this._metadata = null;
+        this._audioMetadata = null;
+        this._videoMetadata = null;
+
+        this._naluLengthSize = 4;
+        this._timestampBase = 0; // int32, in milliseconds
+        this._timescale = 1000;
+        this._duration = 0; // int32, in milliseconds
+        this._durationOverrided = false;
+        this._referenceFrameRate = {
+            fixed: true,
+            fps: 23.976,
+            fps_num: 23976,
+            fps_den: 1000
+        };
+
+        this._flvSoundRateTable = [5500, 11025, 22050, 44100, 48000];
+
+        this._mpegSamplingRates = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+
+        this._mpegAudioV10SampleRateTable = [44100, 48000, 32000, 0];
+        this._mpegAudioV20SampleRateTable = [22050, 24000, 16000, 0];
+        this._mpegAudioV25SampleRateTable = [11025, 12000, 8000, 0];
+
+        this._mpegAudioL1BitRateTable = [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, -1];
+        this._mpegAudioL2BitRateTable = [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, -1];
+        this._mpegAudioL3BitRateTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, -1];
+
+        this._videoTrack = { type: 'video', id: 1, sequenceNumber: 0, samples: [], length: 0 };
+        this._audioTrack = { type: 'audio', id: 2, sequenceNumber: 0, samples: [], length: 0 };
+
+        this._littleEndian = function () {
+            var buf = new ArrayBuffer(2);
+            new DataView(buf).setInt16(0, 256, true); // little-endian write
+            return new Int16Array(buf)[0] === 256; // platform-spec read, if equal then LE
+        }();
+    }
+
+    _createClass(FLVDemuxer, [{
+        key: 'destroy',
+        value: function destroy() {
+            this._mediaInfo = null;
+            this._metadata = null;
+            this._audioMetadata = null;
+            this._videoMetadata = null;
+            this._videoTrack = null;
+            this._audioTrack = null;
+
+            this._onError = null;
+            this._onMediaInfo = null;
+            this._onTrackMetadata = null;
+            this._onDataAvailable = null;
+        }
+
+        /**
+         * Probe the flv data
+         * @param {ArrayBuffer} buffer
+         * @returns {Object} - probeData to be feed into constructor
+         */
+
+    }, {
+        key: 'bindDataSource',
+        value: function bindDataSource(loader) {
+            loader.onDataArrival = this.parseChunks.bind(this);
+            return this;
+        }
+
+        // prototype: function(type: string, metadata: any): void
+
+    }, {
+        key: 'resetMediaInfo',
+        value: function resetMediaInfo() {
+            this._mediaInfo = new MediaInfo();
+        }
+    }, {
+        key: '_isInitialMetadataDispatched',
+        value: function _isInitialMetadataDispatched() {
+            if (this._hasAudio && this._hasVideo) {
+                // both audio & video
+                return this._audioInitialMetadataDispatched && this._videoInitialMetadataDispatched;
+            }
+            if (this._hasAudio && !this._hasVideo) {
+                // audio only
+                return this._audioInitialMetadataDispatched;
+            }
+            if (!this._hasAudio && this._hasVideo) {
+                // video only
+                return this._videoInitialMetadataDispatched;
+            }
+            return false;
+        }
+
+        // function parseChunks(chunk: ArrayBuffer, byteStart: number): number;
+
+    }, {
+        key: 'parseChunks',
+        value: function parseChunks(chunk, byteStart) {
+            if (!this._onError || !this._onMediaInfo || !this._onTrackMetadata || !this._onDataAvailable) {
+                throw new IllegalStateException('Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified');
+            }
+
+            // qli5: fix nonzero byteStart
+            var offset = byteStart || 0;
+            var le = this._littleEndian;
+
+            if (byteStart === 0) {
+                // buffer with FLV header
+                if (chunk.byteLength > 13) {
+                    var probeData = FLVDemuxer.probe(chunk);
+                    offset = probeData.dataOffset;
+                } else {
+                    return 0;
+                }
+            }
+
+            if (this._firstParse) {
+                // handle PreviousTagSize0 before Tag1
+                this._firstParse = false;
+                if (offset !== this._dataOffset) {
+                    Log.w(this.TAG, 'First time parsing but chunk byteStart invalid!');
+                }
+
+                var v = new DataView(chunk, offset);
+                var prevTagSize0 = v.getUint32(0, !le);
+                if (prevTagSize0 !== 0) {
+                    Log.w(this.TAG, 'PrevTagSize0 !== 0 !!!');
+                }
+                offset += 4;
+            }
+
+            while (offset < chunk.byteLength) {
+                this._dispatch = true;
+
+                var _v = new DataView(chunk, offset);
+
+                if (offset + 11 + 4 > chunk.byteLength) {
+                    // data not enough for parsing an flv tag
+                    break;
+                }
+
+                var tagType = _v.getUint8(0);
+                var dataSize = _v.getUint32(0, !le) & 0x00FFFFFF;
+
+                if (offset + 11 + dataSize + 4 > chunk.byteLength) {
+                    // data not enough for parsing actual data body
+                    break;
+                }
+
+                if (tagType !== 8 && tagType !== 9 && tagType !== 18) {
+                    Log.w(this.TAG, 'Unsupported tag type ' + tagType + ', skipped');
+                    // consume the whole tag (skip it)
+                    offset += 11 + dataSize + 4;
+                    continue;
+                }
+
+                var ts2 = _v.getUint8(4);
+                var ts1 = _v.getUint8(5);
+                var ts0 = _v.getUint8(6);
+                var ts3 = _v.getUint8(7);
+
+                var timestamp = ts0 | ts1 << 8 | ts2 << 16 | ts3 << 24;
+
+                var streamId = _v.getUint32(7, !le) & 0x00FFFFFF;
+                if (streamId !== 0) {
+                    Log.w(this.TAG, 'Meet tag which has StreamID != 0!');
+                }
+
+                var dataOffset = offset + 11;
+
+                switch (tagType) {
+                    case 8:
+                        // Audio
+                        this._parseAudioData(chunk, dataOffset, dataSize, timestamp);
+                        break;
+                    case 9:
+                        // Video
+                        this._parseVideoData(chunk, dataOffset, dataSize, timestamp, byteStart + offset);
+                        break;
+                    case 18:
+                        // ScriptDataObject
+                        this._parseScriptData(chunk, dataOffset, dataSize);
+                        break;
+                }
+
+                var prevTagSize = _v.getUint32(11 + dataSize, !le);
+                if (prevTagSize !== 11 + dataSize) {
+                    Log.w(this.TAG, 'Invalid PrevTagSize ' + prevTagSize);
+                }
+
+                offset += 11 + dataSize + 4; // tagBody + dataSize + prevTagSize
+            }
+
+            // dispatch parsed frames to consumer (typically, the remuxer)
+            if (this._isInitialMetadataDispatched()) {
+                if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                    this._onDataAvailable(this._audioTrack, this._videoTrack);
+                }
+            }
+
+            return offset; // consumed bytes, just equals latest offset index
+        }
+    }, {
+        key: '_parseScriptData',
+        value: function _parseScriptData(arrayBuffer, dataOffset, dataSize) {
+            var scriptData = AMF.parseScriptData(arrayBuffer, dataOffset, dataSize);
+
+            if (scriptData.hasOwnProperty('onMetaData')) {
+                if (scriptData.onMetaData == null || _typeof(scriptData.onMetaData) !== 'object') {
+                    Log.w(this.TAG, 'Invalid onMetaData structure!');
+                    return;
+                }
+                if (this._metadata) {
+                    Log.w(this.TAG, 'Found another onMetaData tag!');
+                }
+                this._metadata = scriptData;
+                var onMetaData = this._metadata.onMetaData;
+
+                if (typeof onMetaData.hasAudio === 'boolean') {
+                    // hasAudio
+                    if (this._hasAudioFlagOverrided === false) {
+                        this._hasAudio = onMetaData.hasAudio;
+                        this._mediaInfo.hasAudio = this._hasAudio;
+                    }
+                }
+                if (typeof onMetaData.hasVideo === 'boolean') {
+                    // hasVideo
+                    if (this._hasVideoFlagOverrided === false) {
+                        this._hasVideo = onMetaData.hasVideo;
+                        this._mediaInfo.hasVideo = this._hasVideo;
+                    }
+                }
+                if (typeof onMetaData.audiodatarate === 'number') {
+                    // audiodatarate
+                    this._mediaInfo.audioDataRate = onMetaData.audiodatarate;
+                }
+                if (typeof onMetaData.videodatarate === 'number') {
+                    // videodatarate
+                    this._mediaInfo.videoDataRate = onMetaData.videodatarate;
+                }
+                if (typeof onMetaData.width === 'number') {
+                    // width
+                    this._mediaInfo.width = onMetaData.width;
+                }
+                if (typeof onMetaData.height === 'number') {
+                    // height
+                    this._mediaInfo.height = onMetaData.height;
+                }
+                if (typeof onMetaData.duration === 'number') {
+                    // duration
+                    if (!this._durationOverrided) {
+                        var duration = Math.floor(onMetaData.duration * this._timescale);
+                        this._duration = duration;
+                        this._mediaInfo.duration = duration;
+                    }
+                } else {
+                    this._mediaInfo.duration = 0;
+                }
+                if (typeof onMetaData.framerate === 'number') {
+                    // framerate
+                    var fps_num = Math.floor(onMetaData.framerate * 1000);
+                    if (fps_num > 0) {
+                        var fps = fps_num / 1000;
+                        this._referenceFrameRate.fixed = true;
+                        this._referenceFrameRate.fps = fps;
+                        this._referenceFrameRate.fps_num = fps_num;
+                        this._referenceFrameRate.fps_den = 1000;
+                        this._mediaInfo.fps = fps;
+                    }
+                }
+                if (_typeof(onMetaData.keyframes) === 'object') {
+                    // keyframes
+                    this._mediaInfo.hasKeyframesIndex = true;
+                    var keyframes = onMetaData.keyframes;
+                    this._mediaInfo.keyframesIndex = this._parseKeyframesIndex(keyframes);
+                    onMetaData.keyframes = null; // keyframes has been extracted, remove it
+                } else {
+                    this._mediaInfo.hasKeyframesIndex = false;
+                }
+                this._dispatch = false;
+                this._mediaInfo.metadata = onMetaData;
+                Log.v(this.TAG, 'Parsed onMetaData');
+                if (this._mediaInfo.isComplete()) {
+                    this._onMediaInfo(this._mediaInfo);
+                }
+            }
+        }
+    }, {
+        key: '_parseKeyframesIndex',
+        value: function _parseKeyframesIndex(keyframes) {
+            var times = [];
+            var filepositions = [];
+
+            // ignore first keyframe which is actually AVC Sequence Header (AVCDecoderConfigurationRecord)
+            for (var i = 1; i < keyframes.times.length; i++) {
+                var time = this._timestampBase + Math.floor(keyframes.times[i] * 1000);
+                times.push(time);
+                filepositions.push(keyframes.filepositions[i]);
+            }
+
+            return {
+                times: times,
+                filepositions: filepositions
+            };
+        }
+    }, {
+        key: '_parseAudioData',
+        value: function _parseAudioData(arrayBuffer, dataOffset, dataSize, tagTimestamp) {
+            if (dataSize <= 1) {
+                Log.w(this.TAG, 'Flv: Invalid audio packet, missing SoundData payload!');
+                return;
+            }
+
+            if (this._hasAudioFlagOverrided === true && this._hasAudio === false) {
+                // If hasAudio: false indicated explicitly in MediaDataSource,
+                // Ignore all the audio packets
+                return;
+            }
+
+            var le = this._littleEndian;
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+            var soundSpec = v.getUint8(0);
+
+            var soundFormat = soundSpec >>> 4;
+            if (soundFormat !== 2 && soundFormat !== 10) {
+                // MP3 or AAC
+                this._onError(DemuxErrors.CODEC_UNSUPPORTED, 'Flv: Unsupported audio codec idx: ' + soundFormat);
+                return;
+            }
+
+            var soundRate = 0;
+            var soundRateIndex = (soundSpec & 12) >>> 2;
+            if (soundRateIndex >= 0 && soundRateIndex <= 4) {
+                soundRate = this._flvSoundRateTable[soundRateIndex];
+            } else {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid audio sample rate idx: ' + soundRateIndex);
+                return;
+            }
+            var soundType = soundSpec & 1;
+
+            var meta = this._audioMetadata;
+            var track = this._audioTrack;
+
+            if (!meta) {
+                if (this._hasAudio === false && this._hasAudioFlagOverrided === false) {
+                    this._hasAudio = true;
+                    this._mediaInfo.hasAudio = true;
+                }
+
+                // initial metadata
+                meta = this._audioMetadata = {};
+                meta.type = 'audio';
+                meta.id = track.id;
+                meta.timescale = this._timescale;
+                meta.duration = this._duration;
+                meta.audioSampleRate = soundRate;
+                meta.channelCount = soundType === 0 ? 1 : 2;
+            }
+
+            if (soundFormat === 10) {
+                // AAC
+                var aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);
+
+                if (aacData == undefined) {
+                    return;
+                }
+
+                if (aacData.packetType === 0) {
+                    // AAC sequence header (AudioSpecificConfig)
+                    if (meta.config) {
+                        Log.w(this.TAG, 'Found another AudioSpecificConfig!');
+                    }
+                    var misc = aacData.data;
+                    meta.audioSampleRate = misc.samplingRate;
+                    meta.channelCount = misc.channelCount;
+                    meta.codec = misc.codec;
+                    meta.originalCodec = misc.originalCodec;
+                    meta.config = misc.config;
+                    // added by qli5
+                    meta.configRaw = misc.configRaw;
+                    // added by Xmader
+                    meta.audioObjectType = misc.audioObjectType;
+                    meta.samplingFrequencyIndex = misc.samplingIndex;
+                    meta.channelConfig = misc.channelCount;
+                    // The decode result of an aac sample is 1024 PCM samples
+                    meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
+                    Log.v(this.TAG, 'Parsed AudioSpecificConfig');
+
+                    if (this._isInitialMetadataDispatched()) {
+                        // Non-initial metadata, force dispatch (or flush) parsed frames to remuxer
+                        if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                            this._onDataAvailable(this._audioTrack, this._videoTrack);
+                        }
+                    } else {
+                        this._audioInitialMetadataDispatched = true;
+                    }
+                    // then notify new metadata
+                    this._dispatch = false;
+                    this._onTrackMetadata('audio', meta);
+
+                    var mi = this._mediaInfo;
+                    mi.audioCodec = meta.originalCodec;
+                    mi.audioSampleRate = meta.audioSampleRate;
+                    mi.audioChannelCount = meta.channelCount;
+                    if (mi.hasVideo) {
+                        if (mi.videoCodec != null) {
+                            mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + ',' + mi.audioCodec + '"';
+                        }
+                    } else {
+                        mi.mimeType = 'video/x-flv; codecs="' + mi.audioCodec + '"';
+                    }
+                    if (mi.isComplete()) {
+                        this._onMediaInfo(mi);
+                    }
+                } else if (aacData.packetType === 1) {
+                    // AAC raw frame data
+                    var dts = this._timestampBase + tagTimestamp;
+                    var aacSample = { unit: aacData.data, length: aacData.data.byteLength, dts: dts, pts: dts };
+                    track.samples.push(aacSample);
+                    track.length += aacData.data.length;
+                } else {
+                    Log.e(this.TAG, 'Flv: Unsupported AAC data type ' + aacData.packetType);
+                }
+            } else if (soundFormat === 2) {
+                // MP3
+                if (!meta.codec) {
+                    // We need metadata for mp3 audio track, extract info from frame header
+                    var _misc = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, true);
+                    if (_misc == undefined) {
+                        return;
+                    }
+                    meta.audioSampleRate = _misc.samplingRate;
+                    meta.channelCount = _misc.channelCount;
+                    meta.codec = _misc.codec;
+                    meta.originalCodec = _misc.originalCodec;
+                    // The decode result of an mp3 sample is 1152 PCM samples
+                    meta.refSampleDuration = 1152 / meta.audioSampleRate * meta.timescale;
+                    Log.v(this.TAG, 'Parsed MPEG Audio Frame Header');
+
+                    this._audioInitialMetadataDispatched = true;
+                    this._onTrackMetadata('audio', meta);
+
+                    var _mi = this._mediaInfo;
+                    _mi.audioCodec = meta.codec;
+                    _mi.audioSampleRate = meta.audioSampleRate;
+                    _mi.audioChannelCount = meta.channelCount;
+                    _mi.audioDataRate = _misc.bitRate;
+                    if (_mi.hasVideo) {
+                        if (_mi.videoCodec != null) {
+                            _mi.mimeType = 'video/x-flv; codecs="' + _mi.videoCodec + ',' + _mi.audioCodec + '"';
+                        }
+                    } else {
+                        _mi.mimeType = 'video/x-flv; codecs="' + _mi.audioCodec + '"';
+                    }
+                    if (_mi.isComplete()) {
+                        this._onMediaInfo(_mi);
+                    }
+                }
+
+                // This packet is always a valid audio packet, extract it
+                var data = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, false);
+                if (data == undefined) {
+                    return;
+                }
+                var _dts = this._timestampBase + tagTimestamp;
+                var mp3Sample = { unit: data, length: data.byteLength, dts: _dts, pts: _dts };
+                track.samples.push(mp3Sample);
+                track.length += data.length;
+            }
+        }
+    }, {
+        key: '_parseAACAudioData',
+        value: function _parseAACAudioData(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize <= 1) {
+                Log.w(this.TAG, 'Flv: Invalid AAC packet, missing AACPacketType or/and Data!');
+                return;
+            }
+
+            var result = {};
+            var array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+
+            result.packetType = array[0];
+
+            if (array[0] === 0) {
+                result.data = this._parseAACAudioSpecificConfig(arrayBuffer, dataOffset + 1, dataSize - 1);
+            } else {
+                result.data = array.subarray(1);
+            }
+
+            return result;
+        }
+    }, {
+        key: '_parseAACAudioSpecificConfig',
+        value: function _parseAACAudioSpecificConfig(arrayBuffer, dataOffset, dataSize) {
+            var array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+            var config = null;
+
+            /* Audio Object Type:
+               0: Null
+               1: AAC Main
+               2: AAC LC
+               3: AAC SSR (Scalable Sample Rate)
+               4: AAC LTP (Long Term Prediction)
+               5: HE-AAC / SBR (Spectral Band Replication)
+               6: AAC Scalable
+            */
+
+            var audioObjectType = 0;
+            var originalAudioObjectType = 0;
+            var samplingIndex = 0;
+            var extensionSamplingIndex = null;
+
+            // 5 bits
+            audioObjectType = originalAudioObjectType = array[0] >>> 3;
+            // 4 bits
+            samplingIndex = (array[0] & 0x07) << 1 | array[1] >>> 7;
+            if (samplingIndex < 0 || samplingIndex >= this._mpegSamplingRates.length) {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: AAC invalid sampling frequency index!');
+                return;
+            }
+
+            var samplingFrequence = this._mpegSamplingRates[samplingIndex];
+
+            // 4 bits
+            var channelConfig = (array[1] & 0x78) >>> 3;
+            if (channelConfig < 0 || channelConfig >= 8) {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: AAC invalid channel configuration');
+                return;
+            }
+
+            if (audioObjectType === 5) {
+                // HE-AAC?
+                // 4 bits
+                extensionSamplingIndex = (array[1] & 0x07) << 1 | array[2] >>> 7;
+            }
+
+            // workarounds for various browsers
+            var userAgent = _navigator.userAgent.toLowerCase();
+
+            if (userAgent.indexOf('firefox') !== -1) {
+                // firefox: use SBR (HE-AAC) if freq less than 24kHz
+                if (samplingIndex >= 6) {
+                    audioObjectType = 5;
+                    config = new Array(4);
+                    extensionSamplingIndex = samplingIndex - 3;
+                } else {
+                    // use LC-AAC
+                    audioObjectType = 2;
+                    config = new Array(2);
+                    extensionSamplingIndex = samplingIndex;
+                }
+            } else if (userAgent.indexOf('android') !== -1) {
+                // android: always use LC-AAC
+                audioObjectType = 2;
+                config = new Array(2);
+                extensionSamplingIndex = samplingIndex;
+            } else {
+                // for other browsers, e.g. chrome...
+                // Always use HE-AAC to make it easier to switch aac codec profile
+                audioObjectType = 5;
+                extensionSamplingIndex = samplingIndex;
+                config = new Array(4);
+
+                if (samplingIndex >= 6) {
+                    extensionSamplingIndex = samplingIndex - 3;
+                } else if (channelConfig === 1) {
+                    // Mono channel
+                    audioObjectType = 2;
+                    config = new Array(2);
+                    extensionSamplingIndex = samplingIndex;
+                }
+            }
+
+            config[0] = audioObjectType << 3;
+            config[0] |= (samplingIndex & 0x0F) >>> 1;
+            config[1] = (samplingIndex & 0x0F) << 7;
+            config[1] |= (channelConfig & 0x0F) << 3;
+            if (audioObjectType === 5) {
+                config[1] |= (extensionSamplingIndex & 0x0F) >>> 1;
+                config[2] = (extensionSamplingIndex & 0x01) << 7;
+                // extended audio object type: force to 2 (LC-AAC)
+                config[2] |= 2 << 2;
+                config[3] = 0;
+            }
+
+            return {
+                audioObjectType: audioObjectType, // audio_object_type,        added by Xmader
+                samplingIndex: samplingIndex, // sampling_frequency_index, added by Xmader
+                configRaw: array, //                           added by qli5
+                config: config,
+                samplingRate: samplingFrequence,
+                channelCount: channelConfig, // channel_config
+                codec: 'mp4a.40.' + audioObjectType,
+                originalCodec: 'mp4a.40.' + originalAudioObjectType
+            };
+        }
+    }, {
+        key: '_parseMP3AudioData',
+        value: function _parseMP3AudioData(arrayBuffer, dataOffset, dataSize, requestHeader) {
+            if (dataSize < 4) {
+                Log.w(this.TAG, 'Flv: Invalid MP3 packet, header missing!');
+                return;
+            }
+
+            var le = this._littleEndian;
+            var array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+            var result = null;
+
+            if (requestHeader) {
+                if (array[0] !== 0xFF) {
+                    return;
+                }
+                var ver = array[1] >>> 3 & 0x03;
+                var layer = (array[1] & 0x06) >> 1;
+
+                var bitrate_index = (array[2] & 0xF0) >>> 4;
+                var sampling_freq_index = (array[2] & 0x0C) >>> 2;
+
+                var channel_mode = array[3] >>> 6 & 0x03;
+                var channel_count = channel_mode !== 3 ? 2 : 1;
+
+                var sample_rate = 0;
+                var bit_rate = 0;
+
+                var codec = 'mp3';
+
+                switch (ver) {
+                    case 0:
+                        // MPEG 2.5
+                        sample_rate = this._mpegAudioV25SampleRateTable[sampling_freq_index];
+                        break;
+                    case 2:
+                        // MPEG 2
+                        sample_rate = this._mpegAudioV20SampleRateTable[sampling_freq_index];
+                        break;
+                    case 3:
+                        // MPEG 1
+                        sample_rate = this._mpegAudioV10SampleRateTable[sampling_freq_index];
+                        break;
+                }
+
+                switch (layer) {
+                    case 1:
+                        // Layer 3
+                        if (bitrate_index < this._mpegAudioL3BitRateTable.length) {
+                            bit_rate = this._mpegAudioL3BitRateTable[bitrate_index];
+                        }
+                        break;
+                    case 2:
+                        // Layer 2
+                        if (bitrate_index < this._mpegAudioL2BitRateTable.length) {
+                            bit_rate = this._mpegAudioL2BitRateTable[bitrate_index];
+                        }
+                        break;
+                    case 3:
+                        // Layer 1
+                        if (bitrate_index < this._mpegAudioL1BitRateTable.length) {
+                            bit_rate = this._mpegAudioL1BitRateTable[bitrate_index];
+                        }
+                        break;
+                }
+
+                result = {
+                    bitRate: bit_rate,
+                    samplingRate: sample_rate,
+                    channelCount: channel_count,
+                    codec: codec,
+                    originalCodec: codec
+                };
+            } else {
+                result = array;
+            }
+
+            return result;
+        }
+    }, {
+        key: '_parseVideoData',
+        value: function _parseVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition) {
+            if (dataSize <= 1) {
+                Log.w(this.TAG, 'Flv: Invalid video packet, missing VideoData payload!');
+                return;
+            }
+
+            if (this._hasVideoFlagOverrided === true && this._hasVideo === false) {
+                // If hasVideo: false indicated explicitly in MediaDataSource,
+                // Ignore all the video packets
+                return;
+            }
+
+            var spec = new Uint8Array(arrayBuffer, dataOffset, dataSize)[0];
+
+            var frameType = (spec & 240) >>> 4;
+            var codecId = spec & 15;
+
+            if (codecId !== 7) {
+                this._onError(DemuxErrors.CODEC_UNSUPPORTED, 'Flv: Unsupported codec in video frame: ' + codecId);
+                return;
+            }
+
+            this._parseAVCVideoPacket(arrayBuffer, dataOffset + 1, dataSize - 1, tagTimestamp, tagPosition, frameType);
+        }
+    }, {
+        key: '_parseAVCVideoPacket',
+        value: function _parseAVCVideoPacket(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType) {
+            if (dataSize < 4) {
+                Log.w(this.TAG, 'Flv: Invalid AVC packet, missing AVCPacketType or/and CompositionTime');
+                return;
+            }
+
+            var le = this._littleEndian;
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+            var packetType = v.getUint8(0);
+            var cts = v.getUint32(0, !le) & 0x00FFFFFF;
+
+            if (packetType === 0) {
+                // AVCDecoderConfigurationRecord
+                this._parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset + 4, dataSize - 4);
+            } else if (packetType === 1) {
+                // One or more Nalus
+                this._parseAVCVideoData(arrayBuffer, dataOffset + 4, dataSize - 4, tagTimestamp, tagPosition, frameType, cts);
+            } else if (packetType === 2) {
+                // empty, AVC end of sequence
+            } else {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid video packet type ' + packetType);
+                return;
+            }
+        }
+    }, {
+        key: '_parseAVCDecoderConfigurationRecord',
+        value: function _parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset, dataSize) {
+            if (dataSize < 7) {
+                Log.w(this.TAG, 'Flv: Invalid AVCDecoderConfigurationRecord, lack of data!');
+                return;
+            }
+
+            var meta = this._videoMetadata;
+            var track = this._videoTrack;
+            var le = this._littleEndian;
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+            if (!meta) {
+                if (this._hasVideo === false && this._hasVideoFlagOverrided === false) {
+                    this._hasVideo = true;
+                    this._mediaInfo.hasVideo = true;
+                }
+
+                meta = this._videoMetadata = {};
+                meta.type = 'video';
+                meta.id = track.id;
+                meta.timescale = this._timescale;
+                meta.duration = this._duration;
+            } else {
+                if (typeof meta.avcc !== 'undefined') {
+                    Log.w(this.TAG, 'Found another AVCDecoderConfigurationRecord!');
+                }
+            }
+
+            var version = v.getUint8(0); // configurationVersion
+            var avcProfile = v.getUint8(1); // avcProfileIndication
+            var profileCompatibility = v.getUint8(2); // profile_compatibility
+            var avcLevel = v.getUint8(3); // AVCLevelIndication
+
+            if (version !== 1 || avcProfile === 0) {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord');
+                return;
+            }
+
+            this._naluLengthSize = (v.getUint8(4) & 3) + 1; // lengthSizeMinusOne
+            if (this._naluLengthSize !== 3 && this._naluLengthSize !== 4) {
+                // holy shit!!!
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Strange NaluLengthSizeMinusOne: ' + (this._naluLengthSize - 1));
+                return;
+            }
+
+            var spsCount = v.getUint8(5) & 31; // numOfSequenceParameterSets
+            if (spsCount === 0) {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No SPS');
+                return;
+            } else if (spsCount > 1) {
+                Log.w(this.TAG, 'Flv: Strange AVCDecoderConfigurationRecord: SPS Count = ' + spsCount);
+            }
+
+            var offset = 6;
+
+            for (var i = 0; i < spsCount; i++) {
+                var len = v.getUint16(offset, !le); // sequenceParameterSetLength
+                offset += 2;
+
+                if (len === 0) {
+                    continue;
+                }
+
+                // Notice: Nalu without startcode header (00 00 00 01)
+                var sps = new Uint8Array(arrayBuffer, dataOffset + offset, len);
+                offset += len;
+
+                var config = SPSParser.parseSPS(sps);
+                if (i !== 0) {
+                    // ignore other sps's config
+                    continue;
+                }
+
+                meta.codecWidth = config.codec_size.width;
+                meta.codecHeight = config.codec_size.height;
+                meta.presentWidth = config.present_size.width;
+                meta.presentHeight = config.present_size.height;
+
+                meta.profile = config.profile_string;
+                meta.level = config.level_string;
+                meta.bitDepth = config.bit_depth;
+                meta.chromaFormat = config.chroma_format;
+                meta.sarRatio = config.sar_ratio;
+                meta.frameRate = config.frame_rate;
+
+                if (config.frame_rate.fixed === false || config.frame_rate.fps_num === 0 || config.frame_rate.fps_den === 0) {
+                    meta.frameRate = this._referenceFrameRate;
+                }
+
+                var fps_den = meta.frameRate.fps_den;
+                var fps_num = meta.frameRate.fps_num;
+                meta.refSampleDuration = meta.timescale * (fps_den / fps_num);
+
+                var codecArray = sps.subarray(1, 4);
+                var codecString = 'avc1.';
+                for (var j = 0; j < 3; j++) {
+                    var h = codecArray[j].toString(16);
+                    if (h.length < 2) {
+                        h = '0' + h;
+                    }
+                    codecString += h;
+                }
+                meta.codec = codecString;
+
+                var mi = this._mediaInfo;
+                mi.width = meta.codecWidth;
+                mi.height = meta.codecHeight;
+                mi.fps = meta.frameRate.fps;
+                mi.profile = meta.profile;
+                mi.level = meta.level;
+                mi.chromaFormat = config.chroma_format_string;
+                mi.sarNum = meta.sarRatio.width;
+                mi.sarDen = meta.sarRatio.height;
+                mi.videoCodec = codecString;
+
+                if (mi.hasAudio) {
+                    if (mi.audioCodec != null) {
+                        mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + ',' + mi.audioCodec + '"';
+                    }
+                } else {
+                    mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + '"';
+                }
+                if (mi.isComplete()) {
+                    this._onMediaInfo(mi);
+                }
+            }
+
+            var ppsCount = v.getUint8(offset); // numOfPictureParameterSets
+            if (ppsCount === 0) {
+                this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No PPS');
+                return;
+            } else if (ppsCount > 1) {
+                Log.w(this.TAG, 'Flv: Strange AVCDecoderConfigurationRecord: PPS Count = ' + ppsCount);
+            }
+
+            offset++;
+
+            for (var _i3 = 0; _i3 < ppsCount; _i3++) {
+                var _len3 = v.getUint16(offset, !le); // pictureParameterSetLength
+                offset += 2;
+
+                if (_len3 === 0) {
+                    continue;
+                }
+
+                // pps is useless for extracting video information
+                offset += _len3;
+            }
+
+            meta.avcc = new Uint8Array(dataSize);
+            meta.avcc.set(new Uint8Array(arrayBuffer, dataOffset, dataSize), 0);
+            Log.v(this.TAG, 'Parsed AVCDecoderConfigurationRecord');
+
+            if (this._isInitialMetadataDispatched()) {
+                // flush parsed frames
+                if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                    this._onDataAvailable(this._audioTrack, this._videoTrack);
+                }
+            } else {
+                this._videoInitialMetadataDispatched = true;
+            }
+            // notify new metadata
+            this._dispatch = false;
+            this._onTrackMetadata('video', meta);
+        }
+    }, {
+        key: '_parseAVCVideoData',
+        value: function _parseAVCVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType, cts) {
+            var le = this._littleEndian;
+            var v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+            var units = [],
+                length = 0;
+
+            var offset = 0;
+            var lengthSize = this._naluLengthSize;
+            var dts = this._timestampBase + tagTimestamp;
+            var keyframe = frameType === 1; // from FLV Frame Type constants
+            var refIdc = 1; // added by qli5
+
+            while (offset < dataSize) {
+                if (offset + 4 >= dataSize) {
+                    Log.w(this.TAG, 'Malformed Nalu near timestamp ' + dts + ', offset = ' + offset + ', dataSize = ' + dataSize);
+                    break; // data not enough for next Nalu
+                }
+                // Nalu with length-header (AVC1)
+                var naluSize = v.getUint32(offset, !le); // Big-Endian read
+                if (lengthSize === 3) {
+                    naluSize >>>= 8;
+                }
+                if (naluSize > dataSize - lengthSize) {
+                    Log.w(this.TAG, 'Malformed Nalus near timestamp ' + dts + ', NaluSize > DataSize!');
+                    return;
+                }
+
+                var unitType = v.getUint8(offset + lengthSize) & 0x1F;
+                // added by qli5
+                refIdc = v.getUint8(offset + lengthSize) & 0x60;
+
+                if (unitType === 5) {
+                    // IDR
+                    keyframe = true;
+                }
+
+                var data = new Uint8Array(arrayBuffer, dataOffset + offset, lengthSize + naluSize);
+                var unit = { type: unitType, data: data };
+                units.push(unit);
+                length += data.byteLength;
+
+                offset += lengthSize + naluSize;
+            }
+
+            if (units.length) {
+                var track = this._videoTrack;
+                var avcSample = {
+                    units: units,
+                    length: length,
+                    isKeyframe: keyframe,
+                    refIdc: refIdc,
+                    dts: dts,
+                    cts: cts,
+                    pts: dts + cts
+                };
+                if (keyframe) {
+                    avcSample.fileposition = tagPosition;
+                }
+                track.samples.push(avcSample);
+                track.length += length;
+            }
+        }
+    }, {
+        key: 'onTrackMetadata',
+        get: function get() {
+            return this._onTrackMetadata;
+        },
+        set: function set(callback) {
+            this._onTrackMetadata = callback;
+        }
+
+        // prototype: function(mediaInfo: MediaInfo): void
+
+    }, {
+        key: 'onMediaInfo',
+        get: function get() {
+            return this._onMediaInfo;
+        },
+        set: function set(callback) {
+            this._onMediaInfo = callback;
+        }
+
+        // prototype: function(type: number, info: string): void
+
+    }, {
+        key: 'onError',
+        get: function get() {
+            return this._onError;
+        },
+        set: function set(callback) {
+            this._onError = callback;
+        }
+
+        // prototype: function(videoTrack: any, audioTrack: any): void
+
+    }, {
+        key: 'onDataAvailable',
+        get: function get() {
+            return this._onDataAvailable;
+        },
+        set: function set(callback) {
+            this._onDataAvailable = callback;
+        }
+
+        // timestamp base for output samples, must be in milliseconds
+
+    }, {
+        key: 'timestampBase',
+        get: function get() {
+            return this._timestampBase;
+        },
+        set: function set(base) {
+            this._timestampBase = base;
+        }
+    }, {
+        key: 'overridedDuration',
+        get: function get() {
+            return this._duration;
+        }
+
+        // Force-override media duration. Must be in milliseconds, int32
+        ,
+        set: function set(duration) {
+            this._durationOverrided = true;
+            this._duration = duration;
+            this._mediaInfo.duration = duration;
+        }
+
+        // Force-override audio track present flag, boolean
+
+    }, {
+        key: 'overridedHasAudio',
+        set: function set(hasAudio) {
+            this._hasAudioFlagOverrided = true;
+            this._hasAudio = hasAudio;
+            this._mediaInfo.hasAudio = hasAudio;
+        }
+
+        // Force-override video track present flag, boolean
+
+    }, {
+        key: 'overridedHasVideo',
+        set: function set(hasVideo) {
+            this._hasVideoFlagOverrided = true;
+            this._hasVideo = hasVideo;
+            this._mediaInfo.hasVideo = hasVideo;
+        }
+    }], [{
+        key: 'probe',
+        value: function probe(buffer) {
+            var data = new Uint8Array(buffer);
+            var mismatch = { match: false };
+
+            if (data[0] !== 0x46 || data[1] !== 0x4C || data[2] !== 0x56 || data[3] !== 0x01) {
+                return mismatch;
+            }
+
+            var hasAudio = (data[4] & 4) >>> 2 !== 0;
+            var hasVideo = (data[4] & 1) !== 0;
+
+            var offset = ReadBig32(data, 5);
+
+            if (offset < 9) {
+                return mismatch;
+            }
+
+            return {
+                match: true,
+                consumed: offset,
+                dataOffset: offset,
+                hasAudioTrack: hasAudio,
+                hasVideoTrack: hasVideo
+            };
+        }
+    }]);
+
+    return FLVDemuxer;
+}();
+
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * 计算adts头部
+ * @see https://blog.jianchihu.net/flv-aac-add-adtsheader.html
+ * @typedef {Object} AdtsHeadersInit
+ * @property {number} audioObjectType
+ * @property {number} samplingFrequencyIndex
+ * @property {number} channelConfig
+ * @property {number} adtsLen
+ * @param {AdtsHeadersInit} init 
+ */
+
+
+var getAdtsHeaders = function getAdtsHeaders(init) {
+    var audioObjectType = init.audioObjectType,
+        samplingFrequencyIndex = init.samplingFrequencyIndex,
+        channelConfig = init.channelConfig,
+        adtsLen = init.adtsLen;
+
+    var headers = new Uint8Array(7);
+
+    headers[0] = 0xff; // syncword:0xfff                           高8bits
+    headers[1] = 0xf0; // syncword:0xfff                           低4bits
+    headers[1] |= 0 << 3; // MPEG Version:0 for MPEG-4,1 for MPEG-2   1bit
+    headers[1] |= 0 << 1; // Layer:0                                  2bits 
+    headers[1] |= 1; // protection absent:1                      1bit
+
+    headers[2] = audioObjectType - 1 << 6; // profile:audio_object_type - 1                      2bits
+    headers[2] |= (samplingFrequencyIndex & 0x0f) << 2; // sampling frequency index:sampling_frequency_index  4bits 
+    headers[2] |= 0 << 1; // private bit:0                                      1bit
+    headers[2] |= (channelConfig & 0x04) >> 2; // channel configuration:channel_config               高1bit
+
+    headers[3] = (channelConfig & 0x03) << 6; // channel configuration：channel_config     低2bits
+    headers[3] |= 0 << 5; // original：0                               1bit
+    headers[3] |= 0 << 4; // home：0                                   1bit
+    headers[3] |= 0 << 3; // copyright id bit：0                       1bit  
+    headers[3] |= 0 << 2; // copyright id start：0                     1bit
+
+    headers[3] |= (adtsLen & 0x1800) >> 11; // frame length：value    高2bits
+    headers[4] = (adtsLen & 0x7f8) >> 3; // frame length：value    中间8bits 
+    headers[5] = (adtsLen & 0x7) << 5; // frame length：value    低3bits
+    headers[5] |= 0x1f; // buffer fullness：0x7ff 高5bits 
+    headers[6] = 0xfc;
+
+    return headers;
+};
+
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * Demux FLV into H264 + AAC stream into line stream then
+ * remux it into a AAC file.
+ * @param {Blob|Buffer|ArrayBuffer|string} flv 
+ */
+var FLV2AAC = function () {
+    var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(flv) {
+        var flvArrayBuffer, flvProbeData, flvDemuxer, aac, metadata, finalOffset, _metadata, audioObjectType, samplingFrequencyIndex, channelConfig, output;
+
+        return regeneratorRuntime.wrap(function _callee59$(_context61) {
+            while (1) {
+                switch (_context61.prev = _context61.next) {
+                    case 0:
+                        _context61.next = 2;
+                        return new Promise(function (r, j) {
+                            if (typeof Blob != "undefined" && flv instanceof Blob) {
+                                var reader = new FileReader();
+                                reader.onload = function () {
+                                    /** @type {ArrayBuffer} */
+                                    // @ts-ignore
+                                    var result = reader.result;
+                                    r(result);
+                                };
+                                reader.onerror = j;
+                                reader.readAsArrayBuffer(flv);
+                            } else if (typeof Buffer != "undefined" && flv instanceof Buffer) {
+                                r(new Uint8Array(flv).buffer);
+                            } else if (flv instanceof ArrayBuffer) {
+                                r(flv);
+                            } else if (typeof flv == 'string') {
+                                var req = new XMLHttpRequest();
+                                req.responseType = "arraybuffer";
+                                req.onload = function () {
+                                    return r(req.response);
+                                };
+                                req.onerror = j;
+                                req.open('get', flv);
+                                req.send();
+                            } else {
+                                j(new TypeError("@type {Blob|Buffer|ArrayBuffer} flv"));
+                            }
+                        });
+
+                    case 2:
+                        flvArrayBuffer = _context61.sent;
+                        flvProbeData = FLVDemuxer.probe(flvArrayBuffer);
+                        flvDemuxer = new FLVDemuxer(flvProbeData);
+
+                        // 只解析音频
+
+                        flvDemuxer.overridedHasVideo = false;
+
+                        /**
+                         * @typedef {Object} Sample
+                         * @property {Uint8Array} unit
+                         * @property {number} length
+                         * @property {number} dts
+                         * @property {number} pts
+                         */
+
+                        /** @type {{ type: "audio"; id: number; sequenceNumber: number; length: number; samples: Sample[]; }} */
+                        aac = null;
+                        metadata = null;
+
+
+                        flvDemuxer.onTrackMetadata = function (type, _metaData) {
+                            if (type == "audio") {
+                                metadata = _metaData;
+                            }
+                        };
+
+                        flvDemuxer.onMediaInfo = function () {};
+
+                        flvDemuxer.onError = function (e) {
+                            throw new Error(e);
+                        };
+
+                        flvDemuxer.onDataAvailable = function () {
+                            for (var _len4 = arguments.length, args = Array(_len4), _key3 = 0; _key3 < _len4; _key3++) {
+                                args[_key3] = arguments[_key3];
+                            }
+
+                            args.forEach(function (data) {
+                                if (data.type == "audio") {
+                                    aac = data;
+                                }
+                            });
+                        };
+
+                        finalOffset = flvDemuxer.parseChunks(flvArrayBuffer, flvProbeData.dataOffset);
+
+                        if (!(finalOffset != flvArrayBuffer.byteLength)) {
+                            _context61.next = 15;
+                            break;
+                        }
+
+                        throw new Error("FLVDemuxer: unexpected EOF");
+
+                    case 15:
+                        _metadata = metadata, audioObjectType = _metadata.audioObjectType, samplingFrequencyIndex = _metadata.samplingFrequencyIndex, channelConfig = _metadata.channelCount;
+
+                        /** @type {number[]} */
+
+                        output = [];
+
+
+                        aac.samples.forEach(function (sample) {
+                            var headers = getAdtsHeaders({
+                                audioObjectType: audioObjectType,
+                                samplingFrequencyIndex: samplingFrequencyIndex,
+                                channelConfig: channelConfig,
+                                adtsLen: sample.length + 7
+                            });
+                            output.push.apply(output, _toConsumableArray(headers).concat(_toConsumableArray(sample.unit)));
+                        });
+
+                        return _context61.abrupt('return', new Uint8Array(output));
+
+                    case 19:
+                    case 'end':
+                        return _context61.stop();
+                }
+            }
+        }, _callee59, undefined);
+    }));
+
+    return function FLV2AAC(_x77) {
+        return _ref76.apply(this, arguments);
+    };
+}();
+
+/***
  * Copyright (C) 2018 Xmader. All Rights Reserved.
  * 
  * @author Xmader
@@ -6387,12 +8632,12 @@ var WebWorker = function (_Worker) {
     function WebWorker(stringUrl) {
         _classCallCheck(this, WebWorker);
 
-        var _this43 = _possibleConstructorReturn(this, (WebWorker.__proto__ || Object.getPrototypeOf(WebWorker)).call(this, stringUrl));
+        var _this46 = _possibleConstructorReturn(this, (WebWorker.__proto__ || Object.getPrototypeOf(WebWorker)).call(this, stringUrl));
 
-        _this43.importFnAsAScript(TwentyFourDataView);
-        _this43.importFnAsAScript(FLVTag);
-        _this43.importFnAsAScript(FLV);
-        return _this43;
+        _this46.importFnAsAScript(TwentyFourDataView);
+        _this46.importFnAsAScript(FLVTag);
+        _this46.importFnAsAScript(FLV);
+        return _this46;
     }
 
     /**
@@ -6404,22 +8649,22 @@ var WebWorker = function (_Worker) {
     _createClass(WebWorker, [{
         key: 'getReturnValue',
         value: function () {
-            var _ref76 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee59(method, data) {
-                var _this44 = this;
+            var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60(method, data) {
+                var _this47 = this;
 
                 var callbackNum;
-                return regeneratorRuntime.wrap(function _callee59$(_context61) {
+                return regeneratorRuntime.wrap(function _callee60$(_context62) {
                     while (1) {
-                        switch (_context61.prev = _context61.next) {
+                        switch (_context62.prev = _context62.next) {
                             case 0:
                                 callbackNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
 
 
                                 this.postMessage([method, data, callbackNum]);
 
-                                _context61.next = 4;
+                                _context62.next = 4;
                                 return new Promise(function (resolve, reject) {
-                                    _this44.addEventListener("message", function (e) {
+                                    _this47.addEventListener("message", function (e) {
                                         var _e$data = _slicedToArray(e.data, 3),
                                             _method = _e$data[0],
                                             incomingData = _e$data[1],
@@ -6437,49 +8682,9 @@ var WebWorker = function (_Worker) {
                                 });
 
                             case 4:
-                                return _context61.abrupt('return', _context61.sent);
+                                return _context62.abrupt('return', _context62.sent);
 
                             case 5:
-                            case 'end':
-                                return _context61.stop();
-                        }
-                    }
-                }, _callee59, this);
-            }));
-
-            function getReturnValue(_x78, _x79) {
-                return _ref76.apply(this, arguments);
-            }
-
-            return getReturnValue;
-        }()
-    }, {
-        key: 'registerAllMethods',
-        value: function () {
-            var _ref77 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee60() {
-                var _this45 = this;
-
-                var methods;
-                return regeneratorRuntime.wrap(function _callee60$(_context62) {
-                    while (1) {
-                        switch (_context62.prev = _context62.next) {
-                            case 0:
-                                _context62.next = 2;
-                                return this.getReturnValue("getAllMethods");
-
-                            case 2:
-                                methods = _context62.sent;
-
-
-                                methods.forEach(function (method) {
-                                    Object.defineProperty(_this45, method, {
-                                        value: function value(arg) {
-                                            return _this45.getReturnValue(method, arg);
-                                        }
-                                    });
-                                });
-
-                            case 4:
                             case 'end':
                                 return _context62.stop();
                         }
@@ -6487,8 +8692,48 @@ var WebWorker = function (_Worker) {
                 }, _callee60, this);
             }));
 
-            function registerAllMethods() {
+            function getReturnValue(_x78, _x79) {
                 return _ref77.apply(this, arguments);
+            }
+
+            return getReturnValue;
+        }()
+    }, {
+        key: 'registerAllMethods',
+        value: function () {
+            var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61() {
+                var _this48 = this;
+
+                var methods;
+                return regeneratorRuntime.wrap(function _callee61$(_context63) {
+                    while (1) {
+                        switch (_context63.prev = _context63.next) {
+                            case 0:
+                                _context63.next = 2;
+                                return this.getReturnValue("getAllMethods");
+
+                            case 2:
+                                methods = _context63.sent;
+
+
+                                methods.forEach(function (method) {
+                                    Object.defineProperty(_this48, method, {
+                                        value: function value(arg) {
+                                            return _this48.getReturnValue(method, arg);
+                                        }
+                                    });
+                                });
+
+                            case 4:
+                            case 'end':
+                                return _context63.stop();
+                        }
+                    }
+                }, _callee61, this);
+            }));
+
+            function registerAllMethods() {
+                return _ref78.apply(this, arguments);
             }
 
             return registerAllMethods;
@@ -6532,27 +8777,27 @@ var BatchDownloadWorkerFn = function BatchDownloadWorkerFn() {
         _createClass(BatchDownloadWorker, [{
             key: 'mergeFLVFiles',
             value: function () {
-                var _ref78 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee61(files) {
-                    return regeneratorRuntime.wrap(function _callee61$(_context63) {
+                var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(files) {
+                    return regeneratorRuntime.wrap(function _callee62$(_context64) {
                         while (1) {
-                            switch (_context63.prev = _context63.next) {
+                            switch (_context64.prev = _context64.next) {
                                 case 0:
-                                    _context63.next = 2;
+                                    _context64.next = 2;
                                     return FLV.mergeBlobs(files);
 
                                 case 2:
-                                    return _context63.abrupt('return', _context63.sent);
+                                    return _context64.abrupt('return', _context64.sent);
 
                                 case 3:
                                 case 'end':
-                                    return _context63.stop();
+                                    return _context64.stop();
                             }
                         }
-                    }, _callee61, this);
+                    }, _callee62, this);
                 }));
 
                 function mergeFLVFiles(_x80) {
-                    return _ref78.apply(this, arguments);
+                    return _ref79.apply(this, arguments);
                 }
 
                 return mergeFLVFiles;
@@ -6591,44 +8836,44 @@ var BatchDownloadWorkerFn = function BatchDownloadWorkerFn() {
     var worker = new BatchDownloadWorker();
 
     onmessage = function () {
-        var _ref79 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee62(e) {
+        var _ref80 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63(e) {
             var _e$data2, method, incomingData, callbackNum, returnValue;
 
-            return regeneratorRuntime.wrap(function _callee62$(_context64) {
+            return regeneratorRuntime.wrap(function _callee63$(_context65) {
                 while (1) {
-                    switch (_context64.prev = _context64.next) {
+                    switch (_context65.prev = _context65.next) {
                         case 0:
                             _e$data2 = _slicedToArray(e.data, 3), method = _e$data2[0], incomingData = _e$data2[1], callbackNum = _e$data2[2];
-                            _context64.prev = 1;
-                            _context64.next = 4;
+                            _context65.prev = 1;
+                            _context65.next = 4;
                             return worker[method](incomingData);
 
                         case 4:
-                            returnValue = _context64.sent;
+                            returnValue = _context65.sent;
 
                             if (returnValue) {
                                 postMessage([method, returnValue, callbackNum]);
                             }
-                            _context64.next = 12;
+                            _context65.next = 12;
                             break;
 
                         case 8:
-                            _context64.prev = 8;
-                            _context64.t0 = _context64['catch'](1);
+                            _context65.prev = 8;
+                            _context65.t0 = _context65['catch'](1);
 
-                            postMessage(["error", _context64.t0.message, callbackNum]);
-                            throw _context64.t0;
+                            postMessage(["error", _context65.t0.message, callbackNum]);
+                            throw _context65.t0;
 
                         case 12:
                         case 'end':
-                            return _context64.stop();
+                            return _context65.stop();
                     }
                 }
-            }, _callee62, undefined, [[1, 8]]);
+            }, _callee63, undefined, [[1, 8]]);
         }));
 
         return function onmessage(_x81) {
-            return _ref79.apply(this, arguments);
+            return _ref80.apply(this, arguments);
         };
     }();
 };
@@ -6645,7 +8890,7 @@ var BatchDownloadWorkerFn = function BatchDownloadWorkerFn() {
 
 var UI = function () {
     function UI(twin) {
-        var _this46 = this;
+        var _this49 = this;
 
         var option = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : UI.optionDefaults;
 
@@ -6662,16 +8907,16 @@ var UI = function () {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(function () {
-            Object.values(_this46.dom).forEach(function (e) {
+            Object.values(_this49.dom).forEach(function (e) {
                 return e.remove();
             });
-            _this46.dom = {};
+            _this49.dom = {};
         });
         this.cidSessionDestroy.addCallback(function () {
-            Object.values(_this46.cidSessionDom).forEach(function (e) {
+            Object.values(_this49.cidSessionDom).forEach(function (e) {
                 return e.remove();
             });
-            _this46.cidSessionDom = {};
+            _this49.cidSessionDom = {};
         });
 
         this.styleClearance();
@@ -6703,7 +8948,7 @@ var UI = function () {
     }, {
         key: 'buildTitle',
         value: function buildTitle() {
-            var _this47 = this;
+            var _this50 = this;
 
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
 
@@ -6719,44 +8964,44 @@ var UI = function () {
             // 1.1 build videoA
             assA.style.fontSize = fontSize;
             assA.textContent = '\u5F39\u5E55ASS';
-            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee63() {
+            videoA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
                 var video_format;
-                return regeneratorRuntime.wrap(function _callee63$(_context65) {
+                return regeneratorRuntime.wrap(function _callee64$(_context66) {
                     while (1) {
-                        switch (_context65.prev = _context65.next) {
+                        switch (_context66.prev = _context66.next) {
                             case 0:
                                 // 1.1.1 give processing hint
                                 videoA.textContent = '正在FLV';
                                 videoA.onmouseover = null;
 
                                 // 1.1.2 query video
-                                _context65.next = 4;
+                                _context66.next = 4;
                                 return monkey.queryInfo('video');
 
                             case 4:
-                                video_format = _context65.sent;
+                                video_format = _context66.sent;
 
 
                                 // 1.1.3 display video
                                 videoA.textContent = '\u89C6\u9891' + (video_format ? video_format.toUpperCase() : 'FLV');
                                 videoA.onclick = function () {
-                                    return _this47.displayFLVDiv();
+                                    return _this50.displayFLVDiv();
                                 };
 
                             case 7:
                             case 'end':
-                                return _context65.stop();
+                                return _context66.stop();
                         }
                     }
-                }, _callee63, _this47);
+                }, _callee64, _this50);
             }));
 
             // 1.2 build assA
-            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee64() {
+            assA.onmouseover = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65() {
                 var clicked;
-                return regeneratorRuntime.wrap(function _callee64$(_context66) {
+                return regeneratorRuntime.wrap(function _callee65$(_context67) {
                     while (1) {
-                        switch (_context66.prev = _context66.next) {
+                        switch (_context67.prev = _context67.next) {
                             case 0:
                                 // 1.2.1 give processing hint
                                 assA.textContent = '正在ASS';
@@ -6769,11 +9014,11 @@ var UI = function () {
                                 }, { once: true });
 
                                 // 1.2.2 query flv
-                                _context66.next = 6;
+                                _context67.next = 6;
                                 return monkey.queryInfo('ass');
 
                             case 6:
-                                assA.href = _context66.sent;
+                                assA.href = _context67.sent;
 
 
                                 // 1.2.3 response mp4
@@ -6790,10 +9035,10 @@ var UI = function () {
 
                             case 10:
                             case 'end':
-                                return _context66.stop();
+                                return _context67.stop();
                         }
                     }
-                }, _callee64, _this47);
+                }, _callee65, _this50);
             }));
 
             // 2. save to cache
@@ -6803,9 +9048,9 @@ var UI = function () {
     }, {
         key: 'appendTitle',
         value: function appendTitle() {
-            var _ref82 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
-                videoA = _ref82.videoA,
-                assA = _ref82.assA;
+            var _ref83 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.cidSessionDom,
+                videoA = _ref83.videoA,
+                assA = _ref83.assA;
 
             // 1. build div
             var div = document.createElement('div');
@@ -6832,9 +9077,9 @@ var UI = function () {
         }
     }, {
         key: 'appendShortVideoTitle',
-        value: function appendShortVideoTitle(_ref83) {
-            var video_playurl = _ref83.video_playurl,
-                cover_img = _ref83.cover_img;
+        value: function appendShortVideoTitle(_ref84) {
+            var video_playurl = _ref84.video_playurl,
+                cover_img = _ref84.cover_img;
 
             var fontSize = '15px';
             var marginRight = '15px';
@@ -6870,7 +9115,7 @@ var UI = function () {
             var monkey = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.monkey;
             var flvs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : monkey.flvs;
 
-            var _this48 = this;
+            var _this51 = this;
 
             var cache = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : monkey.cache;
             var format = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : monkey.video_format;
@@ -6890,7 +9135,7 @@ var UI = function () {
                     var a2 = document.createElement('a');
 
                     a2.onclick = function (e) {
-                        return _this48.downloadFLV({
+                        return _this51.downloadFLV({
                             monkey: monkey,
                             index: index,
                             a: e.target,
@@ -6951,7 +9196,7 @@ var UI = function () {
                 var a1 = document.createElement('a');
 
                 a1.onclick = function (e) {
-                    return format != "mp4" ? _this48.downloadAllFLVs({
+                    return format != "mp4" ? _this51.downloadAllFLVs({
                         a: e.target,
                         monkey: monkey,
                         table: table
@@ -6994,7 +9239,7 @@ var UI = function () {
                 var tr1 = document.createElement('tr');
                 var td1 = document.createElement('td');
                 td1.colSpan = '3';
-                _this48.displayQuota.bind(_this48)(td1);
+                _this51.displayQuota.bind(_this51)(td1);
                 tr1.append(td1);
                 return tr1;
             }()]));
@@ -7006,11 +9251,11 @@ var UI = function () {
                 return UI.allowDrag(e);
             };
             div.ondrop = function () {
-                var _ref84 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee65(e) {
+                var _ref85 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66(e) {
                     var files, outputName, href;
-                    return regeneratorRuntime.wrap(function _callee65$(_context67) {
+                    return regeneratorRuntime.wrap(function _callee66$(_context68) {
                         while (1) {
-                            switch (_context67.prev = _context67.next) {
+                            switch (_context68.prev = _context68.next) {
                                 case 0:
                                     // 4.1 allow drag
                                     UI.allowDrag(e);
@@ -7042,11 +9287,11 @@ var UI = function () {
                                     if (outputName) outputName = outputName[0].replace(/-\d/, "");else outputName = 'merge_' + files[0].name;
 
                                     // 4.5 build output ui
-                                    _context67.next = 8;
-                                    return _this48.twin.mergeFLVFiles(files);
+                                    _context68.next = 8;
+                                    return _this51.twin.mergeFLVFiles(files);
 
                                 case 8:
-                                    href = _context67.sent;
+                                    href = _context68.sent;
 
                                     table.append(function () {
                                         var tr1 = document.createElement('tr');
@@ -7063,14 +9308,14 @@ var UI = function () {
 
                                 case 10:
                                 case 'end':
-                                    return _context67.stop();
+                                    return _context68.stop();
                             }
                         }
-                    }, _callee65, _this48);
+                    }, _callee66, _this51);
                 }));
 
                 return function (_x89) {
-                    return _ref84.apply(this, arguments);
+                    return _ref85.apply(this, arguments);
                 };
             }();
 
@@ -7103,7 +9348,7 @@ var UI = function () {
                 button.style.margin = '0.2em';
 
                 button.onclick = function () {
-                    return _this48.twin.clearCacheDB(cache);
+                    return _this51.twin.clearCacheDB(cache);
                 };
 
                 button.textContent = '\u6E05\u7A7A\u6240\u6709\u89C6\u9891\u7684\u7F13\u5B58';
@@ -7135,27 +9380,27 @@ var UI = function () {
     }, {
         key: 'downloadAllFLVs',
         value: function () {
-            var _ref86 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee66(_ref85) {
-                var _this49 = this;
+            var _ref87 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67(_ref86) {
+                var _this52 = this;
 
-                var a = _ref85.a,
-                    _ref85$monkey = _ref85.monkey,
-                    monkey = _ref85$monkey === undefined ? this.twin.monkey : _ref85$monkey,
-                    _ref85$table = _ref85.table,
-                    table = _ref85$table === undefined ? this.cidSessionDom.flvTable : _ref85$table;
+                var a = _ref86.a,
+                    _ref86$monkey = _ref86.monkey,
+                    monkey = _ref86$monkey === undefined ? this.twin.monkey : _ref86$monkey,
+                    _ref86$table = _ref86.table,
+                    table = _ref86$table === undefined ? this.cidSessionDom.flvTable : _ref86$table;
 
-                var i, progress, _i2, files, href, ass, outputName, pageNameElement, pageName;
+                var i, progress, _i4, files, flv, href, ass, outputName, pageNameElement, pageName;
 
-                return regeneratorRuntime.wrap(function _callee66$(_context68) {
+                return regeneratorRuntime.wrap(function _callee67$(_context69) {
                     while (1) {
-                        switch (_context68.prev = _context68.next) {
+                        switch (_context69.prev = _context69.next) {
                             case 0:
                                 if (!this.cidSessionDom.downloadAllTr) {
-                                    _context68.next = 2;
+                                    _context69.next = 2;
                                     break;
                                 }
 
-                                return _context68.abrupt('return');
+                                return _context69.abrupt('return');
 
                             case 2:
 
@@ -7183,26 +9428,27 @@ var UI = function () {
 
                                 progress.max = monkey.flvs.length + 1;
                                 progress.value = 0;
-                                for (_i2 = 0; _i2 < monkey.flvs.length; _i2++) {
-                                    monkey.getFLV(_i2).then(function (e) {
+                                for (_i4 = 0; _i4 < monkey.flvs.length; _i4++) {
+                                    monkey.getFLV(_i4).then(function (e) {
                                         return progress.value++;
                                     });
                                 } // 5. merge splits
-                                _context68.next = 12;
+                                _context69.next = 12;
                                 return monkey.getAllFLVs();
 
                             case 12:
-                                files = _context68.sent;
-                                _context68.next = 15;
-                                return this.twin.mergeFLVFiles(files);
+                                files = _context69.sent;
+                                _context69.next = 15;
+                                return FLV.mergeBlobs(files);
 
                             case 15:
-                                href = _context68.sent;
-                                _context68.next = 18;
-                                return monkey.ass;
+                                flv = _context69.sent;
+                                href = URL.createObjectURL(flv);
+                                _context69.next = 19;
+                                return monkey.getASS();
 
-                            case 18:
-                                ass = _context68.sent;
+                            case 19:
+                                ass = _context69.sent;
                                 outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
                                 pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
 
@@ -7224,7 +9470,7 @@ var UI = function () {
                                     a1.download = outputName + '.flv';
 
                                     (function (a) {
-                                        if (_this49.option.autoDanmaku) a.onclick = function () {
+                                        if (_this52.option.autoDanmaku) a.onclick = function () {
                                             return a.nextElementSibling.click();
                                         };
                                     })(a1);
@@ -7239,31 +9485,47 @@ var UI = function () {
                                     td1.append(a2);
                                     td1.append(' ');
                                     var a3 = document.createElement('a');
+                                    a3.download = outputName + '.aac';
 
                                     a3.onclick = function (e) {
+                                        var aacA = e.target;
+                                        FLV2AAC(flv).then(function (aacData) {
+                                            var blob = new Blob([aacData]);
+                                            aacA.href = URL.createObjectURL(blob);
+                                            aacA.onclick = null;
+                                            aacA.click();
+                                        });
+                                    };
+
+                                    a3.textContent = '\u97F3\u9891AAC';
+                                    td1.append(a3);
+                                    td1.append(' ');
+                                    var a4 = document.createElement('a');
+
+                                    a4.onclick = function (e) {
                                         return new MKVTransmuxer().exec(href, ass, outputName + '.mkv', e.target);
                                     };
 
-                                    a3.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
-                                    td1.append(a3);
+                                    a4.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+                                    td1.append(a4);
                                     td1.append(' ');
                                     td1.append('\u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~');
                                     tr1.append(td1);
                                     return tr1;
                                 }());
 
-                                return _context68.abrupt('return', href);
+                                return _context69.abrupt('return', href);
 
-                            case 25:
+                            case 26:
                             case 'end':
-                                return _context68.stop();
+                                return _context69.stop();
                         }
                     }
-                }, _callee66, this);
+                }, _callee67, this);
             }));
 
             function downloadAllFLVs(_x91) {
-                return _ref86.apply(this, arguments);
+                return _ref87.apply(this, arguments);
             }
 
             return downloadAllFLVs;
@@ -7271,17 +9533,17 @@ var UI = function () {
     }, {
         key: 'downloadFLV',
         value: function () {
-            var _ref88 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee67(_ref87) {
-                var a = _ref87.a,
-                    _ref87$monkey = _ref87.monkey,
-                    monkey = _ref87$monkey === undefined ? this.twin.monkey : _ref87$monkey,
-                    index = _ref87.index,
-                    _ref87$progress = _ref87.progress,
-                    progress = _ref87$progress === undefined ? {} : _ref87$progress;
+            var _ref89 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68(_ref88) {
+                var a = _ref88.a,
+                    _ref88$monkey = _ref88.monkey,
+                    monkey = _ref88$monkey === undefined ? this.twin.monkey : _ref88$monkey,
+                    index = _ref88.index,
+                    _ref88$progress = _ref88.progress,
+                    progress = _ref88$progress === undefined ? {} : _ref88$progress;
                 var handler, url;
-                return regeneratorRuntime.wrap(function _callee67$(_context69) {
+                return regeneratorRuntime.wrap(function _callee68$(_context70) {
                     while (1) {
-                        switch (_context69.prev = _context69.next) {
+                        switch (_context70.prev = _context70.next) {
                             case 0:
                                 // 1. add beforeUnloadHandler
                                 handler = function handler(e) {
@@ -7301,29 +9563,29 @@ var UI = function () {
 
                                 // 3. try download
                                 url = void 0;
-                                _context69.prev = 5;
-                                _context69.next = 8;
+                                _context70.prev = 5;
+                                _context70.next = 8;
                                 return monkey.getFLV(index, function (loaded, total) {
                                     progress.value = loaded;
                                     progress.max = total;
                                 });
 
                             case 8:
-                                url = _context69.sent;
+                                url = _context70.sent;
 
                                 url = URL.createObjectURL(url);
                                 if (progress.value == 0) progress.value = progress.max = 1;
-                                _context69.next = 19;
+                                _context70.next = 19;
                                 break;
 
                             case 13:
-                                _context69.prev = 13;
-                                _context69.t0 = _context69['catch'](5);
+                                _context70.prev = 13;
+                                _context70.t0 = _context70['catch'](5);
 
                                 a.onclick = null;
                                 window.removeEventListener('beforeunload', handler);
                                 a.textContent = '错误';
-                                throw _context69.t0;
+                                throw _context70.t0;
 
                             case 19:
 
@@ -7333,18 +9595,18 @@ var UI = function () {
                                 a.textContent = '另存为';
                                 a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
                                 a.href = url;
-                                return _context69.abrupt('return', url);
+                                return _context70.abrupt('return', url);
 
                             case 25:
                             case 'end':
-                                return _context69.stop();
+                                return _context70.stop();
                         }
                     }
-                }, _callee67, this, [[5, 13]]);
+                }, _callee68, this, [[5, 13]]);
             }));
 
             function downloadFLV(_x92) {
-                return _ref88.apply(this, arguments);
+                return _ref89.apply(this, arguments);
             }
 
             return downloadFLV;
@@ -7352,12 +9614,12 @@ var UI = function () {
     }, {
         key: 'displayQuota',
         value: function () {
-            var _ref89 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee68(td) {
-                return regeneratorRuntime.wrap(function _callee68$(_context70) {
+            var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69(td) {
+                return regeneratorRuntime.wrap(function _callee69$(_context71) {
                     while (1) {
-                        switch (_context70.prev = _context70.next) {
+                        switch (_context71.prev = _context71.next) {
                             case 0:
-                                return _context70.abrupt('return', new Promise(function (resolve) {
+                                return _context71.abrupt('return', new Promise(function (resolve) {
                                     var temporaryStorage = window.navigator.temporaryStorage || window.navigator.webkitTemporaryStorage || window.navigator.mozTemporaryStorage || window.navigator.msTemporaryStorage;
                                     if (!temporaryStorage) return resolve(td.textContent = '这个浏览器不支持缓存呢~关掉标签页后，缓存马上就会消失哦');
                                     temporaryStorage.queryUsageAndQuota(function (usage, quota) {
@@ -7367,14 +9629,14 @@ var UI = function () {
 
                             case 1:
                             case 'end':
-                                return _context70.stop();
+                                return _context71.stop();
                         }
                     }
-                }, _callee68, this);
+                }, _callee69, this);
             }));
 
             function displayQuota(_x93) {
-                return _ref89.apply(this, arguments);
+                return _ref90.apply(this, arguments);
             }
 
             return displayQuota;
@@ -7385,12 +9647,12 @@ var UI = function () {
     }, {
         key: 'appendMenu',
         value: function () {
-            var _ref90 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee69() {
+            var _ref91 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70() {
                 var playerWin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.twin.playerWin;
                 var monkeyMenu, polyfillMenu, ul, menus0, div;
-                return regeneratorRuntime.wrap(function _callee69$(_context71) {
+                return regeneratorRuntime.wrap(function _callee70$(_context72) {
                     while (1) {
-                        switch (_context71.prev = _context71.next) {
+                        switch (_context72.prev = _context72.next) {
                             case 0:
                                 // 1. build monkey menu and polyfill menu
                                 monkeyMenu = this.buildMonkeyMenu();
@@ -7408,11 +9670,11 @@ var UI = function () {
                                 menus0 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
 
                                 if (!(menus0.length == 0)) {
-                                    _context71.next = 10;
+                                    _context72.next = 10;
                                     break;
                                 }
 
-                                _context71.next = 10;
+                                _context72.next = 10;
                                 return new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         var menus1 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
@@ -7436,18 +9698,18 @@ var UI = function () {
                                 // 4. save to cache
                                 this.cidSessionDom.menuUl = ul;
 
-                                return _context71.abrupt('return', ul);
+                                return _context72.abrupt('return', ul);
 
                             case 14:
                             case 'end':
-                                return _context71.stop();
+                                return _context72.stop();
                         }
                     }
-                }, _callee69, this);
+                }, _callee70, this);
             }));
 
             function appendMenu() {
-                return _ref90.apply(this, arguments);
+                return _ref91.apply(this, arguments);
             }
 
             return appendMenu;
@@ -7455,19 +9717,19 @@ var UI = function () {
     }, {
         key: 'buildMonkeyMenu',
         value: function buildMonkeyMenu() {
-            var _this50 = this;
+            var _this53 = this;
 
-            var _ref91 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref91$playerWin = _ref91.playerWin,
-                playerWin = _ref91$playerWin === undefined ? this.twin.playerWin : _ref91$playerWin,
-                _ref91$BiliMonkey = _ref91.BiliMonkey,
-                BiliMonkey = _ref91$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref91$BiliMonkey,
-                _ref91$monkey = _ref91.monkey,
-                monkey = _ref91$monkey === undefined ? this.twin.monkey : _ref91$monkey,
-                _ref91$videoA = _ref91.videoA,
-                videoA = _ref91$videoA === undefined ? this.cidSessionDom.videoA : _ref91$videoA,
-                _ref91$assA = _ref91.assA,
-                assA = _ref91$assA === undefined ? this.cidSessionDom.assA : _ref91$assA;
+            var _ref92 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref92$playerWin = _ref92.playerWin,
+                playerWin = _ref92$playerWin === undefined ? this.twin.playerWin : _ref92$playerWin,
+                _ref92$BiliMonkey = _ref92.BiliMonkey,
+                BiliMonkey = _ref92$BiliMonkey === undefined ? this.twin.BiliMonkey : _ref92$BiliMonkey,
+                _ref92$monkey = _ref92.monkey,
+                monkey = _ref92$monkey === undefined ? this.twin.monkey : _ref92$monkey,
+                _ref92$videoA = _ref92.videoA,
+                videoA = _ref92$videoA === undefined ? this.cidSessionDom.videoA : _ref92$videoA,
+                _ref92$assA = _ref92.assA,
+                assA = _ref92$assA === undefined ? this.cidSessionDom.assA : _ref92$assA;
 
             var context_menu_videoA = document.createElement('li');
 
@@ -7475,18 +9737,18 @@ var UI = function () {
                 context_menu_videoA.className = 'context-menu-function';
 
                 context_menu_videoA.onmouseover = function () {
-                    var _ref93 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee70(_ref92) {
-                        var textNode = _ref92.target.lastChild;
-                        return regeneratorRuntime.wrap(function _callee70$(_context72) {
+                    var _ref94 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71(_ref93) {
+                        var textNode = _ref93.target.lastChild;
+                        return regeneratorRuntime.wrap(function _callee71$(_context73) {
                             while (1) {
-                                switch (_context72.prev = _context72.next) {
+                                switch (_context73.prev = _context73.next) {
                                     case 0:
                                         if (!videoA.onmouseover) {
-                                            _context72.next = 3;
+                                            _context73.next = 3;
                                             break;
                                         }
 
-                                        _context72.next = 3;
+                                        _context73.next = 3;
                                         return videoA.onmouseover();
 
                                     case 3:
@@ -7496,14 +9758,14 @@ var UI = function () {
 
                                     case 4:
                                     case 'end':
-                                        return _context72.stop();
+                                        return _context73.stop();
                                 }
                             }
-                        }, _callee70, _this50);
+                        }, _callee71, _this53);
                     }));
 
                     return function (_x96) {
-                        return _ref93.apply(this, arguments);
+                        return _ref94.apply(this, arguments);
                     };
                 }();
 
@@ -7542,17 +9804,17 @@ var UI = function () {
             var li1 = document.createElement('li');
             li1.className = 'context-menu-function';
 
-            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee71() {
-                return regeneratorRuntime.wrap(function _callee71$(_context73) {
+            li1.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
+                return regeneratorRuntime.wrap(function _callee72$(_context74) {
                     while (1) {
-                        switch (_context73.prev = _context73.next) {
+                        switch (_context74.prev = _context74.next) {
                             case 0:
                                 if (!assA.onmouseover) {
-                                    _context73.next = 3;
+                                    _context74.next = 3;
                                     break;
                                 }
 
-                                _context73.next = 3;
+                                _context74.next = 3;
                                 return assA.onmouseover();
 
                             case 3:
@@ -7560,10 +9822,10 @@ var UI = function () {
 
                             case 4:
                             case 'end':
-                                return _context73.stop();
+                                return _context74.stop();
                         }
                     }
-                }, _callee71, _this50);
+                }, _callee72, _this53);
             }));
 
             var a2 = document.createElement('a');
@@ -7578,7 +9840,7 @@ var UI = function () {
             li2.className = 'context-menu-function';
 
             li2.onclick = function () {
-                return _this50.displayOptionDiv();
+                return _this53.displayOptionDiv();
             };
 
             var a3 = document.createElement('a');
@@ -7592,25 +9854,25 @@ var UI = function () {
             var li3 = document.createElement('li');
             li3.className = 'context-menu-function';
 
-            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee72() {
-                return regeneratorRuntime.wrap(function _callee72$(_context74) {
+            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+                return regeneratorRuntime.wrap(function _callee73$(_context75) {
                     while (1) {
-                        switch (_context74.prev = _context74.next) {
+                        switch (_context75.prev = _context75.next) {
                             case 0:
-                                _context74.t0 = UI;
-                                _context74.next = 3;
+                                _context75.t0 = UI;
+                                _context75.next = 3;
                                 return BiliMonkey.getAllPageDefaultFormats(playerWin, monkey);
 
                             case 3:
-                                _context74.t1 = _context74.sent;
-                                return _context74.abrupt('return', _context74.t0.displayDownloadAllPageDefaultFormatsBody.call(_context74.t0, _context74.t1));
+                                _context75.t1 = _context75.sent;
+                                return _context75.abrupt('return', _context75.t0.displayDownloadAllPageDefaultFormatsBody.call(_context75.t0, _context75.t1));
 
                             case 5:
                             case 'end':
-                                return _context74.stop();
+                                return _context75.stop();
                         }
                     }
-                }, _callee72, _this50);
+                }, _callee73, _this53);
             }));
 
             var a4 = document.createElement('a');
@@ -7624,30 +9886,30 @@ var UI = function () {
             var li4 = document.createElement('li');
             li4.className = 'context-menu-function';
 
-            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
-                return regeneratorRuntime.wrap(function _callee73$(_context75) {
+            li4.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74() {
+                return regeneratorRuntime.wrap(function _callee74$(_context76) {
                     while (1) {
-                        switch (_context75.prev = _context75.next) {
+                        switch (_context76.prev = _context76.next) {
                             case 0:
                                 monkey.proxy = true;
                                 monkey.flvs = null;
                                 UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
                                 // Yes, I AM lazy.
                                 playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
-                                _context75.next = 6;
+                                _context76.next = 6;
                                 return new Promise(function (r) {
                                     return playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r);
                                 });
 
                             case 6:
-                                return _context75.abrupt('return', monkey.queryInfo('video'));
+                                return _context76.abrupt('return', monkey.queryInfo('video'));
 
                             case 7:
                             case 'end':
-                                return _context75.stop();
+                                return _context76.stop();
                         }
                     }
-                }, _callee73, _this50);
+                }, _callee74, _this53);
             }));
 
             var a5 = document.createElement('a');
@@ -7677,7 +9939,7 @@ var UI = function () {
             li6.className = 'context-menu-function';
 
             li6.onclick = function () {
-                return _this50.cidSessionDestroy() && _this50.cidSessionRender();
+                return _this53.cidSessionDestroy() && _this53.cidSessionRender();
             };
 
             var a7 = document.createElement('a');
@@ -7709,15 +9971,15 @@ var UI = function () {
     }, {
         key: 'buildPolyfillMenu',
         value: function buildPolyfillMenu() {
-            var _this51 = this;
+            var _this54 = this;
 
-            var _ref97 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-                _ref97$playerWin = _ref97.playerWin,
-                playerWin = _ref97$playerWin === undefined ? this.twin.playerWin : _ref97$playerWin,
-                _ref97$BiliPolyfill = _ref97.BiliPolyfill,
-                BiliPolyfill = _ref97$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref97$BiliPolyfill,
-                _ref97$polyfill = _ref97.polyfill,
-                polyfill = _ref97$polyfill === undefined ? this.twin.polyfill : _ref97$polyfill;
+            var _ref98 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+                _ref98$playerWin = _ref98.playerWin,
+                playerWin = _ref98$playerWin === undefined ? this.twin.playerWin : _ref98$playerWin,
+                _ref98$BiliPolyfill = _ref98.BiliPolyfill,
+                BiliPolyfill = _ref98$BiliPolyfill === undefined ? this.twin.BiliPolyfill : _ref98$BiliPolyfill,
+                _ref98$polyfill = _ref98.polyfill,
+                polyfill = _ref98$polyfill === undefined ? this.twin.polyfill : _ref98$polyfill;
 
             var oped = [];
             var BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
@@ -8022,7 +10284,7 @@ var UI = function () {
             li15.className = 'context-menu-function';
 
             li15.onclick = function () {
-                return _this51.displayPolyfillDataDiv();
+                return _this54.displayPolyfillDataDiv();
             };
 
             var a16 = document.createElement('a');
@@ -8122,7 +10384,7 @@ var UI = function () {
             li20.className = 'context-menu-function';
 
             li20.onclick = function () {
-                return _this51.displayOptionDiv();
+                return _this54.displayOptionDiv();
             };
 
             var a21 = document.createElement('a');
@@ -8277,10 +10539,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref98) {
-                var _ref99 = _slicedToArray(_ref98, 2),
-                    name = _ref99[0],
-                    description = _ref99[1];
+            table.append.apply(table, _toConsumableArray(BiliMonkey.optionDescriptions.map(function (_ref99) {
+                var _ref100 = _slicedToArray(_ref99, 2),
+                    name = _ref100[0],
+                    description = _ref100[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8354,10 +10616,10 @@ var UI = function () {
                     twin.saveOption(twin.option);
                 };
 
-                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref100) {
-                    var _ref101 = _slicedToArray(_ref100, 2),
-                        name = _ref101[0],
-                        value = _ref101[1];
+                select.append.apply(select, _toConsumableArray(BiliMonkey.resolutionPreferenceOptions.map(function (_ref101) {
+                    var _ref102 = _slicedToArray(_ref101, 2),
+                        name = _ref102[0],
+                        value = _ref102[1];
 
                     var option1 = document.createElement('option');
                     option1.value = value;
@@ -8396,11 +10658,11 @@ var UI = function () {
                 table.append(tr2);
             }
 
-            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref102) {
-                var _ref103 = _slicedToArray(_ref102, 3),
-                    name = _ref103[0],
-                    description = _ref103[1],
-                    disabled = _ref103[2];
+            table.append.apply(table, _toConsumableArray(BiliPolyfill.optionDescriptions.map(function (_ref103) {
+                var _ref104 = _slicedToArray(_ref103, 3),
+                    name = _ref104[0],
+                    description = _ref104[1],
+                    disabled = _ref104[2];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8440,10 +10702,10 @@ var UI = function () {
                 table.append(tr1);
             }
 
-            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref104) {
-                var _ref105 = _slicedToArray(_ref104, 2),
-                    name = _ref105[0],
-                    description = _ref105[1];
+            table.append.apply(table, _toConsumableArray(UI.optionDescriptions.map(function (_ref105) {
+                var _ref106 = _slicedToArray(_ref105, 2),
+                    name = _ref106[0],
+                    description = _ref106[1];
 
                 var tr1 = document.createElement('tr');
                 var label = document.createElement('label');
@@ -8572,7 +10834,7 @@ var UI = function () {
     }], [{
         key: 'buildDownloadAllPageDefaultFormatsBody',
         value: function buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
-            var _this52 = this;
+            var _this55 = this;
 
             var table = document.createElement('table');
 
@@ -8582,104 +10844,104 @@ var UI = function () {
 
             var flvsBlob = [];
             var loadFLVFromCache = function () {
-                var _ref106 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee74(name) {
+                var _ref107 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(name) {
                     var partial = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
                     var cache, item;
-                    return regeneratorRuntime.wrap(function _callee74$(_context76) {
-                        while (1) {
-                            switch (_context76.prev = _context76.next) {
-                                case 0:
-                                    if (partial) name = 'PC_' + name;
-                                    cache = new CacheDB();
-                                    _context76.next = 4;
-                                    return cache.getData(name);
-
-                                case 4:
-                                    item = _context76.sent;
-                                    return _context76.abrupt('return', item && item.data);
-
-                                case 6:
-                                case 'end':
-                                    return _context76.stop();
-                            }
-                        }
-                    }, _callee74, _this52);
-                }));
-
-                return function loadFLVFromCache(_x107) {
-                    return _ref106.apply(this, arguments);
-                };
-            }();
-            var saveFLVToCache = function () {
-                var _ref107 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee75(name, blob) {
-                    var cache;
                     return regeneratorRuntime.wrap(function _callee75$(_context77) {
                         while (1) {
                             switch (_context77.prev = _context77.next) {
                                 case 0:
+                                    if (partial) name = 'PC_' + name;
                                     cache = new CacheDB();
-                                    return _context77.abrupt('return', cache.addData({ name: name, data: blob }));
+                                    _context77.next = 4;
+                                    return cache.getData(name);
 
-                                case 2:
+                                case 4:
+                                    item = _context77.sent;
+                                    return _context77.abrupt('return', item && item.data);
+
+                                case 6:
                                 case 'end':
                                     return _context77.stop();
                             }
                         }
-                    }, _callee75, _this52);
+                    }, _callee75, _this55);
                 }));
 
-                return function saveFLVToCache(_x108, _x109) {
+                return function loadFLVFromCache(_x107) {
                     return _ref107.apply(this, arguments);
                 };
             }();
-            var cleanPartialFLVInCache = function () {
-                var _ref108 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(name) {
+            var saveFLVToCache = function () {
+                var _ref108 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee76(name, blob) {
                     var cache;
                     return regeneratorRuntime.wrap(function _callee76$(_context78) {
                         while (1) {
                             switch (_context78.prev = _context78.next) {
                                 case 0:
                                     cache = new CacheDB();
+                                    return _context78.abrupt('return', cache.addData({ name: name, data: blob }));
 
-                                    name = 'PC_' + name;
-                                    return _context78.abrupt('return', cache.deleteData(name));
-
-                                case 3:
+                                case 2:
                                 case 'end':
                                     return _context78.stop();
                             }
                         }
-                    }, _callee76, _this52);
+                    }, _callee76, _this55);
                 }));
 
-                return function cleanPartialFLVInCache(_x110) {
+                return function saveFLVToCache(_x108, _x109) {
                     return _ref108.apply(this, arguments);
                 };
             }();
-            var getFLVs = function () {
-                var _ref109 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(videoIndex) {
-                    var durl;
-                    return regeneratorRuntime.wrap(function _callee78$(_context80) {
+            var cleanPartialFLVInCache = function () {
+                var _ref109 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(name) {
+                    var cache;
+                    return regeneratorRuntime.wrap(function _callee77$(_context79) {
                         while (1) {
-                            switch (_context80.prev = _context80.next) {
+                            switch (_context79.prev = _context79.next) {
+                                case 0:
+                                    cache = new CacheDB();
+
+                                    name = 'PC_' + name;
+                                    return _context79.abrupt('return', cache.deleteData(name));
+
+                                case 3:
+                                case 'end':
+                                    return _context79.stop();
+                            }
+                        }
+                    }, _callee77, _this55);
+                }));
+
+                return function cleanPartialFLVInCache(_x110) {
+                    return _ref109.apply(this, arguments);
+                };
+            }();
+            var getFLVs = function () {
+                var _ref110 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(videoIndex) {
+                    var durl;
+                    return regeneratorRuntime.wrap(function _callee79$(_context81) {
+                        while (1) {
+                            switch (_context81.prev = _context81.next) {
                                 case 0:
                                     if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
 
                                     durl = ret[videoIndex].durl;
-                                    _context80.next = 4;
+                                    _context81.next = 4;
                                     return Promise.all(durl.map(function () {
-                                        var _ref110 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee77(_, durlIndex) {
+                                        var _ref111 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee78(_, durlIndex) {
                                             var burl, outputName, burlA, progress, flvCache, partialFLVFromCache, opt, fch, fullFLV;
-                                            return regeneratorRuntime.wrap(function _callee77$(_context79) {
+                                            return regeneratorRuntime.wrap(function _callee78$(_context80) {
                                                 while (1) {
-                                                    switch (_context79.prev = _context79.next) {
+                                                    switch (_context80.prev = _context80.next) {
                                                         case 0:
                                                             if (!flvsBlob[videoIndex][durlIndex]) {
-                                                                _context79.next = 4;
+                                                                _context80.next = 4;
                                                                 break;
                                                             }
 
-                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex]);
+                                                            return _context80.abrupt('return', flvsBlob[videoIndex][durlIndex]);
 
                                                         case 4:
                                                             burl = durl[durlIndex];
@@ -8694,14 +10956,14 @@ var UI = function () {
                                                                 return progress1;
                                                             }());
                                                             progress = burlA.parentElement.querySelector("progress");
-                                                            _context79.next = 11;
+                                                            _context80.next = 11;
                                                             return loadFLVFromCache(outputName);
 
                                                         case 11:
-                                                            flvCache = _context79.sent;
+                                                            flvCache = _context80.sent;
 
                                                             if (!flvCache) {
-                                                                _context79.next = 16;
+                                                                _context80.next = 16;
                                                                 break;
                                                             }
 
@@ -8713,14 +10975,14 @@ var UI = function () {
                                                                 a1.textContent = '\u53E6\u5B58\u4E3A';
                                                                 return a1;
                                                             }());
-                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex] = flvCache);
+                                                            return _context80.abrupt('return', flvsBlob[videoIndex][durlIndex] = flvCache);
 
                                                         case 16:
-                                                            _context79.next = 18;
+                                                            _context80.next = 18;
                                                             return loadFLVFromCache(outputName, true);
 
                                                         case 18:
-                                                            partialFLVFromCache = _context79.sent;
+                                                            partialFLVFromCache = _context80.sent;
 
                                                             if (partialFLVFromCache) burl += '&bstart=' + partialFLVFromCache.size;
 
@@ -8740,11 +11002,11 @@ var UI = function () {
                                                             };
 
                                                             fch = new DetailedFetchBlob(burl, opt);
-                                                            _context79.next = 25;
+                                                            _context80.next = 25;
                                                             return fch.getBlob();
 
                                                         case 25:
-                                                            fullFLV = _context79.sent;
+                                                            fullFLV = _context80.sent;
 
                                                             if (partialFLVFromCache) {
                                                                 fullFLV = new Blob([partialFLVFromCache, fullFLV]);
@@ -8760,47 +11022,47 @@ var UI = function () {
                                                                 return a1;
                                                             }());
 
-                                                            return _context79.abrupt('return', flvsBlob[videoIndex][durlIndex] = fullFLV);
+                                                            return _context80.abrupt('return', flvsBlob[videoIndex][durlIndex] = fullFLV);
 
                                                         case 30:
                                                         case 'end':
-                                                            return _context79.stop();
+                                                            return _context80.stop();
                                                     }
                                                 }
-                                            }, _callee77, _this52);
+                                            }, _callee78, _this55);
                                         }));
 
                                         return function (_x112, _x113) {
-                                            return _ref110.apply(this, arguments);
+                                            return _ref111.apply(this, arguments);
                                         };
                                     }()));
 
                                 case 4:
-                                    return _context80.abrupt('return', _context80.sent);
+                                    return _context81.abrupt('return', _context81.sent);
 
                                 case 5:
                                 case 'end':
-                                    return _context80.stop();
+                                    return _context81.stop();
                             }
                         }
-                    }, _callee78, _this52);
+                    }, _callee79, _this55);
                 }));
 
                 return function getFLVs(_x111) {
-                    return _ref109.apply(this, arguments);
+                    return _ref110.apply(this, arguments);
                 };
             }();
             var getSize = function () {
-                var _ref111 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(videoIndex) {
+                var _ref112 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(videoIndex) {
                     var durlObjects, totalSize, durl, sizes;
-                    return regeneratorRuntime.wrap(function _callee80$(_context82) {
+                    return regeneratorRuntime.wrap(function _callee81$(_context83) {
                         while (1) {
-                            switch (_context82.prev = _context82.next) {
+                            switch (_context83.prev = _context83.next) {
                                 case 0:
                                     durlObjects = ret[videoIndex].res.durl;
 
                                     if (!(durlObjects && durlObjects[0] && durlObjects[0].size)) {
-                                        _context82.next = 5;
+                                        _context83.next = 5;
                                         break;
                                     }
 
@@ -8809,61 +11071,61 @@ var UI = function () {
                                     }, 0);
 
                                     if (!totalSize) {
-                                        _context82.next = 5;
+                                        _context83.next = 5;
                                         break;
                                     }
 
-                                    return _context82.abrupt('return', totalSize);
+                                    return _context83.abrupt('return', totalSize);
 
                                 case 5:
                                     durl = ret[videoIndex].durl;
 
                                     /** @type {number[]} */
 
-                                    _context82.next = 8;
+                                    _context83.next = 8;
                                     return Promise.all(durl.map(function () {
-                                        var _ref112 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee79(burl) {
+                                        var _ref113 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee80(burl) {
                                             var r;
-                                            return regeneratorRuntime.wrap(function _callee79$(_context81) {
+                                            return regeneratorRuntime.wrap(function _callee80$(_context82) {
                                                 while (1) {
-                                                    switch (_context81.prev = _context81.next) {
+                                                    switch (_context82.prev = _context82.next) {
                                                         case 0:
-                                                            _context81.next = 2;
+                                                            _context82.next = 2;
                                                             return fetch(burl, { method: "HEAD" });
 
                                                         case 2:
-                                                            r = _context81.sent;
-                                                            return _context81.abrupt('return', +r.headers.get("content-length"));
+                                                            r = _context82.sent;
+                                                            return _context82.abrupt('return', +r.headers.get("content-length"));
 
                                                         case 4:
                                                         case 'end':
-                                                            return _context81.stop();
+                                                            return _context82.stop();
                                                     }
                                                 }
-                                            }, _callee79, _this52);
+                                            }, _callee80, _this55);
                                         }));
 
                                         return function (_x115) {
-                                            return _ref112.apply(this, arguments);
+                                            return _ref113.apply(this, arguments);
                                         };
                                     }()));
 
                                 case 8:
-                                    sizes = _context82.sent;
-                                    return _context82.abrupt('return', sizes.reduce(function (total, _size) {
+                                    sizes = _context83.sent;
+                                    return _context83.abrupt('return', sizes.reduce(function (total, _size) {
                                         return total + _size;
                                     }));
 
                                 case 10:
                                 case 'end':
-                                    return _context82.stop();
+                                    return _context83.stop();
                             }
                         }
-                    }, _callee80, _this52);
+                    }, _callee81, _this55);
                 }));
 
                 return function getSize(_x114) {
-                    return _ref111.apply(this, arguments);
+                    return _ref112.apply(this, arguments);
                 };
             }();
 
@@ -8883,11 +11145,11 @@ var UI = function () {
                     var a1 = document.createElement('a');
 
                     a1.onclick = function () {
-                        var _ref113 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee81(e) {
+                        var _ref114 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(e) {
                             var handler, targetA, format, flvs, worker, href, outputName, ass;
-                            return regeneratorRuntime.wrap(function _callee81$(_context83) {
+                            return regeneratorRuntime.wrap(function _callee82$(_context84) {
                                 while (1) {
-                                    switch (_context83.prev = _context83.next) {
+                                    switch (_context84.prev = _context84.next) {
                                         case 0:
                                             // add beforeUnloadHandler
                                             handler = function handler(e) {
@@ -8903,40 +11165,40 @@ var UI = function () {
                                             targetA.textContent = "缓存中……";
 
                                             format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1];
-                                            _context83.next = 9;
+                                            _context84.next = 9;
                                             return getFLVs(index);
 
                                         case 9:
-                                            flvs = _context83.sent;
+                                            flvs = _context84.sent;
 
 
                                             targetA.textContent = "合并中……";
                                             worker = WebWorker.fromAFunction(BatchDownloadWorkerFn);
-                                            _context83.next = 14;
+                                            _context84.next = 14;
                                             return worker.registerAllMethods();
 
                                         case 14:
-                                            _context83.t0 = URL;
+                                            _context84.t0 = URL;
 
                                             if (!(format == "flv")) {
-                                                _context83.next = 21;
+                                                _context84.next = 21;
                                                 break;
                                             }
 
-                                            _context83.next = 18;
+                                            _context84.next = 18;
                                             return worker.mergeFLVFiles(flvs);
 
                                         case 18:
-                                            _context83.t1 = _context83.sent;
-                                            _context83.next = 22;
+                                            _context84.t1 = _context84.sent;
+                                            _context84.next = 22;
                                             break;
 
                                         case 21:
-                                            _context83.t1 = flvs[0];
+                                            _context84.t1 = flvs[0];
 
                                         case 22:
-                                            _context83.t2 = _context83.t1;
-                                            href = _context83.t0.createObjectURL.call(_context83.t0, _context83.t2);
+                                            _context84.t2 = _context84.t1;
+                                            href = _context84.t0.createObjectURL.call(_context84.t0, _context84.t2);
 
                                             worker.terminate();
 
@@ -8967,14 +11229,14 @@ var UI = function () {
 
                                         case 34:
                                         case 'end':
-                                            return _context83.stop();
+                                            return _context84.stop();
                                     }
                                 }
-                            }, _callee81, _this52);
+                            }, _callee82, _this55);
                         }));
 
                         return function (_x116) {
-                            return _ref113.apply(this, arguments);
+                            return _ref114.apply(this, arguments);
                         };
                     }();
 
@@ -9215,55 +11477,55 @@ var BiliTwin = function (_BiliUserJS) {
 
         _classCallCheck(this, BiliTwin);
 
-        var _this53 = _possibleConstructorReturn(this, (BiliTwin.__proto__ || Object.getPrototypeOf(BiliTwin)).call(this));
+        var _this56 = _possibleConstructorReturn(this, (BiliTwin.__proto__ || Object.getPrototypeOf(BiliTwin)).call(this));
 
-        _this53.BiliMonkey = BiliMonkey;
-        _this53.BiliPolyfill = BiliPolyfill;
-        _this53.playerWin = null;
-        _this53.monkey = null;
-        _this53.polifill = null;
-        _this53.ui = ui || new UI(_this53);
-        _this53.option = option;
-        return _this53;
+        _this56.BiliMonkey = BiliMonkey;
+        _this56.BiliPolyfill = BiliPolyfill;
+        _this56.playerWin = null;
+        _this56.monkey = null;
+        _this56.polifill = null;
+        _this56.ui = ui || new UI(_this56);
+        _this56.option = option;
+        return _this56;
     }
 
     _createClass(BiliTwin, [{
         key: 'runCidSession',
         value: function () {
-            var _ref114 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82() {
-                var _this54 = this;
+            var _ref115 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83() {
+                var _this57 = this;
 
-                var href, cidRefresh, videoRightClick, video, videoA, _ref115;
+                var href, cidRefresh, videoRightClick, video, videoA, _ref116;
 
-                return regeneratorRuntime.wrap(function _callee82$(_context84) {
+                return regeneratorRuntime.wrap(function _callee83$(_context85) {
                     while (1) {
-                        switch (_context84.prev = _context84.next) {
+                        switch (_context85.prev = _context85.next) {
                             case 0:
-                                _context84.prev = 0;
-                                _context84.t0 = BiliUserJS.tryGetPlayerWinSync();
+                                _context85.prev = 0;
+                                _context85.t0 = BiliUserJS.tryGetPlayerWinSync();
 
-                                if (_context84.t0) {
-                                    _context84.next = 6;
+                                if (_context85.t0) {
+                                    _context85.next = 6;
                                     break;
                                 }
 
-                                _context84.next = 5;
+                                _context85.next = 5;
                                 return BiliTwin.getPlayerWin();
 
                             case 5:
-                                _context84.t0 = _context84.sent;
+                                _context85.t0 = _context85.sent;
 
                             case 6:
-                                this.playerWin = _context84.t0;
-                                _context84.next = 13;
+                                this.playerWin = _context85.t0;
+                                _context85.next = 13;
                                 break;
 
                             case 9:
-                                _context84.prev = 9;
-                                _context84.t1 = _context84['catch'](0);
+                                _context85.prev = 9;
+                                _context85.t1 = _context85['catch'](0);
 
-                                if (_context84.t1 == 'Need H5 Player') UI.requestH5Player();
-                                throw _context84.t1;
+                                if (_context85.t1 == 'Need H5 Player') UI.requestH5Player();
+                                throw _context85.t1;
 
                             case 13:
                                 href = location.href;
@@ -9276,7 +11538,7 @@ var BiliTwin = function (_BiliUserJS) {
                                 // 2. monkey and polyfill
                                 this.monkey = new BiliMonkey(this.playerWin, this.option);
                                 this.polyfill = new BiliPolyfill(this.playerWin, this.option, function (t) {
-                                    return UI.hintInfo(t, _this54.playerWin);
+                                    return UI.hintInfo(t, _this57.playerWin);
                                 });
 
                                 cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
@@ -9291,17 +11553,17 @@ var BiliTwin = function (_BiliUserJS) {
                                 };
 
                                 if (!this.option.autoDisplayDownloadBtn) {
-                                    _context84.next = 25;
+                                    _context85.next = 25;
                                     break;
                                 }
 
-                                _context84.next = 23;
+                                _context85.next = 23;
                                 return new Promise(function (resolve) {
                                     var i = setInterval(function () {
                                         var video = document.querySelector("video");
                                         if (video) {
                                             videoRightClick(video);
-                                            if (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this54.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this54.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this54.playerWin.document.querySelector(".video-data .view") && _this54.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--" || _this54.playerWin.document.querySelector(".bilibili-player-video-sendbar").children.length > 0 && _this54.playerWin.document.querySelector("#media_module .media-cover img"))) {
+                                            if (_this57.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this57.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this57.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this57.playerWin.document.querySelector(".video-data .view") && _this57.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--" || _this57.playerWin.document.querySelector(".bilibili-player-video-sendbar").children.length > 0 && _this57.playerWin.document.querySelector("#media_module .media-cover img"))) {
                                                 clearInterval(i);
                                                 resolve();
                                             }
@@ -9310,7 +11572,7 @@ var BiliTwin = function (_BiliUserJS) {
                                 });
 
                             case 23:
-                                _context84.next = 27;
+                                _context85.next = 27;
                                 break;
 
                             case 25:
@@ -9323,7 +11585,7 @@ var BiliTwin = function (_BiliUserJS) {
                                 }
 
                             case 27:
-                                _context84.next = 29;
+                                _context85.next = 29;
                                 return this.polyfill.setFunctions();
 
                             case 29:
@@ -9342,13 +11604,13 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 // 4. debug
                                 if (this.option.debug) {
-                                    _ref115 = [this.monkey, this.polyfill];
-                                    (top.unsafeWindow || top).monkey = _ref115[0];
-                                    (top.unsafeWindow || top).polyfill = _ref115[1];
+                                    _ref116 = [this.monkey, this.polyfill];
+                                    (top.unsafeWindow || top).monkey = _ref116[0];
+                                    (top.unsafeWindow || top).polyfill = _ref116[1];
                                 }
 
                                 // 5. refresh => session expire
-                                _context84.next = 33;
+                                _context85.next = 33;
                                 return cidRefresh;
 
                             case 33:
@@ -9358,14 +11620,14 @@ var BiliTwin = function (_BiliUserJS) {
 
                             case 36:
                             case 'end':
-                                return _context84.stop();
+                                return _context85.stop();
                         }
                     }
-                }, _callee82, this, [[0, 9]]);
+                }, _callee83, this, [[0, 9]]);
             }));
 
             function runCidSession() {
-                return _ref114.apply(this, arguments);
+                return _ref115.apply(this, arguments);
             }
 
             return runCidSession;
@@ -9373,49 +11635,20 @@ var BiliTwin = function (_BiliUserJS) {
     }, {
         key: 'mergeFLVFiles',
         value: function () {
-            var _ref116 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee83(files) {
-                return regeneratorRuntime.wrap(function _callee83$(_context85) {
-                    while (1) {
-                        switch (_context85.prev = _context85.next) {
-                            case 0:
-                                _context85.t0 = URL;
-                                _context85.next = 3;
-                                return FLV.mergeBlobs(files);
-
-                            case 3:
-                                _context85.t1 = _context85.sent;
-                                return _context85.abrupt('return', _context85.t0.createObjectURL.call(_context85.t0, _context85.t1));
-
-                            case 5:
-                            case 'end':
-                                return _context85.stop();
-                        }
-                    }
-                }, _callee83, this);
-            }));
-
-            function mergeFLVFiles(_x118) {
-                return _ref116.apply(this, arguments);
-            }
-
-            return mergeFLVFiles;
-        }()
-    }, {
-        key: 'clearCacheDB',
-        value: function () {
-            var _ref117 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(cache) {
+            var _ref117 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee84(files) {
                 return regeneratorRuntime.wrap(function _callee84$(_context86) {
                     while (1) {
                         switch (_context86.prev = _context86.next) {
                             case 0:
-                                if (!cache) {
-                                    _context86.next = 2;
-                                    break;
-                                }
+                                _context86.t0 = URL;
+                                _context86.next = 3;
+                                return FLV.mergeBlobs(files);
 
-                                return _context86.abrupt('return', cache.deleteEntireDB());
+                            case 3:
+                                _context86.t1 = _context86.sent;
+                                return _context86.abrupt('return', _context86.t0.createObjectURL.call(_context86.t0, _context86.t1));
 
-                            case 2:
+                            case 5:
                             case 'end':
                                 return _context86.stop();
                         }
@@ -9423,8 +11656,37 @@ var BiliTwin = function (_BiliUserJS) {
                 }, _callee84, this);
             }));
 
-            function clearCacheDB(_x119) {
+            function mergeFLVFiles(_x118) {
                 return _ref117.apply(this, arguments);
+            }
+
+            return mergeFLVFiles;
+        }()
+    }, {
+        key: 'clearCacheDB',
+        value: function () {
+            var _ref118 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85(cache) {
+                return regeneratorRuntime.wrap(function _callee85$(_context87) {
+                    while (1) {
+                        switch (_context87.prev = _context87.next) {
+                            case 0:
+                                if (!cache) {
+                                    _context87.next = 2;
+                                    break;
+                                }
+
+                                return _context87.abrupt('return', cache.deleteEntireDB());
+
+                            case 2:
+                            case 'end':
+                                return _context87.stop();
+                        }
+                    }
+                }, _callee85, this);
+            }));
+
+            function clearCacheDB(_x119) {
+                return _ref118.apply(this, arguments);
             }
 
             return clearCacheDB;
@@ -9466,34 +11728,34 @@ var BiliTwin = function (_BiliUserJS) {
     }], [{
         key: 'init',
         value: function () {
-            var _ref118 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee85() {
+            var _ref119 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee86() {
                 var twin, vc_info;
-                return regeneratorRuntime.wrap(function _callee85$(_context87) {
+                return regeneratorRuntime.wrap(function _callee86$(_context88) {
                     while (1) {
-                        switch (_context87.prev = _context87.next) {
+                        switch (_context88.prev = _context88.next) {
                             case 0:
                                 if (document.body) {
-                                    _context87.next = 2;
+                                    _context88.next = 2;
                                     break;
                                 }
 
-                                return _context87.abrupt('return');
+                                return _context88.abrupt('return');
 
                             case 2:
                                 if (!(location.hostname == "www.biligame.com")) {
-                                    _context87.next = 6;
+                                    _context88.next = 6;
                                     break;
                                 }
 
-                                return _context87.abrupt('return', BiliPolyfill.biligameInit());
+                                return _context88.abrupt('return', BiliPolyfill.biligameInit());
 
                             case 6:
                                 if (!location.pathname.startsWith("/bangumi/media/md")) {
-                                    _context87.next = 8;
+                                    _context88.next = 8;
                                     break;
                                 }
 
-                                return _context87.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+                                return _context88.abrupt('return', BiliPolyfill.showBangumiCoverImage());
 
                             case 8:
 
@@ -9503,40 +11765,40 @@ var BiliTwin = function (_BiliUserJS) {
                                 twin = new BiliTwin();
 
                                 if (!(location.hostname == "vc.bilibili.com")) {
-                                    _context87.next = 16;
+                                    _context88.next = 16;
                                     break;
                                 }
 
-                                _context87.next = 14;
+                                _context88.next = 14;
                                 return BiliMonkey.getBiliShortVideoInfo();
 
                             case 14:
-                                vc_info = _context87.sent;
-                                return _context87.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
+                                vc_info = _context88.sent;
+                                return _context88.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
 
                             case 16:
                                 if (!1) {
-                                    _context87.next = 21;
+                                    _context88.next = 21;
                                     break;
                                 }
 
-                                _context87.next = 19;
+                                _context88.next = 19;
                                 return twin.runCidSession();
 
                             case 19:
-                                _context87.next = 16;
+                                _context88.next = 16;
                                 break;
 
                             case 21:
                             case 'end':
-                                return _context87.stop();
+                                return _context88.stop();
                         }
                     }
-                }, _callee85, this);
+                }, _callee86, this);
             }));
 
             function init() {
-                return _ref118.apply(this, arguments);
+                return _ref119.apply(this, arguments);
             }
 
             return init;

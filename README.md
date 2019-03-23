@@ -26,6 +26,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
     * 转码
         * 合并FLV
         * 弹幕转码ASS
+        * AAC音频下载
         * 软字幕打包FLV+ASS为MKV
     * 集成
         * 下载合并一条龙 <sub>一键下载所有超清FLV分段并自动合并</sub>
