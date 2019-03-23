@@ -14,6 +14,7 @@ import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
 import CacheDB from '../util/cache-db.js'
 import FLV from '../flvparser/flv.js';
 import MKVTransmuxer from '../flvass2mkv/interface.js';
+import FLV2AAC from '../flv2aac/flv2aac.js'
 import { WebWorker, BatchDownloadWorkerFn } from './webworker.js';
 
 class UI {
@@ -360,6 +361,16 @@ class UI {
                     }}>保存合并后FLV</a>
                     {' '}
                     <a href={ass} download={`${outputName}.ass`}>弹幕ASS</a>
+                    {' '}
+                    <a download={`${outputName}.aac`} onclick={e => {
+                        const aacA = e.target
+                        FLV2AAC(href).then((aacData) => {
+                            const blob = new Blob([aacData])
+                            aacA.href = URL.createObjectURL(blob)
+                            aacA.onclick = null
+                            aacA.click()
+                        })
+                    }}>音频AAC</a>
                     {' '}
                     <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)}>打包MKV(软字幕封装)</a>
                     {' '}

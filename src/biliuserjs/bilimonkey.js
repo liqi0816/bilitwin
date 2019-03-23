@@ -159,7 +159,7 @@ class BiliMonkey {
 
     async getASS(clickableFormat) {
         if (this.ass) return this.ass;
-        this.ass = new Promise(async resolve => {
+        this.ass = await new Promise(async resolve => {
             // 1. cid
             if (!this.cid) this.cid = this.playerWin.cid
 
@@ -193,9 +193,10 @@ class BiliMonkey {
             }
 
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
+            const data = await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
-            )));
+            );
+            resolve(top.URL.createObjectURL(data));
         });
         return this.ass;
     }

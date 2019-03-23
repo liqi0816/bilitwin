@@ -824,14 +824,11 @@ class FLVDemuxer {
      * @param {boolean} probeData.match
      * @param {number} probeData.consumed
      * @param {number} probeData.dataOffset
-     * @param {booleam} probeData.hasAudioTrack
+     * @param {boolean} probeData.hasAudioTrack
      * @param {boolean} probeData.hasVideoTrack
-     * @param {*} config 
      */
-    constructor(probeData, config) {
+    constructor(probeData) {
         this.TAG = 'FLVDemuxer';
-
-        this._config = config;
 
         this._onError = null;
         this._onMediaInfo = null;
@@ -1283,6 +1280,7 @@ class FLVDemuxer {
 
         if (soundFormat === 10) {  // AAC
             let aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);
+
             if (aacData == undefined) {
                 return;
             }
@@ -1299,6 +1297,10 @@ class FLVDemuxer {
                 meta.config = misc.config;
                 // added by qli5
                 meta.configRaw = misc.configRaw;
+                // added by Xmader
+                meta.audioObjectType = misc.audioObjectType
+                meta.samplingFrequencyIndex = misc.samplingIndex
+                meta.channelConfig = misc.channelCount
                 // The decode result of an aac sample is 1024 PCM samples
                 meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
                 Log.v(this.TAG, 'Parsed AudioSpecificConfig');
@@ -1497,11 +1499,12 @@ class FLVDemuxer {
         }
 
         return {
-            // configRaw: added by qli5
-            configRaw: array,
+            audioObjectType,  // audio_object_type,        added by Xmader
+            samplingIndex,    // sampling_frequency_index, added by Xmader
+            configRaw: array, //                           added by qli5
             config: config,
             samplingRate: samplingFrequence,
-            channelCount: channelConfig,
+            channelCount: channelConfig,  // channel_config
             codec: 'mp4a.40.' + audioObjectType,
             originalCodec: 'mp4a.40.' + originalAudioObjectType
         };
