@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.0
+// @version     1.22.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9667,11 +9667,11 @@ class UI {
         div.addEventListener('click', e => e.stopPropagation());
         div.className = 'bilitwin';
         div.append(...[videoA, ' ', assA]);
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module");
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module") || document.querySelector(".media-title");
         tminfo.style.float = 'none';
         tminfo.after(div);
 
-        const h1_module = document.querySelector("#h1_module");
+        const h1_module = document.querySelector("#h1_module") || document.querySelector(".media-title");
         if (h1_module) {
             h1_module.style.marginBottom = "0px";
         }

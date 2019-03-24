@@ -166,11 +166,11 @@ class UI {
         >{...[videoA, ' ', assA]}</div>;
 
         // 2. append to title
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module");
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module") || document.querySelector(".media-title");
         tminfo.style.float = 'none';
         tminfo.after(div);
 
-        const h1_module = document.querySelector("#h1_module")
+        const h1_module = document.querySelector("#h1_module") || document.querySelector(".media-title")
         if (h1_module) {
             h1_module.style.marginBottom = "0px"
         }

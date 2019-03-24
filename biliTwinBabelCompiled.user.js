@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.0
+// @version     1.22.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.0
+// @version     1.22.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9061,11 +9061,11 @@ var UI = function () {
             });
             div.className = 'bilitwin';
             div.append.apply(div, [videoA, ' ', assA]);
-            var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module");
+            var tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module") || document.querySelector(".media-title");
             tminfo.style.float = 'none';
             tminfo.after(div);
 
-            var h1_module = document.querySelector("#h1_module");
+            var h1_module = document.querySelector("#h1_module") || document.querySelector(".media-title");
             if (h1_module) {
                 h1_module.style.marginBottom = "0px";
             }
