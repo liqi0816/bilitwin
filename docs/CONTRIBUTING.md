@@ -37,7 +37,7 @@ npm install
    // @name        (local)bilibili merged flv+mp4+ass+enhance
    // @namespace   http://qli5.tk/
    // @homepageURL https://github.com/liqi0816/bilitwin/
-   // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
+   // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
    // @match       *://www.bilibili.com/video/av*
    // @match       *://bangumi.bilibili.com/anime/*/play*
    // @match       *://www.bilibili.com/bangumi/play/ep*
