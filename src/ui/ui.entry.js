@@ -517,14 +517,14 @@ class UI {
                         <span class="video-contextmenu-icon"></span> 下载弹幕ASS
                     </a>
                 </li>
+                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey))}>
+                    <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> 批量下载
+                    </a>
+                </li>
                 <li class="context-menu-function" onclick={() => this.displayOptionDiv()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
-                    </a>
-                </li>
-                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey))}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> (测)批量下载
                     </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => {
@@ -573,7 +573,6 @@ class UI {
         >
             <a class="context-menu-a" onmouseover={() => refreshSession()}>
                 BiliPolyfill
-                {!polyfill.option.betabeta ? '(到设置开启)' : ''}
                 <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
             </a>
             <ul>
@@ -1058,10 +1057,20 @@ class UI {
                 sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`
             })
 
+            const iName = i.name
+            let pName = `P${index + 1}`
+            if (typeof iName == "string" && iName.toUpperCase() !== pName) {
+                pName += ` - ${iName}`
+            }
+
+            const outputName = videoTitle.match(/：第\d+话 .+?$/)
+                ? videoTitle.replace(/：第\d+话 .+?$/, `：第${iName}话`)
+                : `${videoTitle} - ${pName}`
+
             table.append(
                 <tr>
                     <td>
-                        {i.name}
+                        {iName}
                         <br />
                         <a onclick={async (e) => {
                             // add beforeUnloadHandler
@@ -1085,10 +1094,6 @@ class UI {
                                     : flvs[0]
                             )
                             worker.terminate()
-
-                            const outputName = videoTitle.match(/：第\d+话 .+?$/)
-                                ? videoTitle.replace(/：第\d+话 .+?$/, `：第${i.name}话`)
-                                : `${videoTitle} - ${i.name}`
 
                             targetA.href = href
                             targetA.download = `${outputName}.flv`
@@ -1160,7 +1165,7 @@ class UI {
                     color: #f25d8e;
                 }
             `}</style>
-            <h1>(测试) 批量下载</h1>
+            <h1>批量下载</h1>
             <ul>
                 <li>
                     <p>抓取的视频的最高分辨率可在设置中自定义，番剧只能抓取到当前清晰度</p>

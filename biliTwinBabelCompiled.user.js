@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.1
+// @version     1.22.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.1
+// @version     1.22.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9839,22 +9839,7 @@ var UI = function () {
             var li2 = document.createElement('li');
             li2.className = 'context-menu-function';
 
-            li2.onclick = function () {
-                return _this53.displayOptionDiv();
-            };
-
-            var a3 = document.createElement('a');
-            a3.className = 'context-menu-a';
-            var span3 = document.createElement('span');
-            span3.className = 'video-contextmenu-icon';
-            a3.append(span3);
-            a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-            li2.append(a3);
-            ul1.append(li2);
-            var li3 = document.createElement('li');
-            li3.className = 'context-menu-function';
-
-            li3.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
+            li2.onclick = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee73() {
                 return regeneratorRuntime.wrap(function _callee73$(_context75) {
                     while (1) {
                         switch (_context75.prev = _context75.next) {
@@ -9875,12 +9860,27 @@ var UI = function () {
                 }, _callee73, _this53);
             }));
 
+            var a3 = document.createElement('a');
+            a3.className = 'context-menu-a';
+            var span3 = document.createElement('span');
+            span3.className = 'video-contextmenu-icon';
+            a3.append(span3);
+            a3.append(' \u6279\u91CF\u4E0B\u8F7D');
+            li2.append(a3);
+            ul1.append(li2);
+            var li3 = document.createElement('li');
+            li3.className = 'context-menu-function';
+
+            li3.onclick = function () {
+                return _this53.displayOptionDiv();
+            };
+
             var a4 = document.createElement('a');
             a4.className = 'context-menu-a';
             var span4 = document.createElement('span');
             span4.className = 'video-contextmenu-icon';
             a4.append(span4);
-            a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
+            a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
             li3.append(a4);
             ul1.append(li3);
             var li4 = document.createElement('li');
@@ -10001,7 +10001,6 @@ var UI = function () {
             };
 
             a1.append('BiliPolyfill');
-            a1.append(!polyfill.option.betabeta ? '(到设置开启)' : '');
             var span1 = document.createElement('span');
             span1.className = 'bpui-icon bpui-icon-arrow-down';
             span1.style = 'transform:rotate(-90deg);margin-top:3px;';
@@ -11136,17 +11135,25 @@ var UI = function () {
                     sizeSpan.textContent = '  (' + sizeMB.toFixed(1) + ' MiB)';
                 });
 
+                var iName = i.name;
+                var pName = 'P' + (index + 1);
+                if (typeof iName == "string" && iName.toUpperCase() !== pName) {
+                    pName += ' - ' + iName;
+                }
+
+                var outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, '\uFF1A\u7B2C' + iName + '\u8BDD') : videoTitle + ' - ' + pName;
+
                 table.append.apply(table, [function () {
                     var tr1 = document.createElement('tr');
                     var td1 = document.createElement('td');
-                    td1.append(i.name);
+                    td1.append(iName);
                     var br = document.createElement('br');
                     td1.append(br);
                     var a1 = document.createElement('a');
 
                     a1.onclick = function () {
                         var _ref114 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee82(e) {
-                            var handler, targetA, format, flvs, worker, href, outputName, ass;
+                            var handler, targetA, format, flvs, worker, href, ass;
                             return regeneratorRuntime.wrap(function _callee82$(_context84) {
                                 while (1) {
                                     switch (_context84.prev = _context84.next) {
@@ -11202,9 +11209,6 @@ var UI = function () {
 
                                             worker.terminate();
 
-                                            outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, '\uFF1A\u7B2C' + i.name + '\u8BDD') : videoTitle + ' - ' + i.name;
-
-
                                             targetA.href = href;
                                             targetA.download = outputName + '.flv';
                                             targetA.textContent = "保存合并后FLV";
@@ -11227,7 +11231,7 @@ var UI = function () {
 
                                             targetA.click();
 
-                                        case 34:
+                                        case 33:
                                         case 'end':
                                             return _context84.stop();
                                     }
@@ -11295,7 +11299,7 @@ var UI = function () {
             style1.textContent = '\n                table {\n                    width: 100%;\n                    table-layout: fixed;\n                }\n            \n                td {\n                    overflow: hidden;\n                    white-space: nowrap;\n                    text-overflow: ellipsis;\n                    text-align: center;\n                    vertical-align: bottom;\n                }\n\n                progress {\n                    margin-left: 15px;\n                }\n\n                a {\n                    cursor: pointer;\n                    color: #00a1d6;\n                }\n        \n                a:hover {\n                    color: #f25d8e;\n                }\n            ';
             fragment.append(style1);
             var h1 = document.createElement('h1');
-            h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u4E0B\u8F7D';
+            h1.textContent = '\u6279\u91CF\u4E0B\u8F7D';
             fragment.append(h1);
             var ul1 = document.createElement('ul');
             var li = document.createElement('li');

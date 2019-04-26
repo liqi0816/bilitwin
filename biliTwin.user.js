@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.1
+// @version     1.22.2
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -10170,27 +10170,27 @@ class UI {
         const li2 = document.createElement('li');
         li2.className = 'context-menu-function';
 
-        li2.onclick = () => this.displayOptionDiv();
+        li2.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)));
 
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';
         const span3 = document.createElement('span');
         span3.className = 'video-contextmenu-icon';
         a3.append(span3);
-        a3.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+        a3.append(' \u6279\u91CF\u4E0B\u8F7D');
         li2.append(a3);
         ul1.append(li2);
         const li3 = document.createElement('li');
         li3.className = 'context-menu-function';
 
-        li3.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)));
+        li3.onclick = () => this.displayOptionDiv();
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
         const span4 = document.createElement('span');
         span4.className = 'video-contextmenu-icon';
         a4.append(span4);
-        a4.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
+        a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li3.append(a4);
         ul1.append(li3);
         const li4 = document.createElement('li');
@@ -10276,7 +10276,6 @@ class UI {
         a1.onmouseover = () => refreshSession();
 
         a1.append('BiliPolyfill');
-        a1.append(!polyfill.option.betabeta ? '(到设置开启)' : '');
         const span1 = document.createElement('span');
         span1.className = 'bpui-icon bpui-icon-arrow-down';
         span1.style = 'transform:rotate(-90deg);margin-top:3px;';
@@ -11124,10 +11123,18 @@ class UI {
                 sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`;
             });
 
+            const iName = i.name;
+            let pName = `P${index + 1}`;
+            if (typeof iName == "string" && iName.toUpperCase() !== pName) {
+                pName += ` - ${iName}`;
+            }
+
+            const outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, `：第${iName}话`) : `${videoTitle} - ${pName}`;
+
             table.append((() => {
                 const tr1 = document.createElement('tr');
                 const td1 = document.createElement('td');
-                td1.append(i.name);
+                td1.append(iName);
                 const br = document.createElement('br');
                 td1.append(br);
                 const a1 = document.createElement('a');
@@ -11150,8 +11157,6 @@ class UI {
                     await worker.registerAllMethods();
                     const href = URL.createObjectURL(format == "flv" ? await worker.mergeFLVFiles(flvs) : flvs[0]);
                     worker.terminate();
-
-                    const outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, `：第${i.name}话`) : `${videoTitle} - ${i.name}`;
 
                     targetA.href = href;
                     targetA.download = `${outputName}.flv`;
@@ -11258,7 +11263,7 @@ class UI {
             `;
         fragment.append(style1);
         const h1 = document.createElement('h1');
-        h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u4E0B\u8F7D';
+        h1.textContent = '\u6279\u91CF\u4E0B\u8F7D';
         fragment.append(h1);
         const ul1 = document.createElement('ul');
         const li = document.createElement('li');
