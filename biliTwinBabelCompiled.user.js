@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.2
+// @version     1.22.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.22.2
+// @version     1.22.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -499,17 +499,22 @@ var BiliUserJS = function () {
                                 });
 
                             case 3:
-                                if (!location.href.includes('/watchlater/#/')) {
-                                    _context3.next = 7;
-                                    break;
-                                }
-
                                 if (document.getElementById('bofqi')) {
-                                    _context3.next = 7;
+                                    _context3.next = 10;
                                     break;
                                 }
 
-                                _context3.next = 7;
+                                if (!document.querySelector("video")) {
+                                    _context3.next = 8;
+                                    break;
+                                }
+
+                                top.location.reload(); // 刷新
+                                _context3.next = 10;
+                                break;
+
+                            case 8:
+                                _context3.next = 10;
                                 return new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         if (document.getElementById('bofqi')) {
@@ -520,41 +525,31 @@ var BiliUserJS = function () {
                                     observer.observe(document, { childList: true, subtree: true });
                                 });
 
-                            case 7:
+                            case 10:
                                 if (!document.getElementById('bilibiliPlayer')) {
-                                    _context3.next = 11;
+                                    _context3.next = 14;
                                     break;
                                 }
 
                                 return _context3.abrupt('return', window);
 
-                            case 11:
+                            case 14:
                                 if (!document.querySelector('#bofqi > iframe')) {
-                                    _context3.next = 15;
+                                    _context3.next = 18;
                                     break;
                                 }
 
                                 return _context3.abrupt('return', BiliUserJS.getIframeWin());
 
-                            case 15:
+                            case 18:
                                 if (!document.querySelector('#bofqi > object')) {
-                                    _context3.next = 19;
+                                    _context3.next = 22;
                                     break;
                                 }
 
                                 throw 'Need H5 Player';
 
-                            case 19:
-                                if (!(!(document.getElementById('bofqi') instanceof Node) && document.querySelector("video"))) {
-                                    _context3.next = 23;
-                                    break;
-                                }
-
-                                top.location.reload(); // 刷新
-                                _context3.next = 24;
-                                break;
-
-                            case 23:
+                            case 22:
                                 return _context3.abrupt('return', new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
                                         if (document.getElementById('bilibiliPlayer')) {
@@ -571,7 +566,7 @@ var BiliUserJS = function () {
                                     observer.observe(document.getElementById('bofqi'), { childList: true });
                                 }));
 
-                            case 24:
+                            case 23:
                             case 'end':
                                 return _context3.stop();
                         }

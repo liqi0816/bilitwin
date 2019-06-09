@@ -33,8 +33,10 @@ class BiliUserJS {
                 window.addEventListener('hashchange', () => resolve(location.href), { once: true });
             });
         }
-        if (location.href.includes('/watchlater/#/')) {
-            if (!document.getElementById('bofqi')) {
+        if (!document.getElementById('bofqi')) {
+            if (document.querySelector("video")) {
+                top.location.reload() // 刷新
+            } else {
                 await new Promise(resolve => {
                     const observer = new MutationObserver(() => {
                         if (document.getElementById('bofqi')) {
@@ -54,9 +56,6 @@ class BiliUserJS {
         }
         else if (document.querySelector('#bofqi > object')) {
             throw 'Need H5 Player';
-        }
-        else if (!(document.getElementById('bofqi') instanceof Node) && document.querySelector("video")) {
-            top.location.reload() // 刷新
         }
         else {
             return new Promise(resolve => {
