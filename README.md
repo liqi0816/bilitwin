@@ -19,6 +19,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
     * 网络
         * 抓取FLV / MP4
         * 抓取弹幕
+        * 抓取CC字幕
     * 缓存
         * 缓存FLV / MP4到本地
         * 断点续传
@@ -26,6 +27,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
     * 转码
         * 合并FLV
         * 弹幕转码ASS
+        * CC字幕转码ASS
         * AAC音频下载
         * 软字幕打包FLV+ASS为MKV
     * 集成
