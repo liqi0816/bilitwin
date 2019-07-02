@@ -16,6 +16,7 @@ import FLV from '../flvparser/flv.js';
 import MKVTransmuxer from '../flvass2mkv/interface.js';
 import FLV2AAC from '../flv2aac/flv2aac.js'
 import { WebWorker, BatchDownloadWorkerFn } from './webworker.js';
+import { getSubtitles } from "../subtitle/index.js"
 
 class UI {
     constructor(twin, option = UI.optionDefaults) {
@@ -178,7 +179,58 @@ class UI {
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;
 
+        this.appendSubtitleAs(div)
+
         return div;
+    }
+
+    async buildSubtitleAs() {
+        if (this.cidSessionDom && this.cidSessionDom.subtitleAs) {
+            return this.cidSessionDom.subtitleAs
+        }
+
+        const subtitleList = await getSubtitles(aid, cid)
+
+        const fontSize = '15px'
+
+        const monkey = this.twin.monkey
+
+        const subtitleAs = subtitleList.map((subtitle) => {
+            const lan = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")")
+
+            /** @type {HTMLAnchorElement} */
+            const a = <a style={{ fontSize }}>{lan}字幕ASS</a>;
+
+            a.onclick = () => {
+                const blob = new Blob([subtitle.ass])
+                a.href = URL.createObjectURL(blob)
+
+                let name = ""
+                if (monkey.mp4 && monkey.mp4.match) {
+                    name = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
+                } else {
+                    name = monkey.cid || cid
+                }
+
+                a.download = `${name}.${subtitle.language}.ass`
+            }
+
+            return a
+        })
+
+        this.cidSessionDom.subtitleAs = subtitleAs
+        return subtitleAs
+    }
+
+    async appendSubtitleAs(div) {
+        const subtitleAs = await this.buildSubtitleAs()
+
+        const items = subtitleAs.reduce((p, c) => {
+            // 在每一项前添加空格
+            return p.concat(' ', c)
+        }, [])
+
+        div.append(...items)
     }
 
     appendShortVideoTitle({ video_playurl, cover_img }) {
@@ -499,6 +551,48 @@ class UI {
 
         Object.assign(this.cidSessionDom, { context_menu_videoA })
 
+        /** @type {HTMLLIElement} */
+        const downloadSubtitlesContextMenu =
+            <li class="context-menu-menu" onmouseover={async () => {
+                /** @type {HTMLAnchorElement[]} */
+                const subtitleAs = await this.buildSubtitleAs()
+
+                if (subtitleAs && subtitleAs.length > 0) {
+
+                    downloadSubtitlesContextMenu.appendChild(
+                        <ul>
+                            {...subtitleAs.map((a) => {
+                                return <li class="context-menu-function">
+                                    <a class="context-menu-a" onclick={() => a.click()}>
+                                        <span class="video-contextmenu-icon"></span> {a.text.replace("字幕ASS", "")}
+                                    </a>
+                                </li>
+                            })}
+                        </ul>
+                    )
+
+                } else {
+
+                    downloadSubtitlesContextMenu.appendChild(
+                        <ul>
+                            <li class="context-menu-function">
+                                <a class="context-menu-a">
+                                    <span class="video-contextmenu-icon"></span> 无字幕
+                                </a>
+                            </li>
+                        </ul>
+                    )
+
+                }
+
+                downloadSubtitlesContextMenu.onmouseover = null
+            }}>
+                <a class="context-menu-a">
+                    <span class="video-contextmenu-icon"></span> 下载字幕ASS
+                    <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
+                </a>
+            </li>
+
         return <li
             class="context-menu-menu bilitwin"
             onclick={() => playerWin.document.getElementById('bilibiliPlayer').click()}
@@ -517,6 +611,7 @@ class UI {
                         <span class="video-contextmenu-icon"></span> 下载弹幕ASS
                     </a>
                 </li>
+                {downloadSubtitlesContextMenu}
                 <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey))}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 批量下载
