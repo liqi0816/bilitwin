@@ -29,7 +29,7 @@ Greasy Fork地址: [https://greasyfork.org/scripts/372516](https://greasyfork.or
         * 弹幕转码ASS
         * CC字幕转码ASS
         * AAC音频下载
-        * 软字幕打包FLV+ASS为MKV
+        * 软字幕打包FLV+弹幕ASS+CC字幕(如果有)为MKV
     * 集成
         * 下载合并一条龙 <sub>一键下载所有超清FLV分段并自动合并</sub>
         * 关标签页已下载的分段不消失 <sub>保留已经下载好的分段到缓存</sub>

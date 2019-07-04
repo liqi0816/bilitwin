@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.0
+// @version     1.23.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3621,6 +3621,7 @@ var FLVASS2MKV = (function () {
 
     const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' };
 
+    /** @type {typeof Blob} */
     const _Blob = typeof Blob === 'function' && Blob || class {
         constructor(array) {
             return Buffer.concat(array.map(Buffer.from.bind(Buffer)));
@@ -4457,14 +4458,11 @@ var FLVASS2MKV = (function () {
          * @param {boolean} probeData.match
          * @param {number} probeData.consumed
          * @param {number} probeData.dataOffset
-         * @param {booleam} probeData.hasAudioTrack
+         * @param {boolean} probeData.hasAudioTrack
          * @param {boolean} probeData.hasVideoTrack
-         * @param {*} config 
          */
-        constructor(probeData, config) {
+        constructor(probeData) {
             this.TAG = 'FLVDemuxer';
-
-            this._config = config;
 
             this._onError = null;
             this._onMediaInfo = null;
@@ -4914,6 +4912,7 @@ var FLVASS2MKV = (function () {
 
             if (soundFormat === 10) {  // AAC
                 let aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);
+
                 if (aacData == undefined) {
                     return;
                 }
@@ -4930,6 +4929,10 @@ var FLVASS2MKV = (function () {
                     meta.config = misc.config;
                     // added by qli5
                     meta.configRaw = misc.configRaw;
+                    // added by Xmader
+                    meta.audioObjectType = misc.audioObjectType;
+                    meta.samplingFrequencyIndex = misc.samplingIndex;
+                    meta.channelConfig = misc.channelCount;
                     // The decode result of an aac sample is 1024 PCM samples
                     meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
                     Log.v(this.TAG, 'Parsed AudioSpecificConfig');
@@ -5125,11 +5128,12 @@ var FLVASS2MKV = (function () {
             }
 
             return {
-                // configRaw: added by qli5
-                configRaw: array,
+                audioObjectType,  // audio_object_type,        added by Xmader
+                samplingIndex,    // sampling_frequency_index, added by Xmader
+                configRaw: array, //                           added by qli5
                 config: config,
                 samplingRate: samplingFrequence,
-                channelCount: channelConfig,
+                channelCount: channelConfig,  // channel_config
                 codec: 'mp4a.40.' + audioObjectType,
                 originalCodec: 'mp4a.40.' + originalAudioObjectType
             };
@@ -6815,15 +6819,15 @@ var FLVASS2MKV = (function () {
      * DEALINGS IN THE SOFTWARE.
      */
 
-    /***
-     * Copyright (C) 2018 Qli5. All Rights Reserved.
-     * 
-     * @author qli5 <goodlq11[at](163|gmail).com>
-     * 
-     * This Source Code Form is subject to the terms of the Mozilla Public
-     * License, v. 2.0. If a copy of the MPL was not distributed with this
-     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
-    */
+    // @ts-check
+
+    /**
+     * @typedef {Object} AssBlock
+     * @property {number} track 
+     * @property {Uint8Array} frame 
+     * @property {number} timestamp 
+     * @property {number} duration 
+     */
 
     class MKV {
         constructor(config) {
@@ -6832,9 +6836,10 @@ var FLVASS2MKV = (function () {
             Object.assign(this, config);
             this.segmentUID = MKV.randomBytes(16);
             this.trackUIDBase = Math.trunc(Math.random() * 2 ** 16);
-            this.trackMetadata = { h264: null, aac: null, ass: null };
+            this.trackMetadata = { h264: null, aac: null, assList: [] };
             this.duration = 0;
-            this.blocks = { h264: [], aac: [], ass: [] };
+            /** @type {{ h264: any[]; aac: any[]; assList: AssBlock[][]; }} */
+            this.blocks = { h264: [], aac: [], assList: [] };
         }
 
         static randomBytes(num) {
@@ -6896,10 +6901,10 @@ var FLVASS2MKV = (function () {
         }
 
         addASSMetadata(ass) {
-            this.trackMetadata.ass = {
+            this.trackMetadata.assList.push({
                 codecId: 'S_TEXT/ASS',
                 codecPrivate: new _TextEncoder().encode(ass.header)
-            };
+            });
         }
 
         addH264Stream(h264) {
@@ -6922,13 +6927,18 @@ var FLVASS2MKV = (function () {
             })));
         }
 
+        /**
+         * @param {{ lines: any[]; }} ass 
+         */
         addASSStream(ass) {
-            this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({
-                track: 3,
+            const n = this.blocks.assList.length;
+            const lineBlocks = ass.lines.map((e, i) => ({
+                track: 3 + n,
                 frame: new _TextEncoder().encode(\`\${i},\${e['Layer'] || ''},\${e['Style'] || ''},\${e['Name'] || ''},\${e['MarginL'] || ''},\${e['MarginR'] || ''},\${e['MarginV'] || ''},\${e['Effect'] || ''},\${e['Text'] || ''}\`),
                 timestamp: MKV.textToMS(e['Start']),
                 duration: MKV.textToMS(e['End']) - MKV.textToMS(e['Start']),
-            })));
+            }));
+            this.blocks.assList.push(lineBlocks);
         }
 
         build() {
@@ -7001,7 +7011,7 @@ var FLVASS2MKV = (function () {
             return EBML.element(EBML.ID.Tracks, [
                 this.getVideoTrackEntry(),
                 this.getAudioTrackEntry(),
-                this.getSubtitleTrackEntry()
+                ...this.getSubtitleTrackEntry(),
             ]);
         }
 
@@ -7042,15 +7052,17 @@ var FLVASS2MKV = (function () {
         }
 
         getSubtitleTrackEntry() {
-            return EBML.element(EBML.ID.TrackEntry, [
-                EBML.element(EBML.ID.TrackNumber, EBML.number(3)),
-                EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3)),
-                EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
-                EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
-                EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.ass.codecId)),
-                EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.ass.codecPrivate)),
-                EBML.element(EBML.ID.Language, EBML.string('und')),
-            ]);
+            return this.trackMetadata.assList.map((ass, i) => {
+                return EBML.element(EBML.ID.TrackEntry, [
+                    EBML.element(EBML.ID.TrackNumber, EBML.number(3 + i)),
+                    EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3 + i)),
+                    EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
+                    EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
+                    EBML.element(EBML.ID.CodecID, EBML.string(ass.codecId)),
+                    EBML.element(EBML.ID.CodecPrivate, EBML.bytes(ass.codecPrivate)),
+                    EBML.element(EBML.ID.Language, EBML.string('und')),
+                ]);
+            });
         }
 
         getClusterArray() {
@@ -7060,7 +7072,7 @@ var FLVASS2MKV = (function () {
 
             let i = 0;
             let j = 0;
-            let k = 0;
+            let k = Array.from({ length: this.blocks.assList.length }).fill(0);
             let clusterTimeCode = 0;
             let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
             let ret = [clusterContent];
@@ -7075,14 +7087,16 @@ var FLVASS2MKV = (function () {
                         break;
                     }
                 }
-                for (; k < this.blocks.ass.length; k++) {
-                    if (this.blocks.ass[k].timestamp < e.timestamp) {
-                        clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+                this.blocks.assList.forEach((ass, n) => {
+                    for (; k[n] < ass.length; k[n]++) {
+                        if (ass[k[n]].timestamp < e.timestamp) {
+                            clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+                        }
+                        else {
+                            break;
+                        }
                     }
-                    else {
-                        break;
-                    }
-                }
+                });
                 if (e.isKeyframe/*  || clusterContent.length > 72 */) {
                     // start new cluster
                     clusterTimeCode = e.timestamp;
@@ -7093,7 +7107,9 @@ var FLVASS2MKV = (function () {
                 if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });
             }
             for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));
-            for (; k < this.blocks.ass.length; k++) clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+            this.blocks.assList.forEach((ass, n) => {
+                for (; k[n] < ass.length; k[n]++) clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+            });
             if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });
             if (ret[0].length == 1) ret.shift();
             ret = ret.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));
@@ -7128,30 +7144,39 @@ var FLVASS2MKV = (function () {
         }
     }
 
-    /***
-     * FLV + ASS => MKV transmuxer
-     * Demux FLV into H264 + AAC stream and ASS into line stream; then
-     * remux them into a MKV file.
-     * 
-     * @author qli5 <goodlq11[at](163|gmail).com>
-     * 
-     * This Source Code Form is subject to the terms of the Mozilla Public
-     * License, v. 2.0. If a copy of the MPL was not distributed with this
-     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
-     * 
-     * The FLV demuxer is from flv.js <https://github.com/Bilibili/flv.js/>
-     * by zheng qian <xqq@xqq.im>, licensed under Apache 2.0.
-     * 
-     * The EMBL builder is from simple-ebml-builder
-     * <https://www.npmjs.com/package/simple-ebml-builder> by ryiwamoto, 
-     * licensed under MIT.
+    // @ts-check
+
+    /**
+     * @param {Blob|string|ArrayBuffer} x 
      */
+    const getArrayBuffer = (x) => {
+        return new Promise((resolve, reject) => {
+            if (x instanceof _Blob) {
+                const e = new FileReader();
+                e.onload = () => resolve(e.result);
+                e.onerror = reject;
+                e.readAsArrayBuffer(x);
+            }
+            else if (typeof x == 'string') {
+                const e = new XMLHttpRequest();
+                e.responseType = 'arraybuffer';
+                e.onload = () => resolve(e.response);
+                e.onerror = reject;
+                e.open('get', x);
+                e.send();
+            }
+            else if (x instanceof ArrayBuffer) {
+                resolve(x);
+            }
+            else {
+                reject(new TypeError('flvass2mkv: getArrayBuffer {Blob|string|ArrayBuffer}'));
+            }
+        })
+    };
 
     const FLVASS2MKV = class {
         constructor(config = {}) {
             this.onflvprogress = null;
-            this.onassprogress = null;
-            this.onurlrevokesafe = null;
             this.onfileload = null;
             this.onmkvprogress = null;
             this.onload = null;
@@ -7165,71 +7190,38 @@ var FLVASS2MKV = (function () {
          * remux them into a MKV file.
          * @param {Blob|string|ArrayBuffer} flv 
          * @param {Blob|string|ArrayBuffer} ass 
+         * @param {...(Blob|string|ArrayBuffer)} subtitleAssList
          */
-        async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass') {
+        async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass', ...subtitleAssList) {
             // load flv and ass as arraybuffer
             await Promise.all([
-                new Promise((r, j) => {
-                    if (flv instanceof _Blob) {
-                        const e = new FileReader();
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(flv = e.result);
-                        e.onerror = j;
-                        e.readAsArrayBuffer(flv);
-                    }
-                    else if (typeof flv == 'string') {
-                        const e = new XMLHttpRequest();
-                        e.responseType = 'arraybuffer';
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(flv = e.response);
-                        e.onerror = j;
-                        e.open('get', flv);
-                        e.send();
-                        flv = 2; // onurlrevokesafe
-                    }
-                    else if (flv instanceof ArrayBuffer) {
-                        r(flv);
-                    }
-                    else {
-                        j(new TypeError('flvass2mkv: flv {Blob|string|ArrayBuffer}'));
-                    }
-                    if (typeof ass != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-                }),
-                new Promise((r, j) => {
-                    if (ass instanceof _Blob) {
-                        const e = new FileReader();
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(ass = e.result);
-                        e.onerror = j;
-                        e.readAsArrayBuffer(ass);
-                    }
-                    else if (typeof ass == 'string') {
-                        const e = new XMLHttpRequest();
-                        e.responseType = 'arraybuffer';
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(ass = e.response);
-                        e.onerror = j;
-                        e.open('get', ass);
-                        e.send();
-                        ass = 2; // onurlrevokesafe
-                    }
-                    else if (ass instanceof ArrayBuffer) {
-                        r(ass);
-                    }
-                    else {
-                        j(new TypeError('flvass2mkv: ass {Blob|string|ArrayBuffer}'));
-                    }
-                    if (typeof flv != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-                }),
+                (async () => {
+                    flv = await getArrayBuffer(flv);
+                })(),
+                (async () => {
+                    ass = await getArrayBuffer(ass);
+                })(),
+                (async () => {
+                    subtitleAssList = await Promise.all(
+                        subtitleAssList.map(getArrayBuffer)
+                    );
+                })(),
             ]);
+
             if (this.onfileload) this.onfileload();
 
             const mkv = new MKV(this.mkvConfig);
 
             const assParser = new ASS();
-            ass = assParser.parseFile(ass);
-            mkv.addASSMetadata(ass);
-            mkv.addASSStream(ass);
+            const assData = assParser.parseFile(ass);
+            mkv.addASSMetadata(assData);
+            mkv.addASSStream(assData);
+
+            subtitleAssList.forEach((subtitleAss) => {
+                const assData = assParser.parseFile(subtitleAss);
+                mkv.addASSMetadata(assData);
+                mkv.addASSStream(assData);
+            });
 
             const flvProbeData = FLVDemuxer.probe(flv);
             const flvDemuxer = new FLVDemuxer(flvProbeData);
@@ -7300,11 +7292,12 @@ var FLVASS2MKV = (function () {
                     mkvProgress.max = total;
                 },
                 name: 'merged.mkv',
+                subtitleAssList: [],
             };
             option = Object.assign(defaultOption, option);
             target.download = a.download = a.textContent = option.name;
             console.time('file');
-            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);
+            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass, ...option.subtitleAssList);
             console.timeEnd('flvass2mkv');
             target.href = a.href = URL.createObjectURL(mkv);
             target.textContent = "另存为MKV"
@@ -7317,7 +7310,8 @@ var FLVASS2MKV = (function () {
     </script>
 </body>
 
-</html>`;
+</html>
+`;
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -7340,8 +7334,10 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} flv
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
+     * @param {Node} target
+     * @param {(Blob|string|ArrayBuffer)[]=} subtitleAssList
      */
-    exec(flv, ass, name, target) {
+    exec(flv, ass, name, target, subtitleAssList = []) {
         if (target.textContent != "另存为MKV") {
             target.textContent = "打包中";
 
@@ -7354,7 +7350,7 @@ class MKVTransmuxer {
 
             // 3. Invoke exec
             if (!(this.option instanceof Object)) this.option = null;
-            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }), target);
+            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name, subtitleAssList }), target);
             URL.revokeObjectURL(flv);
             URL.revokeObjectURL(ass);
 
@@ -9602,9 +9598,11 @@ const buildLine = (dialogue) => {
 
 /**
  * @param {import("./index").SubtitleData} subtitleData 
+ * @param {string} languageDoc 字幕语言描述，例如 "英语（美国）"
  */
-const buildAss = (subtitleData) => {
-    const title = top.document.title;
+const buildAss = (subtitleData, languageDoc = "") => {
+    const pageTitle = top.document.title.replace(/_哔哩哔哩 \(゜-゜\)つロ 干杯~-bilibili$/, "");
+    const title = `${pageTitle} ${languageDoc || ""}字幕`;
     const url = top.location.href;
     const original = `Generated by Xmader/bilitwin based on ${url}`;
 
@@ -9717,7 +9715,7 @@ const getSubtitles = async (aid, cid) => {
                 language_doc: info.lan_doc,
                 url: info.subtitle_url,
                 data: subtitleData,
-                ass: buildAss(subtitleData),
+                ass: buildAss(subtitleData, info.lan_doc),
             }
         })
     )
@@ -9935,6 +9933,8 @@ class UI {
                 }
 
                 a.download = `${name}.${subtitle.language}.ass`;
+
+                a.onclick = null;
             };
 
             return a;
@@ -10228,6 +10228,15 @@ class UI {
         const href = URL.createObjectURL(flv);
         const ass = await monkey.getASS();
 
+        /** @type {HTMLAnchorElement[]} */
+        const subtitleAs = await this.buildSubtitleAs();
+        const subtitleAssList = subtitleAs.map(a => {
+            if (a.onclick && typeof a.onclick === "function") {
+                a.onclick();
+            }
+            return a.href;
+        });
+
         let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
         const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
         if (pageNameElement) {
@@ -10241,7 +10250,7 @@ class UI {
             const tr1 = document.createElement('tr');
             const td1 = document.createElement('td');
             td1.colSpan = '3';
-            td1.style = 'border: 1px solid black';
+            td1.style = 'border: 1px solid black; word-break: keep-all;';
             const a1 = document.createElement('a');
             a1.href = href;
             a1.download = `${outputName}.flv`;
@@ -10274,10 +10283,20 @@ class UI {
 
             a3.textContent = '\u97F3\u9891AAC';
             td1.append(a3);
+            td1.append(...subtitleAs.reduce((p, c) => {
+                // 在每一项前添加空格
+                return p.concat(' ', (() => {
+                    const a4 = document.createElement('a');
+                    a4.href = c.href;
+                    a4.download = c.download;
+                    a4.textContent = c.textContent;
+                    return a4;
+                })());
+            }, []));
             td1.append(' ');
             const a4 = document.createElement('a');
 
-            a4.onclick = e => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target);
+            a4.onclick = e => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList);
 
             a4.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
             td1.append(a4);
