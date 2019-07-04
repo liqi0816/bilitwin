@@ -402,7 +402,9 @@ class UI {
         /** @type {HTMLAnchorElement[]} */
         const subtitleAs = await this.buildSubtitleAs()
         const subtitleAssList = subtitleAs.map((a) => {
-            a.onclick()
+            if (a.onclick && typeof a.onclick === "function") {
+                a.onclick()
+            }
             return a.href
         })
 
