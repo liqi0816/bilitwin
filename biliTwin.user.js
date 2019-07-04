@@ -6819,7 +6819,15 @@ var FLVASS2MKV = (function () {
      * DEALINGS IN THE SOFTWARE.
      */
 
-    // @ts-check
+    /***
+     * Copyright (C) 2018 Qli5. All Rights Reserved.
+     * 
+     * @author qli5 <goodlq11[at](163|gmail).com>
+     * 
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    */
 
     /**
      * @typedef {Object} AssBlock
@@ -7144,7 +7152,24 @@ var FLVASS2MKV = (function () {
         }
     }
 
-    // @ts-check
+    /***
+     * FLV + ASS => MKV transmuxer
+     * Demux FLV into H264 + AAC stream and ASS into line stream; then
+     * remux them into a MKV file.
+     * 
+     * @author qli5 <goodlq11[at](163|gmail).com>
+     * 
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+     * 
+     * The FLV demuxer is from flv.js <https://github.com/Bilibili/flv.js/>
+     * by zheng qian <xqq@xqq.im>, licensed under Apache 2.0.
+     * 
+     * The EMBL builder is from simple-ebml-builder
+     * <https://www.npmjs.com/package/simple-ebml-builder> by ryiwamoto, 
+     * licensed under MIT.
+     */
 
     /**
      * @param {Blob|string|ArrayBuffer} x 

@@ -1,4 +1,3 @@
-// @ts-check
 /***
  * FLV + ASS => MKV transmuxer
  * Demux FLV into H264 + AAC stream and ASS into line stream; then
@@ -17,6 +16,8 @@
  * <https://www.npmjs.com/package/simple-ebml-builder> by ryiwamoto, 
  * licensed under MIT.
  */
+
+// @ts-check
 
 import FLVDemuxer from './demuxer/flvdemuxer.js';
 import ASS from './demuxer/ass.js';
