@@ -21,10 +21,12 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} flv
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
+     * @param {Node} target
+     * @param {(Blob|string|ArrayBuffer)[]=} subtitleAssList
      */
-    exec(flv, ass, name, target) {
+    exec(flv, ass, name, target, subtitleAssList = []) {
         if (target.textContent != "另存为MKV") {
-            target.textContent = "打包中"
+            target.textContent = "打包中";
 
             // 1. Allocate for a new window
             if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
@@ -35,7 +37,7 @@ class MKVTransmuxer {
 
             // 3. Invoke exec
             if (!(this.option instanceof Object)) this.option = null;
-            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }), target);
+            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name, subtitleAssList }), target);
             URL.revokeObjectURL(flv);
             URL.revokeObjectURL(ass);
 

@@ -20,9 +20,6 @@ const replace = require('gulp-replace');
 const inline = require('gulp-inline');
 const rename = require('gulp-rename');
 
-gulp.task('default', ['build']);
-gulp.task('build', ['index.js', 'embedded.html', 'interface.js']);
-
 gulp.task('index.js', async () => {
     const bundle = await rollup.rollup({
         input: './index.entry.js',
@@ -38,15 +35,15 @@ gulp.task('index.js', async () => {
     })
 });
 
-gulp.task('embedded.html', ['index.js'], () => {
+gulp.task('embedded.html', gulp.series('index.js', () => {
     return gulp.src('./demo.html')
         .pipe(replace(/(?:window\.)?exec\(\);?/, ''))
         .pipe(inline())
         .pipe(rename('embedded.html'))
         .pipe(gulp.dest('./'));
-});
+}));
 
-gulp.task('interface.js', ['embedded.html'], async () => {
+gulp.task('interface.js', gulp.series('embedded.html', async () => {
     const bundle = await rollup.rollup({
         input: './interface.entry.js',
         plugins: [
@@ -58,7 +55,7 @@ gulp.task('interface.js', ['embedded.html'], async () => {
         format: 'es',
         sourcemap: true,
     })
-});
+}));
 
 gulp.task('clean', () => {
     const fs = require('fs');
@@ -88,3 +85,7 @@ gulp.task('browserify-index.bundle.js', () => {
         .pipe(sourcemaps.write())
         .pipe(gulp.dest('./'));
 });
+
+gulp.task('build', gulp.series('interface.js'));
+
+gulp.task('default', gulp.series('build'));

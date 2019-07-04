@@ -10,6 +10,7 @@
 
 const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' };
 
+/** @type {typeof Blob} */
 const _Blob = typeof Blob === 'function' && Blob || class {
     constructor(array) {
         return Buffer.concat(array.map(Buffer.from.bind(Buffer)));

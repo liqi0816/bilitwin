@@ -397,6 +397,12 @@ class UI {
         const href = URL.createObjectURL(flv);
         const ass = await monkey.getASS();
 
+        /** @type {HTMLAnchorElement[]} */
+        const subtitleAs = await this.buildSubtitleAs()
+        const subtitleAssList = subtitleAs.map((a) => {
+            return a.href
+        })
+
         let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim()
         const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on")
         if (pageNameElement) {
@@ -425,7 +431,7 @@ class UI {
                         })
                     }}>音频AAC</a>
                     {' '}
-                    <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)}>打包MKV(软字幕封装)</a>
+                    <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList)}>打包MKV(软字幕封装)</a>
                     {' '}
                     记得清理分段缓存哦~
                </td>

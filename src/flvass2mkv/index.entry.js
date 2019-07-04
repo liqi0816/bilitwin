@@ -1,3 +1,4 @@
+// @ts-check
 /***
  * FLV + ASS => MKV transmuxer
  * Demux FLV into H264 + AAC stream and ASS into line stream; then
@@ -22,11 +23,38 @@ import ASS from './demuxer/ass.js';
 import MKV from './remuxer/mkv.js';
 import { Blob } from './util/shim.js';
 
+/**
+ * @param {Blob|string|ArrayBuffer} x 
+ */
+const getArrayBuffer = (x) => {
+    return new Promise((resolve, reject) => {
+        if (x instanceof Blob) {
+            const e = new FileReader();
+            e.onload = () => resolve(e.result);
+            e.onerror = reject;
+            e.readAsArrayBuffer(x);
+        }
+        else if (typeof x == 'string') {
+            const e = new XMLHttpRequest();
+            e.responseType = 'arraybuffer';
+            e.onprogress = this.onflvprogress;
+            e.onload = () => resolve(e.response);
+            e.onerror = reject;
+            e.open('get', x);
+            e.send();
+        }
+        else if (x instanceof ArrayBuffer) {
+            resolve(x);
+        }
+        else {
+            reject(new TypeError('flvass2mkv: getArrayBuffer {Blob|string|ArrayBuffer}'));
+        }
+    })
+}
+
 const FLVASS2MKV = class {
     constructor(config = {}) {
         this.onflvprogress = null;
-        this.onassprogress = null;
-        this.onurlrevokesafe = null;
         this.onfileload = null;
         this.onmkvprogress = null;
         this.onload = null;
@@ -40,71 +68,38 @@ const FLVASS2MKV = class {
      * remux them into a MKV file.
      * @param {Blob|string|ArrayBuffer} flv 
      * @param {Blob|string|ArrayBuffer} ass 
+     * @param {...(Blob|string|ArrayBuffer)} subtitleAssList
      */
-    async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass') {
+    async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass', ...subtitleAssList) {
         // load flv and ass as arraybuffer
         await Promise.all([
-            new Promise((r, j) => {
-                if (flv instanceof Blob) {
-                    const e = new FileReader();
-                    e.onprogress = this.onflvprogress;
-                    e.onload = () => r(flv = e.result);
-                    e.onerror = j;
-                    e.readAsArrayBuffer(flv);
-                }
-                else if (typeof flv == 'string') {
-                    const e = new XMLHttpRequest();
-                    e.responseType = 'arraybuffer';
-                    e.onprogress = this.onflvprogress;
-                    e.onload = () => r(flv = e.response);
-                    e.onerror = j;
-                    e.open('get', flv);
-                    e.send();
-                    flv = 2; // onurlrevokesafe
-                }
-                else if (flv instanceof ArrayBuffer) {
-                    r(flv);
-                }
-                else {
-                    j(new TypeError('flvass2mkv: flv {Blob|string|ArrayBuffer}'));
-                }
-                if (typeof ass != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-            }),
-            new Promise((r, j) => {
-                if (ass instanceof Blob) {
-                    const e = new FileReader();
-                    e.onprogress = this.onflvprogress;
-                    e.onload = () => r(ass = e.result);
-                    e.onerror = j;
-                    e.readAsArrayBuffer(ass);
-                }
-                else if (typeof ass == 'string') {
-                    const e = new XMLHttpRequest();
-                    e.responseType = 'arraybuffer';
-                    e.onprogress = this.onflvprogress;
-                    e.onload = () => r(ass = e.response);
-                    e.onerror = j;
-                    e.open('get', ass);
-                    e.send();
-                    ass = 2; // onurlrevokesafe
-                }
-                else if (ass instanceof ArrayBuffer) {
-                    r(ass);
-                }
-                else {
-                    j(new TypeError('flvass2mkv: ass {Blob|string|ArrayBuffer}'));
-                }
-                if (typeof flv != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-            }),
+            (async () => {
+                flv = await getArrayBuffer(flv)
+            })(),
+            (async () => {
+                ass = await getArrayBuffer(ass)
+            })(),
+            (async () => {
+                subtitleAssList = await Promise.all(
+                    subtitleAssList.map(getArrayBuffer)
+                )
+            })(),
         ]);
+
         if (this.onfileload) this.onfileload();
 
         const mkv = new MKV(this.mkvConfig);
 
         const assParser = new ASS();
-        ass = assParser.parseFile(ass);
-        mkv.addASSMetadata(ass);
-        mkv.addASSStream(ass);
+        const assData = assParser.parseFile(ass);
+        mkv.addASSMetadata(assData);
+        mkv.addASSStream(assData);
+
+        subtitleAssList.forEach((subtitleAss) => {
+            const assData = assParser.parseFile(subtitleAss);
+            mkv.addASSMetadata(assData);
+            mkv.addASSStream(assData);
+        })
 
         const flvProbeData = FLVDemuxer.probe(flv);
         const flvDemuxer = new FLVDemuxer(flvProbeData);
