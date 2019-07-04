@@ -582,7 +582,7 @@ class UI {
                             {...subtitleAs.map((a) => {
                                 return <li class="context-menu-function">
                                     <a class="context-menu-a" onclick={() => a.click()}>
-                                        <span class="video-contextmenu-icon"></span> {a.text.replace("字幕ASS", "")}
+                                        <span class="video-contextmenu-icon"></span> {a.text.replace(/字幕ASS$/, "")}
                                     </a>
                                 </li>
                             })}
