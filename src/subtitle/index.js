@@ -92,7 +92,7 @@ export const getSubtitles = async (aid, cid) => {
                 language_doc: info.lan_doc,
                 url: info.subtitle_url,
                 data: subtitleData,
-                ass: buildAss(subtitleData),
+                ass: buildAss(subtitleData, info.lan_doc),
             }
         })
     )
