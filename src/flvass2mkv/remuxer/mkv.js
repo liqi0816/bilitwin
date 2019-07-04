@@ -263,7 +263,7 @@ class MKV {
 
         let i = 0;
         let j = 0;
-        let k = 0;
+        let k = Array.from({ length: this.blocks.assList.length }).fill(0);
         let clusterTimeCode = 0;
         let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
         let ret = [clusterContent];
@@ -278,10 +278,10 @@ class MKV {
                     break;
                 }
             }
-            this.blocks.assList.forEach((ass) => {
-                for (; k < ass.length; k++) {
-                    if (ass[k].timestamp < e.timestamp) {
-                        clusterContent.push(this.getBlocks(ass[k], clusterTimeCode));
+            this.blocks.assList.forEach((ass, n) => {
+                for (; k[n] < ass.length; k[n]++) {
+                    if (ass[k[n]].timestamp < e.timestamp) {
+                        clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
                     }
                     else {
                         break;
@@ -298,8 +298,8 @@ class MKV {
             if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });
         }
         for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));
-        this.blocks.assList.forEach((ass) => {
-            for (; k < ass.length; k++) clusterContent.push(this.getBlocks(ass[k], clusterTimeCode));
+        this.blocks.assList.forEach((ass, n) => {
+            for (; k[n] < ass.length; k[n]++) clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
         })
         if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });
         if (ret[0].length == 1) ret.shift();
