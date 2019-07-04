@@ -40,7 +40,7 @@
             option = Object.assign(defaultOption, option);
             target.download = a.download = a.textContent = option.name;
             console.time('file');
-            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass, ...option.subtitleAssList);
+            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass, option.subtitleAssList);
             console.timeEnd('flvass2mkv');
             target.href = a.href = URL.createObjectURL(mkv);
             target.textContent = "另存为MKV"

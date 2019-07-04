@@ -92,10 +92,14 @@ class MKV {
         this.duration = Math.max(this.duration, aac.duration);
     }
 
-    addASSMetadata(ass) {
+    /**
+     * @param {string} name 
+     */
+    addASSMetadata(ass, name = "") {
         this.trackMetadata.assList.push({
             codecId: 'S_TEXT/ASS',
-            codecPrivate: new TextEncoder().encode(ass.header)
+            codecPrivate: new TextEncoder().encode(ass.header),
+            name,
         });
     }
 
@@ -120,7 +124,7 @@ class MKV {
     }
 
     /**
-     * @param {{ lines: any[]; }} ass 
+     * @param {import("../demuxer/ass").ASS} ass 
      */
     addASSStream(ass) {
         const n = this.blocks.assList.length
@@ -253,7 +257,8 @@ class MKV {
                 EBML.element(EBML.ID.CodecID, EBML.string(ass.codecId)),
                 EBML.element(EBML.ID.CodecPrivate, EBML.bytes(ass.codecPrivate)),
                 EBML.element(EBML.ID.Language, EBML.string('und')),
-            ]);
+                ass.name && EBML.element(EBML.ID.Name, EBML.bytes(new TextEncoder().encode(ass.name))),
+            ].filter(x => !!x));
         });
     }
 

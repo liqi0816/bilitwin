@@ -59,7 +59,7 @@ class ASS {
         this.eventsHeader = '';
         this.pictures = '';
         this.fonts = '';
-        this.lines = '';
+        this.lines = [];
     }
 
     get header() {

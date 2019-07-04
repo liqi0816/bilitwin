@@ -66,11 +66,12 @@ const FLVASS2MKV = class {
     /**
      * Demux FLV into H264 + AAC stream and ASS into line stream; then
      * remux them into a MKV file.
-     * @param {Blob|string|ArrayBuffer} flv 
-     * @param {Blob|string|ArrayBuffer} ass 
-     * @param {...(Blob|string|ArrayBuffer)} subtitleAssList
+     * @typedef {Blob|string|ArrayBuffer} F
+     * @param {F} flv 
+     * @param {F} ass 
+     * @param {{ name: string; file: F; }[]} subtitleAssList
      */
-    async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass', ...subtitleAssList) {
+    async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass', subtitleAssList) {
         // load flv and ass as arraybuffer
         await Promise.all([
             (async () => {
@@ -81,7 +82,9 @@ const FLVASS2MKV = class {
             })(),
             (async () => {
                 subtitleAssList = await Promise.all(
-                    subtitleAssList.map(getArrayBuffer)
+                    subtitleAssList.map(async ({ name, file }) => {
+                        return { name, file: await getArrayBuffer(file) }
+                    })
                 )
             })(),
         ]);
@@ -92,13 +95,13 @@ const FLVASS2MKV = class {
 
         const assParser = new ASS();
         const assData = assParser.parseFile(ass);
-        mkv.addASSMetadata(assData);
+        mkv.addASSMetadata(assData, "弹幕");
         mkv.addASSStream(assData);
 
-        subtitleAssList.forEach((subtitleAss) => {
-            const assData = assParser.parseFile(subtitleAss);
-            mkv.addASSMetadata(assData);
-            mkv.addASSStream(assData);
+        subtitleAssList.forEach(({ name, file }) => {
+            const subAssData = assParser.parseFile(file);
+            mkv.addASSMetadata(subAssData, name);
+            mkv.addASSStream(subAssData);
         })
 
         const flvProbeData = FLVDemuxer.probe(flv);

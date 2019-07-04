@@ -22,7 +22,7 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
      * @param {Node} target
-     * @param {(Blob|string|ArrayBuffer)[]=} subtitleAssList
+     * @param {{ name: string; file: (Blob|string|ArrayBuffer); }[]=} subtitleAssList
      */
     exec(flv, ass, name, target, subtitleAssList = []) {
         if (target.textContent != "另存为MKV") {

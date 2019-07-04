@@ -405,7 +405,10 @@ class UI {
             if (a.onclick && typeof a.onclick === "function") {
                 a.onclick()
             }
-            return a.href
+            return {
+                name: a.text.replace(/ASS$/, ""),
+                file: a.href,
+            }
         })
 
         let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim()
