@@ -34,11 +34,11 @@
     "rollup": "^0.57.1"
   },
   "scripts": {
-    "install": "gulp",
-    "build": "gulp",
+    "install": "npm run build",
+    "build": "cd src/flvass2mkv && npm i && cd ../../ && gulp",
     "watch": "gulp watch",
-    "dev": "gulp && http-server --cors -p 8081 -c-1",
-    "release-minor": "gulp release-minor",
-    "release-patch": "gulp release-patch"
+    "dev": "npm run build && http-server --cors -p 8081 -c-1",
+    "release-minor": "npm run build && gulp release-minor",
+    "release-patch": "npm run build && gulp release-patch"
   }
 }
