@@ -213,6 +213,8 @@ class UI {
                 }
 
                 a.download = `${name}.${subtitle.language}.ass`
+
+                a.onclick = null
             }
 
             return a
@@ -400,6 +402,7 @@ class UI {
         /** @type {HTMLAnchorElement[]} */
         const subtitleAs = await this.buildSubtitleAs()
         const subtitleAssList = subtitleAs.map((a) => {
+            a.onclick()
             return a.href
         })
 
@@ -414,7 +417,7 @@ class UI {
         progress.value++;
         table.prepend(
             <tr>
-                <td colspan="3" style="border: 1px solid black">
+                <td colspan="3" style="border: 1px solid black; word-break: keep-all;">
                     <a href={href} download={`${outputName}.flv`} ref={a => {
                         if (this.option.autoDanmaku) a.onclick = () => a.nextElementSibling.click()
                     }}>保存合并后FLV</a>
@@ -430,6 +433,10 @@ class UI {
                             aacA.click()
                         })
                     }}>音频AAC</a>
+                    {...subtitleAs.reduce((p, c) => {
+                        // 在每一项前添加空格
+                        return p.concat(' ', <a href={c.href} download={c.download}>{c.textContent}</a>)
+                    }, [])}
                     {' '}
                     <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList)}>打包MKV(软字幕封装)</a>
                     {' '}

@@ -37,7 +37,6 @@ const getArrayBuffer = (x) => {
         else if (typeof x == 'string') {
             const e = new XMLHttpRequest();
             e.responseType = 'arraybuffer';
-            e.onprogress = this.onflvprogress;
             e.onload = () => resolve(e.response);
             e.onerror = reject;
             e.open('get', x);
