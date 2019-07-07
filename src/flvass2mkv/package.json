@@ -30,6 +30,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "install": "gulp"
+    "install": "gulp",
+    "build": "gulp"
   }
 }
