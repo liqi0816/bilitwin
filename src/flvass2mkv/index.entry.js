@@ -104,6 +104,10 @@ const FLVASS2MKV = class {
             mkv.addASSStream(subAssData);
         })
 
+        if (subtitleAssList.length > 0) {
+            mkv.combineSubtitles()
+        }
+
         const flvProbeData = FLVDemuxer.probe(flv);
         const flvDemuxer = new FLVDemuxer(flvProbeData);
         let mediaInfo = null;

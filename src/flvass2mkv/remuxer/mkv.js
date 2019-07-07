@@ -93,6 +93,7 @@ class MKV {
     }
 
     /**
+     * @param {import("../demuxer/ass").ASS} ass 
      * @param {string} name 
      */
     addASSMetadata(ass, name = "") {
@@ -100,6 +101,8 @@ class MKV {
             codecId: 'S_TEXT/ASS',
             codecPrivate: new TextEncoder().encode(ass.header),
             name,
+            _info: ass.info,
+            _styles: ass.styles,
         });
     }
 
@@ -135,6 +138,44 @@ class MKV {
             duration: MKV.textToMS(e['End']) - MKV.textToMS(e['Start']),
         }))
         this.blocks.assList.push(lineBlocks)
+    }
+
+    combineSubtitles() {
+        const [firstB, ...restB] = this.blocks.assList
+        const l = Math.min(this.blocks.assList.length, this.trackMetadata.assList.length)
+        /**
+         * @param {AssBlock} a 
+         * @param {AssBlock} b 
+         */
+        const sortFn = (a, b) => {
+            return a.timestamp - b.timestamp
+        }
+        restB.forEach((a, n) => {
+            this.blocks.assList.push(
+                a.concat(firstB).sort(sortFn).map((x) => {
+                    return {
+                        track: 3 + l + n,
+                        frame: x.frame,
+                        timestamp: x.timestamp,
+                        duration: x.duration,
+                    }
+                })
+            )
+        })
+        const [firstM, ...restM] = this.trackMetadata.assList
+        restM.forEach((a) => {
+            const name = `${firstM.name} + ${a.name}`
+            const info = firstM._info.replace(/^(Title:.+)$/m, `$1 ${name}`)
+            const firstStyles = firstM._styles.split(/\r?\n+/).filter(x => !!x)
+            const aStyles = a._styles.split(/\r?\n+/).slice(2)
+            const styles = firstStyles.concat(aStyles).join("\r\n")
+            const header = info + styles
+            this.trackMetadata.assList.push({
+                name: name,
+                codecId: 'S_TEXT/ASS',
+                codecPrivate: new TextEncoder().encode(header),
+            })
+        })
     }
 
     build() {

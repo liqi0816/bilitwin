@@ -59,7 +59,7 @@ const buildHeader = ({
         "",
         "[V4+ Styles]",
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-        `Style: Fix,${fontFamily},${fontSize},&H${textAlpha}${textColor},&H${textAlpha}${textColor},&H${textAlpha}000000,&H${bgAlpha}${bgColor},${boldFlag},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0`,
+        `Style: CC,${fontFamily},${fontSize},&H${textAlpha}${textColor},&H${textAlpha}${textColor},&H${textAlpha}000000,&H${bgAlpha}${bgColor},${boldFlag},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0`,
         "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -93,7 +93,7 @@ const buildLine = (dialogue) => {
     const start = formatTimestamp(dialogue.from)
     const end = formatTimestamp(dialogue.to)
     const text = textEscape(dialogue.content)
-    return `Dialogue: 0,${start},${end},Fix,,20,20,2,,${text}`
+    return `Dialogue: 0,${start},${end},CC,,20,20,2,,${text}`
 }
 
 /**
