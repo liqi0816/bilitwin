@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.2
+// @version     1.23.3
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -6909,6 +6909,7 @@ var FLVASS2MKV = (function () {
         }
 
         /**
+         * @param {import("../demuxer/ass").ASS} ass 
          * @param {string} name 
          */
         addASSMetadata(ass, name = "") {
@@ -6916,6 +6917,8 @@ var FLVASS2MKV = (function () {
                 codecId: 'S_TEXT/ASS',
                 codecPrivate: new _TextEncoder().encode(ass.header),
                 name,
+                _info: ass.info,
+                _styles: ass.styles,
             });
         }
 
@@ -6951,6 +6954,44 @@ var FLVASS2MKV = (function () {
                 duration: MKV.textToMS(e['End']) - MKV.textToMS(e['Start']),
             }));
             this.blocks.assList.push(lineBlocks);
+        }
+
+        combineSubtitles() {
+            const [firstB, ...restB] = this.blocks.assList;
+            const l = Math.min(this.blocks.assList.length, this.trackMetadata.assList.length);
+            /**
+             * @param {AssBlock} a 
+             * @param {AssBlock} b 
+             */
+            const sortFn = (a, b) => {
+                return a.timestamp - b.timestamp
+            };
+            restB.forEach((a, n) => {
+                this.blocks.assList.push(
+                    a.concat(firstB).sort(sortFn).map((x) => {
+                        return {
+                            track: 3 + l + n,
+                            frame: x.frame,
+                            timestamp: x.timestamp,
+                            duration: x.duration,
+                        }
+                    })
+                );
+            });
+            const [firstM, ...restM] = this.trackMetadata.assList;
+            restM.forEach((a) => {
+                const name = \`\${firstM.name} + \${a.name}\`;
+                const info = firstM._info.replace(/^(Title:.+)\$/m, \`\$1 \${name}\`);
+                const firstStyles = firstM._styles.split(/\\r?\\n+/).filter(x => !!x);
+                const aStyles = a._styles.split(/\\r?\\n+/).slice(2);
+                const styles = firstStyles.concat(aStyles).join("\\r\\n");
+                const header = info + styles;
+                this.trackMetadata.assList.push({
+                    name: name,
+                    codecId: 'S_TEXT/ASS',
+                    codecPrivate: new _TextEncoder().encode(header),
+                });
+            });
         }
 
         build() {
@@ -7255,6 +7296,10 @@ var FLVASS2MKV = (function () {
                 mkv.addASSMetadata(subAssData, name);
                 mkv.addASSStream(subAssData);
             });
+
+            if (subtitleAssList.length > 0) {
+                mkv.combineSubtitles();
+            }
 
             const flvProbeData = FLVDemuxer.probe(flv);
             const flvDemuxer = new FLVDemuxer(flvProbeData);
@@ -9592,7 +9637,7 @@ const buildHeader = ({
         "",
         "[V4+ Styles]",
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-        `Style: Fix,${fontFamily},${fontSize},&H${textAlpha}${textColor},&H${textAlpha}${textColor},&H${textAlpha}000000,&H${bgAlpha}${bgColor},${boldFlag},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0`,
+        `Style: CC,${fontFamily},${fontSize},&H${textAlpha}${textColor},&H${textAlpha}${textColor},&H${textAlpha}000000,&H${bgAlpha}${bgColor},${boldFlag},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0`,
         "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -9626,7 +9671,7 @@ const buildLine = (dialogue) => {
     const start = formatTimestamp$1(dialogue.from);
     const end = formatTimestamp$1(dialogue.to);
     const text = textEscape$1(dialogue.content);
-    return `Dialogue: 0,${start},${end},Fix,,20,20,2,,${text}`
+    return `Dialogue: 0,${start},${end},CC,,20,20,2,,${text}`
 };
 
 /**
@@ -9947,13 +9992,14 @@ class UI {
         const monkey = this.twin.monkey;
 
         const subtitleAs = subtitleList.map(subtitle => {
-            const lan = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")");
+            const lanDoc = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")");
 
             /** @type {HTMLAnchorElement} */
             const a = document.createElement('a');
-
             a.style.fontSize = fontSize;
-            a.textContent = `${lan}字幕ASS`;
+            a.textContent = `${lanDoc}字幕ASS`;
+            a.lan = subtitle.language;
+
             a.onclick = () => {
                 const blob = new Blob([subtitle.ass]);
                 a.href = URL.createObjectURL(blob);
@@ -10300,7 +10346,7 @@ class UI {
             td1.append(' ');
             const a2 = document.createElement('a');
             a2.href = ass;
-            a2.download = `${outputName}.ass`;
+            a2.download = `${outputName}.danmaku.ass`;
             a2.textContent = '\u5F39\u5E55ASS';
             td1.append(a2);
             td1.append(' ');
@@ -10324,7 +10370,7 @@ class UI {
                 return p.concat(' ', (() => {
                     const a4 = document.createElement('a');
                     a4.href = c.href;
-                    a4.download = c.download;
+                    a4.download = `${outputName}.${c.lan}.ass`;
                     a4.textContent = c.textContent;
                     return a4;
                 })());
