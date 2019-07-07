@@ -196,10 +196,11 @@ class UI {
         const monkey = this.twin.monkey
 
         const subtitleAs = subtitleList.map((subtitle) => {
-            const lan = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")")
+            const lanDoc = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")")
 
             /** @type {HTMLAnchorElement} */
-            const a = <a style={{ fontSize }}>{lan}字幕ASS</a>;
+            const a = <a style={{ fontSize }}>{lanDoc}字幕ASS</a>;
+            a.lan = subtitle.language
 
             a.onclick = () => {
                 const blob = new Blob([subtitle.ass])
@@ -427,7 +428,7 @@ class UI {
                         if (this.option.autoDanmaku) a.onclick = () => a.nextElementSibling.click()
                     }}>保存合并后FLV</a>
                     {' '}
-                    <a href={ass} download={`${outputName}.ass`}>弹幕ASS</a>
+                    <a href={ass} download={`${outputName}.danmaku.ass`}>弹幕ASS</a>
                     {' '}
                     <a download={`${outputName}.aac`} onclick={e => {
                         const aacA = e.target
@@ -440,7 +441,7 @@ class UI {
                     }}>音频AAC</a>
                     {...subtitleAs.reduce((p, c) => {
                         // 在每一项前添加空格
-                        return p.concat(' ', <a href={c.href} download={c.download}>{c.textContent}</a>)
+                        return p.concat(' ', <a href={c.href} download={`${outputName}.${c.lan}.ass`}>{c.textContent}</a>)
                     }, [])}
                     {' '}
                     <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList)}>打包MKV(软字幕封装)</a>
