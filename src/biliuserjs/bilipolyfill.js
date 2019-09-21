@@ -227,14 +227,13 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
-        const _jq = top.window.jQuery;
-        const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
+    async getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const viewUrl = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
 
         try {
-            let view_res = _jq.ajax({ url: view_url, async: false })
-            let view_json = JSON.parse(view_res.responseText)
-            return view_json.data.pic.replace("http://", "https://")
+            const res = await fetch(viewUrl)
+            const viewJson = await res.json()
+            return viewJson.data.pic.replace("http://", "https://")
         }
         catch (e) {
             return null

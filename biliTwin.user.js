@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.3
+// @version     1.23.4
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1829,7 +1829,7 @@ class BiliMonkey {
                     const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
                     const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
 
-                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "116";
+                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "120";
                     const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
 
                     const re = await fetch(api_url, { credentials: 'include' });
@@ -2081,7 +2081,7 @@ class BiliMonkey {
             const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
             const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
 
-            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116";
+            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "120";
             const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
             const r = await fetch(api_url, { credentials: 'include' });
 
@@ -2155,6 +2155,7 @@ class BiliMonkey {
     static formatToValue(format) {
         if (format == 'does_not_exist') throw `formatToValue: cannot lookup does_not_exist`;
         if (typeof BiliMonkey.formatToValue.dict == 'undefined') BiliMonkey.formatToValue.dict = {
+            'hdflv2': '120',
             'flv_p60': '116',
             'flv720_p60': '74',
             'flv': '80',
@@ -2172,6 +2173,7 @@ class BiliMonkey {
 
     static valueToFormat(value) {
         if (typeof BiliMonkey.valueToFormat.dict == 'undefined') BiliMonkey.valueToFormat.dict = {
+            '120': 'hdflv2',
             '116': 'flv_p60',
             '74': 'flv720_p60',
             '80': 'flv',
@@ -2208,6 +2210,7 @@ class BiliMonkey {
 
     static get resolutionPreferenceOptions() {
         return [
+            ['超清 4K (大会员)', '120'],
             ['高清 1080P60 (大会员)', '116'],
             ['高清 1080P+ (大会员)', '112'],
             ['高清 720P60 (大会员)', '74'],
@@ -2236,7 +2239,7 @@ class BiliMonkey {
             resolution: false,
             resolutionX: 560,
             resolutionY: 420,
-            videoMaxResolution: "116",
+            videoMaxResolution: "120",
             enableVideoMaxResolution: false,
         }
     }
@@ -2482,14 +2485,13 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
-        const _jq = top.window.jQuery;
-        const view_url = "https://api.bilibili.com/x/web-interface/view?aid=" + aid;
+    async getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const viewUrl = "https://api.bilibili.com/x/web-interface/view?aid=" + aid;
 
         try {
-            let view_res = _jq.ajax({ url: view_url, async: false });
-            let view_json = JSON.parse(view_res.responseText);
-            return view_json.data.pic.replace("http://", "https://")
+            const res = await fetch(viewUrl);
+            const viewJson = await res.json();
+            return viewJson.data.pic.replace("http://", "https://")
         }
         catch (e) {
             return null
@@ -10726,7 +10728,9 @@ class UI {
         const li2 = document.createElement('li');
         li2.className = 'context-menu-function';
 
-        li2.onclick = () => top.window.open(polyfill.getCoverImage(), '_blank');
+        li2.onclick = async () => {
+            const w = top.window.open("", '_blank');w.location = await polyfill.getCoverImage();
+        };
 
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';

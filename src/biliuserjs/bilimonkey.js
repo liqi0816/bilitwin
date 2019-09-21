@@ -211,7 +211,7 @@ class BiliMonkey {
                     const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi")
                     const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
 
-                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "116"
+                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "120"
                     const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
 
                     const re = await fetch(api_url, { credentials: 'include' })
@@ -463,7 +463,7 @@ class BiliMonkey {
             const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi")
             const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
 
-            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "116"
+            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "120"
             const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
             const r = await fetch(api_url, { credentials: 'include' })
 
@@ -537,6 +537,7 @@ class BiliMonkey {
     static formatToValue(format) {
         if (format == 'does_not_exist') throw `formatToValue: cannot lookup does_not_exist`;
         if (typeof BiliMonkey.formatToValue.dict == 'undefined') BiliMonkey.formatToValue.dict = {
+            'hdflv2': '120',
             'flv_p60': '116',
             'flv720_p60': '74',
             'flv': '80',
@@ -554,6 +555,7 @@ class BiliMonkey {
 
     static valueToFormat(value) {
         if (typeof BiliMonkey.valueToFormat.dict == 'undefined') BiliMonkey.valueToFormat.dict = {
+            '120': 'hdflv2',
             '116': 'flv_p60',
             '74': 'flv720_p60',
             '80': 'flv',
@@ -590,6 +592,7 @@ class BiliMonkey {
 
     static get resolutionPreferenceOptions() {
         return [
+            ['超清 4K (大会员)', '120'],
             ['高清 1080P60 (大会员)', '116'],
             ['高清 1080P+ (大会员)', '112'],
             ['高清 720P60 (大会员)', '74'],
@@ -618,7 +621,7 @@ class BiliMonkey {
             resolution: false,
             resolutionX: 560,
             resolutionY: 420,
-            videoMaxResolution: "116",
+            videoMaxResolution: "120",
             enableVideoMaxResolution: false,
         }
     }

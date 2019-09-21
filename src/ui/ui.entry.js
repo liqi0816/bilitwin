@@ -692,7 +692,7 @@ class UI {
             <ul>
                 <li
                     class="context-menu-function"
-                    onclick={() => top.window.open(polyfill.getCoverImage(), '_blank')}
+                    onclick={async () => { const w = top.window.open("", '_blank'); w.location = await polyfill.getCoverImage() }}
                 >
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 获取封面
