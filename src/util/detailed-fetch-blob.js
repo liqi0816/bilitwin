@@ -29,7 +29,7 @@ class DetailedFetchBlob {
         this.buffer = [];
         this.blob = null;
         this.reader = null;
-        this.blobPromise = fetch(input, init).then(res => {
+        this.blobPromise = fetch(input, init).then(/** @param {Response} res */ res => {
             if (this.reader == 'abort') return res.body.getReader().cancel().then(() => null);
             if (!res.ok) throw `HTTP Error ${res.status}: ${res.statusText}`;
             this.lengthComputable = res.headers.has('Content-Length');
@@ -87,6 +87,15 @@ class DetailedFetchBlob {
 
     firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
         if (!top.navigator.userAgent.includes('Firefox')) return false;
+
+        const firefoxVersionM = top.navigator.userAgent.match(/Firefox\/(\d+)/)
+        const firefoxVersion = firefoxVersionM && +firefoxVersionM[1]
+        if (firefoxVersion >= 65) {
+            // xhr.responseType "moz-chunked-arraybuffer" is deprecated since Firefox 68
+            // but res.body is implemented since Firefox 65
+            return false
+        }
+
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
