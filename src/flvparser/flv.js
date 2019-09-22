@@ -28,7 +28,7 @@ class FLV {
         let offset = this.headerLength + 4;
         while (offset < dataView.byteLength) {
             let tag = new FLVTag(dataView, offset);
-            // debug for scrpit data tag
+            // debug for script data tag
             // if (tag.tagType != 0x08 && tag.tagType != 0x09) 
             offset += 11 + tag.dataSize + 4;
             this.tags.push(tag);
