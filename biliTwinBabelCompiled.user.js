@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.6
+// @version     1.23.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.6
+// @version     1.23.7
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -4353,20 +4353,25 @@ var BiliPolyfill = function () {
                             case 2:
                                 this.video = _context49.sent;
 
+
+                                if (!videoRefresh) {
+                                    this.retrieveUserdata();
+                                }
+
+                                // 2. if not enabled, run the process without real actions
+
                                 if (this.option.betabeta) {
-                                    _context49.next = 5;
+                                    _context49.next = 6;
                                     break;
                                 }
 
                                 return _context49.abrupt('return', this.getPlayerMenu());
 
-                            case 5:
+                            case 6:
                                 if (videoRefresh) {
                                     _context49.next = 27;
                                     break;
                                 }
-
-                                this.retrieveUserdata();
 
                                 if (!this.option.badgeWatchLater) {
                                     _context49.next = 11;
@@ -4952,7 +4957,7 @@ var BiliPolyfill = function () {
     }, {
         key: 'getCollectionId',
         value: function getCollectionId() {
-            return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
+            return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
         }
     }, {
         key: 'markOPEDPosition',
@@ -4960,6 +4965,7 @@ var BiliPolyfill = function () {
             var collectionId = this.getCollectionId();
             if (!Array.isArray(this.userdata.oped[collectionId])) this.userdata.oped[collectionId] = [];
             this.userdata.oped[collectionId][index] = this.video.currentTime;
+            this.saveUserdata();
         }
     }, {
         key: 'clearOPEDPosition',

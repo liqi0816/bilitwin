@@ -70,12 +70,15 @@ class BiliPolyfill {
         // 1. initialize
         this.video = await this.getPlayerVideo();
 
+        if (!videoRefresh) {
+            this.retrieveUserdata();
+        }
+
         // 2. if not enabled, run the process without real actions
         if (!this.option.betabeta) return this.getPlayerMenu();
 
         // 3. set up functions that are cid static
         if (!videoRefresh) {
-            this.retrieveUserdata();
             if (this.option.badgeWatchLater) {
                 await this.getWatchLaterBtn()
                 this.badgeWatchLater();
@@ -470,13 +473,14 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
+        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
     }
 
     markOPEDPosition(index) {
         const collectionId = this.getCollectionId();
         if (!Array.isArray(this.userdata.oped[collectionId])) this.userdata.oped[collectionId] = [];
         this.userdata.oped[collectionId][index] = this.video.currentTime;
+        this.saveUserdata()
     }
 
     clearOPEDPosition() {
