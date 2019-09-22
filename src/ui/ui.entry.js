@@ -31,11 +31,11 @@ class UI {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(() => {
-            Object.values(this.dom).forEach(e => e.remove());
+            Object.values(this.dom).forEach(e => typeof e.remove == "function" && e.remove());
             this.dom = {};
         });
         this.cidSessionDestroy.addCallback(() => {
-            Object.values(this.cidSessionDom).forEach(e => e.remove());
+            Object.values(this.cidSessionDom).forEach(e => typeof e.remove == "function" && e.remove());
             this.cidSessionDom = {};
         });
 

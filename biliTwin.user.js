@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.4
+// @version     1.23.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9824,11 +9824,11 @@ class UI {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(() => {
-            Object.values(this.dom).forEach(e => e.remove());
+            Object.values(this.dom).forEach(e => typeof e.remove == "function" && e.remove());
             this.dom = {};
         });
         this.cidSessionDestroy.addCallback(() => {
-            Object.values(this.cidSessionDom).forEach(e => e.remove());
+            Object.values(this.cidSessionDom).forEach(e => typeof e.remove == "function" && e.remove());
             this.cidSessionDom = {};
         });
 

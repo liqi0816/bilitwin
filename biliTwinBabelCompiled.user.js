@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.4
+// @version     1.23.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.4
+// @version     1.23.5
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9284,13 +9284,13 @@ var UI = function () {
 
         this.destroy.addCallback(function () {
             Object.values(_this49.dom).forEach(function (e) {
-                return e.remove();
+                return typeof e.remove == "function" && e.remove();
             });
             _this49.dom = {};
         });
         this.cidSessionDestroy.addCallback(function () {
             Object.values(_this49.cidSessionDom).forEach(function (e) {
-                return e.remove();
+                return typeof e.remove == "function" && e.remove();
             });
             _this49.cidSessionDom = {};
         });
