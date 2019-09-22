@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.5
+// @version     1.23.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -547,7 +547,7 @@ class DetailedFetchBlob {
         this.buffer = [];
         this.blob = null;
         this.reader = null;
-        this.blobPromise = fetch(input, init).then(res => {
+        this.blobPromise = fetch(input, init).then(/** @param {Response} res */ res => {
             if (this.reader == 'abort') return res.body.getReader().cancel().then(() => null);
             if (!res.ok) throw `HTTP Error ${res.status}: ${res.statusText}`;
             this.lengthComputable = res.headers.has('Content-Length');
@@ -605,6 +605,15 @@ class DetailedFetchBlob {
 
     firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
         if (!top.navigator.userAgent.includes('Firefox')) return false;
+
+        const firefoxVersionM = top.navigator.userAgent.match(/Firefox\/(\d+)/);
+        const firefoxVersion = firefoxVersionM && +firefoxVersionM[1];
+        if (firefoxVersion >= 65) {
+            // xhr.responseType "moz-chunked-arraybuffer" is deprecated since Firefox 68
+            // but res.body is implemented since Firefox 65
+            return false
+        }
+
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
@@ -3470,7 +3479,7 @@ class FLV {
         let offset = this.headerLength + 4;
         while (offset < dataView.byteLength) {
             let tag = new FLVTag(dataView, offset);
-            // debug for scrpit data tag
+            // debug for script data tag
             // if (tag.tagType != 0x08 && tag.tagType != 0x09) 
             offset += 11 + tag.dataSize + 4;
             this.tags.push(tag);

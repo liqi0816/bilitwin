@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.5
+// @version     1.23.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.5
+// @version     1.23.6
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1222,7 +1222,7 @@ var DetailedFetchBlob = function () {
         this.buffer = [];
         this.blob = null;
         this.reader = null;
-        this.blobPromise = fetch(input, init).then(function (res) {
+        this.blobPromise = fetch(input, init).then( /** @param {Response} res */function (res) {
             if (_this8.reader == 'abort') return res.body.getReader().cancel().then(function () {
                 return null;
             });
@@ -1380,6 +1380,15 @@ var DetailedFetchBlob = function () {
             var onerror = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : init.onerror;
 
             if (!top.navigator.userAgent.includes('Firefox')) return false;
+
+            var firefoxVersionM = top.navigator.userAgent.match(/Firefox\/(\d+)/);
+            var firefoxVersion = firefoxVersionM && +firefoxVersionM[1];
+            if (firefoxVersion >= 65) {
+                // xhr.responseType "moz-chunked-arraybuffer" is deprecated since Firefox 68
+                // but res.body is implemented since Firefox 65
+                return false;
+            }
+
             this.onprogress = onprogress;
             this.onabort = onabort;
             this.onerror = onerror;
@@ -6049,7 +6058,7 @@ var FLV = function () {
         var offset = this.headerLength + 4;
         while (offset < dataView.byteLength) {
             var tag = new FLVTag(dataView, offset);
-            // debug for scrpit data tag
+            // debug for script data tag
             // if (tag.tagType != 0x08 && tag.tagType != 0x09) 
             offset += 11 + tag.dataSize + 4;
             this.tags.push(tag);
