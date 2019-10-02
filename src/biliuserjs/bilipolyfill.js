@@ -390,9 +390,11 @@ class BiliPolyfill {
         }
 
         // 4. memorize option
-        this.destroy.addCallback(() => {
+        const memorize = () => {
             this.userdata.restore.speed[index] = this.video.playbackRate;
-        });
+            this.destroy.removeCallback(memorize);
+    }
+        this.destroy.addCallback(memorize);
     }
 
     restoreWideScreen() {
