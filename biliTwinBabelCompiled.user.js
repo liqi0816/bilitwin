@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.7
+// @version     1.23.8
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.7
+// @version     1.23.8
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -4765,22 +4765,22 @@ var BiliPolyfill = function () {
             var index = top.location.href.includes('bangumi') ? 0 : 1;
 
             // 3. MUST initialize setting panel before click
-            var danmaku_btn = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
+            var danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
             if (!danmaku_btn) return;
             danmaku_btn.dispatchEvent(new Event('mouseover'));
 
             // 4. restore if true
-            var input = this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
-            if (this.userdata.restore.preventShade[index] && !input.nextElementSibling.classList.contains('bpui-state-active')) {
+            var input = this.playerWin.document.querySelector(".bilibili-player-video-danmaku-setting-left-preventshade input");
+            if (this.userdata.restore.preventShade[index] && !input.checked) {
                 input.click();
             }
 
             // 5. clean up setting panel
-            this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+            danmaku_btn.dispatchEvent(new Event('mouseout'));
 
             // 6. memorize option
             this.destroy.addCallback(function () {
-                _this26.userdata.restore.preventShade[index] = input.nextElementSibling.classList.contains('bpui-state-active');
+                _this26.userdata.restore.preventShade[index] = input.checked;
             });
         }
     }, {
@@ -4790,51 +4790,63 @@ var BiliPolyfill = function () {
 
             // 1. restore option should be an array
             if (!Array.isArray(this.userdata.restore.danmukuSwitch)) this.userdata.restore.danmukuSwitch = [];
+            if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
             if (!Array.isArray(this.userdata.restore.danmukuTopSwitch)) this.userdata.restore.danmukuTopSwitch = [];
             if (!Array.isArray(this.userdata.restore.danmukuBottomSwitch)) this.userdata.restore.danmukuBottomSwitch = [];
-            if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
+            if (!Array.isArray(this.userdata.restore.danmukuColorSwitch)) this.userdata.restore.danmukuColorSwitch = [];
+            if (!Array.isArray(this.userdata.restore.danmukuSpecialSwitch)) this.userdata.restore.danmukuSpecialSwitch = [];
 
             // 2. find corresponding option index
             var index = top.location.href.includes('bangumi') ? 0 : 1;
 
             // 3. MUST initialize setting panel before click
-            var danmaku_btn = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
+            var danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
             if (!danmaku_btn) return;
             danmaku_btn.dispatchEvent(new Event('mouseover'));
 
             // 4. restore if true
             // 4.1 danmukuSwitch
-            var danmukuSwitchDiv = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
-            if (this.userdata.restore.danmukuSwitch[index] && !danmukuSwitchDiv.classList.contains('video-state-danmaku-off')) {
-                danmukuSwitchDiv.click();
+            var danmukuSwitchInput = this.playerWin.document.querySelector('.bilibili-player-video-danmaku-switch input');
+            if (this.userdata.restore.danmukuSwitch[index] && danmukuSwitchInput.checked) {
+                danmukuSwitchInput.click();
             }
 
-            // 4.2 danmukuTopSwitch danmukuBottomSwitch danmukuScrollSwitch
+            // 4.2 danmukuScrollSwitch danmukuTopSwitch danmukuBottomSwitch danmukuColorSwitch danmukuSpecialSwitch
 
-            var _playerWin$document$g = _slicedToArray(this.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children, 3),
-                danmukuTopSwitchDiv = _playerWin$document$g[0],
-                danmukuBottomSwitchDiv = _playerWin$document$g[1],
-                danmukuScrollSwitchDiv = _playerWin$document$g[2];
+            var _playerWin$document$q = _slicedToArray(this.playerWin.document.querySelector('.bilibili-player-video-danmaku-setting-left-block-content').children, 5),
+                danmukuScrollSwitchDiv = _playerWin$document$q[0],
+                danmukuTopSwitchDiv = _playerWin$document$q[1],
+                danmukuBottomSwitchDiv = _playerWin$document$q[2],
+                danmukuColorSwitchDiv = _playerWin$document$q[3],
+                danmukuSpecialSwitchDiv = _playerWin$document$q[4];
 
+            if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
+                danmukuScrollSwitchDiv.click();
+            }
             if (this.userdata.restore.danmukuTopSwitch[index] && !danmukuTopSwitchDiv.classList.contains('disabled')) {
                 danmukuTopSwitchDiv.click();
             }
             if (this.userdata.restore.danmukuBottomSwitch[index] && !danmukuBottomSwitchDiv.classList.contains('disabled')) {
                 danmukuBottomSwitchDiv.click();
             }
-            if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
-                danmukuScrollSwitchDiv.click();
+            if (this.userdata.restore.danmukuColorSwitch[index] && !danmukuColorSwitchDiv.classList.contains('disabled')) {
+                danmukuColorSwitchDiv.click();
+            }
+            if (this.userdata.restore.danmukuSpecialSwitch[index] && !danmukuSpecialSwitchDiv.classList.contains('disabled')) {
+                danmukuSpecialSwitchDiv.click();
             }
 
             // 5. clean up setting panel
-            this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+            danmaku_btn.dispatchEvent(new Event('mouseout'));
 
             // 6. memorize final option
             this.destroy.addCallback(function () {
-                _this27.userdata.restore.danmukuSwitch[index] = danmukuSwitchDiv.classList.contains('video-state-danmaku-off');
+                _this27.userdata.restore.danmukuSwitch[index] = !danmukuSwitchInput.checked;
+                _this27.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
                 _this27.userdata.restore.danmukuTopSwitch[index] = danmukuTopSwitchDiv.classList.contains('disabled');
                 _this27.userdata.restore.danmukuBottomSwitch[index] = danmukuBottomSwitchDiv.classList.contains('disabled');
-                _this27.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
+                _this27.userdata.restore.danmukuColorSwitch[index] = danmukuColorSwitchDiv.classList.contains('disabled');
+                _this27.userdata.restore.danmukuSpecialSwitch[index] = danmukuSpecialSwitchDiv.classList.contains('disabled');
             });
         }
     }, {
@@ -4854,9 +4866,34 @@ var BiliPolyfill = function () {
             }
 
             // 4. memorize option
-            this.destroy.addCallback(function () {
-                _this28.userdata.restore.speed[index] = _this28.video.playbackRate;
+            this.playerWin.player.addEventListener("video_before_destroy", function () {
+                return _this28.saveSpeed();
             });
+
+            var observer = new MutationObserver(function () {
+                var changeSpeedBtn = _this28.playerWin.document.querySelectorAll(".bilibili-player-contextmenu-subwrapp")[0];
+                if (changeSpeedBtn && !changeSpeedBtn._memorize_speed) {
+                    changeSpeedBtn.addEventListener("click", function () {
+                        return _this28.saveSpeed();
+                    });
+                    changeSpeedBtn._memorize_speed = true;
+                }
+            });
+            observer.observe(this.playerWin.document.querySelector("#bilibiliPlayer"), { childList: true, subtree: true });
+        }
+    }, {
+        key: 'saveSpeed',
+        value: function saveSpeed() {
+            if (this.option.restoreSpeed) {
+                // 1. restore option should be an array
+                if (!Array.isArray(this.userdata.restore.speed)) this.userdata.restore.speed = [];
+
+                // 2. find corresponding option index
+                var index = top.location.href.includes('bangumi') ? 0 : 1;
+
+                // 3. memorize
+                this.userdata.restore.speed[index] = this.video.playbackRate;
+            }
         }
     }, {
         key: 'restoreWideScreen',
@@ -4952,7 +4989,9 @@ var BiliPolyfill = function () {
     }, {
         key: 'autoFullScreen',
         value: function autoFullScreen() {
-            if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+            if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
+                this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+            }
         }
     }, {
         key: 'getCollectionId',
@@ -5044,6 +5083,7 @@ var BiliPolyfill = function () {
         value: function setVideoSpeed(speed) {
             if (speed < 0 || speed > 10) return;
             this.video.playbackRate = speed;
+            this.saveSpeed();
         }
     }, {
         key: 'focusOnPlayer',
@@ -5617,10 +5657,10 @@ var BiliPolyfill = function () {
             ['badgeWatchLater', '稍后再看添加数字角标'], ['recommend', '弹幕列表换成相关视频'], ['electric', '整合充电榜与换P倒计时'], ['electricSkippable', '跳过充电榜', 'disabled'],
 
             // 2. automation
-            ['scroll', '自动滚动到播放器'], ['focus', '自动聚焦到播放器(新页面直接按空格会播放而不是向下滚动)'], ['menuFocus', '关闭菜单后聚焦到播放器'], ['restorePrevent', '记住防挡字幕'], ['restoreDanmuku', '记住弹幕开关(顶端/底端/滚动/全部)'], ['restoreSpeed', '记住播放速度'], ['restoreWide', '记住宽屏'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['series', '尝试自动找上下集'],
+            ['scroll', '自动滚动到播放器'], ['focus', '自动聚焦到播放器(新页面直接按空格会播放而不是向下滚动)'], ['menuFocus', '关闭菜单后聚焦到播放器'], ['restorePrevent', '记住防挡字幕'], ['restoreDanmuku', '记住弹幕开关(顶端/底端/滚动/全部)'], ['restoreSpeed', '记住播放速度'], ['restoreWide', '记住宽屏'], ['autoResume', '自动跳转上次看到'], ['autoPlay', '自动播放(需要在浏览器站点权限设置中允许自动播放)'], ['autoFullScreen', '自动全屏'], ['oped', '标记后自动跳OP/ED'], ['series', '尝试自动找上下集'],
 
             // 3. interaction
-            ['limitedKeydown', '首次回车键可全屏自动播放'], ['dblclick', '双击全屏'],
+            ['limitedKeydown', '首次回车键可全屏自动播放(需要在脚本加载完毕后使用)'], ['dblclick', '双击全屏'],
 
             // 4. easter eggs
             ['speech', '(彩蛋)(需墙外)任意三击鼠标左键开启语音识别']];
