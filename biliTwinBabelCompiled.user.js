@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.8
+// @version     1.23.9
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -181,7 +181,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.8
+// @version     1.23.9
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9370,8 +9370,8 @@ var UI = function () {
         value: function cidSessionRender() {
             this.buildTitle();
 
-            if (this.option.title) this.appendTitle();
-            if (this.option.menu) this.appendMenu();
+            if (this.option.title) this.appendTitle(); // 在视频标题旁添加链接
+            this.appendMenu(); // 在视频菜单栏添加链接
         }
 
         // Title Append
@@ -11375,6 +11375,7 @@ var UI = function () {
                 var input = document.createElement('input');
                 input.type = 'checkbox';
                 input.checked = twin.option[name];
+                input.disabled = name == "menu" /** 在视频菜单栏不添加后无法更改设置，所以禁用此选项 */;
 
                 input.onchange = function (e) {
                     twin.option[name] = e.target.checked;

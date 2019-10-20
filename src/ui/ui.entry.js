@@ -99,8 +99,8 @@ class UI {
     cidSessionRender() {
         this.buildTitle();
 
-        if (this.option.title) this.appendTitle();
-        if (this.option.menu) this.appendMenu();
+        if (this.option.title) this.appendTitle();  // 在视频标题旁添加链接
+        this.appendMenu();  // 在视频菜单栏添加链接
     }
 
     // Title Append
@@ -995,6 +995,7 @@ class UI {
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
+                    disabled={name == "menu" /** 在视频菜单栏不添加后无法更改设置，所以禁用此选项 */}
                     onchange={e => {
                         twin.option[name] = e.target.checked;
                         twin.saveOption(twin.option);
