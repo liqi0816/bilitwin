@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.9
+// @version     1.23.10
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -103,11 +103,27 @@ function load() {
         }
     }
 
+    if (typeof TextDecoder === 'undefined') {
+        top.TextDecoder = function () {
+            this.encoding = 'utf-8';
+            this.decode = function (input) {
+                if (input instanceof ArrayBuffer) {
+                    input = new Uint8Array(input);
+                } else {
+                    input = new Uint8Array(input.buffer);
+                }
+
+                var l = Array.prototype.map.call(input, function (x) { return String.fromCharCode(x) }).join("");
+                return decodeURIComponent(escape(l));
+            };
+        }
+    }
+
     if (typeof _babelPolyfill === 'undefined') {
         new Promise(function (resolve) {
             var req = new XMLHttpRequest();
             req.onload = function () { resolve(req.responseText); };
-            req.open('get', 'https://cdn.staticfile.org/babel-polyfill/7.0.0-beta.42/polyfill.min.js');
+            req.open('get', 'https://cdn.staticfile.org/babel-polyfill/7.7.0/polyfill.min.js');
             req.send();
         }).then(function (script) {
             top.eval(script);
@@ -181,7 +197,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.9
+// @version     1.23.10
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
