@@ -555,16 +555,17 @@ class UI {
     } = {}) {
         let context_menu_videoA =
             <li class="context-menu-function"
-                onmouseover={async ({ target: { lastChild: textNode } }) => {
+                onmouseover={async ({ target }) => {
                     if (videoA.onmouseover) await videoA.onmouseover();
+                    const textNode = target.querySelector('#download-btn-vformat')
                     if (textNode && textNode.textContent) {
-                        textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV')
+                        textNode.textContent = monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV'
                     }
                 }}
                 onclick={() => videoA.click()}
             >
                 <a class="context-menu-a">
-                    <span class="video-contextmenu-icon"></span> 下载视频FLV
+                    <span class="video-contextmenu-icon"></span> 下载视频<span id="download-btn-vformat">FLV</span>
                 </a>
             </li>
 

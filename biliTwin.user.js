@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.10
+// @version     1.23.11
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2051,17 +2051,14 @@ class BiliMonkey {
     }
 
     static async getAllPageDefaultFormats(playerWin = top, monkey) {
-        // bilibili has a misconfigured lazy loading => keep trying
-        /** @type {{cid: number; part?: string; index?: string; }[]} */
-        const list = await new Promise(resolve => {
-            const i = setInterval(() => {
-                const ret = playerWin.player.getPlaylist();
-                if (ret) {
-                    clearInterval(i);
-                    resolve(ret);
-                }
-            }, 500);
-        });
+        /** @returns {Promise<{cid: number; page: number; part?: string; }[]>} */
+        const getPartsList = async () => {
+            const r = await fetch(`https://api.bilibili.com/x/player/pagelist?aid=${aid}`);
+            const json = await r.json();
+            return json.data
+        };
+
+        const list = await getPartsList();
 
         const queryInfoMutex = new Mutex();
 
@@ -10537,10 +10534,11 @@ class UI {
         {
             context_menu_videoA.className = 'context-menu-function';
 
-            context_menu_videoA.onmouseover = async ({ target: { lastChild: textNode } }) => {
+            context_menu_videoA.onmouseover = async ({ target }) => {
                 if (videoA.onmouseover) await videoA.onmouseover();
+                const textNode = target.querySelector('#download-btn-vformat');
                 if (textNode && textNode.textContent) {
-                    textNode.textContent = textNode.textContent.slice(0, -3) + (monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV');
+                    textNode.textContent = monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV';
                 }
             };
 
@@ -10551,7 +10549,11 @@ class UI {
             const span1 = document.createElement('span');
             span1.className = 'video-contextmenu-icon';
             a1.append(span1);
-            a1.append(' \u4E0B\u8F7D\u89C6\u9891FLV');
+            a1.append(' \u4E0B\u8F7D\u89C6\u9891');
+            const downloadBtnVformat = document.createElement('span');
+            downloadBtnVformat.id = 'download-btn-vformat';
+            downloadBtnVformat.textContent = 'FLV';
+            a1.append(downloadBtnVformat);
             context_menu_videoA.append(a1);
         }
 

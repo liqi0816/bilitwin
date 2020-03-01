@@ -424,17 +424,14 @@ class BiliMonkey {
     }
 
     static async getAllPageDefaultFormats(playerWin = top, monkey) {
-        // bilibili has a misconfigured lazy loading => keep trying
-        /** @type {{cid: number; part?: string; index?: string; }[]} */
-        const list = await new Promise(resolve => {
-            const i = setInterval(() => {
-                const ret = playerWin.player.getPlaylist();
-                if (ret) {
-                    clearInterval(i);
-                    resolve(ret);
-                }
-            }, 500);
-        });
+        /** @returns {Promise<{cid: number; page: number; part?: string; }[]>} */
+        const getPartsList = async () => {
+            const r = await fetch(`https://api.bilibili.com/x/player/pagelist?aid=${aid}`)
+            const json = await r.json()
+            return json.data
+        }
+
+        const list = await getPartsList()
 
         const queryInfoMutex = new Mutex();
 
