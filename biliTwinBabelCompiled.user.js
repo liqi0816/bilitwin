@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.11
+// @version     1.23.12
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -197,7 +197,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.11
+// @version     1.23.12
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9397,7 +9397,7 @@ var UI = function () {
     _createClass(UI, [{
         key: 'styleClearance',
         value: function styleClearance() {
-            var ret = '\n        .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {\n            background: rgba(255,255,255,.12);\n            transition: all .3s ease-in-out;\n            cursor: pointer;\n        }\n\n        .bilitwin a {\n            cursor: pointer;\n            color: #00a1d6;\n        }\n\n        .bilitwin a:hover {\n            color: #f25d8e;\n        }\n\n        .bilitwin button {\n            color: #fff;\n            cursor: pointer;\n            text-align: center;\n            border-radius: 4px;\n            background-color: #00a1d6;\n            vertical-align: middle;\n            border: 1px solid #00a1d6;\n            transition: .1s;\n            transition-property: background-color,border,color;\n            user-select: none;\n        }\n\n        .bilitwin button:hover {\n            background-color: #00b5e5;\n            border-color: #00b5e5;\n        }\n\n        .bilitwin progress {\n            -webkit-appearance: progress-bar;\n            -moz-appearance: progress-bar;\n            appearance: progress-bar;\n        }\n\n        .bilitwin input[type="checkbox" i] {\n            -webkit-appearance: checkbox;\n            -moz-appearance: checkbox;\n            appearance: checkbox;\n        }\n        ';
+            var ret = '\n        .bilibili-player-context-menu-container.black ul.bilitwin li.context-menu-function > a:hover {\n            background: rgba(255,255,255,.12);\n            transition: all .3s ease-in-out;\n            cursor: pointer;\n        }\n\n        .bilitwin a {\n            cursor: pointer;\n            color: #00a1d6;\n        }\n\n        .bilitwin a:hover {\n            color: #f25d8e;\n        }\n\n        .bilitwin button {\n            color: #fff;\n            cursor: pointer;\n            text-align: center;\n            border-radius: 4px;\n            background-color: #00a1d6;\n            vertical-align: middle;\n            border: 1px solid #00a1d6;\n            transition: .1s;\n            transition-property: background-color,border,color;\n            user-select: none;\n        }\n\n        .bilitwin button:hover {\n            background-color: #00b5e5;\n            border-color: #00b5e5;\n        }\n\n        .bilitwin progress {\n            -webkit-appearance: progress-bar;\n            -moz-appearance: progress-bar;\n            appearance: progress-bar;\n        }\n\n        .bilitwin input[type="checkbox" i] {\n            -webkit-appearance: checkbox;\n            -moz-appearance: checkbox;\n            appearance: checkbox;\n        }\n\n        .bilitwin.context-menu-menu:hover {\n            background: hsla(0,0%,100%,.12);\n        }\n\n        .bilitwin.context-menu-menu:hover > a {\n            background: hsla(0,0%,100%,0) !important;\n        }\n        ';
 
             var style = document.createElement('style');
             style.type = 'text/css';

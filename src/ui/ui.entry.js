@@ -88,6 +88,14 @@ class UI {
             -moz-appearance: checkbox;
             appearance: checkbox;
         }
+
+        .bilitwin.context-menu-menu:hover {
+            background: hsla(0,0%,100%,.12);
+        }
+
+        .bilitwin.context-menu-menu:hover > a {
+            background: hsla(0,0%,100%,0) !important;
+        }
         `;
 
         const style = <style type="text/css">{ret}</style>;

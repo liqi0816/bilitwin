@@ -12,7 +12,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.11
+// @version     1.23.12
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -9922,6 +9922,14 @@ class UI {
             -webkit-appearance: checkbox;
             -moz-appearance: checkbox;
             appearance: checkbox;
+        }
+
+        .bilitwin.context-menu-menu:hover {
+            background: hsla(0,0%,100%,.12);
+        }
+
+        .bilitwin.context-menu-menu:hover > a {
+            background: hsla(0,0%,100%,0) !important;
         }
         `;
 
