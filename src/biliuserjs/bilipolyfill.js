@@ -139,7 +139,7 @@ class BiliPolyfill {
         const keywords = [title, ...epSibling.map(e => seriesTitle + e), ...epSibling];
 
         // 6. find mid
-        const midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
+        const midParent = top.document.querySelector('.u-info > .name') || top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
         if (!midParent) return this.series = [];
         const mid = midParent.children[0].href.match(/\d+/)[0];
 
@@ -504,6 +504,10 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
+        if (aid) {
+            return `av${aid}`
+        }
+
         return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
     }
 

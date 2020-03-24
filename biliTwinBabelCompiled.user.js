@@ -5,6 +5,8 @@
 // @supportURL  https://github.com/Xmader/bilitwin/issues
 // @description (国产浏览器和Edge浏览器专用)bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,CC字幕转码ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
+// @match       *://www.bilibili.com/video/bv*
+// @match       *://www.bilibili.com/video/BV*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
@@ -12,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.12
+// @version     1.23.13
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -190,6 +192,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @supportURL  https://github.com/Xmader/bilitwin/issues
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,CC字幕转码ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
+// @match       *://www.bilibili.com/video/bv*
+// @match       *://www.bilibili.com/video/BV*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
@@ -197,7 +201,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.12
+// @version     1.23.13
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -4534,7 +4538,7 @@ var BiliPolyfill = function () {
 
                                 // 6. find mid
 
-                                midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
+                                midParent = top.document.querySelector('.u-info > .name') || top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
 
                                 if (midParent) {
                                     _context51.next = 11;
@@ -5037,6 +5041,10 @@ var BiliPolyfill = function () {
     }, {
         key: 'getCollectionId',
         value: function getCollectionId() {
+            if (aid) {
+                return 'av' + aid;
+            }
+
             return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
         }
     }, {

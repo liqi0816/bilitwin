@@ -5,6 +5,8 @@
 // @supportURL  https://github.com/Xmader/bilitwin/issues
 // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,CC字幕转码ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
+// @match       *://www.bilibili.com/video/bv*
+// @match       *://www.bilibili.com/video/BV*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
@@ -12,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.12
+// @version     1.23.13
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2403,7 +2405,7 @@ class BiliPolyfill {
         const keywords = [title, ...epSibling.map(e => seriesTitle + e), ...epSibling];
 
         // 6. find mid
-        const midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
+        const midParent = top.document.querySelector('.u-info > .name') || top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
         if (!midParent) return this.series = [];
         const mid = midParent.children[0].href.match(/\d+/)[0];
 
@@ -2768,6 +2770,10 @@ class BiliPolyfill {
     }
 
     getCollectionId() {
+        if (aid) {
+            return `av${aid}`
+        }
+
         return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
     }
 
