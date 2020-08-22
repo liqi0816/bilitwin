@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.13
+// @version     1.23.14
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -2343,37 +2343,41 @@ class BiliPolyfill {
         // 2. if not enabled, run the process without real actions
         if (!this.option.betabeta) return this.getPlayerMenu();
 
-        // 3. set up functions that are cid static
-        if (!videoRefresh) {
-            if (this.option.badgeWatchLater) {
-                await this.getWatchLaterBtn();
-                this.badgeWatchLater();
-            }
-            if (this.option.scroll) this.scrollToPlayer();
+        try {
+            // 3. set up functions that are cid static
+            if (!videoRefresh) {
+                if (this.option.badgeWatchLater) {
+                    await this.getWatchLaterBtn();
+                    this.badgeWatchLater();
+                }
+                if (this.option.scroll) this.scrollToPlayer();
 
-            if (this.option.series) this.inferNextInSeries();
+                if (this.option.series) this.inferNextInSeries();
 
-            if (this.option.recommend) this.showRecommendTab();
-            if (this.option.focus) this.focusOnPlayer();
-            if (this.option.restorePrevent) this.restorePreventShade();
-            if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
-            if (this.option.restoreSpeed) this.restoreSpeed();
-            if (this.option.restoreWide) {
-                await this.getWideScreenBtn();
-                this.restoreWideScreen();
+                if (this.option.recommend) this.showRecommendTab();
+                if (this.option.focus) this.focusOnPlayer();
+                if (this.option.restorePrevent) this.restorePreventShade();
+                if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
+                if (this.option.restoreSpeed) this.restoreSpeed();
+                if (this.option.restoreWide) {
+                    await this.getWideScreenBtn();
+                    this.restoreWideScreen();
+                }
+                if (this.option.autoResume) this.autoResume();
+                if (this.option.autoPlay) this.autoPlay();
+                if (this.option.autoFullScreen) this.autoFullScreen();
+                if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
+                this.destroy.addCallback(() => this.saveUserdata());
             }
-            if (this.option.autoResume) this.autoResume();
-            if (this.option.autoPlay) this.autoPlay();
-            if (this.option.autoFullScreen) this.autoFullScreen();
-            if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
-            this.destroy.addCallback(() => this.saveUserdata());
+
+            // 4. set up functions that are binded to the video DOM
+            if (this.option.dblclick) this.dblclickFullScreen();
+            if (this.option.electric) this.reallocateElectricPanel();
+            if (this.option.oped) this.skipOPED();
+            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
+        } catch (err) {
+            console.error(err);
         }
-
-        // 4. set up functions that are binded to the video DOM
-        if (this.option.dblclick) this.dblclickFullScreen();
-        if (this.option.electric) this.reallocateElectricPanel();
-        if (this.option.oped) this.skipOPED();
-        this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
 
         // 5. set up functions that require everything to be ready
         await this.getPlayerMenu();

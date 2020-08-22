@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.13
+// @version     1.23.14
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -201,7 +201,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.13
+// @version     1.23.14
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -4413,23 +4413,25 @@ var BiliPolyfill = function () {
                                 return _context50.abrupt('return', this.getPlayerMenu());
 
                             case 6:
+                                _context50.prev = 6;
+
                                 if (videoRefresh) {
-                                    _context50.next = 27;
+                                    _context50.next = 28;
                                     break;
                                 }
 
                                 if (!this.option.badgeWatchLater) {
-                                    _context50.next = 11;
+                                    _context50.next = 12;
                                     break;
                                 }
 
-                                _context50.next = 10;
+                                _context50.next = 11;
                                 return this.getWatchLaterBtn();
 
-                            case 10:
+                            case 11:
                                 this.badgeWatchLater();
 
-                            case 11:
+                            case 12:
                                 if (this.option.scroll) this.scrollToPlayer();
 
                                 if (this.option.series) this.inferNextInSeries();
@@ -4441,17 +4443,17 @@ var BiliPolyfill = function () {
                                 if (this.option.restoreSpeed) this.restoreSpeed();
 
                                 if (!this.option.restoreWide) {
-                                    _context50.next = 22;
+                                    _context50.next = 23;
                                     break;
                                 }
 
-                                _context50.next = 21;
+                                _context50.next = 22;
                                 return this.getWideScreenBtn();
 
-                            case 21:
+                            case 22:
                                 this.restoreWideScreen();
 
-                            case 22:
+                            case 23:
                                 if (this.option.autoResume) this.autoResume();
                                 if (this.option.autoPlay) this.autoPlay();
                                 if (this.option.autoFullScreen) this.autoFullScreen();
@@ -4460,7 +4462,7 @@ var BiliPolyfill = function () {
                                     return _this22.saveUserdata();
                                 });
 
-                            case 27:
+                            case 28:
 
                                 // 4. set up functions that are binded to the video DOM
                                 if (this.option.dblclick) this.dblclickFullScreen();
@@ -4469,12 +4471,20 @@ var BiliPolyfill = function () {
                                 this.video.addEventListener('emptied', function () {
                                     return _this22.setFunctions({ videoRefresh: true });
                                 }, { once: true });
+                                _context50.next = 37;
+                                break;
 
-                                // 5. set up functions that require everything to be ready
-                                _context50.next = 33;
+                            case 34:
+                                _context50.prev = 34;
+                                _context50.t0 = _context50['catch'](6);
+
+                                console.error(_context50.t0);
+
+                            case 37:
+                                _context50.next = 39;
                                 return this.getPlayerMenu();
 
-                            case 33:
+                            case 39:
                                 if (this.option.menuFocus) this.menuFocusOnPlayer();
 
                                 // 6. set up experimental functions
@@ -4482,12 +4492,12 @@ var BiliPolyfill = function () {
                                     return e.detail > 2 && _this22.speechRecognition();
                                 });
 
-                            case 35:
+                            case 41:
                             case 'end':
                                 return _context50.stop();
                         }
                     }
-                }, _callee50, this);
+                }, _callee50, this, [[6, 34]]);
             }));
 
             function setFunctions() {
