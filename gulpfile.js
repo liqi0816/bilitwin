@@ -92,7 +92,7 @@ gulp.task('biliTwinBabelCompiled.user.js', gulp.series('biliTwin.user.js', async
             gulp.src(['./src/bilitwin-babel.entry.js'])
                 .pipe(replace('"${metadata}"', meta))
                 .pipe(replace(/(\/\/[ ]?@name\s+)(?=\w)/, '$1(Babel)'))
-                .pipe(replace(/(\/\/[ ]?@description\s+)(?=\w)/, '$1(国产浏览器和Edge浏览器专用)'))
+                .pipe(replace(/(\/\/[ ]?@description\s+)(?=\w)/, '$1(国产浏览器和旧版Edge浏览器专用)'))
                 .pipe(replace('"${transpiledCode}"', code))
                 .pipe(rename('biliTwinBabelCompiled.user.js'))
                 .pipe(gulp.dest('.'))
