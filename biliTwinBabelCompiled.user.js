@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.14
+// @version     1.23.15
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -201,7 +201,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.14
+// @version     1.23.15
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -3173,7 +3173,7 @@ var BiliMonkey = function () {
                                                     isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
                                                     apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
                                                     qn = _this16.option.enableVideoMaxResolution && _this16.option.videoMaxResolution || "120";
-                                                    api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
+                                                    api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&fourk=1&qn=' + qn;
                                                     _context30.next = 11;
                                                     return fetch(api_url, { credentials: 'include' });
 
@@ -4042,7 +4042,7 @@ var BiliMonkey = function () {
                                                         isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
                                                         apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
                                                         qn = monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution || "120";
-                                                        api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&qn=' + qn;
+                                                        api_url = 'https://api.bilibili.com' + apiPath + '?avid=' + aid + '&cid=' + cid + '&otype=json&fourk=1&qn=' + qn;
                                                         _context46.next = 18;
                                                         return fetch(api_url, { credentials: 'include' });
 

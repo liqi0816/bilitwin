@@ -212,7 +212,7 @@ class BiliMonkey {
                     const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
 
                     const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "120"
-                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
+                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`
 
                     const re = await fetch(api_url, { credentials: 'include' })
                     const apiJson = await re.json()
@@ -461,7 +461,7 @@ class BiliMonkey {
             const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl"
 
             const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "120"
-            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`
+            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`
             const r = await fetch(api_url, { credentials: 'include' })
 
             const apiJson = await r.json()

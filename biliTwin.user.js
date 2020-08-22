@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.14
+// @version     1.23.15
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -1841,7 +1841,7 @@ class BiliMonkey {
                     const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
 
                     const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "120";
-                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
+                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`;
 
                     const re = await fetch(api_url, { credentials: 'include' });
                     const apiJson = await re.json();
@@ -2090,7 +2090,7 @@ class BiliMonkey {
             const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
 
             const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "120";
-            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&qn=${qn}`;
+            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`;
             const r = await fetch(api_url, { credentials: 'include' });
 
             const apiJson = await r.json();
