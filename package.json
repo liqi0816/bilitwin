@@ -1,6 +1,6 @@
 {
   "name": "bilitwin",
-  "version": "1.23.15",
+  "version": "1.23.16",
   "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
   "main": "bilitwin.user.js",
   "directories": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/liqi0816/bilitwin.git"
+    "url": "git+https://github.com/Xmader/bilitwin.git"
   },
-  "author": "qli5",
+  "author": "qli5 & Xmader",
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/liqi0816/bilitwin/issues"
+    "url": "https://github.com/Xmader/bilitwin/issues"
   },
-  "homepage": "https://github.com/liqi0816/bilitwin#readme",
+  "homepage": "https://github.com/Xmader/bilitwin#readme",
   "engines": {
     "node": "^8.10.0"
   },

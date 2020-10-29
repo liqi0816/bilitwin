@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.15
+// @version     1.23.16
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -201,7 +201,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.15
+// @version     1.23.16
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -12294,16 +12294,19 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 _context96.next = 23;
                                 return new Promise(function (resolve) {
-                                    var i = setInterval(function () {
-                                        var video = document.querySelector("video");
-                                        if (video) {
+                                    var observer = new MutationObserver(function () {
+                                        // const app = this.playerWin.document.querySelector('#app');
+                                        var app = _this57.playerWin.app;
+
+                                        if (!app.dataset.serverRendered) {
+                                            var video = _this57.playerWin.document.querySelector("video");
                                             videoRightClick(video);
-                                            if (_this57.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length && (_this57.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length || _this57.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && _this57.playerWin.document.querySelector(".video-data .view") && _this57.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--" || _this57.playerWin.document.querySelector(".bilibili-player-video-sendbar").children.length > 0 && _this57.playerWin.document.querySelector("#media_module .media-cover img"))) {
-                                                clearInterval(i);
-                                                resolve();
-                                            }
+
+                                            observer.disconnect();
+                                            resolve();
                                         }
-                                    }, 10);
+                                    });
+                                    observer.observe(document, { childList: true, subtree: true });
                                 });
 
                             case 23:
