@@ -69,22 +69,19 @@ class BiliTwin extends BiliUserJS {
         if (this.option.autoDisplayDownloadBtn) {
             // 无需右键播放器就能显示下载按钮
             await new Promise(resolve => {
-                const i = setInterval(() => {
-                    const video = document.querySelector("video")
-                    if (video) {
-                        videoRightClick(video)
-                        if (
-                            this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black').length
-                            && (this.playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin').length
-                                || (this.playerWin.document.querySelectorAll("#bilibiliPlayer > div").length >= 4 && this.playerWin.document.querySelector(".video-data .view") && this.playerWin.document.querySelector(".video-data .view").textContent.slice(0, 2) != "--")
-                                || (this.playerWin.document.querySelector(".bilibili-player-video-sendbar").children.length > 0 && this.playerWin.document.querySelector("#media_module .media-cover img"))
-                            )
-                        ) {
-                            clearInterval(i);
-                            resolve();
-                        }
+                const observer = new MutationObserver(() => {
+                    // const app = this.playerWin.document.querySelector('#app');
+                    const app = this.playerWin.app;
+
+                    if (!app.dataset.serverRendered) {
+                        const video = this.playerWin.document.querySelector("video");
+                        videoRightClick(video);
+
+                        observer.disconnect();
+                        resolve();
                     }
-                }, 10);
+                });
+                observer.observe(document, { childList: true, subtree: true });
             })
         } else {
             const video = document.querySelector("video")
