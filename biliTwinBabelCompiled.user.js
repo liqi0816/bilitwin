@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.16
+// @version     1.23.17
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -201,7 +201,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.16
+// @version     1.23.17
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -12278,6 +12278,10 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
 
+                                /**
+                                 * @param {HTMLVideoElement} video 
+                                 */
+
                                 videoRightClick = function videoRightClick(video) {
                                     var event = new MouseEvent('contextmenu', {
                                         'bubbles': true
@@ -12295,10 +12299,8 @@ var BiliTwin = function (_BiliUserJS) {
                                 _context96.next = 23;
                                 return new Promise(function (resolve) {
                                     var observer = new MutationObserver(function () {
-                                        // const app = this.playerWin.document.querySelector('#app');
-                                        var app = _this57.playerWin.app;
-
-                                        if (!app.dataset.serverRendered) {
+                                        var el = _this57.playerWin.document.querySelector('.bilibili-player-dm-tip-wrap');
+                                        if (el) {
                                             var video = _this57.playerWin.document.querySelector("video");
                                             videoRightClick(video);
 

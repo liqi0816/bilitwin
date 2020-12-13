@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.16
+// @version     1.23.17
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -11962,6 +11962,9 @@ class BiliTwin extends BiliUserJS {
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
 
+        /**
+         * @param {HTMLVideoElement} video 
+         */
         const videoRightClick = (video) => {
             let event = new MouseEvent('contextmenu', {
                 'bubbles': true
@@ -11974,10 +11977,8 @@ class BiliTwin extends BiliUserJS {
             // 无需右键播放器就能显示下载按钮
             await new Promise(resolve => {
                 const observer = new MutationObserver(() => {
-                    // const app = this.playerWin.document.querySelector('#app');
-                    const app = this.playerWin.app;
-
-                    if (!app.dataset.serverRendered) {
+                    const el = this.playerWin.document.querySelector('.bilibili-player-dm-tip-wrap');
+                    if (el) {
                         const video = this.playerWin.document.querySelector("video");
                         videoRightClick(video);
 
