@@ -58,6 +58,9 @@ class BiliTwin extends BiliUserJS {
 
         const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
 
+        /**
+         * @param {HTMLVideoElement} video 
+         */
         const videoRightClick = (video) => {
             let event = new MouseEvent('contextmenu', {
                 'bubbles': true
@@ -70,10 +73,8 @@ class BiliTwin extends BiliUserJS {
             // 无需右键播放器就能显示下载按钮
             await new Promise(resolve => {
                 const observer = new MutationObserver(() => {
-                    // const app = this.playerWin.document.querySelector('#app');
-                    const app = this.playerWin.app;
-
-                    if (!app.dataset.serverRendered) {
+                    const el = this.playerWin.document.querySelector('.bilibili-player-dm-tip-wrap')
+                    if (el) {
                         const video = this.playerWin.document.querySelector("video");
                         videoRightClick(video);
 
