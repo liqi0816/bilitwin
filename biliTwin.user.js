@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.17
+// @version     1.23.18
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -211,33 +211,20 @@ class AsyncContainer {
  * Provides common util for all bilibili user scripts
  */
 class BiliUserJS {
-    static async getIframeWin() {
-        if (document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-            return document.querySelector('#bofqi > iframe').contentWindow;
-        }
-        else {
-            return new Promise(resolve => {
-                document.querySelector('#bofqi > iframe').addEventListener('load', () => {
-                    resolve(document.querySelector('#bofqi > iframe').contentWindow);
-                }, { once: true });
-            });
-        }
-    }
-
     static async getPlayerWin() {
         if (location.href.includes('/watchlater/#/list')) {
             await new Promise(resolve => {
                 window.addEventListener('hashchange', () => resolve(location.href), { once: true });
             });
         }
-        if (!document.getElementById('bofqi')) {
+        if (!document.getElementById('bilibili-player')) {
             if (document.querySelector("video")) {
                 top.location.reload(); // 刷新
             } else {
                 await new Promise(resolve => {
                     const observer = new MutationObserver(() => {
-                        if (document.getElementById('bofqi')) {
-                            resolve(document.getElementById('bofqi'));
+                        if (document.getElementById('bilibili-player')) {
+                            resolve(document.getElementById('bilibili-player'));
                             observer.disconnect();
                         }
                     });
@@ -248,12 +235,6 @@ class BiliUserJS {
         if (document.getElementById('bilibiliPlayer')) {
             return window;
         }
-        else if (document.querySelector('#bofqi > iframe')) {
-            return BiliUserJS.getIframeWin();
-        }
-        else if (document.querySelector('#bofqi > object')) {
-            throw 'Need H5 Player';
-        }
         else {
             return new Promise(resolve => {
                 const observer = new MutationObserver(() => {
@@ -261,16 +242,8 @@ class BiliUserJS {
                         observer.disconnect();
                         resolve(window);
                     }
-                    else if (document.querySelector('#bofqi > iframe')) {
-                        observer.disconnect();
-                        resolve(BiliUserJS.getIframeWin());
-                    }
-                    else if (document.querySelector('#bofqi > object')) {
-                        observer.disconnect();
-                        throw 'Need H5 Player';
-                    }
                 });
-                observer.observe(document.getElementById('bofqi'), { childList: true });
+                observer.observe(document.getElementById('bilibili-player'), { childList: true });
             });
         }
     }
@@ -2046,7 +2019,8 @@ class BiliMonkey {
                 const e = new XMLHttpRequest();
                 e.onload = () => resolve(e.responseText);
                 e.onerror = reject;
-                e.open('get', `https://comment.bilibili.com/${cid}.xml`);
+                // fix CORS issue
+                e.open('get', `https://cors.xmader.com/?url=${encodeURIComponent(`https://comment.bilibili.com/${cid}.xml`)}`);
                 e.send();
             })
         );
@@ -2492,7 +2466,7 @@ class BiliPolyfill {
     }
 
     scrollToPlayer() {
-        if (top.scrollY < 200) top.document.getElementById('bofqi').scrollIntoView();
+        if (top.scrollY < 200) top.document.getElementById('bilibili-player').scrollIntoView();
     }
 
     showRecommendTab() {
