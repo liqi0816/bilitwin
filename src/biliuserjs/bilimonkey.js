@@ -417,7 +417,8 @@ class BiliMonkey {
                 const e = new XMLHttpRequest();
                 e.onload = () => resolve(e.responseText);
                 e.onerror = reject;
-                e.open('get', `https://comment.bilibili.com/${cid}.xml`);
+                // fix CORS issue
+                e.open('get', `https://cors.xmader.com/?url=${encodeURIComponent(`https://comment.bilibili.com/${cid}.xml`)}`);
                 e.send();
             })
         );
