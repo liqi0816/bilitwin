@@ -226,7 +226,7 @@ class BiliPolyfill {
     }
 
     scrollToPlayer() {
-        if (top.scrollY < 200) top.document.getElementById('bofqi').scrollIntoView();
+        if (top.scrollY < 200) top.document.getElementById('bilibili-player').scrollIntoView();
     }
 
     showRecommendTab() {

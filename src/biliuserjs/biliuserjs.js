@@ -14,33 +14,20 @@ import AsyncContainer from '../util/async-container.js';
  * Provides common util for all bilibili user scripts
  */
 class BiliUserJS {
-    static async getIframeWin() {
-        if (document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-            return document.querySelector('#bofqi > iframe').contentWindow;
-        }
-        else {
-            return new Promise(resolve => {
-                document.querySelector('#bofqi > iframe').addEventListener('load', () => {
-                    resolve(document.querySelector('#bofqi > iframe').contentWindow);
-                }, { once: true });
-            });
-        }
-    }
-
     static async getPlayerWin() {
         if (location.href.includes('/watchlater/#/list')) {
             await new Promise(resolve => {
                 window.addEventListener('hashchange', () => resolve(location.href), { once: true });
             });
         }
-        if (!document.getElementById('bofqi')) {
+        if (!document.getElementById('bilibili-player')) {
             if (document.querySelector("video")) {
                 top.location.reload() // 刷新
             } else {
                 await new Promise(resolve => {
                     const observer = new MutationObserver(() => {
-                        if (document.getElementById('bofqi')) {
-                            resolve(document.getElementById('bofqi'));
+                        if (document.getElementById('bilibili-player')) {
+                            resolve(document.getElementById('bilibili-player'));
                             observer.disconnect();
                         }
                     });
@@ -51,12 +38,6 @@ class BiliUserJS {
         if (document.getElementById('bilibiliPlayer')) {
             return window;
         }
-        else if (document.querySelector('#bofqi > iframe')) {
-            return BiliUserJS.getIframeWin();
-        }
-        else if (document.querySelector('#bofqi > object')) {
-            throw 'Need H5 Player';
-        }
         else {
             return new Promise(resolve => {
                 const observer = new MutationObserver(() => {
@@ -64,16 +45,8 @@ class BiliUserJS {
                         observer.disconnect();
                         resolve(window);
                     }
-                    else if (document.querySelector('#bofqi > iframe')) {
-                        observer.disconnect();
-                        resolve(BiliUserJS.getIframeWin());
-                    }
-                    else if (document.querySelector('#bofqi > object')) {
-                        observer.disconnect();
-                        throw 'Need H5 Player';
-                    }
                 });
-                observer.observe(document.getElementById('bofqi'), { childList: true });
+                observer.observe(document.getElementById('bilibili-player'), { childList: true });
             });
         }
     }
