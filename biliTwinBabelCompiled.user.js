@@ -14,11 +14,12 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.18
+// @version     1.24.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -77,6 +78,12 @@
  * https://github.com/Xmader/bilitwin/
  * for source code.
  */
+
+if (typeof unsafeWindow !== "undefined") {
+    // retrieve real window object
+    window = unsafeWindow
+}
+var top = window.top  // workaround
 
 
 if (document.readyState == 'loading') {
@@ -201,11 +208,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.18
+// @version     1.24.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -265,6 +273,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * for source code.
  */
 
+if (typeof unsafeWindow !== "undefined") {
+    // retrieve real window object
+    window = unsafeWindow;
+}
+var top = window.top; // workaround
+
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
  * 
@@ -278,6 +292,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 /**
  * Basically a Promise that exposes its resolve and reject callbacks
  */
+
 var AsyncContainer = function () {
     /***
      * The thing is, if we cannot cancel a promise, we should at least be able to 
@@ -12408,16 +12423,17 @@ var BiliTwin = function (_BiliUserJS) {
 
             return option.setStorage('BiliTwin', JSON.stringify(option));
         }
-    }], [{
-        key: 'init',
+    }, {
+        key: 'addUserScriptMenu',
         value: function () {
             var _ref130 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee96() {
-                var twin, vc_info;
+                var _this58 = this;
+
                 return regeneratorRuntime.wrap(function _callee96$(_context98) {
                     while (1) {
                         switch (_context98.prev = _context98.next) {
                             case 0:
-                                if (document.body) {
+                                if (!((typeof GM === 'undefined' ? 'undefined' : _typeof(GM)) !== 'object')) {
                                     _context98.next = 2;
                                     break;
                                 }
@@ -12425,20 +12441,65 @@ var BiliTwin = function (_BiliUserJS) {
                                 return _context98.abrupt('return');
 
                             case 2:
-                                if (!(location.hostname == "www.biligame.com")) {
-                                    _context98.next = 6;
+                                if (!(typeof GM.registerMenuCommand !== 'function')) {
+                                    _context98.next = 4;
                                     break;
                                 }
 
-                                return _context98.abrupt('return', BiliPolyfill.biligameInit());
+                                return _context98.abrupt('return');
+
+                            case 4:
+                                _context98.next = 6;
+                                return GM.registerMenuCommand('恢复默认设置并刷新', function () {
+                                    // 开启增强组件以后如不显示脚本，可以通过 Tampermonkey/Greasemonkey 的菜单重置设置
+                                    _this58.resetOption() && top.location.reload();
+                                });
+
+                            case 6:
+                            case 'end':
+                                return _context98.stop();
+                        }
+                    }
+                }, _callee96, this);
+            }));
+
+            function addUserScriptMenu() {
+                return _ref130.apply(this, arguments);
+            }
+
+            return addUserScriptMenu;
+        }()
+    }], [{
+        key: 'init',
+        value: function () {
+            var _ref131 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee97() {
+                var twin, vc_info;
+                return regeneratorRuntime.wrap(function _callee97$(_context99) {
+                    while (1) {
+                        switch (_context99.prev = _context99.next) {
+                            case 0:
+                                if (document.body) {
+                                    _context99.next = 2;
+                                    break;
+                                }
+
+                                return _context99.abrupt('return');
+
+                            case 2:
+                                if (!(location.hostname == "www.biligame.com")) {
+                                    _context99.next = 6;
+                                    break;
+                                }
+
+                                return _context99.abrupt('return', BiliPolyfill.biligameInit());
 
                             case 6:
                                 if (!location.pathname.startsWith("/bangumi/media/md")) {
-                                    _context98.next = 8;
+                                    _context99.next = 8;
                                     break;
                                 }
 
-                                return _context98.abrupt('return', BiliPolyfill.showBangumiCoverImage());
+                                return _context99.abrupt('return', BiliPolyfill.showBangumiCoverImage());
 
                             case 8:
 
@@ -12447,41 +12508,43 @@ var BiliTwin = function (_BiliUserJS) {
 
                                 twin = new BiliTwin();
 
+                                twin.addUserScriptMenu();
+
                                 if (!(location.hostname == "vc.bilibili.com")) {
-                                    _context98.next = 16;
+                                    _context99.next = 17;
                                     break;
                                 }
 
-                                _context98.next = 14;
+                                _context99.next = 15;
                                 return BiliMonkey.getBiliShortVideoInfo();
 
-                            case 14:
-                                vc_info = _context98.sent;
-                                return _context98.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
+                            case 15:
+                                vc_info = _context99.sent;
+                                return _context99.abrupt('return', twin.ui.appendShortVideoTitle(vc_info));
 
-                            case 16:
+                            case 17:
                                 if (!1) {
-                                    _context98.next = 21;
+                                    _context99.next = 22;
                                     break;
                                 }
 
-                                _context98.next = 19;
+                                _context99.next = 20;
                                 return twin.runCidSession();
 
-                            case 19:
-                                _context98.next = 16;
+                            case 20:
+                                _context99.next = 17;
                                 break;
 
-                            case 21:
+                            case 22:
                             case 'end':
-                                return _context98.stop();
+                                return _context99.stop();
                         }
                     }
-                }, _callee96, this);
+                }, _callee97, this);
             }));
 
             function init() {
-                return _ref130.apply(this, arguments);
+                return _ref131.apply(this, arguments);
             }
 
             return init;

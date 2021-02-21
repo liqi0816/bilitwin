@@ -14,11 +14,12 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.23.18
+// @version     1.24.0
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -77,6 +78,12 @@
  * https://github.com/Xmader/bilitwin/
  * for source code.
  */
+
+if (typeof unsafeWindow !== "undefined") {
+    // retrieve real window object
+    window = unsafeWindow
+}
+var top = window.top  // workaround
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -12033,6 +12040,17 @@ class BiliTwin extends BiliUserJS {
         return option.setStorage('BiliTwin', JSON.stringify(option));
     }
 
+    async addUserScriptMenu() {
+        if (typeof GM !== 'object') return
+        if (typeof GM.registerMenuCommand !== 'function') return
+
+        // see https://www.tampermonkey.net/documentation.php#GM_registerMenuCommand
+        await GM.registerMenuCommand('恢复默认设置并刷新', () => {
+            // 开启增强组件以后如不显示脚本，可以通过 Tampermonkey/Greasemonkey 的菜单重置设置
+            this.resetOption() && top.location.reload();
+        });
+    }
+
     static async init() {
         if (!document.body) return;
 
@@ -12047,6 +12065,7 @@ class BiliTwin extends BiliUserJS {
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+        twin.addUserScriptMenu();
 
         if (location.hostname == "vc.bilibili.com") {
             const vc_info = await BiliMonkey.getBiliShortVideoInfo();
