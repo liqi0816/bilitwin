@@ -18,7 +18,8 @@
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -77,3 +78,9 @@
  * https://github.com/Xmader/bilitwin/
  * for source code.
  */
+
+if (typeof unsafeWindow !== "undefined") {
+    // retrieve real window object
+    window = unsafeWindow
+}
+var top = window.top  // workaround

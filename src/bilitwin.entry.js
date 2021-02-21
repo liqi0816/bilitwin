@@ -155,6 +155,17 @@ class BiliTwin extends BiliUserJS {
         return option.setStorage('BiliTwin', JSON.stringify(option));
     }
 
+    async addUserScriptMenu() {
+        if (typeof GM !== 'object') return
+        if (typeof GM.registerMenuCommand !== 'function') return
+
+        // see https://www.tampermonkey.net/documentation.php#GM_registerMenuCommand
+        await GM.registerMenuCommand('恢复默认设置并刷新', () => {
+            // 开启增强组件以后如不显示脚本，可以通过 Tampermonkey/Greasemonkey 的菜单重置设置
+            this.resetOption() && top.location.reload();
+        });
+    }
+
     static async init() {
         if (!document.body) return;
 
@@ -169,6 +180,7 @@ class BiliTwin extends BiliUserJS {
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+        twin.addUserScriptMenu();
 
         if (location.hostname == "vc.bilibili.com") {
             const vc_info = await BiliMonkey.getBiliShortVideoInfo()
