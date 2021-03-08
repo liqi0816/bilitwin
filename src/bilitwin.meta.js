@@ -79,8 +79,5 @@
  * for source code.
  */
 
-if (typeof unsafeWindow !== "undefined") {
-    // retrieve real window object
-    window = unsafeWindow
-}
+var window = typeof unsafeWindow !== "undefined" && unsafeWindow || self
 var top = window.top  // workaround
