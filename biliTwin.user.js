@@ -14,7 +14,7 @@
 // @match       *://www.biligame.com/detail/*
 // @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.24.0
+// @version     1.24.1
 // @author      qli5
 // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
@@ -79,10 +79,7 @@
  * for source code.
  */
 
-if (typeof unsafeWindow !== "undefined") {
-    // retrieve real window object
-    window = unsafeWindow
-}
+var window = typeof unsafeWindow !== "undefined" && unsafeWindow || self
 var top = window.top  // workaround
 
 /***
