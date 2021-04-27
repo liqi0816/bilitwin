@@ -8,8 +8,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+// @ts-check
+
 import { TextEncoder, Blob } from '../util/shim.js';
 import EBML from '../util/ebml.js';
+
+/**
+ * @typedef {Object} AssBlock
+ * @property {number} track 
+ * @property {Uint8Array} frame 
+ * @property {number} timestamp 
+ * @property {number} duration 
+ */
 
 class MKV {
     constructor(config) {
@@ -18,9 +28,10 @@ class MKV {
         Object.assign(this, config);
         this.segmentUID = MKV.randomBytes(16);
         this.trackUIDBase = Math.trunc(Math.random() * 2 ** 16);
-        this.trackMetadata = { h264: null, aac: null, ass: null };
+        this.trackMetadata = { h264: null, aac: null, assList: [] };
         this.duration = 0;
-        this.blocks = { h264: [], aac: [], ass: [] };
+        /** @type {{ h264: any[]; aac: any[]; assList: AssBlock[][]; }} */
+        this.blocks = { h264: [], aac: [], assList: [] };
     }
 
     static randomBytes(num) {
@@ -81,11 +92,18 @@ class MKV {
         this.duration = Math.max(this.duration, aac.duration);
     }
 
-    addASSMetadata(ass) {
-        this.trackMetadata.ass = {
+    /**
+     * @param {import("../demuxer/ass").ASS} ass 
+     * @param {string} name 
+     */
+    addASSMetadata(ass, name = "") {
+        this.trackMetadata.assList.push({
             codecId: 'S_TEXT/ASS',
-            codecPrivate: new TextEncoder().encode(ass.header)
-        };
+            codecPrivate: new TextEncoder().encode(ass.header),
+            name,
+            _info: ass.info,
+            _styles: ass.styles,
+        });
     }
 
     addH264Stream(h264) {
@@ -108,13 +126,56 @@ class MKV {
         })));
     }
 
+    /**
+     * @param {import("../demuxer/ass").ASS} ass 
+     */
     addASSStream(ass) {
-        this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({
-            track: 3,
+        const n = this.blocks.assList.length
+        const lineBlocks = ass.lines.map((e, i) => ({
+            track: 3 + n,
             frame: new TextEncoder().encode(`${i},${e['Layer'] || ''},${e['Style'] || ''},${e['Name'] || ''},${e['MarginL'] || ''},${e['MarginR'] || ''},${e['MarginV'] || ''},${e['Effect'] || ''},${e['Text'] || ''}`),
             timestamp: MKV.textToMS(e['Start']),
             duration: MKV.textToMS(e['End']) - MKV.textToMS(e['Start']),
-        })));
+        }))
+        this.blocks.assList.push(lineBlocks)
+    }
+
+    combineSubtitles() {
+        const [firstB, ...restB] = this.blocks.assList
+        const l = Math.min(this.blocks.assList.length, this.trackMetadata.assList.length)
+        /**
+         * @param {AssBlock} a 
+         * @param {AssBlock} b 
+         */
+        const sortFn = (a, b) => {
+            return a.timestamp - b.timestamp
+        }
+        restB.forEach((a, n) => {
+            this.blocks.assList.push(
+                a.concat(firstB).sort(sortFn).map((x) => {
+                    return {
+                        track: 3 + l + n,
+                        frame: x.frame,
+                        timestamp: x.timestamp,
+                        duration: x.duration,
+                    }
+                })
+            )
+        })
+        const [firstM, ...restM] = this.trackMetadata.assList
+        restM.forEach((a) => {
+            const name = `${firstM.name} + ${a.name}`
+            const info = firstM._info.replace(/^(Title:.+)$/m, `$1 ${name}`)
+            const firstStyles = firstM._styles.split(/\r?\n+/).filter(x => !!x)
+            const aStyles = a._styles.split(/\r?\n+/).slice(2)
+            const styles = firstStyles.concat(aStyles).join("\r\n")
+            const header = info + styles
+            this.trackMetadata.assList.push({
+                name: name,
+                codecId: 'S_TEXT/ASS',
+                codecPrivate: new TextEncoder().encode(header),
+            })
+        })
     }
 
     build() {
@@ -187,7 +248,7 @@ class MKV {
         return EBML.element(EBML.ID.Tracks, [
             this.getVideoTrackEntry(),
             this.getAudioTrackEntry(),
-            this.getSubtitleTrackEntry()
+            ...this.getSubtitleTrackEntry(),
         ]);
     }
 
@@ -228,15 +289,18 @@ class MKV {
     }
 
     getSubtitleTrackEntry() {
-        return EBML.element(EBML.ID.TrackEntry, [
-            EBML.element(EBML.ID.TrackNumber, EBML.number(3)),
-            EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3)),
-            EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
-            EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
-            EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.ass.codecId)),
-            EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.ass.codecPrivate)),
-            EBML.element(EBML.ID.Language, EBML.string('und')),
-        ]);
+        return this.trackMetadata.assList.map((ass, i) => {
+            return EBML.element(EBML.ID.TrackEntry, [
+                EBML.element(EBML.ID.TrackNumber, EBML.number(3 + i)),
+                EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3 + i)),
+                EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
+                EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
+                EBML.element(EBML.ID.CodecID, EBML.string(ass.codecId)),
+                EBML.element(EBML.ID.CodecPrivate, EBML.bytes(ass.codecPrivate)),
+                EBML.element(EBML.ID.Language, EBML.string('und')),
+                ass.name && EBML.element(EBML.ID.Name, EBML.bytes(new TextEncoder().encode(ass.name))),
+            ].filter(x => !!x));
+        });
     }
 
     getClusterArray() {
@@ -246,7 +310,7 @@ class MKV {
 
         let i = 0;
         let j = 0;
-        let k = 0;
+        let k = Array.from({ length: this.blocks.assList.length }).fill(0);
         let clusterTimeCode = 0;
         let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
         let ret = [clusterContent];
@@ -261,14 +325,16 @@ class MKV {
                     break;
                 }
             }
-            for (; k < this.blocks.ass.length; k++) {
-                if (this.blocks.ass[k].timestamp < e.timestamp) {
-                    clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+            this.blocks.assList.forEach((ass, n) => {
+                for (; k[n] < ass.length; k[n]++) {
+                    if (ass[k[n]].timestamp < e.timestamp) {
+                        clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+                    }
+                    else {
+                        break;
+                    }
                 }
-                else {
-                    break;
-                }
-            }
+            })
             if (e.isKeyframe/*  || clusterContent.length > 72 */) {
                 // start new cluster
                 clusterTimeCode = e.timestamp;
@@ -279,7 +345,9 @@ class MKV {
             if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });
         }
         for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));
-        for (; k < this.blocks.ass.length; k++) clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+        this.blocks.assList.forEach((ass, n) => {
+            for (; k[n] < ass.length; k[n]++) clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+        })
         if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });
         if (ret[0].length == 1) ret.shift();
         ret = ret.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));

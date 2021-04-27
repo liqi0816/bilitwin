@@ -1,18 +1,25 @@
 // ==UserScript==
 // @name        bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
-// @homepageURL https://github.com/liqi0816/bilitwin/
-// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
+// @homepageURL https://github.com/Xmader/bilitwin/
+// @supportURL  https://github.com/Xmader/bilitwin/issues
+// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,CC字幕转码ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
+// @match       *://www.bilibili.com/video/bv*
+// @match       *://www.bilibili.com/video/BV*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.bilibili.com/bangumi/media/md*
+// @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.14
+// @version     1.24.1
 // @author      qli5
-// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
+// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -68,9 +75,12 @@
 /***
  * This is a bundled code. While it is not uglified, it may still be too
  * complex for reviewing. Please refer to
- * https://github.com/liqi0816/bilitwin/
+ * https://github.com/Xmader/bilitwin/
  * for source code.
  */
+
+var window = typeof unsafeWindow !== "undefined" && unsafeWindow || self
+var top = window.top  // workaround
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -205,31 +215,20 @@ class AsyncContainer {
  * Provides common util for all bilibili user scripts
  */
 class BiliUserJS {
-    static async getIframeWin() {
-        if (document.querySelector('#bofqi > iframe').contentDocument.getElementById('bilibiliPlayer')) {
-            return document.querySelector('#bofqi > iframe').contentWindow;
-        }
-        else {
-            return new Promise(resolve => {
-                document.querySelector('#bofqi > iframe').addEventListener('load', () => {
-                    resolve(document.querySelector('#bofqi > iframe').contentWindow);
-                }, { once: true });
-            });
-        }
-    }
-
     static async getPlayerWin() {
         if (location.href.includes('/watchlater/#/list')) {
             await new Promise(resolve => {
                 window.addEventListener('hashchange', () => resolve(location.href), { once: true });
             });
         }
-        if (location.href.includes('/watchlater/#/')) {
-            if (!document.getElementById('bofqi')) {
+        if (!document.getElementById('bilibili-player')) {
+            if (document.querySelector("video")) {
+                top.location.reload(); // 刷新
+            } else {
                 await new Promise(resolve => {
                     const observer = new MutationObserver(() => {
-                        if (document.getElementById('bofqi')) {
-                            resolve(document.getElementById('bofqi'));
+                        if (document.getElementById('bilibili-player')) {
+                            resolve(document.getElementById('bilibili-player'));
                             observer.disconnect();
                         }
                     });
@@ -240,12 +239,6 @@ class BiliUserJS {
         if (document.getElementById('bilibiliPlayer')) {
             return window;
         }
-        else if (document.querySelector('#bofqi > iframe')) {
-            return BiliUserJS.getIframeWin();
-        }
-        else if (document.querySelector('#bofqi > object')) {
-            throw 'Need H5 Player';
-        }
         else {
             return new Promise(resolve => {
                 const observer = new MutationObserver(() => {
@@ -253,16 +246,8 @@ class BiliUserJS {
                         observer.disconnect();
                         resolve(window);
                     }
-                    else if (document.querySelector('#bofqi > iframe')) {
-                        observer.disconnect();
-                        resolve(BiliUserJS.getIframeWin());
-                    }
-                    else if (document.querySelector('#bofqi > object')) {
-                        observer.disconnect();
-                        throw 'Need H5 Player';
-                    }
                 });
-                observer.observe(document.getElementById('bofqi'), { childList: true });
+                observer.observe(document.getElementById('bilibili-player'), { childList: true });
             });
         }
     }
@@ -296,7 +281,7 @@ class BiliUserJS {
                 cidRefresh.resolve();
             }
         });
-        observer.observe(playerWin.document.getElementsByClassName('bilibili-player-video')[0], { childList: true });
+        observer.observe(playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
 
         // 2. playerWin unload => cid refresh
         playerWin.addEventListener('unload', () => Promise.resolve().then(() => cidRefresh.resolve()));
@@ -315,6 +300,25 @@ class BiliUserJS {
         }
     }
 }
+
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * @template T
+ * @param {Promise<T>} promise 
+ * @param {number} ms 
+ * @returns {Promise< T | null >}
+ */
+const setTimeoutDo = (promise, ms) => {
+    /** @type {Promise<null>} */
+    const t = new Promise((resolve) => {
+        setTimeout(() => resolve(null), ms);
+    });
+    return Promise.race([promise, t])
+};
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -341,7 +345,7 @@ class CacheDB {
 
     async getDB() {
         if (this.db) return this.db;
-        this.db = new Promise((resolve, reject) => {
+        this.db = await new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(this.dbName);
             openRequest.onupgradeneeded = e => {
                 const db = e.target.result;
@@ -350,7 +354,7 @@ class CacheDB {
                 }
             };
             openRequest.onsuccess = e => {
-                return resolve(this.db = e.target.result);
+                return resolve(e.target.result);
             };
             openRequest.onerror = reject;
         });
@@ -416,7 +420,7 @@ class CacheDB {
     async getData(name) {
         const reqCascade = new Promise(async (resolve, reject) => {
             const dataChunks = [];
-            const db = await this.getDB();
+            const db = await this.getDB();  // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，这一步会超时
             const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
             const probe = objectStore.get(`${name}/part_0`);
             probe.onerror = reject;
@@ -439,7 +443,8 @@ class CacheDB {
             };
         });
 
-        const dataChunks = await reqCascade;
+        // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，添加超时
+        const dataChunks = await setTimeoutDo(reqCascade, 5 * 1000);
 
         return dataChunks ? { name, data: new Blob(dataChunks) } : null;
     }
@@ -521,7 +526,7 @@ class DetailedFetchBlob {
         this.buffer = [];
         this.blob = null;
         this.reader = null;
-        this.blobPromise = fetch(input, init).then(res => {
+        this.blobPromise = fetch(input, init).then(/** @param {Response} res */ res => {
             if (this.reader == 'abort') return res.body.getReader().cancel().then(() => null);
             if (!res.ok) throw `HTTP Error ${res.status}: ${res.statusText}`;
             this.lengthComputable = res.headers.has('Content-Length');
@@ -579,6 +584,15 @@ class DetailedFetchBlob {
 
     firefoxConstructor(input, init = {}, onprogress = init.onprogress, onabort = init.onabort, onerror = init.onerror) {
         if (!top.navigator.userAgent.includes('Firefox')) return false;
+
+        const firefoxVersionM = top.navigator.userAgent.match(/Firefox\/(\d+)/);
+        const firefoxVersion = firefoxVersionM && +firefoxVersionM[1];
+        if (firefoxVersion >= 65) {
+            // xhr.responseType "moz-chunked-arraybuffer" is deprecated since Firefox 68
+            // but res.body is implemented since Firefox 65
+            return false
+        }
+
         this.onprogress = onprogress;
         this.onabort = onabort;
         this.onerror = onerror;
@@ -604,7 +618,12 @@ class DetailedFetchBlob {
             xhr.onabort = e => this.onabort({ target: this, type: 'abort' });
             xhr.onerror = e => { this.onerror({ target: this, type: e.type }); reject(e); };
             this.abort = xhr.abort.bind(xhr);
-            xhr.open('get', input);
+            xhr.open(init.method || 'get', input);
+            if (init.headers) {
+                Object.entries(init.headers).forEach(([header, value]) => {
+                    xhr.setRequestHeader(header, value);
+                });
+            }
             xhr.send();
         });
         this.promise = this.blobPromise;
@@ -718,6 +737,7 @@ class Mutex {
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     const parser = {};
@@ -781,9 +801,9 @@ class Mutex {
      */
     parser.bilibili = function (content) {
       const text = typeof content === 'string' ? content : new TextDecoder('utf-8').decode(content);
-      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '');
+      const clean = text.replace(/(?:[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g, '').replace(/.*?\?>/,"");
       const data = (new DOMParser()).parseFromString(clean, 'text/xml');
-      const cid = +data.querySelector('chatid').textContent;
+      const cid = +data.querySelector('chatid,oid').textContent;
       /** @type {Array<Danmaku>} */
       const danmaku = Array.from(data.querySelectorAll('d')).map(d => {
         const p = d.getAttribute('p');
@@ -796,6 +816,7 @@ class Mutex {
           size: +size,
           color: parseRgb256IntegerColor(color),
           bottom: bottom > 0,
+          sender,
         };
       }).filter(danmakuFilter);
       return { cid, danmaku };
@@ -1259,9 +1280,9 @@ const rtlCanvas = function (options) {
         original: `Generated by tiansh/ass-danmaku (embedded in liqi0816/bilitwin) based on ${danmaku.meta.url}`,
         playResX: options.resolutionX,
         playResY: options.resolutionY,
-        fontFamily: options.fontFamily,
+        fontFamily: options.fontFamily.split(",")[0],
         fontSize: getCommonFontSize(danmaku.layout),
-        alpha: formatColorChannel(0xFF * (100 - options.textOpacity) / 100),
+        alpha: formatColorChannel(0xFF * (100 - options.textOpacity * 100) / 100),
         bold: options.bold? -1 : 0,
       };
       return [
@@ -1299,7 +1320,7 @@ const rtlCanvas = function (options) {
     { name: 'rtlDuration', type: 'number', min: 0.1, predef: 8, step: 0.1 },
     { name: 'fixDuration', type: 'number', min: 0.1, predef: 4, step: 0.1 },
     { name: 'maxDelay', type: 'number', min: 0, predef: 6, step: 0.1 },
-    { name: 'textOpacity', type: 'number', min: 10, max: 100, predef: 60 },
+    { name: 'textOpacity', type: 'number', min: 0.1, max: 1, predef: 0.6 },
     { name: 'maxOverlap', type: 'number', min: 1, max: 20, predef: 1 },
     { name: 'bold', type: 'boolean', predef: true },
   ];
@@ -1314,7 +1335,7 @@ const rtlCanvas = function (options) {
       if (Number.isNaN(value)) value = predef;
       if (value < min) value = min;
       if (value > max) value = max;
-      value = Math.round((value - min) / step) * step + min;
+      if (name !='textOpacity') value = Math.round((value - min) / step) * step + min;
     }
     return value;
   };
@@ -1424,6 +1445,7 @@ class ASSConverter {
      * @property {number} size
      * @property {DanmakuColor} color
      * @property {boolean} bottom
+     * @property {string=} sender
      */
 
     /**
@@ -1630,7 +1652,7 @@ class BiliMonkey {
         this.mp4FormatName = null;
         this.fallbackFormatName = null;
         this.cidAsyncContainer = new AsyncContainer();
-        this.cidAsyncContainer.then(cid => { this.cid = cid; this.ass = this.getASS(); });
+        this.cidAsyncContainer.then(cid => { this.cid = cid; /** this.ass = this.getASS(); */ });
         if (typeof top.cid === 'string') this.cidAsyncContainer.resolve(top.cid);
 
         /***
@@ -1653,8 +1675,6 @@ class BiliMonkey {
 
         this.defaultFormatPromise = null;
         this.queryInfoMutex = new Mutex();
-        this.queryInfoMutex.lockAndAwait(() => this.getPlayerButtons());
-        this.queryInfoMutex.lockAndAwait(() => this.getAvailableFormatName());
 
         this.destroy = new HookedFunction();
     }
@@ -1743,218 +1763,11 @@ class BiliMonkey {
         }
     }
 
-    getAvailableFormatName(accept_quality) {
-        if (!Array.isArray(accept_quality)) accept_quality = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li')).map(e => e.getAttribute('data-value'));
-
-        const accept_format = accept_quality.map(e => BiliMonkey.valueToFormat(e));
-
-        const vipExclusiveFormatSet = new Set(['flv_p60', 'hdflv2', 'flv720_p60']);
-        const candidateFormatSet = new Set(this.getVIPStatus() ? accept_format : accept_format.filter(e => !vipExclusiveFormatSet.has(e)));
-
-        this.flvFormatName = ['flv_p60', 'hdflv2', 'flv', 'flv720_p60', 'flv720', 'flv480', 'flv360']
-            .find(e => candidateFormatSet.has(e))
-            || 'does_not_exist';
-
-        this.mp4FormatName = ['hdmp4', 'mp4']
-            .find(e => candidateFormatSet.has(e))
-            || 'does_not_exist';
-
-        if (this.flvFormatName == 'does_not_exist' || this.mp4FormatName == 'does_not_exist') {
-            this.fallbackFormatName = ['mp4', 'flv360'].find(e => candidateFormatSet.has(e));
-            if (!this.fallbackFormatName) throw 'BiliMonkey: cannot get available format names (this video has only one available quality?)';
-        }
-    }
-
-    async execOptions() {
-        if (this.option.autoDefault) await this.sniffDefaultFormat();
-        if (this.option.autoFLV) this.queryInfo('flv');
-        if (this.option.autoMP4) this.queryInfo('mp4');
-    }
-
-    async sniffDefaultFormat() {
-        if (this.defaultFormatPromise) return this.defaultFormatPromise;
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) return this.defaultFormatPromise = Promise.resolve();
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        this.defaultFormatPromise = new Promise(resolve => {
-            let timeout = setTimeout(() => { jq.ajax = _ajax; resolve(); }, 3000);
-            let self = this;
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    clearTimeout(timeout);
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    let _success = a.success;
-                    a.success = res => {
-                        // 1. determine available format names
-                        self.getAvailableFormatName(res.accept_quality);
-
-                        // 2. determine if we should take this response
-                        const format = res.format;
-                        if (format == self.mp4FormatName || format == self.flvFormatName) {
-                            self.lockFormat(format);
-                            self.resolveFormat(res, format);
-                        }
-
-                        // 3. callback
-                        if (self.proxy && self.flvs) {
-                            self.setupProxy(res, _success);
-                        }
-                        else {
-                            _success(res);
-                        }
-
-                        // 4. return to await
-                        resolve(res);
-                    };
-                    jq.ajax = _ajax;
-                }
-                return _ajax.call(jq, a, c);
-            };
-        });
-        return this.defaultFormatPromise;
-    }
-
-    async getBackgroundFormat(format) {
-        if (format == 'hdmp4' || format == 'mp4') {
-            let src = this.playerWin.document.getElementsByTagName('video')[0].src;
-            if ((src.includes('hd') || format == 'mp4') && src.includes('.mp4')) {
-                let pendingFormat = this.lockFormat(format);
-                this.resolveFormat({ durl: [{ url: src }] }, format);
-                return pendingFormat;
-            }
-        }
-
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                a.success = res => {
-                    if (format == 'hdmp4') res.durl = [res.durl[0].backup_url.find(e => e.includes('hd') && e.includes('.mp4'))];
-                    if (format == 'mp4') res.durl = [res.durl[0].backup_url.find(e => !e.includes('hd') && e.includes('.mp4'))];
-                    self.resolveFormat(res, format);
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.player.reloadAccess();
-
-        return pendingFormat;
-    }
-
-    async getCurrentFormat(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-        const siblingFormat = this.fallbackFormatName || (format == this.flvFormatName ? this.mp4FormatName : this.flvFormatName);
-        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': 'https://static.hdslb.com/encoding.mp4', 'backup_url': ['https://static.hdslb.com/encoding.mp4'] }] };
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        let blockedRequest = await new Promise(resolve => {
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    // Send back a fake response to enable the change-format button.
-                    self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                    a.success(fakedRes);
-                    self.playerWin.document.getElementsByTagName('video')[1].loop = true;
-                    self.playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', () => resolve([a, c]), { once: true });
-                }
-                else {
-                    return _ajax.call(jq, a, c);
-                }
-            };
-            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-            this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(siblingFormat)}"]`).click();
-        });
-
-        let siblingOK = siblingFormat == this.fallbackFormatName ? true : siblingFormat == this.flvFormatName ? this.flvs : this.mp4;
-        if (!siblingOK) {
-            this.lockFormat(siblingFormat);
-            blockedRequest[0].success = res => this.resolveFormat(res, siblingFormat);
-            _ajax.call(jq, ...blockedRequest);
-        }
-
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                let _success = a.success;
-                a.success = res => {
-                    if (self.proxy) {
-                        self.resolveFormat(res, format);
-                        if (self.flvs) self.setupProxy(res, _success);
-                    }
-                    else {
-                        _success(res);
-                        self.resolveFormat(res, format);
-                    }
-                };
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
-
-        return pendingFormat;
-    }
-
-    async getNonCurrentFormat(format) {
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-
-        let pendingFormat = this.lockFormat(format);
-        let self = this;
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                self.cidAsyncContainer.resolve(a.url.match(/cid=\d+/)[0].slice(4));
-                let _success = a.success;
-                _success({});
-                a.success = res => self.resolveFormat(res, format);
-                jq.ajax = _ajax;
-            }
-            return _ajax.call(jq, a, c);
-        };
-        this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-        this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(format)}"]`).click();
-        return pendingFormat;
-    }
-
-    async getASS(clickableFormat) {
+    async getASS() {
         if (this.ass) return this.ass;
-        this.ass = new Promise(async resolve => {
+        this.ass = await new Promise(async resolve => {
             // 1. cid
-            if (!this.cid) this.cid = await new Promise((resolve, reject) => {
-                clickableFormat = this.fallbackFormatName || clickableFormat;
-                if (!clickableFormat) reject('get ASS Error: cid unavailable, nor clickable format given.');
-                const jq = this.playerWin.jQuery;
-                const _ajax = jq.ajax;
-                const _setItem = this.playerWin.localStorage.setItem;
-
-                if (!this.fallbackFormatName) this.lockFormat(clickableFormat);
-                let self = this;
-                jq.ajax = function (a, c) {
-                    if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                    if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                        resolve(self.cid = a.url.match(/cid=\d+/)[0].slice(4));
-                        let _success = a.success;
-                        _success({});
-                        a.success = res => {
-                            if (!this.fallbackFormatName) self.resolveFormat(res, clickableFormat);
-                        };
-                        jq.ajax = _ajax;
-                    }
-                    return _ajax.call(jq, a, c);
-                };
-                this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-                this.playerWin.document.querySelector(`div.bilibili-player-video-btn-quality > div ul li[data-value="${BiliMonkey.formatToValue(clickableFormat)}"]`).click();
-            });
+            if (!this.cid) this.cid = this.playerWin.cid;
 
             // 2. options
             const bilibili_player_settings = this.playerWin.localStorage.bilibili_player_settings && JSON.parse(this.playerWin.localStorage.bilibili_player_settings);
@@ -1965,7 +1778,7 @@ class BiliMonkey {
                 const i = bilibili_player_settings.block.list.map(e => e.v).join('|');
                 if (i) {
                     const regexp = new RegExp(i);
-                    danmaku = danmaku.filter(e => !regexp.test(e.text));
+                    danmaku = danmaku.filter(e => !regexp.test(e.text) && !regexp.test(e.sender));
                 }
             }
 
@@ -1977,10 +1790,19 @@ class BiliMonkey {
                 'bold': bilibili_player_settings.setting_config['bold'] ? 1 : 0,
             } || undefined;
 
+            // 2.3 resolution
+            if (this.option.resolution) {
+                Object.assign(option, {
+                    'resolutionX': +this.option.resolutionX || 560,
+                    'resolutionY': +this.option.resolutionY || 420
+                });
+            }
+
             // 3. generate
-            resolve(this.ass = top.URL.createObjectURL(await new ASSConverter(option).genASSBlob(
+            const data = await new ASSConverter(option).genASSBlob(
                 danmaku, top.document.title, top.location.href
-            )));
+            );
+            resolve(top.URL.createObjectURL(data));
         });
         return this.ass;
     }
@@ -1988,29 +1810,57 @@ class BiliMonkey {
     async queryInfo(format) {
         return this.queryInfoMutex.lockAndAwait(async () => {
             switch (format) {
-                case 'flv':
+                case 'video':
                     if (this.flvs)
-                        return this.flvs;
-                    else if (this.flvFormatName == 'does_not_exist')
-                        return this.flvFormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
-                        return this.getCurrentFormat(this.flvFormatName);
-                    else
-                        return this.getNonCurrentFormat(this.flvFormatName);
-                case 'mp4':
-                    if (this.mp4)
-                        return this.mp4;
-                    else if (this.mp4FormatName == 'does_not_exist')
-                        return this.mp4FormatName;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.mp4FormatName))
-                        return this.getCurrentFormat(this.mp4FormatName);
-                    else
-                        return this.getNonCurrentFormat(this.mp4FormatName);
+                        return this.video_format;
+
+                    const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
+                    const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
+
+                    const qn = (this.option.enableVideoMaxResolution && this.option.videoMaxResolution) || "120";
+                    const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`;
+
+                    const re = await fetch(api_url, { credentials: 'include' });
+                    const apiJson = await re.json();
+
+                    let data = apiJson.data || apiJson.result;
+                    // console.log(data)
+                    let durls = data && data.durl;
+
+                    if (!durls) {
+                        const _zc = window.Gc || window.zc ||
+                            Object.values(window).filter(
+                                x => typeof x == "string" && x.includes("[Info]")
+                            )[0];
+
+                        data = JSON.parse(
+                            _zc.split("\n").filter(
+                                x => x.startsWith("{")
+                            ).pop()
+                        );
+
+                        const _data_X = data.Y || data.X ||
+                            Object.values(data).filter(
+                                x => typeof x == "object" && Object.prototype.toString.call(x) == "[object Object]"
+                            )[0];
+
+                        durls = _data_X.segments || [_data_X];
+                    }
+
+                    // console.log(data)
+
+                    let flvs = durls.map(url_obj => url_obj.url.replace("http://", "https://"));
+
+                    this.flvs = flvs;
+
+                    let video_format = data.format && (data.format.match(/mp4|flv/) || [])[0];
+
+                    this.video_format = video_format;
+
+                    return video_format
                 case 'ass':
                     if (this.ass)
                         return this.ass;
-                    else if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-selected]').getAttribute('data-value') == BiliMonkey.formatToValue(this.flvFormatName))
-                        return this.getASS(this.mp4FormatName);
                     else
                         return this.getASS(this.flvFormatName);
                 default:
@@ -2019,55 +1869,14 @@ class BiliMonkey {
         });
     }
 
-    async getPlayerButtons() {
-        if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
-            return this.playerWin;
-        }
-        else {
-            return new Promise(resolve => {
-                let observer = new MutationObserver(() => {
-                    if (this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li')) {
-                        observer.disconnect();
-                        resolve(this.playerWin);
-                    }
-                });
-                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
-            });
-        }
-    }
-
-    async hangPlayer() {
-        const fakedRes = { 'from': 'local', 'result': 'suee', 'format': 'faked_mp4', 'timelength': 10, 'accept_format': 'hdflv2,flv,hdmp4,faked_mp4,mp4', 'accept_quality': [112, 80, 64, 32, 16], 'seek_param': 'start', 'seek_type': 'second', 'durl': [{ 'order': 1, 'length': 1000, 'size': 30000, 'url': '' }] };
-        const jq = this.playerWin.jQuery;
-        const _ajax = jq.ajax;
-        const _setItem = this.playerWin.localStorage.setItem;
-
-        return this.queryInfoMutex.lockAndAwait(() => new Promise(async resolve => {
-            let blockerTimeout;
-            jq.ajax = function (a, c) {
-                if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }                if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                    clearTimeout(blockerTimeout);
-                    a.success(fakedRes);
-                    blockerTimeout = setTimeout(() => {
-                        jq.ajax = _ajax;
-                        resolve();
-                    }, 2500);
-                }
-                else {
-                    return _ajax.call(jq, a, c);
-                }
-            };
-            this.playerWin.localStorage.setItem = () => this.playerWin.localStorage.setItem = _setItem;
-            let button = Array.from(this.playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul').getElementsByTagName('li'))
-                .find(e => !e.getAttribute('data-selected') && e.children.length == 2);
-            button.click();
-        }));
+    hangPlayer() {
+        this.playerWin.document.getElementsByTagName('video')[0].src = "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAsxtZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjY0MyA1YzY1NzA0IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAADmWIhABf/qcv4FM6/0nHAAAC7G1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAAoAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAIWdHJhawAAAFx0a2hkAAAAAwAAAAAAAAAAAAAAAQAAAAAAAAAoAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAQAAAAEAAAAAAAJGVkdHMAAAAcZWxzdAAAAAAAAAABAAAAKAAAAAAAAQAAAAABjm1kaWEAAAAgbWRoZAAAAAAAAAAAAAAAAAAAMgAAAAIAFccAAAAAAC1oZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAATltaW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAAD5c3RibAAAAJVzdHNkAAAAAAAAAAEAAACFYXZjMQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAQABAASAAAAEgAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABj//wAAAC9hdmNDAWQACv/hABZnZAAKrNlehAAAAwAEAAADAMg8SJZYAQAGaOvjyyLAAAAAGHN0dHMAAAAAAAAAAQAAAAEAAAIAAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAAsQAAAABAAAAFHN0Y28AAAAAAAAAAQAAADAAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjU2LjQwLjEwMQ==";
     }
 
     async loadFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         let item = await this.cache.getData(name);
         if (!item) return;
         return this.flvsBlob[index] = item.data;
@@ -2076,7 +1885,7 @@ class BiliMonkey {
     async loadPartialFLVFromCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         name = 'PC_' + name;
         let item = await this.cache.getData(name);
         if (!item) return;
@@ -2096,14 +1905,14 @@ class BiliMonkey {
     async saveFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         return this.cache.addData({ name, data: blob });
     }
 
     async savePartialFLVToCache(index, blob) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         name = 'PC_' + name;
         return this.cache.putData({ name, data: blob });
     }
@@ -2111,7 +1920,7 @@ class BiliMonkey {
     async cleanPartialFLVInCache(index) {
         if (!this.cache) return;
         if (!this.flvs) throw 'BiliMonkey: info uninitialized';
-        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        let name = this.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         name = 'PC_' + name;
         return this.cache.deleteData(name);
     }
@@ -2174,7 +1983,7 @@ class BiliMonkey {
 
         let ret = [];
         for (let flv of this.flvs) {
-            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+            let name = flv.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
             ret.push(await this.cache.deleteData(name));
             ret.push(await this.cache.deleteData('PC_' + name));
         }
@@ -2214,101 +2023,125 @@ class BiliMonkey {
                 const e = new XMLHttpRequest();
                 e.onload = () => resolve(e.responseText);
                 e.onerror = reject;
-                e.open('get', `https://comment.bilibili.com/${cid}.xml`, );
+                // fix CORS issue
+                e.open('get', `https://cors.xmader.com/?url=${encodeURIComponent(`https://comment.bilibili.com/${cid}.xml`)}`);
                 e.send();
             })
         );
     }
 
-    static async getAllPageDefaultFormats(playerWin = top) {
-        const jq = playerWin.jQuery;
-        const _ajax = jq.ajax;
-
-        // 1. mutex => you must send requests one by one
-        const queryInfoMutex = new Mutex();
-
-        // 2. bilibili has a misconfigured lazy loading => keep trying
-        const list = await new Promise(resolve => {
-            const i = setInterval(() => {
-                const ret = playerWin.player.getPlaylist();
-                if (ret) {
-                    clearInterval(i);
-                    resolve(ret);
-                }
-            }, 500);
-        });
-
-        // 3. build {cid: information} dict
-        const index = list.reduce((acc, cur) => { acc[cur.cid] = cur; return acc }, {});
-
-        // 4. find where to stop
-        const end = list[list.length - 1].cid.toString();
-
-        // 5. collect information
-        const ret = [];
-        jq.ajax = function (a, c) {
-            if (typeof c === 'object') { if (typeof a === 'string') c.url = a; a = c; c = undefined; }            if (a.url.includes('comment.bilibili.com') || a.url.includes('interface.bilibili.com/player?') || a.url.includes('api.bilibili.com/x/player/playurl/token')) return _ajax.call(jq, a, c);
-            if (a.url.includes('interface.bilibili.com/v2/playurl?') || a.url.includes('bangumi.bilibili.com/player/web_api/v2/playurl?')) {
-                (async () => {
-                    // 5.1 suppress success handler
-                    a.success = undefined;
-
-                    // 5.2 find cid
-                    const cid = a.url.match(/cid=\d+/)[0].slice(4);
-
-                    // 5.3 grab information
-                    const [danmuku, res] = await Promise.all([
-                        // 5.3.1 grab danmuku
-                        (async () => top.URL.createObjectURL(await new ASSConverter().genASSBlob(
-                            await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
-                        )))(),
-
-                        // 5.3.2 grab download res
-                        _ajax.call(jq, a, c)
-                    ]);
-
-                    // 5.4 save information
-                    ret.push({
-                        durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
-                        danmuku,
-                        name: index[cid].part || index[cid].index,
-                        outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
-                            /***
-                             * see #28
-                             * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
-                             * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
-                             */
-                            res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '')
-                            : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
-                                res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
-                                : cid,
-                        cid,
-                        res,
-                    });
-
-                    // 5.5 finish job
-                    queryInfoMutex.unlock();
-                })();
-            }
-            return _ajax.call(jq, { url: '//0.0.0.0' });
+    static async getAllPageDefaultFormats(playerWin = top, monkey) {
+        /** @returns {Promise<{cid: number; page: number; part?: string; }[]>} */
+        const getPartsList = async () => {
+            const r = await fetch(`https://api.bilibili.com/x/player/pagelist?aid=${aid}`);
+            const json = await r.json();
+            return json.data
         };
 
-        // 6.1 from the first page
-        await queryInfoMutex.lock();
+        const list = await getPartsList();
+
+        const queryInfoMutex = new Mutex();
+
+        const _getDataList = () => {
+            const _zc = playerWin.Gc || playerWin.zc ||
+                Object.values(playerWin).filter(
+                    x => typeof x == "string" && x.includes("[Info]")
+                )[0];
+            return _zc.split("\n").filter(
+                x => x.startsWith("{")
+            )
+        };
+
+        // from the first page
         playerWin.player.next(1);
-        while (1) {
-            // 6.2 to the last page
+        const initialDataSize = new Set(_getDataList()).size;
+
+        const retPromises = list.map((x, n) => (async () => {
             await queryInfoMutex.lock();
-            if (ret[ret.length - 1].cid == end) break;
+
+            const cid = x.cid;
+            const danmuku = await new ASSConverter().genASSBlob(
+                await BiliMonkey.fetchDanmaku(cid), top.document.title, top.location.href
+            );
+
+            const isBangumi = location.pathname.includes("bangumi") || location.hostname.includes("bangumi");
+            const apiPath = isBangumi ? "/pgc/player/web/playurl" : "/x/player/playurl";
+
+            const qn = (monkey.option.enableVideoMaxResolution && monkey.option.videoMaxResolution) || "120";
+            const api_url = `https://api.bilibili.com${apiPath}?avid=${aid}&cid=${cid}&otype=json&fourk=1&qn=${qn}`;
+            const r = await fetch(api_url, { credentials: 'include' });
+
+            const apiJson = await r.json();
+            const res = apiJson.data || apiJson.result;
+
+            if (!res.durl) {
+                await new Promise(resolve => {
+                    const i = setInterval(() => {
+                        const dataSize = new Set(
+                            _getDataList()
+                        ).size;
+
+                        if (list.length == 1 || dataSize == n + initialDataSize + 1) {
+                            clearInterval(i);
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+                const data = JSON.parse(
+                    _getDataList().pop()
+                );
+
+                const _data_X = data.Y || data.X ||
+                    Object.values(data).filter(
+                        x => typeof x == "object" && Object.prototype.toString.call(x) == "[object Object]"
+                    )[0];
+
+                res.durl = _data_X.segments || [_data_X];
+            }
+
+            queryInfoMutex.unlock();
             playerWin.player.next();
-        }
+
+            return ({
+                durl: res.durl.map(({ url }) => url.replace('http:', playerWin.location.protocol)),
+                danmuku,
+                name: x.part || x.index || playerWin.document.title.replace("_哔哩哔哩 (゜-゜)つロ 干杯~-bilibili", ""),
+                outputName: res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/) ?
+                    /***
+                     * see #28
+                     * Firefox lookbehind assertion not implemented https://bugzilla.mozilla.org/show_bug.cgi?id=1225665
+                     * try replace /-\d+(?=(?:\d|-|hd)*\.flv)/ => /(?<=\d+)-\d+(?=(?:\d|-|hd)*\.flv)/ in the future
+                     */
+                    res.durl[0].url.match(/\d+-\d+(?:\d|-|hd)*(?=\.flv)/)[0].replace(/-\d+(?=(?:\d|-|hd)*\.flv)/, '')
+                    : res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/) ?
+                        res.durl[0].url.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
+                        : cid,
+                cid,
+                res,
+            });
+        })());
+
+        const ret = await Promise.all(retPromises);
 
         return ret;
+    }
+
+    static async getBiliShortVideoInfo() {
+        const video_id = location.pathname.match(/\/video\/(\d+)/)[1];
+        const api_url = `https://api.vc.bilibili.com/clip/v1/video/detail?video_id=${video_id}&need_playurl=1`;
+
+        const req = await fetch(api_url, { credentials: 'include' });
+        const data = (await req.json()).data;
+        const { video_playurl, first_pic: cover_img } = data.item;
+
+        return { video_playurl: video_playurl.replace("http://", "https://"), cover_img }
     }
 
     static formatToValue(format) {
         if (format == 'does_not_exist') throw `formatToValue: cannot lookup does_not_exist`;
         if (typeof BiliMonkey.formatToValue.dict == 'undefined') BiliMonkey.formatToValue.dict = {
+            'hdflv2': '120',
             'flv_p60': '116',
             'flv720_p60': '74',
             'flv': '80',
@@ -2326,6 +2159,7 @@ class BiliMonkey {
 
     static valueToFormat(value) {
         if (typeof BiliMonkey.valueToFormat.dict == 'undefined') BiliMonkey.valueToFormat.dict = {
+            '120': 'hdflv2',
             '116': 'flv_p60',
             '74': 'flv720_p60',
             '80': 'flv',
@@ -2348,20 +2182,29 @@ class BiliMonkey {
 
     static get optionDescriptions() {
         return [
-            // 1. automation
-            ['autoDefault', '尝试自动抓取：不会拖慢页面，抓取默认清晰度，但可能抓不到。'],
-            ['autoFLV', '强制自动抓取FLV：会拖慢页面，如果默认清晰度也是超清会更慢，但保证抓到。'],
-            ['autoMP4', '强制自动抓取MP4：会拖慢页面，如果默认清晰度也是高清会更慢，但保证抓到。'],
-
-            // 2. cache
+            // 1. cache
             ['cache', '关标签页不清缓存：保留完全下载好的分段到缓存，忘记另存为也没关系。'],
             ['partial', '断点续传：点击“取消”保留部分下载的分段到缓存，忘记点击会弹窗确认。'],
             ['proxy', '用缓存加速播放器：如果缓存里有完全下载好的分段，直接喂给网页播放器，不重新访问网络。小水管利器，播放只需500k流量。如果实在搞不清怎么播放ASS弹幕，也可以就这样用。'],
 
-            // 3. customizing
+            // 2. customizing
             ['blocker', '弹幕过滤：在网页播放器里设置的屏蔽词也对下载的弹幕生效。'],
-            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。']
+            ['font', '自定义字体：在网页播放器里设置的字体、大小、加粗、透明度也对下载的弹幕生效。'],
+            ['resolution', '(测)自定义弹幕画布分辨率：仅对下载的弹幕生效。(默认值: 560 x 420)'],
         ];
+    }
+
+    static get resolutionPreferenceOptions() {
+        return [
+            ['超清 4K (大会员)', '120'],
+            ['高清 1080P60 (大会员)', '116'],
+            ['高清 1080P+ (大会员)', '112'],
+            ['高清 720P60 (大会员)', '74'],
+            ['高清 1080P', '80'],
+            ['高清 720P', '64'],
+            ['清晰 480P', '32'],
+            ['流畅 360P', '16'],
+        ]
     }
 
     static get optionDefaults() {
@@ -2379,6 +2222,11 @@ class BiliMonkey {
             // 3. customizing
             blocker: true,
             font: true,
+            resolution: false,
+            resolutionX: 560,
+            resolutionY: 420,
+            videoMaxResolution: "120",
+            enableVideoMaxResolution: false,
         }
     }
 
@@ -2387,19 +2235,9 @@ class BiliMonkey {
             let playerWin = await BiliUserJS.getPlayerWin();
             window.m = new BiliMonkey(playerWin);
 
-            console.warn('sniffDefaultFormat test');
-            await m.sniffDefaultFormat();
-            console.log(m);
-
             console.warn('data race test');
-            m.queryInfo('mp4');
-            console.log(m.queryInfo('mp4'));
-
-            console.warn('getNonCurrentFormat test');
-            console.log(await m.queryInfo('mp4'));
-
-            console.warn('getCurrentFormat test');
-            console.log(await m.queryInfo('flv'));
+            m.queryInfo('video');
+            console.log(m.queryInfo('video'));
 
             //location.reload();
         })();
@@ -2436,6 +2274,22 @@ class BiliPolyfill {
         this.destroy = new HookedFunction();
         this.playerWin.addEventListener('beforeunload', this.destroy);
         this.destroy.addCallback(() => this.playerWin.removeEventListener('beforeunload', this.destroy));
+
+        this.BiliDanmakuSettings =
+            class BiliDanmakuSettings {
+                static getPlayerSettings() {
+                    return playerWin.localStorage.bilibili_player_settings && JSON.parse(playerWin.localStorage.bilibili_player_settings)
+                }
+                static get(key) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    return player_settings.setting_config && player_settings.setting_config[key]
+                }
+                static set(key, value) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings();
+                    player_settings.setting_config[key] = value;
+                    playerWin.localStorage.bilibili_player_settings = JSON.stringify(player_settings);
+                }
+            };
     }
 
     saveUserdata() {
@@ -2460,35 +2314,48 @@ class BiliPolyfill {
         // 1. initialize
         this.video = await this.getPlayerVideo();
 
+        if (!videoRefresh) {
+            this.retrieveUserdata();
+        }
+
         // 2. if not enabled, run the process without real actions
         if (!this.option.betabeta) return this.getPlayerMenu();
 
-        // 3. set up functions that are cid static
-        if (!videoRefresh) {
-            this.retrieveUserdata();
-            if (this.option.badgeWatchLater) this.badgeWatchLater();
-            if (this.option.scroll) this.scrollToPlayer();
+        try {
+            // 3. set up functions that are cid static
+            if (!videoRefresh) {
+                if (this.option.badgeWatchLater) {
+                    await this.getWatchLaterBtn();
+                    this.badgeWatchLater();
+                }
+                if (this.option.scroll) this.scrollToPlayer();
 
-            if (this.option.series) this.inferNextInSeries();
+                if (this.option.series) this.inferNextInSeries();
 
-            if (this.option.recommend) this.showRecommendTab();
-            if (this.option.focus) this.focusOnPlayer();
-            if (this.option.restorePrevent) this.restorePreventShade();
-            if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
-            if (this.option.restoreSpeed) this.restoreSpeed();
-            if (this.option.restoreWide) this.restoreWideScreen();
-            if (this.option.autoResume) this.autoResume();
-            if (this.option.autoPlay) this.autoPlay();
-            if (this.option.autoFullScreen) this.autoFullScreen();
-            if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
-            this.destroy.addCallback(() => this.saveUserdata());
+                if (this.option.recommend) this.showRecommendTab();
+                if (this.option.focus) this.focusOnPlayer();
+                if (this.option.restorePrevent) this.restorePreventShade();
+                if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
+                if (this.option.restoreSpeed) this.restoreSpeed();
+                if (this.option.restoreWide) {
+                    await this.getWideScreenBtn();
+                    this.restoreWideScreen();
+                }
+                if (this.option.autoResume) this.autoResume();
+                if (this.option.autoPlay) this.autoPlay();
+                if (this.option.autoFullScreen) this.autoFullScreen();
+                if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
+                this.destroy.addCallback(() => this.saveUserdata());
+            }
+
+            // 4. set up functions that are binded to the video DOM
+            if (this.option.dblclick) this.dblclickFullScreen();
+            if (this.option.electric) this.reallocateElectricPanel();
+            if (this.option.oped) this.skipOPED();
+            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
+        } catch (err) {
+            console.error(err);
         }
-
-        // 4. set up functions that are binded to the video DOM
-        if (this.option.dblclick) this.dblclickFullScreen();
-        if (this.option.electric) this.reallocateElectricPanel();
-        if (this.option.oped) this.skipOPED();
-        this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
 
         // 5. set up functions that require everything to be ready
         await this.getPlayerMenu();
@@ -2520,7 +2387,7 @@ class BiliPolyfill {
         const keywords = [title, ...epSibling.map(e => seriesTitle + e), ...epSibling];
 
         // 6. find mid
-        const midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
+        const midParent = top.document.querySelector('.u-info > .name') || top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
         if (!midParent) return this.series = [];
         const mid = midParent.children[0].href.match(/\d+/)[0];
 
@@ -2603,7 +2470,7 @@ class BiliPolyfill {
     }
 
     scrollToPlayer() {
-        if (top.scrollY < 200) top.document.getElementById('bofqi').scrollIntoView();
+        if (top.scrollY < 200) top.document.getElementById('bilibili-player').scrollIntoView();
     }
 
     showRecommendTab() {
@@ -2611,26 +2478,17 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() {
-        // 1. search for img tag
-        const img = top.document.querySelector('.cover_image')
-            || top.document.querySelector('div.info-cover > a > img')
-            || top.document.querySelector('[data-state-play="true"]  img');
+    async getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const viewUrl = "https://api.bilibili.com/x/web-interface/view?aid=" + aid;
 
-        // 2. search for ld+jason
-        const script = top.document.querySelector('script[type="application/ld+json"]');
-
-        // 3. find src
-        let ret = (img && img.src) || (script && JSON.parse(script.textContent).images[0]);
-        if (!ret) return null;
-
-        // 4. trim parameters
-        let i;
-        i = ret.indexOf('.jpg');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        i = ret.indexOf('.png');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        return ret;
+        try {
+            const res = await fetch(viewUrl);
+            const viewJson = await res.json();
+            return viewJson.data.pic.replace("http://", "https://")
+        }
+        catch (e) {
+            return null
+        }
     }
 
     reallocateElectricPanel() {
@@ -2702,64 +2560,78 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
-        const input = this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
-        if (this.userdata.restore.preventShade[index] && !input.nextElementSibling.classList.contains('bpui-state-active')) {
+        const input = this.playerWin.document.querySelector(".bilibili-player-video-danmaku-setting-left-preventshade input");
+        if (this.userdata.restore.preventShade[index] && !input.checked) {
             input.click();
         }
 
         // 5. clean up setting panel
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+        danmaku_btn.dispatchEvent(new Event('mouseout'));
 
         // 6. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.preventShade[index] = input.nextElementSibling.classList.contains('bpui-state-active');
+            this.userdata.restore.preventShade[index] = input.checked;
         });
     }
 
     restoreDanmukuSwitch() {
         // 1. restore option should be an array
         if (!Array.isArray(this.userdata.restore.danmukuSwitch)) this.userdata.restore.danmukuSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
         if (!Array.isArray(this.userdata.restore.danmukuTopSwitch)) this.userdata.restore.danmukuTopSwitch = [];
         if (!Array.isArray(this.userdata.restore.danmukuBottomSwitch)) this.userdata.restore.danmukuBottomSwitch = [];
-        if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuColorSwitch)) this.userdata.restore.danmukuColorSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuSpecialSwitch)) this.userdata.restore.danmukuSpecialSwitch = [];
 
         // 2. find corresponding option index
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
         // 4.1 danmukuSwitch
-        const danmukuSwitchDiv = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
-        if (this.userdata.restore.danmukuSwitch[index] && !danmukuSwitchDiv.classList.contains('video-state-danmaku-off')) {
-            danmukuSwitchDiv.click();
+        const danmukuSwitchInput = this.playerWin.document.querySelector('.bilibili-player-video-danmaku-switch input');
+        if (this.userdata.restore.danmukuSwitch[index] && danmukuSwitchInput.checked) {
+            danmukuSwitchInput.click();
         }
 
-        // 4.2 danmukuTopSwitch danmukuBottomSwitch danmukuScrollSwitch
-        const [danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuScrollSwitchDiv] = this.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children;
+        // 4.2 danmukuScrollSwitch danmukuTopSwitch danmukuBottomSwitch danmukuColorSwitch danmukuSpecialSwitch
+        const [danmukuScrollSwitchDiv, danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuColorSwitchDiv, danmukuSpecialSwitchDiv] = this.playerWin.document.querySelector('.bilibili-player-video-danmaku-setting-left-block-content').children;
+        if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
+            danmukuScrollSwitchDiv.click();
+        }
         if (this.userdata.restore.danmukuTopSwitch[index] && !danmukuTopSwitchDiv.classList.contains('disabled')) {
             danmukuTopSwitchDiv.click();
         }
         if (this.userdata.restore.danmukuBottomSwitch[index] && !danmukuBottomSwitchDiv.classList.contains('disabled')) {
             danmukuBottomSwitchDiv.click();
         }
-        if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
-            danmukuScrollSwitchDiv.click();
+        if (this.userdata.restore.danmukuColorSwitch[index] && !danmukuColorSwitchDiv.classList.contains('disabled')) {
+            danmukuColorSwitchDiv.click();
+        }
+        if (this.userdata.restore.danmukuSpecialSwitch[index] && !danmukuSpecialSwitchDiv.classList.contains('disabled')) {
+            danmukuSpecialSwitchDiv.click();
         }
 
         // 5. clean up setting panel
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+        danmaku_btn.dispatchEvent(new Event('mouseout'));
 
         // 6. memorize final option
         this.destroy.addCallback(() => {
-            this.userdata.restore.danmukuSwitch[index] = danmukuSwitchDiv.classList.contains('video-state-danmaku-off');
+            this.userdata.restore.danmukuSwitch[index] = !danmukuSwitchInput.checked;
+            this.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
             this.userdata.restore.danmukuTopSwitch[index] = danmukuTopSwitchDiv.classList.contains('disabled');
             this.userdata.restore.danmukuBottomSwitch[index] = danmukuBottomSwitchDiv.classList.contains('disabled');
-            this.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
+            this.userdata.restore.danmukuColorSwitch[index] = danmukuColorSwitchDiv.classList.contains('disabled');
+            this.userdata.restore.danmukuSpecialSwitch[index] = danmukuSpecialSwitchDiv.classList.contains('disabled');
         });
     }
 
@@ -2776,9 +2648,29 @@ class BiliPolyfill {
         }
 
         // 4. memorize option
-        this.destroy.addCallback(() => {
-            this.userdata.restore.speed[index] = this.video.playbackRate;
+        this.playerWin.player.addEventListener("video_before_destroy", () => this.saveSpeed());
+
+        const observer = new MutationObserver(() => {
+            const changeSpeedBtn = this.playerWin.document.querySelectorAll(".bilibili-player-contextmenu-subwrapp")[0];
+            if (changeSpeedBtn && !changeSpeedBtn._memorize_speed) {
+                changeSpeedBtn.addEventListener("click", () => this.saveSpeed());
+                changeSpeedBtn._memorize_speed = true;
+            }
         });
+        observer.observe(this.playerWin.document.querySelector("#bilibiliPlayer"), { childList: true, subtree: true });
+    }
+
+    saveSpeed() {
+        if (this.option.restoreSpeed) {
+            // 1. restore option should be an array
+            if (!Array.isArray(this.userdata.restore.speed)) this.userdata.restore.speed = [];
+
+            // 2. find corresponding option index
+            const index = top.location.href.includes('bangumi') ? 0 : 1;
+
+            // 3. memorize
+            this.userdata.restore.speed[index] = this.video.playbackRate;
+        }
     }
 
     restoreWideScreen() {
@@ -2789,14 +2681,14 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. restore if different
-        const i = this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0];
-        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('icon-24wideon')) {
+        const i = this.playerWin.document.querySelector('.bilibili-player-video-btn-widescreen');
+        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('closed') && !i.firstElementChild.classList.contains('icon-24wideon')) {
             i.click();
         }
 
         // 4. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.wideScreen[index] = i.classList.contains('icon-24wideon');
+            this.userdata.restore.wideScreen[index] = i.classList.contains('closed') || i.firstElementChild.classList.contains('icon-24wideon');
         });
     }
 
@@ -2854,18 +2746,24 @@ class BiliPolyfill {
     }
 
     autoFullScreen() {
-        if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off'))
+        if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
             this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+        }
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
+        if (aid) {
+            return `av${aid}`
+        }
+
+        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
     }
 
     markOPEDPosition(index) {
         const collectionId = this.getCollectionId();
         if (!Array.isArray(this.userdata.oped[collectionId])) this.userdata.oped[collectionId] = [];
         this.userdata.oped[collectionId][index] = this.video.currentTime;
+        this.saveUserdata();
     }
 
     clearOPEDPosition() {
@@ -2943,10 +2841,12 @@ class BiliPolyfill {
     setVideoSpeed(speed) {
         if (speed < 0 || speed > 10) return;
         this.video.playbackRate = speed;
+        this.saveSpeed();
     }
 
     focusOnPlayer() {
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0].click();
+        let player = this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0];
+        if (player) player.click();
     }
 
     menuFocusOnPlayer() {
@@ -3104,6 +3004,42 @@ class BiliPolyfill {
         }
     }
 
+    async getWatchLaterBtn() {
+        let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+
+        if (!document.cookie.includes("DedeUserID")) return; // 未登录
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
+    async getWideScreenBtn() {
+        let li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
     static async openMinimizedPlayer(option = { cid: top.cid, aid: top.aid, playerWin: top }) {
         // 1. check param
         if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
@@ -3197,6 +3133,36 @@ class BiliPolyfill {
         [playerDiv.webkitRequestFullscreen, playerDiv.mozRequestFullScreen, playerDiv.msRequestFullscreen, playerDiv.requestFullscreen] = hook;
     }
 
+    static async biligameInit() {
+        const game_id = location.href.match(/id=(\d+)/)[1];
+        const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`;
+
+        const req = await fetch(api_url, { credentials: 'include' });
+        const data = (await req.json()).data;
+
+        const aid = data.video_url;
+        const video_url = `https://www.bilibili.com/video/av${aid}`;
+
+        const tabs = document.querySelector(".tab-head");
+        const tab = document.createElement("a");
+        tab.href = video_url;
+        tab.textContent = "查看视频";
+        tab.target = "_blank";
+        tabs.appendChild(tab);
+    }
+
+    static showBangumiCoverImage() {
+        const imgElement = document.querySelector(".media-preview img");
+        if (!imgElement) return;
+
+        imgElement.style.cursor = "pointer";
+
+        imgElement.onclick = () => {
+            const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0];
+            top.window.open(cover_img, '_blank');
+        };
+    }
+
     static secondToReadable(s) {
         if (s > 60) return `${parseInt(s / 60)}分${parseInt(s % 60)}秒`;
         else return `${parseInt(s % 60)}秒`;
@@ -3227,13 +3193,13 @@ class BiliPolyfill {
             ['restoreSpeed', '记住播放速度'],
             ['restoreWide', '记住宽屏'],
             ['autoResume', '自动跳转上次看到'],
-            ['autoPlay', '自动播放'],
+            ['autoPlay', '自动播放(需要在浏览器站点权限设置中允许自动播放)'],
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
             ['series', '尝试自动找上下集'],
 
             // 3. interaction
-            ['limitedKeydown', '首次回车键可全屏自动播放'],
+            ['limitedKeydown', '首次回车键可全屏自动播放(需要在脚本加载完毕后使用)'],
             ['dblclick', '双击全屏'],
 
             // 4. easter eggs
@@ -3253,10 +3219,10 @@ class BiliPolyfill {
 
             // 2. automation
             scroll: true,
-            focus: true,
+            focus: false,
             menuFocus: true,
-            restorePrevent: true,
-            restoreDanmuku: true,
+            restorePrevent: false,
+            restoreDanmuku: false,
             restoreSpeed: true,
             restoreWide: true,
             autoResume: true,
@@ -3306,26 +3272,41 @@ class Exporter {
     }
 
     static async sendToAria2RPC(urls, referrer = top.location.origin, target = 'http://127.0.0.1:6800/jsonrpc') {
-        // 1. prepare body
         const h = 'referer';
-        const body = JSON.stringify(urls.map((url, id) => ({
-            id,
-            jsonrpc: 2,
-            method: "aria2.addUri",
-            params: [
-                [url],
-                { [h]: referrer }
-            ]
-        })));
-
-        // 2. send to jsonrpc target
         const method = 'POST';
+
         while (1) {
+            const token_array = target.match(/\/\/((.+)@)/);
+            const body = JSON.stringify(urls.map((url, id) => {
+                const params = [
+                    [url],
+                    { [h]: referrer }
+                ];
+
+                if (token_array) {
+                    params.unshift(token_array[2]);
+                    target = target.replace(token_array[1], "");
+                }
+
+                return ({
+                    id,
+                    jsonrpc: 2,
+                    method: "aria2.addUri",
+                    params
+                })
+            }));
+
             try {
-                return await (await fetch(target, { method, body })).json();
+                const res = await (await fetch(target, { method, body })).json();
+                if (res.error || res[0].error) {
+                    throw new Error((res.error || res[0].error).message)
+                }
+                else {
+                    return res;
+                }
             }
             catch (e) {
-                target = top.prompt('Aria2 connection failed. Please provide a valid server address:', target);
+                target = top.prompt(`Aria2 connection failed${!e.message.includes("fetch") ? `: ${e.message}.\n` : ". "}Please provide a valid server address:`, target);
                 if (!target) return null;
             }
         }
@@ -3519,7 +3500,7 @@ class FLV {
         let offset = this.headerLength + 4;
         while (offset < dataView.byteLength) {
             let tag = new FLVTag(dataView, offset);
-            // debug for scrpit data tag
+            // debug for script data tag
             // if (tag.tagType != 0x08 && tag.tagType != 0x09) 
             offset += 11 + tag.dataSize + 4;
             this.tags.push(tag);
@@ -3672,6 +3653,7 @@ var FLVASS2MKV = (function () {
 
     const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' };
 
+    /** @type {typeof Blob} */
     const _Blob = typeof Blob === 'function' && Blob || class {
         constructor(array) {
             return Buffer.concat(array.map(Buffer.from.bind(Buffer)));
@@ -4508,14 +4490,11 @@ var FLVASS2MKV = (function () {
          * @param {boolean} probeData.match
          * @param {number} probeData.consumed
          * @param {number} probeData.dataOffset
-         * @param {booleam} probeData.hasAudioTrack
+         * @param {boolean} probeData.hasAudioTrack
          * @param {boolean} probeData.hasVideoTrack
-         * @param {*} config 
          */
-        constructor(probeData, config) {
+        constructor(probeData) {
             this.TAG = 'FLVDemuxer';
-
-            this._config = config;
 
             this._onError = null;
             this._onMediaInfo = null;
@@ -4965,6 +4944,7 @@ var FLVASS2MKV = (function () {
 
             if (soundFormat === 10) {  // AAC
                 let aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);
+
                 if (aacData == undefined) {
                     return;
                 }
@@ -4981,6 +4961,10 @@ var FLVASS2MKV = (function () {
                     meta.config = misc.config;
                     // added by qli5
                     meta.configRaw = misc.configRaw;
+                    // added by Xmader
+                    meta.audioObjectType = misc.audioObjectType;
+                    meta.samplingFrequencyIndex = misc.samplingIndex;
+                    meta.channelConfig = misc.channelCount;
                     // The decode result of an aac sample is 1024 PCM samples
                     meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
                     Log.v(this.TAG, 'Parsed AudioSpecificConfig');
@@ -5176,11 +5160,12 @@ var FLVASS2MKV = (function () {
             }
 
             return {
-                // configRaw: added by qli5
-                configRaw: array,
+                audioObjectType,  // audio_object_type,        added by Xmader
+                samplingIndex,    // sampling_frequency_index, added by Xmader
+                configRaw: array, //                           added by qli5
                 config: config,
                 samplingRate: samplingFrequence,
-                channelCount: channelConfig,
+                channelCount: channelConfig,  // channel_config
                 codec: 'mp4a.40.' + audioObjectType,
                 originalCodec: 'mp4a.40.' + originalAudioObjectType
             };
@@ -5572,7 +5557,7 @@ var FLVASS2MKV = (function () {
          * @returns {Array<Object>} - array of subtitle lines
          */
         static extractSubtitleLines(str) {
-            const lines = str.split('\\n');
+            const lines = str.split(/\\r\\n+/);
             if (lines[0] != '[Events]' && lines[0] != '[events]') throw new Error('ASSDemuxer: section is not [Events]');
             if (lines[1].indexOf('Format:') != 0 && lines[1].indexOf('format:') != 0) throw new Error('ASSDemuxer: cannot find Format definition in section [Events]');
 
@@ -5597,7 +5582,7 @@ var FLVASS2MKV = (function () {
             this.eventsHeader = '';
             this.pictures = '';
             this.fonts = '';
-            this.lines = '';
+            this.lines = [];
         }
 
         get header() {
@@ -6876,6 +6861,14 @@ var FLVASS2MKV = (function () {
      * file, You can obtain one at http://mozilla.org/MPL/2.0/.
     */
 
+    /**
+     * @typedef {Object} AssBlock
+     * @property {number} track 
+     * @property {Uint8Array} frame 
+     * @property {number} timestamp 
+     * @property {number} duration 
+     */
+
     class MKV {
         constructor(config) {
             this.min = true;
@@ -6883,9 +6876,10 @@ var FLVASS2MKV = (function () {
             Object.assign(this, config);
             this.segmentUID = MKV.randomBytes(16);
             this.trackUIDBase = Math.trunc(Math.random() * 2 ** 16);
-            this.trackMetadata = { h264: null, aac: null, ass: null };
+            this.trackMetadata = { h264: null, aac: null, assList: [] };
             this.duration = 0;
-            this.blocks = { h264: [], aac: [], ass: [] };
+            /** @type {{ h264: any[]; aac: any[]; assList: AssBlock[][]; }} */
+            this.blocks = { h264: [], aac: [], assList: [] };
         }
 
         static randomBytes(num) {
@@ -6946,11 +6940,18 @@ var FLVASS2MKV = (function () {
             this.duration = Math.max(this.duration, aac.duration);
         }
 
-        addASSMetadata(ass) {
-            this.trackMetadata.ass = {
+        /**
+         * @param {import("../demuxer/ass").ASS} ass 
+         * @param {string} name 
+         */
+        addASSMetadata(ass, name = "") {
+            this.trackMetadata.assList.push({
                 codecId: 'S_TEXT/ASS',
-                codecPrivate: new _TextEncoder().encode(ass.header)
-            };
+                codecPrivate: new _TextEncoder().encode(ass.header),
+                name,
+                _info: ass.info,
+                _styles: ass.styles,
+            });
         }
 
         addH264Stream(h264) {
@@ -6973,13 +6974,56 @@ var FLVASS2MKV = (function () {
             })));
         }
 
+        /**
+         * @param {import("../demuxer/ass").ASS} ass 
+         */
         addASSStream(ass) {
-            this.blocks.ass = this.blocks.ass.concat(ass.lines.map((e, i) => ({
-                track: 3,
+            const n = this.blocks.assList.length;
+            const lineBlocks = ass.lines.map((e, i) => ({
+                track: 3 + n,
                 frame: new _TextEncoder().encode(\`\${i},\${e['Layer'] || ''},\${e['Style'] || ''},\${e['Name'] || ''},\${e['MarginL'] || ''},\${e['MarginR'] || ''},\${e['MarginV'] || ''},\${e['Effect'] || ''},\${e['Text'] || ''}\`),
                 timestamp: MKV.textToMS(e['Start']),
                 duration: MKV.textToMS(e['End']) - MKV.textToMS(e['Start']),
-            })));
+            }));
+            this.blocks.assList.push(lineBlocks);
+        }
+
+        combineSubtitles() {
+            const [firstB, ...restB] = this.blocks.assList;
+            const l = Math.min(this.blocks.assList.length, this.trackMetadata.assList.length);
+            /**
+             * @param {AssBlock} a 
+             * @param {AssBlock} b 
+             */
+            const sortFn = (a, b) => {
+                return a.timestamp - b.timestamp
+            };
+            restB.forEach((a, n) => {
+                this.blocks.assList.push(
+                    a.concat(firstB).sort(sortFn).map((x) => {
+                        return {
+                            track: 3 + l + n,
+                            frame: x.frame,
+                            timestamp: x.timestamp,
+                            duration: x.duration,
+                        }
+                    })
+                );
+            });
+            const [firstM, ...restM] = this.trackMetadata.assList;
+            restM.forEach((a) => {
+                const name = \`\${firstM.name} + \${a.name}\`;
+                const info = firstM._info.replace(/^(Title:.+)\$/m, \`\$1 \${name}\`);
+                const firstStyles = firstM._styles.split(/\\r?\\n+/).filter(x => !!x);
+                const aStyles = a._styles.split(/\\r?\\n+/).slice(2);
+                const styles = firstStyles.concat(aStyles).join("\\r\\n");
+                const header = info + styles;
+                this.trackMetadata.assList.push({
+                    name: name,
+                    codecId: 'S_TEXT/ASS',
+                    codecPrivate: new _TextEncoder().encode(header),
+                });
+            });
         }
 
         build() {
@@ -7052,7 +7096,7 @@ var FLVASS2MKV = (function () {
             return EBML.element(EBML.ID.Tracks, [
                 this.getVideoTrackEntry(),
                 this.getAudioTrackEntry(),
-                this.getSubtitleTrackEntry()
+                ...this.getSubtitleTrackEntry(),
             ]);
         }
 
@@ -7093,15 +7137,18 @@ var FLVASS2MKV = (function () {
         }
 
         getSubtitleTrackEntry() {
-            return EBML.element(EBML.ID.TrackEntry, [
-                EBML.element(EBML.ID.TrackNumber, EBML.number(3)),
-                EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3)),
-                EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
-                EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
-                EBML.element(EBML.ID.CodecID, EBML.string(this.trackMetadata.ass.codecId)),
-                EBML.element(EBML.ID.CodecPrivate, EBML.bytes(this.trackMetadata.ass.codecPrivate)),
-                EBML.element(EBML.ID.Language, EBML.string('und')),
-            ]);
+            return this.trackMetadata.assList.map((ass, i) => {
+                return EBML.element(EBML.ID.TrackEntry, [
+                    EBML.element(EBML.ID.TrackNumber, EBML.number(3 + i)),
+                    EBML.element(EBML.ID.TrackUID, EBML.number(this.trackUIDBase + 3 + i)),
+                    EBML.element(EBML.ID.TrackType, EBML.number(0x11)),
+                    EBML.element(EBML.ID.FlagLacing, EBML.number(0x00)),
+                    EBML.element(EBML.ID.CodecID, EBML.string(ass.codecId)),
+                    EBML.element(EBML.ID.CodecPrivate, EBML.bytes(ass.codecPrivate)),
+                    EBML.element(EBML.ID.Language, EBML.string('und')),
+                    ass.name && EBML.element(EBML.ID.Name, EBML.bytes(new _TextEncoder().encode(ass.name))),
+                ].filter(x => !!x));
+            });
         }
 
         getClusterArray() {
@@ -7111,7 +7158,7 @@ var FLVASS2MKV = (function () {
 
             let i = 0;
             let j = 0;
-            let k = 0;
+            let k = Array.from({ length: this.blocks.assList.length }).fill(0);
             let clusterTimeCode = 0;
             let clusterContent = [EBML.element(EBML.ID.Timecode, EBML.number(clusterTimeCode))];
             let ret = [clusterContent];
@@ -7126,14 +7173,16 @@ var FLVASS2MKV = (function () {
                         break;
                     }
                 }
-                for (; k < this.blocks.ass.length; k++) {
-                    if (this.blocks.ass[k].timestamp < e.timestamp) {
-                        clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+                this.blocks.assList.forEach((ass, n) => {
+                    for (; k[n] < ass.length; k[n]++) {
+                        if (ass[k[n]].timestamp < e.timestamp) {
+                            clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+                        }
+                        else {
+                            break;
+                        }
                     }
-                    else {
-                        break;
-                    }
-                }
+                });
                 if (e.isKeyframe/*  || clusterContent.length > 72 */) {
                     // start new cluster
                     clusterTimeCode = e.timestamp;
@@ -7144,7 +7193,9 @@ var FLVASS2MKV = (function () {
                 if (this.onprogress && !(i & progressThrottler)) this.onprogress({ loaded: i, total: this.blocks.h264.length });
             }
             for (; j < this.blocks.aac.length; j++) clusterContent.push(this.getBlocks(this.blocks.aac[j], clusterTimeCode));
-            for (; k < this.blocks.ass.length; k++) clusterContent.push(this.getBlocks(this.blocks.ass[k], clusterTimeCode));
+            this.blocks.assList.forEach((ass, n) => {
+                for (; k[n] < ass.length; k[n]++) clusterContent.push(this.getBlocks(ass[k[n]], clusterTimeCode));
+            });
             if (this.onprogress) this.onprogress({ loaded: i, total: this.blocks.h264.length });
             if (ret[0].length == 1) ret.shift();
             ret = ret.map(clusterContent => EBML.element(EBML.ID.Cluster, clusterContent));
@@ -7198,11 +7249,37 @@ var FLVASS2MKV = (function () {
      * licensed under MIT.
      */
 
+    /**
+     * @param {Blob|string|ArrayBuffer} x 
+     */
+    const getArrayBuffer = (x) => {
+        return new Promise((resolve, reject) => {
+            if (x instanceof _Blob) {
+                const e = new FileReader();
+                e.onload = () => resolve(e.result);
+                e.onerror = reject;
+                e.readAsArrayBuffer(x);
+            }
+            else if (typeof x == 'string') {
+                const e = new XMLHttpRequest();
+                e.responseType = 'arraybuffer';
+                e.onload = () => resolve(e.response);
+                e.onerror = reject;
+                e.open('get', x);
+                e.send();
+            }
+            else if (x instanceof ArrayBuffer) {
+                resolve(x);
+            }
+            else {
+                reject(new TypeError('flvass2mkv: getArrayBuffer {Blob|string|ArrayBuffer}'));
+            }
+        })
+    };
+
     const FLVASS2MKV = class {
         constructor(config = {}) {
             this.onflvprogress = null;
-            this.onassprogress = null;
-            this.onurlrevokesafe = null;
             this.onfileload = null;
             this.onmkvprogress = null;
             this.onload = null;
@@ -7214,73 +7291,47 @@ var FLVASS2MKV = (function () {
         /**
          * Demux FLV into H264 + AAC stream and ASS into line stream; then
          * remux them into a MKV file.
-         * @param {Blob|string|ArrayBuffer} flv 
-         * @param {Blob|string|ArrayBuffer} ass 
+         * @typedef {Blob|string|ArrayBuffer} F
+         * @param {F} flv 
+         * @param {F} ass 
+         * @param {{ name: string; file: F; }[]} subtitleAssList
          */
-        async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass') {
+        async build(flv = './samples/gen_case.flv', ass = './samples/gen_case.ass', subtitleAssList) {
             // load flv and ass as arraybuffer
             await Promise.all([
-                new Promise((r, j) => {
-                    if (flv instanceof _Blob) {
-                        const e = new FileReader();
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(flv = e.result);
-                        e.onerror = j;
-                        e.readAsArrayBuffer(flv);
-                    }
-                    else if (typeof flv == 'string') {
-                        const e = new XMLHttpRequest();
-                        e.responseType = 'arraybuffer';
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(flv = e.response);
-                        e.onerror = j;
-                        e.open('get', flv);
-                        e.send();
-                        flv = 2; // onurlrevokesafe
-                    }
-                    else if (flv instanceof ArrayBuffer) {
-                        r(flv);
-                    }
-                    else {
-                        j(new TypeError('flvass2mkv: flv {Blob|string|ArrayBuffer}'));
-                    }
-                    if (typeof ass != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-                }),
-                new Promise((r, j) => {
-                    if (ass instanceof _Blob) {
-                        const e = new FileReader();
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(ass = e.result);
-                        e.onerror = j;
-                        e.readAsArrayBuffer(ass);
-                    }
-                    else if (typeof ass == 'string') {
-                        const e = new XMLHttpRequest();
-                        e.responseType = 'arraybuffer';
-                        e.onprogress = this.onflvprogress;
-                        e.onload = () => r(ass = e.response);
-                        e.onerror = j;
-                        e.open('get', ass);
-                        e.send();
-                        ass = 2; // onurlrevokesafe
-                    }
-                    else if (ass instanceof ArrayBuffer) {
-                        r(ass);
-                    }
-                    else {
-                        j(new TypeError('flvass2mkv: ass {Blob|string|ArrayBuffer}'));
-                    }
-                    if (typeof flv != 'string' && this.onurlrevokesafe) this.onurlrevokesafe();
-                }),
+                (async () => {
+                    flv = await getArrayBuffer(flv);
+                })(),
+                (async () => {
+                    ass = await getArrayBuffer(ass);
+                })(),
+                (async () => {
+                    subtitleAssList = await Promise.all(
+                        subtitleAssList.map(async ({ name, file }) => {
+                            return { name, file: await getArrayBuffer(file) }
+                        })
+                    );
+                })(),
             ]);
+
             if (this.onfileload) this.onfileload();
 
             const mkv = new MKV(this.mkvConfig);
 
             const assParser = new ASS();
-            ass = assParser.parseFile(ass);
-            mkv.addASSMetadata(ass);
-            mkv.addASSStream(ass);
+            const assData = assParser.parseFile(ass);
+            mkv.addASSMetadata(assData, "弹幕");
+            mkv.addASSStream(assData);
+
+            subtitleAssList.forEach(({ name, file }) => {
+                const subAssData = assParser.parseFile(file);
+                mkv.addASSMetadata(subAssData, name);
+                mkv.addASSStream(subAssData);
+            });
+
+            if (subtitleAssList.length > 0) {
+                mkv.combineSubtitles();
+            }
 
             const flvProbeData = FLVDemuxer.probe(flv);
             const flvDemuxer = new FLVDemuxer(flvProbeData);
@@ -7336,7 +7387,7 @@ var FLVASS2MKV = (function () {
         const fileProgress = document.getElementById('fileProgress');
         const mkvProgress = document.getElementById('mkvProgress');
         const a = document.getElementById('a');
-        window.exec = async option => {
+        window.exec = async (option, target) => {
             const defaultOption = {
                 onflvprogress: ({ loaded, total }) => {
                     fileProgress.value = loaded;
@@ -7351,13 +7402,19 @@ var FLVASS2MKV = (function () {
                     mkvProgress.max = total;
                 },
                 name: 'merged.mkv',
+                subtitleAssList: [],
             };
             option = Object.assign(defaultOption, option);
-            a.download = a.textContent = option.name;
+            target.download = a.download = a.textContent = option.name;
             console.time('file');
-            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);
+            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass, option.subtitleAssList);
             console.timeEnd('flvass2mkv');
-            return a.href = URL.createObjectURL(mkv);
+            target.href = a.href = URL.createObjectURL(mkv);
+            target.textContent = "另存为MKV"
+            target.onclick = () => {
+                window.close()
+            }
+            return a.href
         };
         
     </script>
@@ -7387,26 +7444,2392 @@ class MKVTransmuxer {
      * @param {Blob|string|ArrayBuffer} flv
      * @param {Blob|string|ArrayBuffer} ass 
      * @param {string=} name 
+     * @param {Node} target
+     * @param {{ name: string; file: (Blob|string|ArrayBuffer); }[]=} subtitleAssList
      */
-    exec(flv, ass, name) {
-        // 1. Allocate for a new window
-        if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
+    exec(flv, ass, name, target, subtitleAssList = []) {
+        if (target.textContent != "另存为MKV") {
+            target.textContent = "打包中";
 
-        // 2. Inject scripts
-        this.workerWin.document.write(embeddedHTML);
-        this.workerWin.document.close();
+            // 1. Allocate for a new window
+            if (!this.workerWin) this.workerWin = top.open('', undefined, ' ');
 
-        // 3. Invoke exec
-        if (!(this.option instanceof Object)) this.option = null;
-        this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name }));
-        URL.revokeObjectURL(flv);
-        URL.revokeObjectURL(ass);
+            // 2. Inject scripts
+            this.workerWin.document.write(embeddedHTML);
+            this.workerWin.document.close();
 
-        // 4. Free parent window
-        // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) 
-        top.location = 'about:blank';
+            // 3. Invoke exec
+            if (!(this.option instanceof Object)) this.option = null;
+            this.workerWin.exec(Object.assign({}, this.option, { flv, ass, name, subtitleAssList }), target);
+            URL.revokeObjectURL(flv);
+            URL.revokeObjectURL(ass);
+
+            // 4. Free parent window
+            // if (top.confirm('MKV打包中……要关掉这个窗口，释放内存吗？')) {
+            //     top.location = 'about:blank';
+            // }
+        }
     }
 }
+
+/***
+ * Copyright (C) 2018 Qli5. All Rights Reserved.
+ * 
+ * @author qli5 <goodlq11[at](163|gmail).com>
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+const _navigator = typeof navigator === 'object' && navigator || { userAgent: 'chrome' };
+
+const _TextDecoder = typeof TextDecoder === 'function' && TextDecoder || class extends require('string_decoder').StringDecoder {
+    /**
+     * @param {ArrayBuffer} chunk 
+     * @returns {string}
+     */
+    decode(chunk) {
+        return this.end(Buffer.from(chunk));
+    }
+};
+
+/***
+ * The FLV demuxer is from flv.js
+ * 
+ * Copyright (C) 2016 Bilibili. All Rights Reserved.
+ *
+ * @author zheng qian <xqq@xqq.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// import FLVDemuxer from 'flv.js/src/demux/flv-demuxer.js';
+// ..import Log from '../utils/logger.js';
+const Log = {
+    e: console.error.bind(console),
+    w: console.warn.bind(console),
+    i: console.log.bind(console),
+    v: console.log.bind(console),
+};
+
+// ..import AMF from './amf-parser.js';
+// ....import Log from '../utils/logger.js';
+// ....import decodeUTF8 from '../utils/utf8-conv.js';
+function checkContinuation(uint8array, start, checkLength) {
+    let array = uint8array;
+    if (start + checkLength < array.length) {
+        while (checkLength--) {
+            if ((array[++start] & 0xC0) !== 0x80)
+                return false;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function decodeUTF8(uint8array) {
+    let out = [];
+    let input = uint8array;
+    let i = 0;
+    let length = uint8array.length;
+
+    while (i < length) {
+        if (input[i] < 0x80) {
+            out.push(String.fromCharCode(input[i]));
+            ++i;
+            continue;
+        } else if (input[i] < 0xC0) {
+            // fallthrough
+        } else if (input[i] < 0xE0) {
+            if (checkContinuation(input, i, 1)) {
+                let ucs4 = (input[i] & 0x1F) << 6 | (input[i + 1] & 0x3F);
+                if (ucs4 >= 0x80) {
+                    out.push(String.fromCharCode(ucs4 & 0xFFFF));
+                    i += 2;
+                    continue;
+                }
+            }
+        } else if (input[i] < 0xF0) {
+            if (checkContinuation(input, i, 2)) {
+                let ucs4 = (input[i] & 0xF) << 12 | (input[i + 1] & 0x3F) << 6 | input[i + 2] & 0x3F;
+                if (ucs4 >= 0x800 && (ucs4 & 0xF800) !== 0xD800) {
+                    out.push(String.fromCharCode(ucs4 & 0xFFFF));
+                    i += 3;
+                    continue;
+                }
+            }
+        } else if (input[i] < 0xF8) {
+            if (checkContinuation(input, i, 3)) {
+                let ucs4 = (input[i] & 0x7) << 18 | (input[i + 1] & 0x3F) << 12
+                    | (input[i + 2] & 0x3F) << 6 | (input[i + 3] & 0x3F);
+                if (ucs4 > 0x10000 && ucs4 < 0x110000) {
+                    ucs4 -= 0x10000;
+                    out.push(String.fromCharCode((ucs4 >>> 10) | 0xD800));
+                    out.push(String.fromCharCode((ucs4 & 0x3FF) | 0xDC00));
+                    i += 4;
+                    continue;
+                }
+            }
+        }
+        out.push(String.fromCharCode(0xFFFD));
+        ++i;
+    }
+
+    return out.join('');
+}
+
+// ....import {IllegalStateException} from '../utils/exception.js';
+class IllegalStateException extends Error { }
+
+let le = (function () {
+    let buf = new ArrayBuffer(2);
+    (new DataView(buf)).setInt16(0, 256, true);  // little-endian write
+    return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE
+})();
+
+class AMF {
+
+    static parseScriptData(arrayBuffer, dataOffset, dataSize) {
+        let data = {};
+
+        try {
+            let name = AMF.parseValue(arrayBuffer, dataOffset, dataSize);
+            let value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);
+
+            data[name.data] = value.data;
+        } catch (e) {
+            Log.e('AMF', e.toString());
+        }
+
+        return data;
+    }
+
+    static parseObject(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 3) {
+            throw new IllegalStateException('Data not enough when parse ScriptDataObject');
+        }
+        let name = AMF.parseString(arrayBuffer, dataOffset, dataSize);
+        let value = AMF.parseValue(arrayBuffer, dataOffset + name.size, dataSize - name.size);
+        let isObjectEnd = value.objectEnd;
+
+        return {
+            data: {
+                name: name.data,
+                value: value.data
+            },
+            size: name.size + value.size,
+            objectEnd: isObjectEnd
+        };
+    }
+
+    static parseVariable(arrayBuffer, dataOffset, dataSize) {
+        return AMF.parseObject(arrayBuffer, dataOffset, dataSize);
+    }
+
+    static parseString(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 2) {
+            throw new IllegalStateException('Data not enough when parse String');
+        }
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+        let length = v.getUint16(0, !le);
+
+        let str;
+        if (length > 0) {
+            str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 2, length));
+        } else {
+            str = '';
+        }
+
+        return {
+            data: str,
+            size: 2 + length
+        };
+    }
+
+    static parseLongString(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 4) {
+            throw new IllegalStateException('Data not enough when parse LongString');
+        }
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+        let length = v.getUint32(0, !le);
+
+        let str;
+        if (length > 0) {
+            str = decodeUTF8(new Uint8Array(arrayBuffer, dataOffset + 4, length));
+        } else {
+            str = '';
+        }
+
+        return {
+            data: str,
+            size: 4 + length
+        };
+    }
+
+    static parseDate(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 10) {
+            throw new IllegalStateException('Data size invalid when parse Date');
+        }
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+        let timestamp = v.getFloat64(0, !le);
+        let localTimeOffset = v.getInt16(8, !le);
+        timestamp += localTimeOffset * 60 * 1000;  // get UTC time
+
+        return {
+            data: new Date(timestamp),
+            size: 8 + 2
+        };
+    }
+
+    static parseValue(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 1) {
+            throw new IllegalStateException('Data not enough when parse Value');
+        }
+
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+        let offset = 1;
+        let type = v.getUint8(0);
+        let value;
+        let objectEnd = false;
+
+        try {
+            switch (type) {
+                case 0:  // Number(Double) type
+                    value = v.getFloat64(1, !le);
+                    offset += 8;
+                    break;
+                case 1: {  // Boolean type
+                    let b = v.getUint8(1);
+                    value = b ? true : false;
+                    offset += 1;
+                    break;
+                }
+                case 2: {  // String type
+                    let amfstr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);
+                    value = amfstr.data;
+                    offset += amfstr.size;
+                    break;
+                }
+                case 3: { // Object(s) type
+                    value = {};
+                    let terminal = 0;  // workaround for malformed Objects which has missing ScriptDataObjectEnd
+                    if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {
+                        terminal = 3;
+                    }
+                    while (offset < dataSize - 4) {  // 4 === type(UI8) + ScriptDataObjectEnd(UI24)
+                        let amfobj = AMF.parseObject(arrayBuffer, dataOffset + offset, dataSize - offset - terminal);
+                        if (amfobj.objectEnd)
+                            break;
+                        value[amfobj.data.name] = amfobj.data.value;
+                        offset += amfobj.size;
+                    }
+                    if (offset <= dataSize - 3) {
+                        let marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;
+                        if (marker === 9) {
+                            offset += 3;
+                        }
+                    }
+                    break;
+                }
+                case 8: { // ECMA array type (Mixed array)
+                    value = {};
+                    offset += 4;  // ECMAArrayLength(UI32)
+                    let terminal = 0;  // workaround for malformed MixedArrays which has missing ScriptDataObjectEnd
+                    if ((v.getUint32(dataSize - 4, !le) & 0x00FFFFFF) === 9) {
+                        terminal = 3;
+                    }
+                    while (offset < dataSize - 8) {  // 8 === type(UI8) + ECMAArrayLength(UI32) + ScriptDataVariableEnd(UI24)
+                        let amfvar = AMF.parseVariable(arrayBuffer, dataOffset + offset, dataSize - offset - terminal);
+                        if (amfvar.objectEnd)
+                            break;
+                        value[amfvar.data.name] = amfvar.data.value;
+                        offset += amfvar.size;
+                    }
+                    if (offset <= dataSize - 3) {
+                        let marker = v.getUint32(offset - 1, !le) & 0x00FFFFFF;
+                        if (marker === 9) {
+                            offset += 3;
+                        }
+                    }
+                    break;
+                }
+                case 9:  // ScriptDataObjectEnd
+                    value = undefined;
+                    offset = 1;
+                    objectEnd = true;
+                    break;
+                case 10: {  // Strict array type
+                    // ScriptDataValue[n]. NOTE: according to video_file_format_spec_v10_1.pdf
+                    value = [];
+                    let strictArrayLength = v.getUint32(1, !le);
+                    offset += 4;
+                    for (let i = 0; i < strictArrayLength; i++) {
+                        let val = AMF.parseValue(arrayBuffer, dataOffset + offset, dataSize - offset);
+                        value.push(val.data);
+                        offset += val.size;
+                    }
+                    break;
+                }
+                case 11: {  // Date type
+                    let date = AMF.parseDate(arrayBuffer, dataOffset + 1, dataSize - 1);
+                    value = date.data;
+                    offset += date.size;
+                    break;
+                }
+                case 12: {  // Long string type
+                    let amfLongStr = AMF.parseString(arrayBuffer, dataOffset + 1, dataSize - 1);
+                    value = amfLongStr.data;
+                    offset += amfLongStr.size;
+                    break;
+                }
+                default:
+                    // ignore and skip
+                    offset = dataSize;
+                    Log.w('AMF', 'Unsupported AMF value type ' + type);
+            }
+        } catch (e) {
+            Log.e('AMF', e.toString());
+        }
+
+        return {
+            data: value,
+            size: offset,
+            objectEnd: objectEnd
+        };
+    }
+
+}
+
+// ..import SPSParser from './sps-parser.js';
+// ....import ExpGolomb from './exp-golomb.js';
+// ......import {IllegalStateException, InvalidArgumentException} from '../utils/exception.js';
+class InvalidArgumentException extends Error { }
+
+class ExpGolomb {
+
+    constructor(uint8array) {
+        this.TAG = 'ExpGolomb';
+
+        this._buffer = uint8array;
+        this._buffer_index = 0;
+        this._total_bytes = uint8array.byteLength;
+        this._total_bits = uint8array.byteLength * 8;
+        this._current_word = 0;
+        this._current_word_bits_left = 0;
+    }
+
+    destroy() {
+        this._buffer = null;
+    }
+
+    _fillCurrentWord() {
+        let buffer_bytes_left = this._total_bytes - this._buffer_index;
+        if (buffer_bytes_left <= 0)
+            throw new IllegalStateException('ExpGolomb: _fillCurrentWord() but no bytes available');
+
+        let bytes_read = Math.min(4, buffer_bytes_left);
+        let word = new Uint8Array(4);
+        word.set(this._buffer.subarray(this._buffer_index, this._buffer_index + bytes_read));
+        this._current_word = new DataView(word.buffer).getUint32(0, false);
+
+        this._buffer_index += bytes_read;
+        this._current_word_bits_left = bytes_read * 8;
+    }
+
+    readBits(bits) {
+        if (bits > 32)
+            throw new InvalidArgumentException('ExpGolomb: readBits() bits exceeded max 32bits!');
+
+        if (bits <= this._current_word_bits_left) {
+            let result = this._current_word >>> (32 - bits);
+            this._current_word <<= bits;
+            this._current_word_bits_left -= bits;
+            return result;
+        }
+
+        let result = this._current_word_bits_left ? this._current_word : 0;
+        result = result >>> (32 - this._current_word_bits_left);
+        let bits_need_left = bits - this._current_word_bits_left;
+
+        this._fillCurrentWord();
+        let bits_read_next = Math.min(bits_need_left, this._current_word_bits_left);
+
+        let result2 = this._current_word >>> (32 - bits_read_next);
+        this._current_word <<= bits_read_next;
+        this._current_word_bits_left -= bits_read_next;
+
+        result = (result << bits_read_next) | result2;
+        return result;
+    }
+
+    readBool() {
+        return this.readBits(1) === 1;
+    }
+
+    readByte() {
+        return this.readBits(8);
+    }
+
+    _skipLeadingZero() {
+        let zero_count;
+        for (zero_count = 0; zero_count < this._current_word_bits_left; zero_count++) {
+            if (0 !== (this._current_word & (0x80000000 >>> zero_count))) {
+                this._current_word <<= zero_count;
+                this._current_word_bits_left -= zero_count;
+                return zero_count;
+            }
+        }
+        this._fillCurrentWord();
+        return zero_count + this._skipLeadingZero();
+    }
+
+    readUEG() {  // unsigned exponential golomb
+        let leading_zeros = this._skipLeadingZero();
+        return this.readBits(leading_zeros + 1) - 1;
+    }
+
+    readSEG() {  // signed exponential golomb
+        let value = this.readUEG();
+        if (value & 0x01) {
+            return (value + 1) >>> 1;
+        } else {
+            return -1 * (value >>> 1);
+        }
+    }
+
+}
+
+class SPSParser {
+
+    static _ebsp2rbsp(uint8array) {
+        let src = uint8array;
+        let src_length = src.byteLength;
+        let dst = new Uint8Array(src_length);
+        let dst_idx = 0;
+
+        for (let i = 0; i < src_length; i++) {
+            if (i >= 2) {
+                // Unescape: Skip 0x03 after 00 00
+                if (src[i] === 0x03 && src[i - 1] === 0x00 && src[i - 2] === 0x00) {
+                    continue;
+                }
+            }
+            dst[dst_idx] = src[i];
+            dst_idx++;
+        }
+
+        return new Uint8Array(dst.buffer, 0, dst_idx);
+    }
+
+    static parseSPS(uint8array) {
+        let rbsp = SPSParser._ebsp2rbsp(uint8array);
+        let gb = new ExpGolomb(rbsp);
+
+        gb.readByte();
+        let profile_idc = gb.readByte();  // profile_idc
+        gb.readByte();  // constraint_set_flags[5] + reserved_zero[3]
+        let level_idc = gb.readByte();  // level_idc
+        gb.readUEG();  // seq_parameter_set_id
+
+        let profile_string = SPSParser.getProfileString(profile_idc);
+        let level_string = SPSParser.getLevelString(level_idc);
+        let chroma_format_idc = 1;
+        let chroma_format = 420;
+        let chroma_format_table = [0, 420, 422, 444];
+        let bit_depth = 8;
+
+        if (profile_idc === 100 || profile_idc === 110 || profile_idc === 122 ||
+            profile_idc === 244 || profile_idc === 44 || profile_idc === 83 ||
+            profile_idc === 86 || profile_idc === 118 || profile_idc === 128 ||
+            profile_idc === 138 || profile_idc === 144) {
+
+            chroma_format_idc = gb.readUEG();
+            if (chroma_format_idc === 3) {
+                gb.readBits(1);  // separate_colour_plane_flag
+            }
+            if (chroma_format_idc <= 3) {
+                chroma_format = chroma_format_table[chroma_format_idc];
+            }
+
+            bit_depth = gb.readUEG() + 8;  // bit_depth_luma_minus8
+            gb.readUEG();  // bit_depth_chroma_minus8
+            gb.readBits(1);  // qpprime_y_zero_transform_bypass_flag
+            if (gb.readBool()) {  // seq_scaling_matrix_present_flag
+                let scaling_list_count = (chroma_format_idc !== 3) ? 8 : 12;
+                for (let i = 0; i < scaling_list_count; i++) {
+                    if (gb.readBool()) {  // seq_scaling_list_present_flag
+                        if (i < 6) {
+                            SPSParser._skipScalingList(gb, 16);
+                        } else {
+                            SPSParser._skipScalingList(gb, 64);
+                        }
+                    }
+                }
+            }
+        }
+        gb.readUEG();  // log2_max_frame_num_minus4
+        let pic_order_cnt_type = gb.readUEG();
+        if (pic_order_cnt_type === 0) {
+            gb.readUEG();  // log2_max_pic_order_cnt_lsb_minus_4
+        } else if (pic_order_cnt_type === 1) {
+            gb.readBits(1);  // delta_pic_order_always_zero_flag
+            gb.readSEG();  // offset_for_non_ref_pic
+            gb.readSEG();  // offset_for_top_to_bottom_field
+            let num_ref_frames_in_pic_order_cnt_cycle = gb.readUEG();
+            for (let i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {
+                gb.readSEG();  // offset_for_ref_frame
+            }
+        }
+        gb.readUEG();  // max_num_ref_frames
+        gb.readBits(1);  // gaps_in_frame_num_value_allowed_flag
+
+        let pic_width_in_mbs_minus1 = gb.readUEG();
+        let pic_height_in_map_units_minus1 = gb.readUEG();
+
+        let frame_mbs_only_flag = gb.readBits(1);
+        if (frame_mbs_only_flag === 0) {
+            gb.readBits(1);  // mb_adaptive_frame_field_flag
+        }
+        gb.readBits(1);  // direct_8x8_inference_flag
+
+        let frame_crop_left_offset = 0;
+        let frame_crop_right_offset = 0;
+        let frame_crop_top_offset = 0;
+        let frame_crop_bottom_offset = 0;
+
+        let frame_cropping_flag = gb.readBool();
+        if (frame_cropping_flag) {
+            frame_crop_left_offset = gb.readUEG();
+            frame_crop_right_offset = gb.readUEG();
+            frame_crop_top_offset = gb.readUEG();
+            frame_crop_bottom_offset = gb.readUEG();
+        }
+
+        let sar_width = 1, sar_height = 1;
+        let fps = 0, fps_fixed = true, fps_num = 0, fps_den = 0;
+
+        let vui_parameters_present_flag = gb.readBool();
+        if (vui_parameters_present_flag) {
+            if (gb.readBool()) {  // aspect_ratio_info_present_flag
+                let aspect_ratio_idc = gb.readByte();
+                let sar_w_table = [1, 12, 10, 16, 40, 24, 20, 32, 80, 18, 15, 64, 160, 4, 3, 2];
+                let sar_h_table = [1, 11, 11, 11, 33, 11, 11, 11, 33, 11, 11, 33, 99, 3, 2, 1];
+
+                if (aspect_ratio_idc > 0 && aspect_ratio_idc < 16) {
+                    sar_width = sar_w_table[aspect_ratio_idc - 1];
+                    sar_height = sar_h_table[aspect_ratio_idc - 1];
+                } else if (aspect_ratio_idc === 255) {
+                    sar_width = gb.readByte() << 8 | gb.readByte();
+                    sar_height = gb.readByte() << 8 | gb.readByte();
+                }
+            }
+
+            if (gb.readBool()) {  // overscan_info_present_flag
+                gb.readBool();  // overscan_appropriate_flag
+            }
+            if (gb.readBool()) {  // video_signal_type_present_flag
+                gb.readBits(4);  // video_format & video_full_range_flag
+                if (gb.readBool()) {  // colour_description_present_flag
+                    gb.readBits(24);  // colour_primaries & transfer_characteristics & matrix_coefficients
+                }
+            }
+            if (gb.readBool()) {  // chroma_loc_info_present_flag
+                gb.readUEG();  // chroma_sample_loc_type_top_field
+                gb.readUEG();  // chroma_sample_loc_type_bottom_field
+            }
+            if (gb.readBool()) {  // timing_info_present_flag
+                let num_units_in_tick = gb.readBits(32);
+                let time_scale = gb.readBits(32);
+                fps_fixed = gb.readBool();  // fixed_frame_rate_flag
+
+                fps_num = time_scale;
+                fps_den = num_units_in_tick * 2;
+                fps = fps_num / fps_den;
+            }
+        }
+
+        let sarScale = 1;
+        if (sar_width !== 1 || sar_height !== 1) {
+            sarScale = sar_width / sar_height;
+        }
+
+        let crop_unit_x = 0, crop_unit_y = 0;
+        if (chroma_format_idc === 0) {
+            crop_unit_x = 1;
+            crop_unit_y = 2 - frame_mbs_only_flag;
+        } else {
+            let sub_wc = (chroma_format_idc === 3) ? 1 : 2;
+            let sub_hc = (chroma_format_idc === 1) ? 2 : 1;
+            crop_unit_x = sub_wc;
+            crop_unit_y = sub_hc * (2 - frame_mbs_only_flag);
+        }
+
+        let codec_width = (pic_width_in_mbs_minus1 + 1) * 16;
+        let codec_height = (2 - frame_mbs_only_flag) * ((pic_height_in_map_units_minus1 + 1) * 16);
+
+        codec_width -= (frame_crop_left_offset + frame_crop_right_offset) * crop_unit_x;
+        codec_height -= (frame_crop_top_offset + frame_crop_bottom_offset) * crop_unit_y;
+
+        let present_width = Math.ceil(codec_width * sarScale);
+
+        gb.destroy();
+        gb = null;
+
+        return {
+            profile_string: profile_string,  // baseline, high, high10, ...
+            level_string: level_string,  // 3, 3.1, 4, 4.1, 5, 5.1, ...
+            bit_depth: bit_depth,  // 8bit, 10bit, ...
+            chroma_format: chroma_format,  // 4:2:0, 4:2:2, ...
+            chroma_format_string: SPSParser.getChromaFormatString(chroma_format),
+
+            frame_rate: {
+                fixed: fps_fixed,
+                fps: fps,
+                fps_den: fps_den,
+                fps_num: fps_num
+            },
+
+            sar_ratio: {
+                width: sar_width,
+                height: sar_height
+            },
+
+            codec_size: {
+                width: codec_width,
+                height: codec_height
+            },
+
+            present_size: {
+                width: present_width,
+                height: codec_height
+            }
+        };
+    }
+
+    static _skipScalingList(gb, count) {
+        let last_scale = 8, next_scale = 8;
+        let delta_scale = 0;
+        for (let i = 0; i < count; i++) {
+            if (next_scale !== 0) {
+                delta_scale = gb.readSEG();
+                next_scale = (last_scale + delta_scale + 256) % 256;
+            }
+            last_scale = (next_scale === 0) ? last_scale : next_scale;
+        }
+    }
+
+    static getProfileString(profile_idc) {
+        switch (profile_idc) {
+            case 66:
+                return 'Baseline';
+            case 77:
+                return 'Main';
+            case 88:
+                return 'Extended';
+            case 100:
+                return 'High';
+            case 110:
+                return 'High10';
+            case 122:
+                return 'High422';
+            case 244:
+                return 'High444';
+            default:
+                return 'Unknown';
+        }
+    }
+
+    static getLevelString(level_idc) {
+        return (level_idc / 10).toFixed(1);
+    }
+
+    static getChromaFormatString(chroma) {
+        switch (chroma) {
+            case 420:
+                return '4:2:0';
+            case 422:
+                return '4:2:2';
+            case 444:
+                return '4:4:4';
+            default:
+                return 'Unknown';
+        }
+    }
+
+}
+
+// ..import DemuxErrors from './demux-errors.js';
+const DemuxErrors = {
+    OK: 'OK',
+    FORMAT_ERROR: 'FormatError',
+    FORMAT_UNSUPPORTED: 'FormatUnsupported',
+    CODEC_UNSUPPORTED: 'CodecUnsupported'
+};
+
+// ..import MediaInfo from '../core/media-info.js';
+class MediaInfo {
+
+    constructor() {
+        this.mimeType = null;
+        this.duration = null;
+
+        this.hasAudio = null;
+        this.hasVideo = null;
+        this.audioCodec = null;
+        this.videoCodec = null;
+        this.audioDataRate = null;
+        this.videoDataRate = null;
+
+        this.audioSampleRate = null;
+        this.audioChannelCount = null;
+
+        this.width = null;
+        this.height = null;
+        this.fps = null;
+        this.profile = null;
+        this.level = null;
+        this.chromaFormat = null;
+        this.sarNum = null;
+        this.sarDen = null;
+
+        this.metadata = null;
+        this.segments = null;  // MediaInfo[]
+        this.segmentCount = null;
+        this.hasKeyframesIndex = null;
+        this.keyframesIndex = null;
+    }
+
+    isComplete() {
+        let audioInfoComplete = (this.hasAudio === false) ||
+            (this.hasAudio === true &&
+                this.audioCodec != null &&
+                this.audioSampleRate != null &&
+                this.audioChannelCount != null);
+
+        let videoInfoComplete = (this.hasVideo === false) ||
+            (this.hasVideo === true &&
+                this.videoCodec != null &&
+                this.width != null &&
+                this.height != null &&
+                this.fps != null &&
+                this.profile != null &&
+                this.level != null &&
+                this.chromaFormat != null &&
+                this.sarNum != null &&
+                this.sarDen != null);
+
+        // keyframesIndex may not be present
+        return this.mimeType != null &&
+            this.duration != null &&
+            this.metadata != null &&
+            this.hasKeyframesIndex != null &&
+            audioInfoComplete &&
+            videoInfoComplete;
+    }
+
+    isSeekable() {
+        return this.hasKeyframesIndex === true;
+    }
+
+    getNearestKeyframe(milliseconds) {
+        if (this.keyframesIndex == null) {
+            return null;
+        }
+
+        let table = this.keyframesIndex;
+        let keyframeIdx = this._search(table.times, milliseconds);
+
+        return {
+            index: keyframeIdx,
+            milliseconds: table.times[keyframeIdx],
+            fileposition: table.filepositions[keyframeIdx]
+        };
+    }
+
+    _search(list, value) {
+        let idx = 0;
+
+        let last = list.length - 1;
+        let mid = 0;
+        let lbound = 0;
+        let ubound = last;
+
+        if (value < list[0]) {
+            idx = 0;
+            lbound = ubound + 1;  // skip search
+        }
+
+        while (lbound <= ubound) {
+            mid = lbound + Math.floor((ubound - lbound) / 2);
+            if (mid === last || (value >= list[mid] && value < list[mid + 1])) {
+                idx = mid;
+                break;
+            } else if (list[mid] < value) {
+                lbound = mid + 1;
+            } else {
+                ubound = mid - 1;
+            }
+        }
+
+        return idx;
+    }
+
+}
+
+function ReadBig32(array, index) {
+    return ((array[index] << 24) |
+        (array[index + 1] << 16) |
+        (array[index + 2] << 8) |
+        (array[index + 3]));
+}
+
+class FLVDemuxer {
+
+    /**
+     * Create a new FLV demuxer
+     * @param {Object} probeData
+     * @param {boolean} probeData.match
+     * @param {number} probeData.consumed
+     * @param {number} probeData.dataOffset
+     * @param {boolean} probeData.hasAudioTrack
+     * @param {boolean} probeData.hasVideoTrack
+     */
+    constructor(probeData) {
+        this.TAG = 'FLVDemuxer';
+
+        this._onError = null;
+        this._onMediaInfo = null;
+        this._onTrackMetadata = null;
+        this._onDataAvailable = null;
+
+        this._dataOffset = probeData.dataOffset;
+        this._firstParse = true;
+        this._dispatch = false;
+
+        this._hasAudio = probeData.hasAudioTrack;
+        this._hasVideo = probeData.hasVideoTrack;
+
+        this._hasAudioFlagOverrided = false;
+        this._hasVideoFlagOverrided = false;
+
+        this._audioInitialMetadataDispatched = false;
+        this._videoInitialMetadataDispatched = false;
+
+        this._mediaInfo = new MediaInfo();
+        this._mediaInfo.hasAudio = this._hasAudio;
+        this._mediaInfo.hasVideo = this._hasVideo;
+        this._metadata = null;
+        this._audioMetadata = null;
+        this._videoMetadata = null;
+
+        this._naluLengthSize = 4;
+        this._timestampBase = 0;  // int32, in milliseconds
+        this._timescale = 1000;
+        this._duration = 0;  // int32, in milliseconds
+        this._durationOverrided = false;
+        this._referenceFrameRate = {
+            fixed: true,
+            fps: 23.976,
+            fps_num: 23976,
+            fps_den: 1000
+        };
+
+        this._flvSoundRateTable = [5500, 11025, 22050, 44100, 48000];
+
+        this._mpegSamplingRates = [
+            96000, 88200, 64000, 48000, 44100, 32000,
+            24000, 22050, 16000, 12000, 11025, 8000, 7350
+        ];
+
+        this._mpegAudioV10SampleRateTable = [44100, 48000, 32000, 0];
+        this._mpegAudioV20SampleRateTable = [22050, 24000, 16000, 0];
+        this._mpegAudioV25SampleRateTable = [11025, 12000, 8000, 0];
+
+        this._mpegAudioL1BitRateTable = [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, -1];
+        this._mpegAudioL2BitRateTable = [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, -1];
+        this._mpegAudioL3BitRateTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, -1];
+
+        this._videoTrack = { type: 'video', id: 1, sequenceNumber: 0, samples: [], length: 0 };
+        this._audioTrack = { type: 'audio', id: 2, sequenceNumber: 0, samples: [], length: 0 };
+
+        this._littleEndian = (function () {
+            let buf = new ArrayBuffer(2);
+            (new DataView(buf)).setInt16(0, 256, true);  // little-endian write
+            return (new Int16Array(buf))[0] === 256;  // platform-spec read, if equal then LE
+        })();
+    }
+
+    destroy() {
+        this._mediaInfo = null;
+        this._metadata = null;
+        this._audioMetadata = null;
+        this._videoMetadata = null;
+        this._videoTrack = null;
+        this._audioTrack = null;
+
+        this._onError = null;
+        this._onMediaInfo = null;
+        this._onTrackMetadata = null;
+        this._onDataAvailable = null;
+    }
+
+    /**
+     * Probe the flv data
+     * @param {ArrayBuffer} buffer
+     * @returns {Object} - probeData to be feed into constructor
+     */
+    static probe(buffer) {
+        let data = new Uint8Array(buffer);
+        let mismatch = { match: false };
+
+        if (data[0] !== 0x46 || data[1] !== 0x4C || data[2] !== 0x56 || data[3] !== 0x01) {
+            return mismatch;
+        }
+
+        let hasAudio = ((data[4] & 4) >>> 2) !== 0;
+        let hasVideo = (data[4] & 1) !== 0;
+
+        let offset = ReadBig32(data, 5);
+
+        if (offset < 9) {
+            return mismatch;
+        }
+
+        return {
+            match: true,
+            consumed: offset,
+            dataOffset: offset,
+            hasAudioTrack: hasAudio,
+            hasVideoTrack: hasVideo
+        };
+    }
+
+    bindDataSource(loader) {
+        loader.onDataArrival = this.parseChunks.bind(this);
+        return this;
+    }
+
+    // prototype: function(type: string, metadata: any): void
+    get onTrackMetadata() {
+        return this._onTrackMetadata;
+    }
+
+    set onTrackMetadata(callback) {
+        this._onTrackMetadata = callback;
+    }
+
+    // prototype: function(mediaInfo: MediaInfo): void
+    get onMediaInfo() {
+        return this._onMediaInfo;
+    }
+
+    set onMediaInfo(callback) {
+        this._onMediaInfo = callback;
+    }
+
+    // prototype: function(type: number, info: string): void
+    get onError() {
+        return this._onError;
+    }
+
+    set onError(callback) {
+        this._onError = callback;
+    }
+
+    // prototype: function(videoTrack: any, audioTrack: any): void
+    get onDataAvailable() {
+        return this._onDataAvailable;
+    }
+
+    set onDataAvailable(callback) {
+        this._onDataAvailable = callback;
+    }
+
+    // timestamp base for output samples, must be in milliseconds
+    get timestampBase() {
+        return this._timestampBase;
+    }
+
+    set timestampBase(base) {
+        this._timestampBase = base;
+    }
+
+    get overridedDuration() {
+        return this._duration;
+    }
+
+    // Force-override media duration. Must be in milliseconds, int32
+    set overridedDuration(duration) {
+        this._durationOverrided = true;
+        this._duration = duration;
+        this._mediaInfo.duration = duration;
+    }
+
+    // Force-override audio track present flag, boolean
+    set overridedHasAudio(hasAudio) {
+        this._hasAudioFlagOverrided = true;
+        this._hasAudio = hasAudio;
+        this._mediaInfo.hasAudio = hasAudio;
+    }
+
+    // Force-override video track present flag, boolean
+    set overridedHasVideo(hasVideo) {
+        this._hasVideoFlagOverrided = true;
+        this._hasVideo = hasVideo;
+        this._mediaInfo.hasVideo = hasVideo;
+    }
+
+    resetMediaInfo() {
+        this._mediaInfo = new MediaInfo();
+    }
+
+    _isInitialMetadataDispatched() {
+        if (this._hasAudio && this._hasVideo) {  // both audio & video
+            return this._audioInitialMetadataDispatched && this._videoInitialMetadataDispatched;
+        }
+        if (this._hasAudio && !this._hasVideo) {  // audio only
+            return this._audioInitialMetadataDispatched;
+        }
+        if (!this._hasAudio && this._hasVideo) {  // video only
+            return this._videoInitialMetadataDispatched;
+        }
+        return false;
+    }
+
+    // function parseChunks(chunk: ArrayBuffer, byteStart: number): number;
+    parseChunks(chunk, byteStart) {
+        if (!this._onError || !this._onMediaInfo || !this._onTrackMetadata || !this._onDataAvailable) {
+            throw new IllegalStateException('Flv: onError & onMediaInfo & onTrackMetadata & onDataAvailable callback must be specified');
+        }
+
+        // qli5: fix nonzero byteStart
+        let offset = byteStart || 0;
+        let le = this._littleEndian;
+
+        if (byteStart === 0) {  // buffer with FLV header
+            if (chunk.byteLength > 13) {
+                let probeData = FLVDemuxer.probe(chunk);
+                offset = probeData.dataOffset;
+            } else {
+                return 0;
+            }
+        }
+
+        if (this._firstParse) {  // handle PreviousTagSize0 before Tag1
+            this._firstParse = false;
+            if (offset !== this._dataOffset) {
+                Log.w(this.TAG, 'First time parsing but chunk byteStart invalid!');
+            }
+
+            let v = new DataView(chunk, offset);
+            let prevTagSize0 = v.getUint32(0, !le);
+            if (prevTagSize0 !== 0) {
+                Log.w(this.TAG, 'PrevTagSize0 !== 0 !!!');
+            }
+            offset += 4;
+        }
+
+        while (offset < chunk.byteLength) {
+            this._dispatch = true;
+
+            let v = new DataView(chunk, offset);
+
+            if (offset + 11 + 4 > chunk.byteLength) {
+                // data not enough for parsing an flv tag
+                break;
+            }
+
+            let tagType = v.getUint8(0);
+            let dataSize = v.getUint32(0, !le) & 0x00FFFFFF;
+
+            if (offset + 11 + dataSize + 4 > chunk.byteLength) {
+                // data not enough for parsing actual data body
+                break;
+            }
+
+            if (tagType !== 8 && tagType !== 9 && tagType !== 18) {
+                Log.w(this.TAG, `Unsupported tag type ${tagType}, skipped`);
+                // consume the whole tag (skip it)
+                offset += 11 + dataSize + 4;
+                continue;
+            }
+
+            let ts2 = v.getUint8(4);
+            let ts1 = v.getUint8(5);
+            let ts0 = v.getUint8(6);
+            let ts3 = v.getUint8(7);
+
+            let timestamp = ts0 | (ts1 << 8) | (ts2 << 16) | (ts3 << 24);
+
+            let streamId = v.getUint32(7, !le) & 0x00FFFFFF;
+            if (streamId !== 0) {
+                Log.w(this.TAG, 'Meet tag which has StreamID != 0!');
+            }
+
+            let dataOffset = offset + 11;
+
+            switch (tagType) {
+                case 8:  // Audio
+                    this._parseAudioData(chunk, dataOffset, dataSize, timestamp);
+                    break;
+                case 9:  // Video
+                    this._parseVideoData(chunk, dataOffset, dataSize, timestamp, byteStart + offset);
+                    break;
+                case 18:  // ScriptDataObject
+                    this._parseScriptData(chunk, dataOffset, dataSize);
+                    break;
+            }
+
+            let prevTagSize = v.getUint32(11 + dataSize, !le);
+            if (prevTagSize !== 11 + dataSize) {
+                Log.w(this.TAG, `Invalid PrevTagSize ${prevTagSize}`);
+            }
+
+            offset += 11 + dataSize + 4;  // tagBody + dataSize + prevTagSize
+        }
+
+        // dispatch parsed frames to consumer (typically, the remuxer)
+        if (this._isInitialMetadataDispatched()) {
+            if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                this._onDataAvailable(this._audioTrack, this._videoTrack);
+            }
+        }
+
+        return offset;  // consumed bytes, just equals latest offset index
+    }
+
+    _parseScriptData(arrayBuffer, dataOffset, dataSize) {
+        let scriptData = AMF.parseScriptData(arrayBuffer, dataOffset, dataSize);
+
+        if (scriptData.hasOwnProperty('onMetaData')) {
+            if (scriptData.onMetaData == null || typeof scriptData.onMetaData !== 'object') {
+                Log.w(this.TAG, 'Invalid onMetaData structure!');
+                return;
+            }
+            if (this._metadata) {
+                Log.w(this.TAG, 'Found another onMetaData tag!');
+            }
+            this._metadata = scriptData;
+            let onMetaData = this._metadata.onMetaData;
+
+            if (typeof onMetaData.hasAudio === 'boolean') {  // hasAudio
+                if (this._hasAudioFlagOverrided === false) {
+                    this._hasAudio = onMetaData.hasAudio;
+                    this._mediaInfo.hasAudio = this._hasAudio;
+                }
+            }
+            if (typeof onMetaData.hasVideo === 'boolean') {  // hasVideo
+                if (this._hasVideoFlagOverrided === false) {
+                    this._hasVideo = onMetaData.hasVideo;
+                    this._mediaInfo.hasVideo = this._hasVideo;
+                }
+            }
+            if (typeof onMetaData.audiodatarate === 'number') {  // audiodatarate
+                this._mediaInfo.audioDataRate = onMetaData.audiodatarate;
+            }
+            if (typeof onMetaData.videodatarate === 'number') {  // videodatarate
+                this._mediaInfo.videoDataRate = onMetaData.videodatarate;
+            }
+            if (typeof onMetaData.width === 'number') {  // width
+                this._mediaInfo.width = onMetaData.width;
+            }
+            if (typeof onMetaData.height === 'number') {  // height
+                this._mediaInfo.height = onMetaData.height;
+            }
+            if (typeof onMetaData.duration === 'number') {  // duration
+                if (!this._durationOverrided) {
+                    let duration = Math.floor(onMetaData.duration * this._timescale);
+                    this._duration = duration;
+                    this._mediaInfo.duration = duration;
+                }
+            } else {
+                this._mediaInfo.duration = 0;
+            }
+            if (typeof onMetaData.framerate === 'number') {  // framerate
+                let fps_num = Math.floor(onMetaData.framerate * 1000);
+                if (fps_num > 0) {
+                    let fps = fps_num / 1000;
+                    this._referenceFrameRate.fixed = true;
+                    this._referenceFrameRate.fps = fps;
+                    this._referenceFrameRate.fps_num = fps_num;
+                    this._referenceFrameRate.fps_den = 1000;
+                    this._mediaInfo.fps = fps;
+                }
+            }
+            if (typeof onMetaData.keyframes === 'object') {  // keyframes
+                this._mediaInfo.hasKeyframesIndex = true;
+                let keyframes = onMetaData.keyframes;
+                this._mediaInfo.keyframesIndex = this._parseKeyframesIndex(keyframes);
+                onMetaData.keyframes = null;  // keyframes has been extracted, remove it
+            } else {
+                this._mediaInfo.hasKeyframesIndex = false;
+            }
+            this._dispatch = false;
+            this._mediaInfo.metadata = onMetaData;
+            Log.v(this.TAG, 'Parsed onMetaData');
+            if (this._mediaInfo.isComplete()) {
+                this._onMediaInfo(this._mediaInfo);
+            }
+        }
+    }
+
+    _parseKeyframesIndex(keyframes) {
+        let times = [];
+        let filepositions = [];
+
+        // ignore first keyframe which is actually AVC Sequence Header (AVCDecoderConfigurationRecord)
+        for (let i = 1; i < keyframes.times.length; i++) {
+            let time = this._timestampBase + Math.floor(keyframes.times[i] * 1000);
+            times.push(time);
+            filepositions.push(keyframes.filepositions[i]);
+        }
+
+        return {
+            times: times,
+            filepositions: filepositions
+        };
+    }
+
+    _parseAudioData(arrayBuffer, dataOffset, dataSize, tagTimestamp) {
+        if (dataSize <= 1) {
+            Log.w(this.TAG, 'Flv: Invalid audio packet, missing SoundData payload!');
+            return;
+        }
+
+        if (this._hasAudioFlagOverrided === true && this._hasAudio === false) {
+            // If hasAudio: false indicated explicitly in MediaDataSource,
+            // Ignore all the audio packets
+            return;
+        }
+
+        let le = this._littleEndian;
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+        let soundSpec = v.getUint8(0);
+
+        let soundFormat = soundSpec >>> 4;
+        if (soundFormat !== 2 && soundFormat !== 10) {  // MP3 or AAC
+            this._onError(DemuxErrors.CODEC_UNSUPPORTED, 'Flv: Unsupported audio codec idx: ' + soundFormat);
+            return;
+        }
+
+        let soundRate = 0;
+        let soundRateIndex = (soundSpec & 12) >>> 2;
+        if (soundRateIndex >= 0 && soundRateIndex <= 4) {
+            soundRate = this._flvSoundRateTable[soundRateIndex];
+        } else {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid audio sample rate idx: ' + soundRateIndex);
+            return;
+        }
+        let soundType = (soundSpec & 1);
+
+
+        let meta = this._audioMetadata;
+        let track = this._audioTrack;
+
+        if (!meta) {
+            if (this._hasAudio === false && this._hasAudioFlagOverrided === false) {
+                this._hasAudio = true;
+                this._mediaInfo.hasAudio = true;
+            }
+
+            // initial metadata
+            meta = this._audioMetadata = {};
+            meta.type = 'audio';
+            meta.id = track.id;
+            meta.timescale = this._timescale;
+            meta.duration = this._duration;
+            meta.audioSampleRate = soundRate;
+            meta.channelCount = (soundType === 0 ? 1 : 2);
+        }
+
+        if (soundFormat === 10) {  // AAC
+            let aacData = this._parseAACAudioData(arrayBuffer, dataOffset + 1, dataSize - 1);
+
+            if (aacData == undefined) {
+                return;
+            }
+
+            if (aacData.packetType === 0) {  // AAC sequence header (AudioSpecificConfig)
+                if (meta.config) {
+                    Log.w(this.TAG, 'Found another AudioSpecificConfig!');
+                }
+                let misc = aacData.data;
+                meta.audioSampleRate = misc.samplingRate;
+                meta.channelCount = misc.channelCount;
+                meta.codec = misc.codec;
+                meta.originalCodec = misc.originalCodec;
+                meta.config = misc.config;
+                // added by qli5
+                meta.configRaw = misc.configRaw;
+                // added by Xmader
+                meta.audioObjectType = misc.audioObjectType;
+                meta.samplingFrequencyIndex = misc.samplingIndex;
+                meta.channelConfig = misc.channelCount;
+                // The decode result of an aac sample is 1024 PCM samples
+                meta.refSampleDuration = 1024 / meta.audioSampleRate * meta.timescale;
+                Log.v(this.TAG, 'Parsed AudioSpecificConfig');
+
+                if (this._isInitialMetadataDispatched()) {
+                    // Non-initial metadata, force dispatch (or flush) parsed frames to remuxer
+                    if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                        this._onDataAvailable(this._audioTrack, this._videoTrack);
+                    }
+                } else {
+                    this._audioInitialMetadataDispatched = true;
+                }
+                // then notify new metadata
+                this._dispatch = false;
+                this._onTrackMetadata('audio', meta);
+
+                let mi = this._mediaInfo;
+                mi.audioCodec = meta.originalCodec;
+                mi.audioSampleRate = meta.audioSampleRate;
+                mi.audioChannelCount = meta.channelCount;
+                if (mi.hasVideo) {
+                    if (mi.videoCodec != null) {
+                        mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + ',' + mi.audioCodec + '"';
+                    }
+                } else {
+                    mi.mimeType = 'video/x-flv; codecs="' + mi.audioCodec + '"';
+                }
+                if (mi.isComplete()) {
+                    this._onMediaInfo(mi);
+                }
+            } else if (aacData.packetType === 1) {  // AAC raw frame data
+                let dts = this._timestampBase + tagTimestamp;
+                let aacSample = { unit: aacData.data, length: aacData.data.byteLength, dts: dts, pts: dts };
+                track.samples.push(aacSample);
+                track.length += aacData.data.length;
+            } else {
+                Log.e(this.TAG, `Flv: Unsupported AAC data type ${aacData.packetType}`);
+            }
+        } else if (soundFormat === 2) {  // MP3
+            if (!meta.codec) {
+                // We need metadata for mp3 audio track, extract info from frame header
+                let misc = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, true);
+                if (misc == undefined) {
+                    return;
+                }
+                meta.audioSampleRate = misc.samplingRate;
+                meta.channelCount = misc.channelCount;
+                meta.codec = misc.codec;
+                meta.originalCodec = misc.originalCodec;
+                // The decode result of an mp3 sample is 1152 PCM samples
+                meta.refSampleDuration = 1152 / meta.audioSampleRate * meta.timescale;
+                Log.v(this.TAG, 'Parsed MPEG Audio Frame Header');
+
+                this._audioInitialMetadataDispatched = true;
+                this._onTrackMetadata('audio', meta);
+
+                let mi = this._mediaInfo;
+                mi.audioCodec = meta.codec;
+                mi.audioSampleRate = meta.audioSampleRate;
+                mi.audioChannelCount = meta.channelCount;
+                mi.audioDataRate = misc.bitRate;
+                if (mi.hasVideo) {
+                    if (mi.videoCodec != null) {
+                        mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + ',' + mi.audioCodec + '"';
+                    }
+                } else {
+                    mi.mimeType = 'video/x-flv; codecs="' + mi.audioCodec + '"';
+                }
+                if (mi.isComplete()) {
+                    this._onMediaInfo(mi);
+                }
+            }
+
+            // This packet is always a valid audio packet, extract it
+            let data = this._parseMP3AudioData(arrayBuffer, dataOffset + 1, dataSize - 1, false);
+            if (data == undefined) {
+                return;
+            }
+            let dts = this._timestampBase + tagTimestamp;
+            let mp3Sample = { unit: data, length: data.byteLength, dts: dts, pts: dts };
+            track.samples.push(mp3Sample);
+            track.length += data.length;
+        }
+    }
+
+    _parseAACAudioData(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize <= 1) {
+            Log.w(this.TAG, 'Flv: Invalid AAC packet, missing AACPacketType or/and Data!');
+            return;
+        }
+
+        let result = {};
+        let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+
+        result.packetType = array[0];
+
+        if (array[0] === 0) {
+            result.data = this._parseAACAudioSpecificConfig(arrayBuffer, dataOffset + 1, dataSize - 1);
+        } else {
+            result.data = array.subarray(1);
+        }
+
+        return result;
+    }
+
+    _parseAACAudioSpecificConfig(arrayBuffer, dataOffset, dataSize) {
+        let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+        let config = null;
+
+        /* Audio Object Type:
+           0: Null
+           1: AAC Main
+           2: AAC LC
+           3: AAC SSR (Scalable Sample Rate)
+           4: AAC LTP (Long Term Prediction)
+           5: HE-AAC / SBR (Spectral Band Replication)
+           6: AAC Scalable
+        */
+
+        let audioObjectType = 0;
+        let originalAudioObjectType = 0;
+        let samplingIndex = 0;
+        let extensionSamplingIndex = null;
+
+        // 5 bits
+        audioObjectType = originalAudioObjectType = array[0] >>> 3;
+        // 4 bits
+        samplingIndex = ((array[0] & 0x07) << 1) | (array[1] >>> 7);
+        if (samplingIndex < 0 || samplingIndex >= this._mpegSamplingRates.length) {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: AAC invalid sampling frequency index!');
+            return;
+        }
+
+        let samplingFrequence = this._mpegSamplingRates[samplingIndex];
+
+        // 4 bits
+        let channelConfig = (array[1] & 0x78) >>> 3;
+        if (channelConfig < 0 || channelConfig >= 8) {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: AAC invalid channel configuration');
+            return;
+        }
+
+        if (audioObjectType === 5) {  // HE-AAC?
+            // 4 bits
+            extensionSamplingIndex = ((array[1] & 0x07) << 1) | (array[2] >>> 7);
+        }
+
+        // workarounds for various browsers
+        let userAgent = _navigator.userAgent.toLowerCase();
+
+        if (userAgent.indexOf('firefox') !== -1) {
+            // firefox: use SBR (HE-AAC) if freq less than 24kHz
+            if (samplingIndex >= 6) {
+                audioObjectType = 5;
+                config = new Array(4);
+                extensionSamplingIndex = samplingIndex - 3;
+            } else {  // use LC-AAC
+                audioObjectType = 2;
+                config = new Array(2);
+                extensionSamplingIndex = samplingIndex;
+            }
+        } else if (userAgent.indexOf('android') !== -1) {
+            // android: always use LC-AAC
+            audioObjectType = 2;
+            config = new Array(2);
+            extensionSamplingIndex = samplingIndex;
+        } else {
+            // for other browsers, e.g. chrome...
+            // Always use HE-AAC to make it easier to switch aac codec profile
+            audioObjectType = 5;
+            extensionSamplingIndex = samplingIndex;
+            config = new Array(4);
+
+            if (samplingIndex >= 6) {
+                extensionSamplingIndex = samplingIndex - 3;
+            } else if (channelConfig === 1) {  // Mono channel
+                audioObjectType = 2;
+                config = new Array(2);
+                extensionSamplingIndex = samplingIndex;
+            }
+        }
+
+        config[0] = audioObjectType << 3;
+        config[0] |= (samplingIndex & 0x0F) >>> 1;
+        config[1] = (samplingIndex & 0x0F) << 7;
+        config[1] |= (channelConfig & 0x0F) << 3;
+        if (audioObjectType === 5) {
+            config[1] |= ((extensionSamplingIndex & 0x0F) >>> 1);
+            config[2] = (extensionSamplingIndex & 0x01) << 7;
+            // extended audio object type: force to 2 (LC-AAC)
+            config[2] |= (2 << 2);
+            config[3] = 0;
+        }
+
+        return {
+            audioObjectType,  // audio_object_type,        added by Xmader
+            samplingIndex,    // sampling_frequency_index, added by Xmader
+            configRaw: array, //                           added by qli5
+            config: config,
+            samplingRate: samplingFrequence,
+            channelCount: channelConfig,  // channel_config
+            codec: 'mp4a.40.' + audioObjectType,
+            originalCodec: 'mp4a.40.' + originalAudioObjectType
+        };
+    }
+
+    _parseMP3AudioData(arrayBuffer, dataOffset, dataSize, requestHeader) {
+        if (dataSize < 4) {
+            Log.w(this.TAG, 'Flv: Invalid MP3 packet, header missing!');
+            return;
+        }
+
+        let le = this._littleEndian;
+        let array = new Uint8Array(arrayBuffer, dataOffset, dataSize);
+        let result = null;
+
+        if (requestHeader) {
+            if (array[0] !== 0xFF) {
+                return;
+            }
+            let ver = (array[1] >>> 3) & 0x03;
+            let layer = (array[1] & 0x06) >> 1;
+
+            let bitrate_index = (array[2] & 0xF0) >>> 4;
+            let sampling_freq_index = (array[2] & 0x0C) >>> 2;
+
+            let channel_mode = (array[3] >>> 6) & 0x03;
+            let channel_count = channel_mode !== 3 ? 2 : 1;
+
+            let sample_rate = 0;
+            let bit_rate = 0;
+
+            let codec = 'mp3';
+
+            switch (ver) {
+                case 0:  // MPEG 2.5
+                    sample_rate = this._mpegAudioV25SampleRateTable[sampling_freq_index];
+                    break;
+                case 2:  // MPEG 2
+                    sample_rate = this._mpegAudioV20SampleRateTable[sampling_freq_index];
+                    break;
+                case 3:  // MPEG 1
+                    sample_rate = this._mpegAudioV10SampleRateTable[sampling_freq_index];
+                    break;
+            }
+
+            switch (layer) {
+                case 1:  // Layer 3
+                    if (bitrate_index < this._mpegAudioL3BitRateTable.length) {
+                        bit_rate = this._mpegAudioL3BitRateTable[bitrate_index];
+                    }
+                    break;
+                case 2:  // Layer 2
+                    if (bitrate_index < this._mpegAudioL2BitRateTable.length) {
+                        bit_rate = this._mpegAudioL2BitRateTable[bitrate_index];
+                    }
+                    break;
+                case 3:  // Layer 1
+                    if (bitrate_index < this._mpegAudioL1BitRateTable.length) {
+                        bit_rate = this._mpegAudioL1BitRateTable[bitrate_index];
+                    }
+                    break;
+            }
+
+            result = {
+                bitRate: bit_rate,
+                samplingRate: sample_rate,
+                channelCount: channel_count,
+                codec: codec,
+                originalCodec: codec
+            };
+        } else {
+            result = array;
+        }
+
+        return result;
+    }
+
+    _parseVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition) {
+        if (dataSize <= 1) {
+            Log.w(this.TAG, 'Flv: Invalid video packet, missing VideoData payload!');
+            return;
+        }
+
+        if (this._hasVideoFlagOverrided === true && this._hasVideo === false) {
+            // If hasVideo: false indicated explicitly in MediaDataSource,
+            // Ignore all the video packets
+            return;
+        }
+
+        let spec = (new Uint8Array(arrayBuffer, dataOffset, dataSize))[0];
+
+        let frameType = (spec & 240) >>> 4;
+        let codecId = spec & 15;
+
+        if (codecId !== 7) {
+            this._onError(DemuxErrors.CODEC_UNSUPPORTED, `Flv: Unsupported codec in video frame: ${codecId}`);
+            return;
+        }
+
+        this._parseAVCVideoPacket(arrayBuffer, dataOffset + 1, dataSize - 1, tagTimestamp, tagPosition, frameType);
+    }
+
+    _parseAVCVideoPacket(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType) {
+        if (dataSize < 4) {
+            Log.w(this.TAG, 'Flv: Invalid AVC packet, missing AVCPacketType or/and CompositionTime');
+            return;
+        }
+
+        let le = this._littleEndian;
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+        let packetType = v.getUint8(0);
+        let cts = v.getUint32(0, !le) & 0x00FFFFFF;
+
+        if (packetType === 0) {  // AVCDecoderConfigurationRecord
+            this._parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset + 4, dataSize - 4);
+        } else if (packetType === 1) {  // One or more Nalus
+            this._parseAVCVideoData(arrayBuffer, dataOffset + 4, dataSize - 4, tagTimestamp, tagPosition, frameType, cts);
+        } else if (packetType === 2) {
+            // empty, AVC end of sequence
+        } else {
+            this._onError(DemuxErrors.FORMAT_ERROR, `Flv: Invalid video packet type ${packetType}`);
+            return;
+        }
+    }
+
+    _parseAVCDecoderConfigurationRecord(arrayBuffer, dataOffset, dataSize) {
+        if (dataSize < 7) {
+            Log.w(this.TAG, 'Flv: Invalid AVCDecoderConfigurationRecord, lack of data!');
+            return;
+        }
+
+        let meta = this._videoMetadata;
+        let track = this._videoTrack;
+        let le = this._littleEndian;
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+        if (!meta) {
+            if (this._hasVideo === false && this._hasVideoFlagOverrided === false) {
+                this._hasVideo = true;
+                this._mediaInfo.hasVideo = true;
+            }
+
+            meta = this._videoMetadata = {};
+            meta.type = 'video';
+            meta.id = track.id;
+            meta.timescale = this._timescale;
+            meta.duration = this._duration;
+        } else {
+            if (typeof meta.avcc !== 'undefined') {
+                Log.w(this.TAG, 'Found another AVCDecoderConfigurationRecord!');
+            }
+        }
+
+        let version = v.getUint8(0);  // configurationVersion
+        let avcProfile = v.getUint8(1);  // avcProfileIndication
+        let profileCompatibility = v.getUint8(2);  // profile_compatibility
+        let avcLevel = v.getUint8(3);  // AVCLevelIndication
+
+        if (version !== 1 || avcProfile === 0) {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord');
+            return;
+        }
+
+        this._naluLengthSize = (v.getUint8(4) & 3) + 1;  // lengthSizeMinusOne
+        if (this._naluLengthSize !== 3 && this._naluLengthSize !== 4) {  // holy shit!!!
+            this._onError(DemuxErrors.FORMAT_ERROR, `Flv: Strange NaluLengthSizeMinusOne: ${this._naluLengthSize - 1}`);
+            return;
+        }
+
+        let spsCount = v.getUint8(5) & 31;  // numOfSequenceParameterSets
+        if (spsCount === 0) {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No SPS');
+            return;
+        } else if (spsCount > 1) {
+            Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: SPS Count = ${spsCount}`);
+        }
+
+        let offset = 6;
+
+        for (let i = 0; i < spsCount; i++) {
+            let len = v.getUint16(offset, !le);  // sequenceParameterSetLength
+            offset += 2;
+
+            if (len === 0) {
+                continue;
+            }
+
+            // Notice: Nalu without startcode header (00 00 00 01)
+            let sps = new Uint8Array(arrayBuffer, dataOffset + offset, len);
+            offset += len;
+
+            let config = SPSParser.parseSPS(sps);
+            if (i !== 0) {
+                // ignore other sps's config
+                continue;
+            }
+
+            meta.codecWidth = config.codec_size.width;
+            meta.codecHeight = config.codec_size.height;
+            meta.presentWidth = config.present_size.width;
+            meta.presentHeight = config.present_size.height;
+
+            meta.profile = config.profile_string;
+            meta.level = config.level_string;
+            meta.bitDepth = config.bit_depth;
+            meta.chromaFormat = config.chroma_format;
+            meta.sarRatio = config.sar_ratio;
+            meta.frameRate = config.frame_rate;
+
+            if (config.frame_rate.fixed === false ||
+                config.frame_rate.fps_num === 0 ||
+                config.frame_rate.fps_den === 0) {
+                meta.frameRate = this._referenceFrameRate;
+            }
+
+            let fps_den = meta.frameRate.fps_den;
+            let fps_num = meta.frameRate.fps_num;
+            meta.refSampleDuration = meta.timescale * (fps_den / fps_num);
+
+            let codecArray = sps.subarray(1, 4);
+            let codecString = 'avc1.';
+            for (let j = 0; j < 3; j++) {
+                let h = codecArray[j].toString(16);
+                if (h.length < 2) {
+                    h = '0' + h;
+                }
+                codecString += h;
+            }
+            meta.codec = codecString;
+
+            let mi = this._mediaInfo;
+            mi.width = meta.codecWidth;
+            mi.height = meta.codecHeight;
+            mi.fps = meta.frameRate.fps;
+            mi.profile = meta.profile;
+            mi.level = meta.level;
+            mi.chromaFormat = config.chroma_format_string;
+            mi.sarNum = meta.sarRatio.width;
+            mi.sarDen = meta.sarRatio.height;
+            mi.videoCodec = codecString;
+
+            if (mi.hasAudio) {
+                if (mi.audioCodec != null) {
+                    mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + ',' + mi.audioCodec + '"';
+                }
+            } else {
+                mi.mimeType = 'video/x-flv; codecs="' + mi.videoCodec + '"';
+            }
+            if (mi.isComplete()) {
+                this._onMediaInfo(mi);
+            }
+        }
+
+        let ppsCount = v.getUint8(offset);  // numOfPictureParameterSets
+        if (ppsCount === 0) {
+            this._onError(DemuxErrors.FORMAT_ERROR, 'Flv: Invalid AVCDecoderConfigurationRecord: No PPS');
+            return;
+        } else if (ppsCount > 1) {
+            Log.w(this.TAG, `Flv: Strange AVCDecoderConfigurationRecord: PPS Count = ${ppsCount}`);
+        }
+
+        offset++;
+
+        for (let i = 0; i < ppsCount; i++) {
+            let len = v.getUint16(offset, !le);  // pictureParameterSetLength
+            offset += 2;
+
+            if (len === 0) {
+                continue;
+            }
+
+            // pps is useless for extracting video information
+            offset += len;
+        }
+
+        meta.avcc = new Uint8Array(dataSize);
+        meta.avcc.set(new Uint8Array(arrayBuffer, dataOffset, dataSize), 0);
+        Log.v(this.TAG, 'Parsed AVCDecoderConfigurationRecord');
+
+        if (this._isInitialMetadataDispatched()) {
+            // flush parsed frames
+            if (this._dispatch && (this._audioTrack.length || this._videoTrack.length)) {
+                this._onDataAvailable(this._audioTrack, this._videoTrack);
+            }
+        } else {
+            this._videoInitialMetadataDispatched = true;
+        }
+        // notify new metadata
+        this._dispatch = false;
+        this._onTrackMetadata('video', meta);
+    }
+
+    _parseAVCVideoData(arrayBuffer, dataOffset, dataSize, tagTimestamp, tagPosition, frameType, cts) {
+        let le = this._littleEndian;
+        let v = new DataView(arrayBuffer, dataOffset, dataSize);
+
+        let units = [], length = 0;
+
+        let offset = 0;
+        const lengthSize = this._naluLengthSize;
+        let dts = this._timestampBase + tagTimestamp;
+        let keyframe = (frameType === 1);  // from FLV Frame Type constants
+        let refIdc = 1; // added by qli5
+
+        while (offset < dataSize) {
+            if (offset + 4 >= dataSize) {
+                Log.w(this.TAG, `Malformed Nalu near timestamp ${dts}, offset = ${offset}, dataSize = ${dataSize}`);
+                break;  // data not enough for next Nalu
+            }
+            // Nalu with length-header (AVC1)
+            let naluSize = v.getUint32(offset, !le);  // Big-Endian read
+            if (lengthSize === 3) {
+                naluSize >>>= 8;
+            }
+            if (naluSize > dataSize - lengthSize) {
+                Log.w(this.TAG, `Malformed Nalus near timestamp ${dts}, NaluSize > DataSize!`);
+                return;
+            }
+
+            let unitType = v.getUint8(offset + lengthSize) & 0x1F;
+            // added by qli5
+            refIdc = v.getUint8(offset + lengthSize) & 0x60;
+
+            if (unitType === 5) {  // IDR
+                keyframe = true;
+            }
+
+            let data = new Uint8Array(arrayBuffer, dataOffset + offset, lengthSize + naluSize);
+            let unit = { type: unitType, data: data };
+            units.push(unit);
+            length += data.byteLength;
+
+            offset += lengthSize + naluSize;
+        }
+
+        if (units.length) {
+            let track = this._videoTrack;
+            let avcSample = {
+                units: units,
+                length: length,
+                isKeyframe: keyframe,
+                refIdc: refIdc,
+                dts: dts,
+                cts: cts,
+                pts: (dts + cts)
+            };
+            if (keyframe) {
+                avcSample.fileposition = tagPosition;
+            }
+            track.samples.push(avcSample);
+            track.length += length;
+        }
+    }
+
+}
+
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * 计算adts头部
+ * @see https://blog.jianchihu.net/flv-aac-add-adtsheader.html
+ * @typedef {Object} AdtsHeadersInit
+ * @property {number} audioObjectType
+ * @property {number} samplingFrequencyIndex
+ * @property {number} channelConfig
+ * @property {number} adtsLen
+ * @param {AdtsHeadersInit} init 
+ */
+const getAdtsHeaders = (init) => {
+    const { audioObjectType, samplingFrequencyIndex, channelConfig, adtsLen } = init;
+    const headers = new Uint8Array(7);
+
+    headers[0] = 0xff;         // syncword:0xfff                           高8bits
+    headers[1] = 0xf0;         // syncword:0xfff                           低4bits
+    headers[1] |= (0 << 3);    // MPEG Version:0 for MPEG-4,1 for MPEG-2   1bit
+    headers[1] |= (0 << 1);    // Layer:0                                  2bits 
+    headers[1] |= 1;           // protection absent:1                      1bit
+
+    headers[2] = (audioObjectType - 1) << 6;            // profile:audio_object_type - 1                      2bits
+    headers[2] |= (samplingFrequencyIndex & 0x0f) << 2; // sampling frequency index:sampling_frequency_index  4bits 
+    headers[2] |= (0 << 1);                             // private bit:0                                      1bit
+    headers[2] |= (channelConfig & 0x04) >> 2;          // channel configuration:channel_config               高1bit
+
+    headers[3] = (channelConfig & 0x03) << 6;    // channel configuration：channel_config     低2bits
+    headers[3] |= (0 << 5);                      // original：0                               1bit
+    headers[3] |= (0 << 4);                      // home：0                                   1bit
+    headers[3] |= (0 << 3);                      // copyright id bit：0                       1bit  
+    headers[3] |= (0 << 2);                      // copyright id start：0                     1bit
+
+    headers[3] |= (adtsLen & 0x1800) >> 11;      // frame length：value    高2bits
+    headers[4] = (adtsLen & 0x7f8) >> 3;         // frame length：value    中间8bits 
+    headers[5] = (adtsLen & 0x7) << 5;           // frame length：value    低3bits
+    headers[5] |= 0x1f;                          // buffer fullness：0x7ff 高5bits 
+    headers[6] = 0xfc;
+
+    return headers
+};
+
+/**
+ * Copyright (C) 2018 Xmader.
+ * @author Xmader
+ */
+
+/**
+ * Demux FLV into H264 + AAC stream into line stream then
+ * remux it into a AAC file.
+ * @param {Blob|Buffer|ArrayBuffer|string} flv 
+ */
+const FLV2AAC = async (flv) => {
+
+    // load flv as arraybuffer
+    /** @type {ArrayBuffer} */
+    const flvArrayBuffer = await new Promise((r, j) => {
+        if ((typeof Blob != "undefined") && (flv instanceof Blob)) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                /** @type {ArrayBuffer} */
+                // @ts-ignore
+                const result = reader.result;
+                r(result);
+            };
+            reader.onerror = j;
+            reader.readAsArrayBuffer(flv);
+        } else if ((typeof Buffer != "undefined") && (flv instanceof Buffer)) {
+            r(new Uint8Array(flv).buffer);
+        } else if (flv instanceof ArrayBuffer) {
+            r(flv);
+        } else if (typeof flv == 'string') {
+            const req = new XMLHttpRequest();
+            req.responseType = "arraybuffer";
+            req.onload = () => r(req.response);
+            req.onerror = j;
+            req.open('get', flv);
+            req.send();
+        } else {
+            j(new TypeError("@type {Blob|Buffer|ArrayBuffer} flv"));
+        }
+    });
+
+    const flvProbeData = FLVDemuxer.probe(flvArrayBuffer);
+    const flvDemuxer = new FLVDemuxer(flvProbeData);
+
+    // 只解析音频
+    flvDemuxer.overridedHasVideo = false;
+
+    /**
+     * @typedef {Object} Sample
+     * @property {Uint8Array} unit
+     * @property {number} length
+     * @property {number} dts
+     * @property {number} pts
+     */
+
+    /** @type {{ type: "audio"; id: number; sequenceNumber: number; length: number; samples: Sample[]; }} */
+    let aac = null;
+    let metadata = null;
+
+    flvDemuxer.onTrackMetadata = (type, _metaData) => {
+        if (type == "audio") {
+            metadata = _metaData;
+        }
+    };
+
+    flvDemuxer.onMediaInfo = () => { };
+
+    flvDemuxer.onError = (e) => {
+        throw new Error(e)
+    };
+
+    flvDemuxer.onDataAvailable = (...args) => {
+        args.forEach(data => {
+            if (data.type == "audio") {
+                aac = data;
+            }
+        });
+    };
+
+    const finalOffset = flvDemuxer.parseChunks(flvArrayBuffer, flvProbeData.dataOffset);
+    if (finalOffset != flvArrayBuffer.byteLength) {
+        throw new Error("FLVDemuxer: unexpected EOF")
+    }
+
+    const {
+        audioObjectType,
+        samplingFrequencyIndex,
+        channelCount: channelConfig
+    } = metadata;
+
+    /** @type {number[]} */
+    let output = [];
+
+    aac.samples.forEach((sample) => {
+        const headers = getAdtsHeaders({
+            audioObjectType,
+            samplingFrequencyIndex,
+            channelConfig,
+            adtsLen: sample.length + 7
+        });
+        output.push(...headers, ...sample.unit);
+    });
+
+    return new Uint8Array(output)
+};
+
+/***
+ * Copyright (C) 2018 Xmader. All Rights Reserved.
+ * 
+ * @author Xmader
+ * 
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+class WebWorker extends Worker {
+    constructor(stringUrl) {
+        super(stringUrl);
+
+        this.importFnAsAScript(TwentyFourDataView);
+        this.importFnAsAScript(FLVTag);
+        this.importFnAsAScript(FLV);
+    }
+
+    /**
+     * @param {string} method 
+     * @param {*} data 
+     */
+    async getReturnValue(method, data) {
+        const callbackNum = window.crypto.getRandomValues(new Uint32Array(1))[0];
+
+        this.postMessage([
+            method,
+            data,
+            callbackNum
+        ]);
+
+        return await new Promise((resolve, reject) => {
+            this.addEventListener("message", (e) => {
+                const [_method, incomingData, _callbackNum] = e.data;
+                if (_callbackNum == callbackNum) {
+                    if (_method == method) {
+                        resolve(incomingData);
+                    } else if (_method == "error") {
+                        console.error(incomingData);
+                        reject(new Error("Web Worker 内部错误"));
+                    }
+                }
+            });
+        })
+    }
+
+    async registerAllMethods() {
+        const methods = await this.getReturnValue("getAllMethods");
+
+        methods.forEach(method => {
+            Object.defineProperty(this, method, {
+                value: (arg) => this.getReturnValue(method, arg)
+            });
+        });
+    }
+
+    /**
+     * @param {Function | ClassDecorator} c 
+     */
+    importFnAsAScript(c) {
+        const blob = new Blob([c.toString()], { type: 'application/javascript' });
+        return this.getReturnValue("importScripts", URL.createObjectURL(blob))
+    }
+
+    /**
+     * @param {() => void} fn 
+     */
+    static fromAFunction(fn) {
+        const blob = new Blob(['(' + fn.toString() + ')()'], { type: 'application/javascript' });
+        return new WebWorker(URL.createObjectURL(blob))
+    }
+}
+
+// 用于批量下载的 Web Worker , 请将函数中的内容想象成一个独立的js文件
+const BatchDownloadWorkerFn = () => {
+
+    class BatchDownloadWorker {
+        async mergeFLVFiles(files) {
+            return await FLV.mergeBlobs(files);
+        }
+
+        /**
+         * 引入脚本与库
+         * @param  {string[]} scripts 
+         */
+        importScripts(...scripts) {
+            importScripts(...scripts);
+        }
+
+        getAllMethods() {
+            return Object.getOwnPropertyNames(BatchDownloadWorker.prototype).slice(1, -1)
+        }
+    }
+
+    const worker = new BatchDownloadWorker();
+
+    onmessage = async (e) => {
+        const [method, incomingData, callbackNum] = e.data;
+
+        try {
+            const returnValue = await worker[method](incomingData);
+            if (returnValue) {
+                postMessage([
+                    method,
+                    returnValue,
+                    callbackNum
+                ]);
+            }
+        } catch (e) {
+            postMessage([
+                "error",
+                e.message,
+                callbackNum
+            ]);
+            throw e
+        }
+    };
+};
+
+// @ts-check
+
+/**
+ * @param {number} alpha 0~255
+ */
+const formatColorChannel$1 = (alpha) => {
+    return (alpha & 255).toString(16).toUpperCase().padStart(2, '0')
+};
+
+/**
+ * @param {number} opacity 0 ~ 1 -> alpha 0 ~ 255
+ */
+const formatOpacity = (opacity) => {
+    const alpha = 0xFF * (100 - +opacity * 100) / 100;
+    return formatColorChannel$1(alpha)
+};
+
+/**
+ * "#xxxxxx" -> "xxxxxx"
+ * @param {string} colorStr 
+ */
+const formatColor$1 = (colorStr) => {
+    colorStr = colorStr.toUpperCase();
+    const m = colorStr.match(/^#?(\w{6})$/);
+    return m[1]
+};
+
+const buildHeader = ({
+    title = "",
+    original = "",
+    fontFamily = "Arial",
+    bold = false,
+    textColor = "#FFFFFF",
+    bgColor = "#000000",
+    textOpacity = 1.0,
+    bgOpacity = 0.5,
+    fontsizeRatio = 0.4,
+    baseFontsize = 50,
+    playResX = 560,
+    playResY = 420,
+}) => {
+    textColor = formatColor$1(textColor);
+    bgColor = formatColor$1(bgColor);
+
+    const boldFlag = bold ? -1 : 0;
+    const fontSize = Math.round(fontsizeRatio * baseFontsize);
+    const textAlpha = formatOpacity(textOpacity);
+    const bgAlpha = formatOpacity(bgOpacity);
+
+    return [
+        "[Script Info]",
+        `Title: ${title}`,
+        `Original Script: ${original}`,
+        "ScriptType: v4.00+",
+        "Collisions: Normal",
+        `PlayResX: ${playResX}`,
+        `PlayResY: ${playResY}`,
+        "Timer: 100.0000",
+        "",
+        "[V4+ Styles]",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+        `Style: CC,${fontFamily},${fontSize},&H${textAlpha}${textColor},&H${textAlpha}${textColor},&H${textAlpha}000000,&H${bgAlpha}${bgColor},${boldFlag},0,0,0,100,100,0,0,1,2,0,2,20,20,2,0`,
+        "",
+        "[Events]",
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+    ]
+};
+
+/**
+ * @param {number} time 
+ */
+const formatTimestamp$1 = (time) => {
+    const value = Math.round(time * 100) * 10;
+    const rem = value % 3600000;
+    const hour = (value - rem) / 3600000;
+    const fHour = hour.toFixed(0).padStart(2, '0');
+    const fRem = new Date(rem).toISOString().slice(-11, -2);
+    return fHour + fRem
+};
+
+/**
+ * @param {string} str 
+ */
+const textEscape$1 = (str) => {
+    // VSFilter do not support escaped "{" or "}"; we use full-width version instead
+    return str.replace(/{/g, '｛').replace(/}/g, '｝').replace(/\s/g, ' ')
+};
+
+/**
+ * @param {import("./index").Dialogue} dialogue 
+ */
+const buildLine = (dialogue) => {
+    const start = formatTimestamp$1(dialogue.from);
+    const end = formatTimestamp$1(dialogue.to);
+    const text = textEscape$1(dialogue.content);
+    return `Dialogue: 0,${start},${end},CC,,20,20,2,,${text}`
+};
+
+/**
+ * @param {import("./index").SubtitleData} subtitleData 
+ * @param {string} languageDoc 字幕语言描述，例如 "英语（美国）"
+ */
+const buildAss = (subtitleData, languageDoc = "") => {
+    const pageTitle = top.document.title.replace(/_哔哩哔哩 \(゜-゜\)つロ 干杯~-bilibili$/, "");
+    const title = `${pageTitle} ${languageDoc || ""}字幕`;
+    const url = top.location.href;
+    const original = `Generated by Xmader/bilitwin based on ${url}`;
+
+    const header = buildHeader({
+        title,
+        original,
+        fontsizeRatio: subtitleData.font_size,
+        textColor: subtitleData.font_color,
+        bgOpacity: subtitleData.background_alpha,
+        bgColor: subtitleData.background_color,
+    });
+
+    const lines = subtitleData.body.map(buildLine);
+
+    return [
+        ...header,
+        ...lines,
+    ].join('\r\n')
+};
+
+// @ts-check
+
+/**
+ * 获取视频信息
+ * @param {number} aid 
+ * @param {number} cid 
+ */
+const getVideoInfo = async (aid, cid) => {
+    const url = `https://api.bilibili.com/x/web-interface/view?aid=${aid}&cid=${cid}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText}`)
+    }
+
+    const json = await res.json();
+    return json.data
+};
+
+/**
+ * @typedef {Object} SubtitleInfo 字幕信息
+ * @property {number} id
+ * @property {string} lan 字幕语言，例如 "en-US"
+ * @property {string} lan_doc 字幕语言描述，例如 "英语（美国）"
+ * @property {boolean} is_lock 是否字幕可以在视频上拖动
+ * @property {string} subtitle_url 指向字幕数据 json 的 url
+ * @property {object} author 作者信息
+ */
+
+/**
+ * 获取字幕信息列表
+ * @param {number} aid 
+ * @param {number} cid 
+ * @returns {Promise<SubtitleInfo[]>}
+ */
+const getSubtitleInfoList = async (aid, cid) => {
+    try {
+        const videoinfo = await getVideoInfo(aid, cid);
+        return videoinfo.subtitle.list
+    } catch (error) {
+        return []
+    }
+};
+
+/**
+ * @typedef {Object} Dialogue
+ * @property {number} from 开始时间
+ * @property {number} to 结束时间
+ * @property {number} location 默认 2
+ * @property {string} content 字幕内容
+ */
+
+/**
+ * @typedef {Object} SubtitleData 字幕数据
+ * @property {number} font_size 默认 0.4
+ * @property {string} font_color 默认 "#FFFFFF"
+ * @property {number} background_alpha 默认 0.5
+ * @property {string} background_color 默认 "#9C27B0"
+ * @property {string} Stroke 默认 "none"
+ * @property {Dialogue[]} body
+ */
+
+/**
+ * @param {string} subtitle_url 指向字幕数据 json 的 url
+ * @returns {Promise<SubtitleData>}
+ */
+const getSubtitleData = async (subtitle_url) => {
+    subtitle_url = subtitle_url.replace(/^http:/, "https:");
+
+    const res = await fetch(subtitle_url);
+    if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText}`)
+    }
+
+    const data = await res.json();
+    return data
+};
+
+/**
+ * @param {number} aid 
+ * @param {number} cid 
+ */
+const getSubtitles = async (aid, cid) => {
+    const list = await getSubtitleInfoList(aid, cid);
+    return await Promise.all(
+        list.map(async (info) => {
+            const subtitleData = await getSubtitleData(info.subtitle_url);
+            return {
+                language: info.lan,
+                language_doc: info.lan_doc,
+                url: info.subtitle_url,
+                data: subtitleData,
+                ass: buildAss(subtitleData, info.lan_doc),
+            }
+        })
+    )
+};
 
 /***
  * Copyright (C) 2018 Qli5. All Rights Reserved.
@@ -7431,11 +9854,11 @@ class UI {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(() => {
-            Object.values(this.dom).forEach(e => e.remove());
+            Object.values(this.dom).forEach(e => typeof e.remove == "function" && e.remove());
             this.dom = {};
         });
         this.cidSessionDestroy.addCallback(() => {
-            Object.values(this.cidSessionDom).forEach(e => e.remove());
+            Object.values(this.cidSessionDom).forEach(e => typeof e.remove == "function" && e.remove());
             this.cidSessionDom = {};
         });
 
@@ -7449,8 +9872,7 @@ class UI {
             transition: all .3s ease-in-out;
             cursor: pointer;
         }
-        `;
-        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
+
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;
@@ -7489,6 +9911,14 @@ class UI {
             -moz-appearance: checkbox;
             appearance: checkbox;
         }
+
+        .bilitwin.context-menu-menu:hover {
+            background: hsla(0,0%,100%,.12);
+        }
+
+        .bilitwin.context-menu-menu:hover > a {
+            background: hsla(0,0%,100%,0) !important;
+        }
         `;
 
         const style = document.createElement('style');
@@ -7502,113 +9932,186 @@ class UI {
     cidSessionRender() {
         this.buildTitle();
 
-        if (this.option.title) this.appendTitle();
-        if (this.option.menu) this.appendMenu();
+        if (this.option.title) this.appendTitle(); // 在视频标题旁添加链接
+        this.appendMenu(); // 在视频菜单栏添加链接
     }
 
     // Title Append
     buildTitle(monkey = this.twin.monkey) {
-        // 1. build flvA, mp4A, assA
+        // 1. build videoA, assA
         const fontSize = '15px';
-        const flvA = document.createElement('a');
-        flvA.style.fontSize = fontSize;
-        flvA.textContent = '\u8D85\u6E05FLV';
-        const mp4A = document.createElement('a');
-        mp4A.style.fontSize = fontSize;
-        mp4A.textContent = '\u539F\u751FMP4';
+        /** @type {HTMLAnchorElement} */
+        const videoA = document.createElement('a');
+        /** @type {HTMLAnchorElement} */
+        videoA.style.fontSize = fontSize;
+        videoA.textContent = '\u89C6\u9891FLV';
         const assA = document.createElement('a');
 
-        // 1.1 build flvA
+        // 1.1 build videoA
         assA.style.fontSize = fontSize;
         assA.textContent = '\u5F39\u5E55ASS';
-        flvA.onmouseover = async () => {
+        videoA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
-            flvA.onmouseover = null;
+            videoA.textContent = '正在FLV';
+            videoA.onmouseover = null;
 
-            // 1.1.2 query flv
-            const href = await monkey.queryInfo('flv');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV';
+            // 1.1.2 query video
+            const video_format = await monkey.queryInfo('video');
 
-            // 1.1.3 display flv
-            flvA.textContent = '超清FLV';
-            flvA.onclick = () => this.displayFLVDiv();
+            // 1.1.3 display video
+            videoA.textContent = `视频${video_format ? video_format.toUpperCase() : 'FLV'}`;
+            videoA.onclick = () => this.displayFLVDiv();
         };
 
-        // 1.2 build mp4A
-        mp4A.onmouseover = async () => {
-            // 1.2.1 give processing hint
-            mp4A.textContent = '正在MP4';
-            mp4A.onmouseover = null;
-            if (this.option.autoDanmaku) {
-                await assA.onmouseover();
-                mp4A.onclick = () => assA.click();
-            }
-
-            // 1.2.2 query flv
-            let href = await monkey.queryInfo('mp4');
-            if (href == 'does_not_exist') return mp4A.textContent = '没有MP4';
-
-            // 1.2.3 response mp4
-            mp4A.href = href;
-            mp4A.textContent = '原生MP4';
-            mp4A.download = '';
-            mp4A.referrerPolicy = 'origin';
-        };
-
-        // 1.3 build assA
+        // 1.2 build assA
         assA.onmouseover = async () => {
-            // 1.3.1 give processing hint
+            // 1.2.1 give processing hint
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
-            // 1.3.2 query flv
+            let clicked = false;
+            assA.addEventListener("click", () => {
+                clicked = true;
+            }, { once: true });
+
+            // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
-            // 1.3.3 response mp4
+            // 1.2.3 response mp4
             assA.textContent = '弹幕ASS';
             if (monkey.mp4 && monkey.mp4.match) {
                 assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
             } else {
                 assA.download = monkey.cid + '.ass';
             }
+
+            if (clicked) {
+                assA.click();
+            }
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, mp4A, assA });
+        Object.assign(this.cidSessionDom, { videoA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, mp4A, assA } = this.cidSessionDom) {
+    appendTitle({ videoA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = document.createElement('div');
 
         // 2. append to title
         div.addEventListener('click', e => e.stopPropagation());
-        div.style.float = 'left';
-        div.style.clear = 'left';
         div.className = 'bilitwin';
-        div.append(...[flvA, ' ', mp4A, ' ', assA]);
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        div.append(...[videoA, ' ', assA]);
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module") || document.querySelector(".media-title");
         tminfo.style.float = 'none';
-        tminfo.style.marginLeft = '185px';
-        tminfo.parentElement.insertBefore(div, tminfo);
+        tminfo.after(div);
+
+        const h1_module = document.querySelector("#h1_module") || document.querySelector(".media-title");
+        if (h1_module) {
+            h1_module.style.marginBottom = "0px";
+        }
 
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;
 
+        this.appendSubtitleAs(div);
+
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
-        // 1. build flv splits
+    async buildSubtitleAs() {
+        if (this.cidSessionDom && this.cidSessionDom.subtitleAs) {
+            return this.cidSessionDom.subtitleAs;
+        }
+
+        const subtitleList = await getSubtitles(aid, cid);
+
+        const fontSize = '15px';
+
+        const monkey = this.twin.monkey;
+
+        const subtitleAs = subtitleList.map(subtitle => {
+            const lanDoc = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")");
+
+            /** @type {HTMLAnchorElement} */
+            const a = document.createElement('a');
+            a.style.fontSize = fontSize;
+            a.textContent = `${lanDoc}字幕ASS`;
+            a.lan = subtitle.language;
+
+            a.onclick = () => {
+                const blob = new Blob([subtitle.ass]);
+                a.href = URL.createObjectURL(blob);
+
+                let name = "";
+                if (monkey.mp4 && monkey.mp4.match) {
+                    name = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0];
+                } else {
+                    name = monkey.cid || cid;
+                }
+
+                a.download = `${name}.${subtitle.language}.ass`;
+
+                a.onclick = null;
+            };
+
+            return a;
+        });
+
+        this.cidSessionDom.subtitleAs = subtitleAs;
+        return subtitleAs;
+    }
+
+    async appendSubtitleAs(div) {
+        const subtitleAs = await this.buildSubtitleAs();
+
+        const items = subtitleAs.reduce((p, c) => {
+            // 在每一项前添加空格
+            return p.concat(' ', c);
+        }, []);
+
+        div.append(...items);
+    }
+
+    appendShortVideoTitle({ video_playurl, cover_img }) {
+        const fontSize = '15px';
+        const marginRight = '15px';
+        const videoA = document.createElement('a');
+        videoA.style.fontSize = fontSize;
+        videoA.style.marginRight = marginRight;
+        videoA.href = video_playurl;
+        videoA.target = '_blank';
+        videoA.textContent = '\u4E0B\u8F7D\u89C6\u9891';
+        const coverA = document.createElement('a');
+
+        coverA.style.fontSize = fontSize;
+        coverA.href = cover_img;
+        coverA.target = '_blank';
+        coverA.textContent = '\u83B7\u53D6\u5C01\u9762';
+        videoA.onclick = e => {
+            e.preventDefault();alert("请使用右键另存为下载视频");
+        };
+
+        const span = document.createElement('span');
+
+        span.addEventListener('click', e => e.stopPropagation());
+        span.className = 'bilitwin';
+        span.append(...[videoA, ' ', coverA]);
+        const infoDiv = document.querySelector('div.base-info div.info');
+        infoDiv.appendChild(span);
+    }
+
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
+        // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = document.createElement('tr');
             {
                 const td1 = document.createElement('td');
                 const a1 = document.createElement('a');
                 a1.href = href;
-                a1.textContent = `FLV分段 ${index + 1}`;
+                a1.download = cid + '-' + (index + 1) + '.' + (format || "flv");
+                a1.textContent = `视频分段 ${index + 1}`;
                 td1.append(a1);
                 tr.append(td1);
                 const td2 = document.createElement('td');
@@ -7669,10 +10172,11 @@ class UI {
             const td2 = document.createElement('td');
             const a1 = document.createElement('a');
 
-            a1.onclick = e => this.downloadAllFLVs({
+            a1.onclick = e => format != "mp4" ? this.downloadAllFLVs({
                 a: e.target,
-                monkey, table
-            });
+                monkey,
+                table
+            }) : top.alert("不支持合并MP4视频");
 
             a1.textContent = '\u7F13\u5B58\u5168\u90E8+\u81EA\u52A8\u5408\u5E76';
             td2.append(a1);
@@ -7820,7 +10324,7 @@ class UI {
             const tr1 = document.createElement('tr');
             const td1 = document.createElement('td');
             td1.colSpan = '3';
-            td1.textContent = '\u5DF2\u5C4F\u853D\u7F51\u9875\u64AD\u653E\u5668\u7684\u7F51\u7EDC\u94FE\u63A5\u3002\u5207\u6362\u6E05\u6670\u5EA6\u53EF\u91CD\u65B0\u6FC0\u6D3B\u64AD\u653E\u5668\u3002';
+            td1.textContent = '\u5DF2\u5C4F\u853D\u7F51\u9875\u64AD\u653E\u5668\u7684\u7F51\u7EDC\u94FE\u63A5\u3002\u5237\u65B0\u9875\u9762\u53EF\u91CD\u65B0\u6FC0\u6D3B\u64AD\u653E\u5668\u3002';
             tr1.append(td1);
             return tr1;
         })();
@@ -7831,7 +10335,7 @@ class UI {
             if (table.rows[i].cells[1].children[0].textContent == '缓存本段') table.rows[i].cells[1].children[0].click();
         }
 
-        // 4. set sprogress
+        // 4. set progress
         const progress = a.parentElement.nextElementSibling.children[0];
         progress.max = monkey.flvs.length + 1;
         progress.value = 0;
@@ -7839,9 +10343,28 @@ class UI {
 
         // 5. merge splits
         const files = await monkey.getAllFLVs();
-        const href = await this.twin.mergeFLVFiles(files);
-        const ass = await monkey.ass;
-        const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+        const flv = await FLV.mergeBlobs(files);
+        const href = URL.createObjectURL(flv);
+        const ass = await monkey.getASS();
+
+        /** @type {HTMLAnchorElement[]} */
+        const subtitleAs = await this.buildSubtitleAs();
+        const subtitleAssList = subtitleAs.map(a => {
+            if (a.onclick && typeof a.onclick === "function") {
+                a.onclick();
+            }
+            return {
+                name: a.text.replace(/ASS$/, ""),
+                file: a.href
+            };
+        });
+
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+        const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on");
+        if (pageNameElement) {
+            const pageName = pageNameElement.textContent;
+            if (pageName && pageName != outputName) outputName += ` - ${pageName}`;
+        }
 
         // 6. build download all ui
         progress.value++;
@@ -7849,7 +10372,7 @@ class UI {
             const tr1 = document.createElement('tr');
             const td1 = document.createElement('td');
             td1.colSpan = '3';
-            td1.style = 'border: 1px solid black';
+            td1.style = 'border: 1px solid black; word-break: keep-all;';
             const a1 = document.createElement('a');
             a1.href = href;
             a1.download = `${outputName}.flv`;
@@ -7863,16 +10386,42 @@ class UI {
             td1.append(' ');
             const a2 = document.createElement('a');
             a2.href = ass;
-            a2.download = `${outputName}.ass`;
+            a2.download = `${outputName}.danmaku.ass`;
             a2.textContent = '\u5F39\u5E55ASS';
             td1.append(a2);
             td1.append(' ');
             const a3 = document.createElement('a');
+            a3.download = `${outputName}.aac`;
 
-            a3.onclick = () => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`);
+            a3.onclick = e => {
+                const aacA = e.target;
+                FLV2AAC(flv).then(aacData => {
+                    const blob = new Blob([aacData]);
+                    aacA.href = URL.createObjectURL(blob);
+                    aacA.onclick = null;
+                    aacA.click();
+                });
+            };
 
-            a3.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+            a3.textContent = '\u97F3\u9891AAC';
             td1.append(a3);
+            td1.append(...subtitleAs.reduce((p, c) => {
+                // 在每一项前添加空格
+                return p.concat(' ', (() => {
+                    const a4 = document.createElement('a');
+                    a4.href = c.href;
+                    a4.download = `${outputName}.${c.lan}.ass`;
+                    a4.textContent = c.textContent;
+                    return a4;
+                })());
+            }, []));
+            td1.append(' ');
+            const a4 = document.createElement('a');
+
+            a4.onclick = e => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList);
+
+            a4.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+            td1.append(a4);
             td1.append(' ');
             td1.append('\u8BB0\u5F97\u6E05\u7406\u5206\u6BB5\u7F13\u5B58\u54E6~');
             tr1.append(td1);
@@ -7916,7 +10465,7 @@ class UI {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         a.href = url;
         return url;
     }
@@ -7930,7 +10479,7 @@ class UI {
     }
 
     // Menu Append
-    appendMenu(playerWin = this.twin.playerWin) {
+    async appendMenu(playerWin = this.twin.playerWin) {
         // 1. build monkey menu and polyfill menu
         const monkeyMenu = this.buildMonkeyMenu();
         const polyfillMenu = this.buildPolyfillMenu();
@@ -7942,7 +10491,25 @@ class UI {
         ul.className = 'bilitwin';
         ul.style.borderBottom = '1px solid rgba(255,255,255,.12)';
         ul.append(...[monkeyMenu, polyfillMenu]);
-        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+        const menus0 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
+        if (menus0.length == 0) {
+            await new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    const menus1 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin');
+                    const menus2 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black');
+                    if (menus1.length > 0 || menus2.length >= 2) {
+                        observer.disconnect();
+                        resolve();
+                    }
+                });
+                observer.observe(playerWin.document.querySelector("#bilibiliPlayer"), {
+                    childList: true,
+                    attributeFilter: ["class"]
+                });
+            });
+        }
+
+        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0] || [...playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')].pop();
         div.prepend(ul);
 
         // 4. save to cache
@@ -7955,11 +10522,104 @@ class UI {
         playerWin = this.twin.playerWin,
         BiliMonkey = this.twin.BiliMonkey,
         monkey = this.twin.monkey,
-        flvA = this.cidSessionDom.flvA,
-        mp4A = this.cidSessionDom.mp4A,
+        videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA
     } = {}) {
-        const li = document.createElement('li');
+        let context_menu_videoA = document.createElement('li');
+
+        {
+            context_menu_videoA.className = 'context-menu-function';
+
+            context_menu_videoA.onmouseover = async ({ target }) => {
+                if (videoA.onmouseover) await videoA.onmouseover();
+                const textNode = target.querySelector('#download-btn-vformat');
+                if (textNode && textNode.textContent) {
+                    textNode.textContent = monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV';
+                }
+            };
+
+            context_menu_videoA.onclick = () => videoA.click();
+
+            const a1 = document.createElement('a');
+            a1.className = 'context-menu-a';
+            const span1 = document.createElement('span');
+            span1.className = 'video-contextmenu-icon';
+            a1.append(span1);
+            a1.append(' \u4E0B\u8F7D\u89C6\u9891');
+            const downloadBtnVformat = document.createElement('span');
+            downloadBtnVformat.id = 'download-btn-vformat';
+            downloadBtnVformat.textContent = 'FLV';
+            a1.append(downloadBtnVformat);
+            context_menu_videoA.append(a1);
+        }
+
+        Object.assign(this.cidSessionDom, { context_menu_videoA });
+
+        /** @type {HTMLLIElement} */
+        const downloadSubtitlesContextMenu = document.createElement('li');
+
+        {
+            downloadSubtitlesContextMenu.className = 'context-menu-menu';
+
+            downloadSubtitlesContextMenu.onmouseover = async () => {
+                /** @type {HTMLAnchorElement[]} */
+                const subtitleAs = await this.buildSubtitleAs();
+
+                if (subtitleAs && subtitleAs.length > 0) {
+
+                    downloadSubtitlesContextMenu.appendChild((() => {
+                        const ul1 = document.createElement('ul');
+                        ul1.append(...subtitleAs.map(a => {
+                            const li = document.createElement('li');
+                            li.className = 'context-menu-function';
+                            const a1 = document.createElement('a');
+                            a1.className = 'context-menu-a';
+
+                            a1.onclick = () => a.click();
+
+                            const span1 = document.createElement('span');
+                            span1.className = 'video-contextmenu-icon';
+                            a1.append(span1);
+                            a1.append(a.text.replace(/字幕ASS$/, ""));
+                            li.append(a1);
+
+                            return li;
+                        }));
+                        return ul1;
+                    })());
+                } else {
+
+                    downloadSubtitlesContextMenu.appendChild((() => {
+                        const ul1 = document.createElement('ul');
+                        const li = document.createElement('li');
+                        li.className = 'context-menu-function';
+                        const a1 = document.createElement('a');
+                        a1.className = 'context-menu-a';
+                        const span1 = document.createElement('span');
+                        span1.className = 'video-contextmenu-icon';
+                        a1.append(span1);
+                        a1.append(' \u65E0\u5B57\u5E55');
+                        li.append(a1);
+                        ul1.append(li);
+                        return ul1;
+                    })());
+                }
+
+                downloadSubtitlesContextMenu.onmouseover = null;
+            };
+
+            const a1 = document.createElement('a');
+            a1.className = 'context-menu-a';
+            const span1 = document.createElement('span');
+            span1.className = 'video-contextmenu-icon';
+            a1.append(span1);
+            a1.append(' \u4E0B\u8F7D\u5B57\u5E55ASS');
+            const span2 = document.createElement('span');
+            span2.className = 'bpui-icon bpui-icon-arrow-down';
+            span2.style = 'transform:rotate(-90deg);margin-top:3px;';
+            a1.append(span2);
+            downloadSubtitlesContextMenu.append(a1);
+        }const li = document.createElement('li');
         li.className = 'context-menu-menu bilitwin';
 
         li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
@@ -7967,147 +10627,118 @@ class UI {
         const a1 = document.createElement('a');
         a1.className = 'context-menu-a';
         a1.append('BiliMonkey');
-        const span = document.createElement('span');
-        span.className = 'bpui-icon bpui-icon-arrow-down';
-        span.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a1.append(span);
+        const span1 = document.createElement('span');
+        span1.className = 'bpui-icon bpui-icon-arrow-down';
+        span1.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a1.append(span1);
         li.append(a1);
         const ul1 = document.createElement('ul');
+        ul1.append(context_menu_videoA);
         const li1 = document.createElement('li');
         li1.className = 'context-menu-function';
 
         li1.onclick = async () => {
-            if (flvA.onmouseover) await flvA.onmouseover();
-            flvA.click();
+            if (assA.onmouseover) await assA.onmouseover();
+            assA.click();
         };
 
         const a2 = document.createElement('a');
         a2.className = 'context-menu-a';
-        const span1 = document.createElement('span');
-        span1.className = 'video-contextmenu-icon';
-        a2.append(span1);
-        a2.append(' \u4E0B\u8F7DFLV');
+        const span2 = document.createElement('span');
+        span2.className = 'video-contextmenu-icon';
+        a2.append(span2);
+        a2.append(' \u4E0B\u8F7D\u5F39\u5E55ASS');
         li1.append(a2);
         ul1.append(li1);
+        ul1.append(downloadSubtitlesContextMenu);
         const li2 = document.createElement('li');
         li2.className = 'context-menu-function';
 
-        li2.onclick = async () => {
-            if (mp4A.onmouseover) await mp4A.onmouseover();
-            mp4A.click();
-        };
+        li2.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey)));
 
         const a3 = document.createElement('a');
         a3.className = 'context-menu-a';
-        const span2 = document.createElement('span');
-        span2.className = 'video-contextmenu-icon';
-        a3.append(span2);
-        a3.append(' \u4E0B\u8F7DMP4');
+        const span3 = document.createElement('span');
+        span3.className = 'video-contextmenu-icon';
+        a3.append(span3);
+        a3.append(' \u6279\u91CF\u4E0B\u8F7D');
         li2.append(a3);
         ul1.append(li2);
         const li3 = document.createElement('li');
         li3.className = 'context-menu-function';
 
-        li3.onclick = async () => {
-            if (assA.onmouseover) await assA.onmouseover();
-            assA.click();
-        };
+        li3.onclick = () => this.displayOptionDiv();
 
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
-        const span3 = document.createElement('span');
-        span3.className = 'video-contextmenu-icon';
-        a4.append(span3);
-        a4.append(' \u4E0B\u8F7DASS');
+        const span4 = document.createElement('span');
+        span4.className = 'video-contextmenu-icon';
+        a4.append(span4);
+        a4.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
         li3.append(a4);
         ul1.append(li3);
         const li4 = document.createElement('li');
         li4.className = 'context-menu-function';
 
-        li4.onclick = () => this.displayOptionDiv();
-
-        const a5 = document.createElement('a');
-        a5.className = 'context-menu-a';
-        const span4 = document.createElement('span');
-        span4.className = 'video-contextmenu-icon';
-        a5.append(span4);
-        a5.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-        li4.append(a5);
-        ul1.append(li4);
-        const li5 = document.createElement('li');
-        li5.className = 'context-menu-function';
-
-        li5.onclick = async () => UI.displayDownloadAllPageDefaultFormatsBody((await BiliMonkey.getAllPageDefaultFormats(playerWin)));
-
-        const a6 = document.createElement('a');
-        a6.className = 'context-menu-a';
-        const span5 = document.createElement('span');
-        span5.className = 'video-contextmenu-icon';
-        a6.append(span5);
-        a6.append(' (\u6D4B)\u6279\u91CF\u4E0B\u8F7D');
-        li5.append(a6);
-        ul1.append(li5);
-        const li6 = document.createElement('li');
-        li6.className = 'context-menu-function';
-
-        li6.onclick = async () => {
+        li4.onclick = async () => {
             monkey.proxy = true;
             monkey.flvs = null;
             UI.hintInfo('请稍候，可能需要10秒时间……', playerWin);
             // Yes, I AM lazy.
             playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
             await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
-            return monkey.queryInfo('flv');
+            return monkey.queryInfo('video');
         };
+
+        const a5 = document.createElement('a');
+        a5.className = 'context-menu-a';
+        const span5 = document.createElement('span');
+        span5.className = 'video-contextmenu-icon';
+        a5.append(span5);
+        a5.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        li4.append(a5);
+        ul1.append(li4);
+        const li5 = document.createElement('li');
+        li5.className = 'context-menu-function';
+
+        li5.onclick = () => top.location.reload(true);
+
+        const a6 = document.createElement('a');
+        a6.className = 'context-menu-a';
+        const span6 = document.createElement('span');
+        span6.className = 'video-contextmenu-icon';
+        a6.append(span6);
+        a6.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
+        li5.append(a6);
+        ul1.append(li5);
+        const li6 = document.createElement('li');
+        li6.className = 'context-menu-function';
+
+        li6.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
 
         const a7 = document.createElement('a');
         a7.className = 'context-menu-a';
-        const span6 = document.createElement('span');
-        span6.className = 'video-contextmenu-icon';
-        a7.append(span6);
-        a7.append(' (\u6D4B)\u8F7D\u5165\u7F13\u5B58FLV');
+        const span7 = document.createElement('span');
+        span7.className = 'video-contextmenu-icon';
+        a7.append(span7);
+        a7.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
         li6.append(a7);
         ul1.append(li6);
         const li7 = document.createElement('li');
         li7.className = 'context-menu-function';
 
-        li7.onclick = () => top.location.reload(true);
+        li7.onclick = () => playerWin.player && playerWin.player.destroy();
 
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
-        const span7 = document.createElement('span');
-        span7.className = 'video-contextmenu-icon';
-        a8.append(span7);
-        a8.append(' (\u6D4B)\u5F3A\u5236\u5237\u65B0');
-        li7.append(a8);
-        ul1.append(li7);
-        const li8 = document.createElement('li');
-        li8.className = 'context-menu-function';
-
-        li8.onclick = () => this.cidSessionDestroy() && this.cidSessionRender();
-
-        const a9 = document.createElement('a');
-        a9.className = 'context-menu-a';
         const span8 = document.createElement('span');
         span8.className = 'video-contextmenu-icon';
-        a9.append(span8);
-        a9.append(' (\u6D4B)\u91CD\u542F\u811A\u672C');
-        li8.append(a9);
-        ul1.append(li8);
-        const li9 = document.createElement('li');
-        li9.className = 'context-menu-function';
-
-        li9.onclick = () => playerWin.player && playerWin.player.destroy();
-
-        const a10 = document.createElement('a');
-        a10.className = 'context-menu-a';
-        const span9 = document.createElement('span');
-        span9.className = 'video-contextmenu-icon';
-        a10.append(span9);
-        a10.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
-        li9.append(a10);
-        ul1.append(li9);
+        a8.append(span8);
+        a8.append(' (\u6D4B)\u9500\u6BC1\u64AD\u653E\u5668');
+        li7.append(a8);
+        ul1.append(li7);
         li.append(ul1);
+
 
         return li;
     }
@@ -8118,337 +10749,391 @@ class UI {
         polyfill = this.twin.polyfill
     } = {}) {
         let oped = [];
+        const BiliDanmakuSettings = polyfill.BiliDanmakuSettings;
         const refreshSession = new HookedFunction(() => oped = polyfill.userdata.oped[polyfill.getCollectionId()] || []); // as a convenient callback register
-        const li = document.createElement('li');
-        li.className = 'context-menu-menu bilitwin';
-
-        li.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
-
-        const a1 = document.createElement('a');
-        a1.className = 'context-menu-a';
-
-        a1.onmouseover = () => refreshSession();
-
-        a1.append('BiliPolyfill');
-        a1.append(!polyfill.option.betabeta ? '(到设置开启)' : '');
-        const span = document.createElement('span');
-        span.className = 'bpui-icon bpui-icon-arrow-down';
-        span.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a1.append(span);
-        li.append(a1);
-        const ul1 = document.createElement('ul');
         const li1 = document.createElement('li');
-        li1.className = 'context-menu-function';
+        li1.className = 'context-menu-menu bilitwin';
 
-        li1.onclick = () => top.window.open(polyfill.getCoverImage(), '_blank');
+        li1.onclick = () => playerWin.document.getElementById('bilibiliPlayer').click();
 
         const a2 = document.createElement('a');
         a2.className = 'context-menu-a';
-        const span1 = document.createElement('span');
-        span1.className = 'video-contextmenu-icon';
-        a2.append(span1);
-        a2.append(' \u83B7\u53D6\u5C01\u9762');
-        li1.append(a2);
-        ul1.append(li1);
-        const li2 = document.createElement('li');
-        li2.className = 'context-menu-menu';
-        const a3 = document.createElement('a');
-        a3.className = 'context-menu-a';
-        const span2 = document.createElement('span');
-        span2.className = 'video-contextmenu-icon';
-        a3.append(span2);
-        a3.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
-        const span3 = document.createElement('span');
-        span3.className = 'bpui-icon bpui-icon-arrow-down';
-        span3.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a3.append(span3);
-        li2.append(a3);
-        const ul2 = document.createElement('ul');
-        const li3 = document.createElement('li');
-        li3.className = 'context-menu-function';
 
-        li3.onclick = () => {
-            polyfill.setVideoSpeed(0.1);
+        a2.onmouseover = () => refreshSession();
+
+        a2.append('BiliPolyfill');
+        const span2 = document.createElement('span');
+        span2.className = 'bpui-icon bpui-icon-arrow-down';
+        span2.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a2.append(span2);
+        li1.append(a2);
+        const ul2 = document.createElement('ul');
+        const li2 = document.createElement('li');
+        li2.className = 'context-menu-function';
+
+        li2.onclick = async () => {
+            const w = top.window.open("", '_blank');w.location = await polyfill.getCoverImage();
         };
 
+        const a3 = document.createElement('a');
+        a3.className = 'context-menu-a';
+        const span3 = document.createElement('span');
+        span3.className = 'video-contextmenu-icon';
+        a3.append(span3);
+        a3.append(' \u83B7\u53D6\u5C01\u9762');
+        li2.append(a3);
+        ul2.append(li2);
+        const li3 = document.createElement('li');
+        li3.className = 'context-menu-menu';
         const a4 = document.createElement('a');
         a4.className = 'context-menu-a';
         const span4 = document.createElement('span');
         span4.className = 'video-contextmenu-icon';
         a4.append(span4);
-        a4.append(' 0.1');
+        a4.append(' \u66F4\u591A\u64AD\u653E\u901F\u5EA6');
+        const span5 = document.createElement('span');
+        span5.className = 'bpui-icon bpui-icon-arrow-down';
+        span5.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a4.append(span5);
         li3.append(a4);
-        ul2.append(li3);
+        const ul3 = document.createElement('ul');
         const li4 = document.createElement('li');
         li4.className = 'context-menu-function';
 
         li4.onclick = () => {
-            polyfill.setVideoSpeed(3);
+            polyfill.setVideoSpeed(0.1);
         };
 
         const a5 = document.createElement('a');
         a5.className = 'context-menu-a';
-        const span5 = document.createElement('span');
-        span5.className = 'video-contextmenu-icon';
-        a5.append(span5);
-        a5.append(' 3');
+        const span6 = document.createElement('span');
+        span6.className = 'video-contextmenu-icon';
+        a5.append(span6);
+        a5.append(' 0.1');
         li4.append(a5);
-        ul2.append(li4);
+        ul3.append(li4);
         const li5 = document.createElement('li');
         li5.className = 'context-menu-function';
 
-        li5.onclick = e => polyfill.setVideoSpeed(e.children[0].children[1].value);
+        li5.onclick = () => {
+            polyfill.setVideoSpeed(3);
+        };
 
         const a6 = document.createElement('a');
         a6.className = 'context-menu-a';
-        const span6 = document.createElement('span');
-        span6.className = 'video-contextmenu-icon';
-        a6.append(span6);
-        a6.append(' \u70B9\u51FB\u786E\u8BA4');
+        const span7 = document.createElement('span');
+        span7.className = 'video-contextmenu-icon';
+        a6.append(span7);
+        a6.append(' 3');
+        li5.append(a6);
+        ul3.append(li5);
+        const li6 = document.createElement('li');
+        li6.className = 'context-menu-function';
+
+        li6.onclick = e => polyfill.setVideoSpeed(e.target.children[1].value);
+
+        const a7 = document.createElement('a');
+        a7.className = 'context-menu-a';
+        const span8 = document.createElement('span');
+        span8.className = 'video-contextmenu-icon';
+        a7.append(span8);
+        a7.append(' \u70B9\u51FB\u786E\u8BA4');
         const input = document.createElement('input');
         input.type = 'text';
-        input.style = 'width: 35px; height: 70%';
+        input.style = 'width: 35px; height: 70%; color:black;';
 
         input.onclick = e => e.stopPropagation();
 
         (e => refreshSession.addCallback(() => e.value = polyfill.video.playbackRate))(input);
 
-        a6.append(input);
-        li5.append(a6);
-        ul2.append(li5);
-        li2.append(ul2);
-        ul1.append(li2);
-        const li6 = document.createElement('li');
-        li6.className = 'context-menu-menu';
-        const a7 = document.createElement('a');
-        a7.className = 'context-menu-a';
-        const span7 = document.createElement('span');
-        span7.className = 'video-contextmenu-icon';
-        a7.append(span7);
-        a7.append(' \u7247\u5934\u7247\u5C3E');
-        const span8 = document.createElement('span');
-        span8.className = 'bpui-icon bpui-icon-arrow-down';
-        span8.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a7.append(span8);
+        a7.append(input);
         li6.append(a7);
-        const ul3 = document.createElement('ul');
+        ul3.append(li6);
+        li3.append(ul3);
+        ul2.append(li3);
         const li7 = document.createElement('li');
-        li7.className = 'context-menu-function';
-
-        li7.onclick = () => polyfill.markOPEDPosition(0);
-
+        li7.className = 'context-menu-menu';
         const a8 = document.createElement('a');
         a8.className = 'context-menu-a';
         const span9 = document.createElement('span');
         span9.className = 'video-contextmenu-icon';
         a8.append(span9);
-        a8.append(' \u7247\u5934\u5F00\u59CB:');
+        a8.append(' \u81EA\u5B9A\u4E49\u5F39\u5E55\u5B57\u4F53');
         const span10 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span10);
-
+        span10.className = 'bpui-icon bpui-icon-arrow-down';
+        span10.style = 'transform:rotate(-90deg);margin-top:3px;';
         a8.append(span10);
         li7.append(a8);
-        ul3.append(li7);
+        const ul4 = document.createElement('ul');
         const li8 = document.createElement('li');
         li8.className = 'context-menu-function';
 
-        li8.onclick = () => polyfill.markOPEDPosition(1);
+        li8.onclick = e => {
+            BiliDanmakuSettings.set('fontfamily', e.target.lastChild.value);
+            playerWin.location.reload();
+        };
 
         const a9 = document.createElement('a');
         a9.className = 'context-menu-a';
-        const span11 = document.createElement('span');
-        span11.className = 'video-contextmenu-icon';
-        a9.append(span11);
-        a9.append(' \u7247\u5934\u7ED3\u675F:');
-        const span12 = document.createElement('span');
+        const input1 = document.createElement('input');
+        input1.type = 'text';
+        input1.style = 'width: 108px; height: 70%; color:black;';
 
-        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span12);
+        input1.onclick = e => e.stopPropagation();
 
-        a9.append(span12);
+        (e => refreshSession.addCallback(() => e.value = BiliDanmakuSettings.get('fontfamily')))(input1);
+
+        a9.append(input1);
         li8.append(a9);
-        ul3.append(li8);
+        ul4.append(li8);
         const li9 = document.createElement('li');
         li9.className = 'context-menu-function';
 
-        li9.onclick = () => polyfill.markOPEDPosition(2);
+        li9.onclick = e => {
+            BiliDanmakuSettings.set('fontfamily', e.target.parentElement.previousElementSibling.querySelector("input").value);
+            playerWin.location.reload();
+        };
 
         const a10 = document.createElement('a');
         a10.className = 'context-menu-a';
-        const span13 = document.createElement('span');
-        span13.className = 'video-contextmenu-icon';
-        a10.append(span13);
-        a10.append(' \u7247\u5C3E\u5F00\u59CB:');
-        const span14 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span14);
-
-        a10.append(span14);
+        a10.textContent = `
+                                点击确认并刷新
+                            `;
         li9.append(a10);
-        ul3.append(li9);
+        ul4.append(li9);
+        li7.append(ul4);
+        ul2.append(li7);
         const li10 = document.createElement('li');
-        li10.className = 'context-menu-function';
-
-        li10.onclick = () => polyfill.markOPEDPosition(3);
-
+        li10.className = 'context-menu-menu';
         const a11 = document.createElement('a');
         a11.className = 'context-menu-a';
-        const span15 = document.createElement('span');
-        span15.className = 'video-contextmenu-icon';
-        a11.append(span15);
-        a11.append(' \u7247\u5C3E\u7ED3\u675F:');
-        const span16 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span16);
-
-        a11.append(span16);
+        const span11 = document.createElement('span');
+        span11.className = 'video-contextmenu-icon';
+        a11.append(span11);
+        a11.append(' \u7247\u5934\u7247\u5C3E');
+        const span12 = document.createElement('span');
+        span12.className = 'bpui-icon bpui-icon-arrow-down';
+        span12.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a11.append(span12);
         li10.append(a11);
-        ul3.append(li10);
+        const ul5 = document.createElement('ul');
         const li11 = document.createElement('li');
         li11.className = 'context-menu-function';
 
-        li11.onclick = () => polyfill.clearOPEDPosition();
+        li11.onclick = () => polyfill.markOPEDPosition(0);
 
         const a12 = document.createElement('a');
         a12.className = 'context-menu-a';
-        const span17 = document.createElement('span');
-        span17.className = 'video-contextmenu-icon';
-        a12.append(span17);
-        a12.append(' \u53D6\u6D88\u6807\u8BB0');
+        const span13 = document.createElement('span');
+        span13.className = 'video-contextmenu-icon';
+        a12.append(span13);
+        a12.append(' \u7247\u5934\u5F00\u59CB:');
+        const span14 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[0] ? BiliPolyfill.secondToReadable(oped[0]) : '无'))(span14);
+
+        a12.append(span14);
         li11.append(a12);
-        ul3.append(li11);
+        ul5.append(li11);
         const li12 = document.createElement('li');
         li12.className = 'context-menu-function';
 
-        li12.onclick = () => this.displayPolyfillDataDiv();
+        li12.onclick = () => polyfill.markOPEDPosition(1);
 
         const a13 = document.createElement('a');
         a13.className = 'context-menu-a';
-        const span18 = document.createElement('span');
-        span18.className = 'video-contextmenu-icon';
-        a13.append(span18);
-        a13.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
+        const span15 = document.createElement('span');
+        span15.className = 'video-contextmenu-icon';
+        a13.append(span15);
+        a13.append(' \u7247\u5934\u7ED3\u675F:');
+        const span16 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[1] ? BiliPolyfill.secondToReadable(oped[1]) : '无'))(span16);
+
+        a13.append(span16);
         li12.append(a13);
-        ul3.append(li12);
-        li6.append(ul3);
-        ul1.append(li6);
+        ul5.append(li12);
         const li13 = document.createElement('li');
-        li13.className = 'context-menu-menu';
+        li13.className = 'context-menu-function';
+
+        li13.onclick = () => polyfill.markOPEDPosition(2);
+
         const a14 = document.createElement('a');
         a14.className = 'context-menu-a';
-        const span19 = document.createElement('span');
-        span19.className = 'video-contextmenu-icon';
-        a14.append(span19);
-        a14.append(' \u627E\u4E0A\u4E0B\u96C6');
-        const span20 = document.createElement('span');
-        span20.className = 'bpui-icon bpui-icon-arrow-down';
-        span20.style = 'transform:rotate(-90deg);margin-top:3px;';
-        a14.append(span20);
+        const span17 = document.createElement('span');
+        span17.className = 'video-contextmenu-icon';
+        a14.append(span17);
+        a14.append(' \u7247\u5C3E\u5F00\u59CB:');
+        const span18 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[2] ? BiliPolyfill.secondToReadable(oped[2]) : '无'))(span18);
+
+        a14.append(span18);
         li13.append(a14);
-        const ul4 = document.createElement('ul');
+        ul5.append(li13);
         const li14 = document.createElement('li');
         li14.className = 'context-menu-function';
 
-        li14.onclick = () => {
+        li14.onclick = () => polyfill.markOPEDPosition(3);
+
+        const a15 = document.createElement('a');
+        a15.className = 'context-menu-a';
+        const span19 = document.createElement('span');
+        span19.className = 'video-contextmenu-icon';
+        a15.append(span19);
+        a15.append(' \u7247\u5C3E\u7ED3\u675F:');
+        const span20 = document.createElement('span');
+
+        (e => refreshSession.addCallback(() => e.textContent = oped[3] ? BiliPolyfill.secondToReadable(oped[3]) : '无'))(span20);
+
+        a15.append(span20);
+        li14.append(a15);
+        ul5.append(li14);
+        const li15 = document.createElement('li');
+        li15.className = 'context-menu-function';
+
+        li15.onclick = () => polyfill.clearOPEDPosition();
+
+        const a16 = document.createElement('a');
+        a16.className = 'context-menu-a';
+        const span21 = document.createElement('span');
+        span21.className = 'video-contextmenu-icon';
+        a16.append(span21);
+        a16.append(' \u53D6\u6D88\u6807\u8BB0');
+        li15.append(a16);
+        ul5.append(li15);
+        const li16 = document.createElement('li');
+        li16.className = 'context-menu-function';
+
+        li16.onclick = () => this.displayPolyfillDataDiv();
+
+        const a17 = document.createElement('a');
+        a17.className = 'context-menu-a';
+        const span22 = document.createElement('span');
+        span22.className = 'video-contextmenu-icon';
+        a17.append(span22);
+        a17.append(' \u68C0\u89C6\u6570\u636E/\u8BF4\u660E');
+        li16.append(a17);
+        ul5.append(li16);
+        li10.append(ul5);
+        ul2.append(li10);
+        const li17 = document.createElement('li');
+        li17.className = 'context-menu-menu';
+        const a18 = document.createElement('a');
+        a18.className = 'context-menu-a';
+        const span23 = document.createElement('span');
+        span23.className = 'video-contextmenu-icon';
+        a18.append(span23);
+        a18.append(' \u627E\u4E0A\u4E0B\u96C6');
+        const span24 = document.createElement('span');
+        span24.className = 'bpui-icon bpui-icon-arrow-down';
+        span24.style = 'transform:rotate(-90deg);margin-top:3px;';
+        a18.append(span24);
+        li17.append(a18);
+        const ul6 = document.createElement('ul');
+        const li18 = document.createElement('li');
+        li18.className = 'context-menu-function';
+
+        li18.onclick = () => {
             if (polyfill.series[0]) {
                 top.window.open(`https://www.bilibili.com/video/av${polyfill.series[0].aid}`, '_blank');
             }
         };
 
-        const a15 = document.createElement('a');
-        a15.className = 'context-menu-a';
-        a15.style.width = 'initial';
-        const span21 = document.createElement('span');
-        span21.className = 'video-contextmenu-icon';
-        a15.append(span21);
-        const span22 = document.createElement('span');
+        const a19 = document.createElement('a');
+        a19.className = 'context-menu-a';
+        a19.style.width = 'initial';
+        const span25 = document.createElement('span');
+        span25.className = 'video-contextmenu-icon';
+        a19.append(span25);
+        const span26 = document.createElement('span');
 
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span22);
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[0] ? polyfill.series[0].title : '找不到'))(span26);
 
-        a15.append(span22);
-        li14.append(a15);
-        ul4.append(li14);
-        const li15 = document.createElement('li');
-        li15.className = 'context-menu-function';
+        a19.append(span26);
+        li18.append(a19);
+        ul6.append(li18);
+        const li19 = document.createElement('li');
+        li19.className = 'context-menu-function';
 
-        li15.onclick = () => {
+        li19.onclick = () => {
             if (polyfill.series[1]) {
                 top.window.open(`https://www.bilibili.com/video/av${polyfill.series[1].aid}`, '_blank');
             }
         };
 
-        const a16 = document.createElement('a');
-        a16.className = 'context-menu-a';
-        a16.style.width = 'initial';
-        const span23 = document.createElement('span');
-        span23.className = 'video-contextmenu-icon';
-        a16.append(span23);
-        const span24 = document.createElement('span');
-
-        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span24);
-
-        a16.append(span24);
-        li15.append(a16);
-        ul4.append(li15);
-        li13.append(ul4);
-        ul1.append(li13);
-        const li16 = document.createElement('li');
-        li16.className = 'context-menu-function';
-
-        li16.onclick = () => BiliPolyfill.openMinimizedPlayer();
-
-        const a17 = document.createElement('a');
-        a17.className = 'context-menu-a';
-        const span25 = document.createElement('span');
-        span25.className = 'video-contextmenu-icon';
-        a17.append(span25);
-        a17.append(' \u5C0F\u7A97\u64AD\u653E');
-        li16.append(a17);
-        ul1.append(li16);
-        const li17 = document.createElement('li');
-        li17.className = 'context-menu-function';
-
-        li17.onclick = () => this.displayOptionDiv();
-
-        const a18 = document.createElement('a');
-        a18.className = 'context-menu-a';
-        const span26 = document.createElement('span');
-        span26.className = 'video-contextmenu-icon';
-        a18.append(span26);
-        a18.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
-        li17.append(a18);
-        ul1.append(li17);
-        const li18 = document.createElement('li');
-        li18.className = 'context-menu-function';
-
-        li18.onclick = () => polyfill.saveUserdata();
-
-        const a19 = document.createElement('a');
-        a19.className = 'context-menu-a';
+        const a20 = document.createElement('a');
+        a20.className = 'context-menu-a';
+        a20.style.width = 'initial';
         const span27 = document.createElement('span');
         span27.className = 'video-contextmenu-icon';
-        a19.append(span27);
-        a19.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
-        li18.append(a19);
-        ul1.append(li18);
-        const li19 = document.createElement('li');
-        li19.className = 'context-menu-function';
+        a20.append(span27);
+        const span28 = document.createElement('span');
 
-        li19.onclick = () => {
+        (e => refreshSession.addCallback(() => e.textContent = polyfill.series[1] ? polyfill.series[1].title : '找不到'))(span28);
+
+        a20.append(span28);
+        li19.append(a20);
+        ul6.append(li19);
+        li17.append(ul6);
+        ul2.append(li17);
+        const li20 = document.createElement('li');
+        li20.className = 'context-menu-function';
+
+        li20.onclick = () => BiliPolyfill.openMinimizedPlayer();
+
+        const a21 = document.createElement('a');
+        a21.className = 'context-menu-a';
+        const span29 = document.createElement('span');
+        span29.className = 'video-contextmenu-icon';
+        a21.append(span29);
+        a21.append(' \u5C0F\u7A97\u64AD\u653E');
+        li20.append(a21);
+        ul2.append(li20);
+        const li21 = document.createElement('li');
+        li21.className = 'context-menu-function';
+
+        li21.onclick = () => this.displayOptionDiv();
+
+        const a22 = document.createElement('a');
+        a22.className = 'context-menu-a';
+        const span30 = document.createElement('span');
+        span30.className = 'video-contextmenu-icon';
+        a22.append(span30);
+        a22.append(' \u8BBE\u7F6E/\u5E2E\u52A9/\u5173\u4E8E');
+        li21.append(a22);
+        ul2.append(li21);
+        const li22 = document.createElement('li');
+        li22.className = 'context-menu-function';
+
+        li22.onclick = () => polyfill.saveUserdata();
+
+        const a23 = document.createElement('a');
+        a23.className = 'context-menu-a';
+        const span31 = document.createElement('span');
+        span31.className = 'video-contextmenu-icon';
+        a23.append(span31);
+        a23.append(' (\u6D4B)\u7ACB\u5373\u4FDD\u5B58\u6570\u636E');
+        li22.append(a23);
+        ul2.append(li22);
+        const li23 = document.createElement('li');
+        li23.className = 'context-menu-function';
+
+        li23.onclick = () => {
             BiliPolyfill.clearAllUserdata(playerWin);
             polyfill.retrieveUserdata();
         };
 
-        const a20 = document.createElement('a');
-        a20.className = 'context-menu-a';
-        const span28 = document.createElement('span');
-        span28.className = 'video-contextmenu-icon';
-        a20.append(span28);
-        a20.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
-        li19.append(a20);
-        ul1.append(li19);
-        li.append(ul1);
-        return li;
+        const a24 = document.createElement('a');
+        a24.className = 'context-menu-a';
+        const span32 = document.createElement('span');
+        span32.className = 'video-contextmenu-icon';
+        a24.append(span32);
+        a24.append(' (\u6D4B)\u5F3A\u5236\u6E05\u7A7A\u6570\u636E');
+        li23.append(a24);
+        ul2.append(li23);
+        li1.append(ul2);
+        return li1;
     }
 
     buildOptionDiv(twin = this.twin) {
@@ -8480,19 +11165,25 @@ class UI {
             table1.append(tr4);
             const tr5 = document.createElement('tr');
             const td5 = document.createElement('td');
-            const a1 = document.createElement('a');
-            a1.href = 'https://greasyfork.org/zh-CN/scripts/27819';
-            a1.target = '_blank';
-            a1.textContent = '\u66F4\u65B0/\u8BA8\u8BBA';
-            td5.append(a1);
-            td5.append(' ');
             const a2 = document.createElement('a');
-            a2.href = 'https://github.com/liqi0816/bilitwin/';
+            a2.href = 'https://greasyfork.org/zh-CN/scripts/372516';
             a2.target = '_blank';
-            a2.textContent = 'GitHub';
+            a2.textContent = '\u66F4\u65B0';
             td5.append(a2);
             td5.append(' ');
-            td5.append('Author: qli5. Copyright: qli5, 2014+, \u7530\u751F, grepmusic');
+            const a3 = document.createElement('a');
+            a3.href = 'https://github.com/Xmader/bilitwin/issues';
+            a3.target = '_blank';
+            a3.textContent = '\u8BA8\u8BBA';
+            td5.append(a3);
+            td5.append(' ');
+            const a4 = document.createElement('a');
+            a4.href = 'https://github.com/Xmader/bilitwin/';
+            a4.target = '_blank';
+            a4.textContent = 'GitHub';
+            td5.append(a4);
+            td5.append(' ');
+            td5.append('Author: qli5. Copyright: qli5, 2014+, \u7530\u751F, grepmusic, xmader');
             tr5.append(td5);
             table1.append(tr5);
             return table1;
@@ -8539,12 +11230,6 @@ class UI {
             td1.textContent = 'BiliMonkey\uFF08\u89C6\u9891\u6293\u53D6\u7EC4\u4EF6\uFF09';
             tr1.append(td1);
             table.append(tr1);
-            const tr2 = document.createElement('tr');
-            const td2 = document.createElement('td');
-            td2.style = 'text-align:center';
-            td2.textContent = '\u56E0\u4E3A\u4F5C\u8005\u5077\u61D2\u4E86\uFF0C\u7F13\u5B58\u7684\u4E09\u4E2A\u9009\u9879\u6700\u597D\u8981\u4E48\u5168\u5F00\uFF0C\u8981\u4E48\u5168\u5173\u3002\u6700\u597D\u3002';
-            tr2.append(td2);
-            table.append(tr2);
         }
 
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => {
@@ -8564,6 +11249,73 @@ class UI {
             tr1.append(label);
             return tr1;
         }));
+
+        table.append((() => {
+            const tr1 = document.createElement('tr');
+            const label = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = +twin.option["resolutionX"] || 560;
+            input.min = 480;
+
+            input.onchange = e => {
+                twin.option["resolutionX"] = +e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input);
+            label.append(" x ");
+            const input1 = document.createElement('input');
+            input1.type = 'number';
+            input1.value = +twin.option["resolutionY"] || 420;
+            input1.min = 360;
+
+            input1.onchange = e => {
+                twin.option["resolutionY"] = +e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input1);
+            tr1.append(label);
+            return tr1;
+        })());
+
+        table.append((() => {
+            const tr1 = document.createElement('tr');
+            const label = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = twin.option["enableVideoMaxResolution"];
+
+            input.onchange = e => {
+                twin.option["enableVideoMaxResolution"] = e.target.checked;
+                twin.saveOption(twin.option);
+            };
+
+            label.append(input);
+            label.append('\u81EA\u5B9A\u4E49\u4E0B\u8F7D\u7684\u89C6\u9891\u7684');
+            const b1 = document.createElement('b');
+            b1.textContent = '\u6700\u9AD8';
+            label.append(b1);
+            label.append('\u5206\u8FA8\u7387\uFF1A');
+            const select = document.createElement('select');
+
+            select.onchange = e => {
+                twin.option["videoMaxResolution"] = e.target.value;
+                twin.saveOption(twin.option);
+            };
+
+            select.append(...BiliMonkey.resolutionPreferenceOptions.map(([name, value]) => {
+                const option1 = document.createElement('option');
+                option1.value = value;
+                option1.selected = (twin.option["videoMaxResolution"] || "116") == value;
+                option1.textContent = name;
+                return option1;
+            }));
+            label.append(select);
+            tr1.append(label);
+            return tr1;
+        })());
 
         return table;
     }
@@ -8629,6 +11381,7 @@ class UI {
             const input = document.createElement('input');
             input.type = 'checkbox';
             input.checked = twin.option[name];
+            input.disabled = name == "menu" /** 在视频菜单栏不添加后无法更改设置，所以禁用此选项 */;
 
             input.onchange = e => {
                 twin.option[name] = e.target.checked;
@@ -8665,25 +11418,25 @@ class UI {
         const div = UI.genDiv();
 
         div.append((() => {
-            const p = document.createElement('p');
-            p.style.margin = '0.3em';
-            p.textContent = '\u8FD9\u91CC\u662F\u811A\u672C\u50A8\u5B58\u7684\u6570\u636E\u3002\u6240\u6709\u6570\u636E\u90FD\u53EA\u5B58\u5728\u6D4F\u89C8\u5668\u91CC\uFF0C\u522B\u4EBA\u4E0D\u77E5\u9053\uFF0CB\u7AD9\u4E5F\u4E0D\u77E5\u9053\uFF0C\u811A\u672C\u4F5C\u8005\u66F4\u4E0D\u77E5\u9053(\u8FD9\u4E2A\u5BB6\u4F19\u8FDE\u670D\u52A1\u5668\u90FD\u79DF\u4E0D\u8D77 \u6454';
-            return p;
+            const p1 = document.createElement('p');
+            p1.style.margin = '0.3em';
+            p1.textContent = '\u8FD9\u91CC\u662F\u811A\u672C\u50A8\u5B58\u7684\u6570\u636E\u3002\u6240\u6709\u6570\u636E\u90FD\u53EA\u5B58\u5728\u6D4F\u89C8\u5668\u91CC\uFF0C\u522B\u4EBA\u4E0D\u77E5\u9053\uFF0CB\u7AD9\u4E5F\u4E0D\u77E5\u9053\uFF0C\u811A\u672C\u4F5C\u8005\u66F4\u4E0D\u77E5\u9053(\u8FD9\u4E2A\u5BB6\u4F19\u8FDE\u670D\u52A1\u5668\u90FD\u79DF\u4E0D\u8D77 \u6454';
+            return p1;
         })(), (() => {
-            const p = document.createElement('p');
-            p.style.margin = '0.3em';
-            p.textContent = 'B\u7AD9\u5DF2\u4E0A\u7EBF\u539F\u751F\u7684\u7A0D\u540E\u89C2\u770B\u529F\u80FD\u3002';
-            return p;
+            const p1 = document.createElement('p');
+            p1.style.margin = '0.3em';
+            p1.textContent = 'B\u7AD9\u5DF2\u4E0A\u7EBF\u539F\u751F\u7684\u7A0D\u540E\u89C2\u770B\u529F\u80FD\u3002';
+            return p1;
         })(), (() => {
-            const p = document.createElement('p');
-            p.style.margin = '0.3em';
-            p.textContent = '\u8FD9\u91CC\u662F\u7247\u5934\u7247\u5C3E\u3002\u683C\u5F0F\u662F\uFF0Cav\u53F7\u6216\u756A\u5267\u53F7:[\u7247\u5934\u5F00\u59CB(\u9ED8\u8BA4=0),\u7247\u5934\u7ED3\u675F(\u9ED8\u8BA4=\u4E0D\u8DF3),\u7247\u5C3E\u5F00\u59CB(\u9ED8\u8BA4=\u4E0D\u8DF3),\u7247\u5C3E\u7ED3\u675F(\u9ED8\u8BA4=\u65E0\u7A77\u5927)]\u3002\u53EF\u4EE5\u4EFB\u610F\u586B\u5199null\uFF0C\u811A\u672C\u4F1A\u81EA\u52A8\u91C7\u7528\u9ED8\u8BA4\u503C\u3002';
-            return p;
+            const p1 = document.createElement('p');
+            p1.style.margin = '0.3em';
+            p1.textContent = '\u8FD9\u91CC\u662F\u7247\u5934\u7247\u5C3E\u3002\u683C\u5F0F\u662F\uFF0Cav\u53F7\u6216\u756A\u5267\u53F7:[\u7247\u5934\u5F00\u59CB(\u9ED8\u8BA4=0),\u7247\u5934\u7ED3\u675F(\u9ED8\u8BA4=\u4E0D\u8DF3),\u7247\u5C3E\u5F00\u59CB(\u9ED8\u8BA4=\u4E0D\u8DF3),\u7247\u5C3E\u7ED3\u675F(\u9ED8\u8BA4=\u65E0\u7A77\u5927)]\u3002\u53EF\u4EE5\u4EFB\u610F\u586B\u5199null\uFF0C\u811A\u672C\u4F1A\u81EA\u52A8\u91C7\u7528\u9ED8\u8BA4\u503C\u3002';
+            return p1;
         })(), textarea, (() => {
-            const p = document.createElement('p');
-            p.style.margin = '0.3em';
-            p.textContent = '\u5F53\u7136\u53EF\u4EE5\u76F4\u63A5\u6E05\u7A7A\u5566\u3002\u53EA\u5220\u9664\u5176\u4E2D\u7684\u4E00\u4E9B\u884C\u7684\u8BDD\uFF0C\u4E00\u5B9A\u8981\u8BB0\u5F97\u5220\u6389\u591A\u4F59\u7684\u9017\u53F7\u3002';
-            return p;
+            const p1 = document.createElement('p');
+            p1.style.margin = '0.3em';
+            p1.textContent = '\u5F53\u7136\u53EF\u4EE5\u76F4\u63A5\u6E05\u7A7A\u5566\u3002\u53EA\u5220\u9664\u5176\u4E2D\u7684\u4E00\u4E9B\u884C\u7684\u8BDD\uFF0C\u4E00\u5B9A\u8981\u8BB0\u5F97\u5220\u6389\u591A\u4F59\u7684\u9017\u53F7\u3002';
+            return p1;
         })(), (() => {
             const button = document.createElement('button');
             button.style.padding = '0.5em';
@@ -8740,34 +11493,204 @@ class UI {
     }
 
     // Common
-    static buildDownloadAllPageDefaultFormatsBody(ret) {
+    static buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
         const table = document.createElement('table');
 
         table.onclick = e => e.stopPropagation();
 
-        for (const i of ret) {
+        let flvsBlob = [];
+        const loadFLVFromCache = async (name, partial = false) => {
+            if (partial) name = 'PC_' + name;
+            const cache = new CacheDB();
+            let item = await cache.getData(name);
+            return item && item.data;
+        };
+        const saveFLVToCache = async (name, blob) => {
+            const cache = new CacheDB();
+            return cache.addData({ name, data: blob });
+        };
+        const cleanPartialFLVInCache = async name => {
+            const cache = new CacheDB();
+            name = 'PC_' + name;
+            return cache.deleteData(name);
+        };
+        const getFLVs = async videoIndex => {
+            if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = [];
+
+            const { durl } = ret[videoIndex];
+
+            return await Promise.all(durl.map(async (_, durlIndex) => {
+                if (flvsBlob[videoIndex][durlIndex]) {
+                    return flvsBlob[videoIndex][durlIndex];
+                } else {
+                    let burl = durl[durlIndex];
+                    const outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+
+                    const burlA = top.document.querySelector(`a[download][href="${burl}"]`);
+                    burlA.after((() => {
+                        const progress1 = document.createElement('progress');
+                        progress1.setAttribute('value', '0');
+                        progress1.setAttribute('max', '100');
+                        progress1.textContent = '\u8FDB\u5EA6\u6761';
+                        return progress1;
+                    })());
+                    const progress = burlA.parentElement.querySelector("progress");
+
+                    let flvCache = await loadFLVFromCache(outputName);
+                    if (flvCache) {
+                        progress.value = progress.max;
+                        progress.after((() => {
+                            const a2 = document.createElement('a');
+                            a2.href = top.URL.createObjectURL(flvCache);
+                            a2.download = outputName;
+                            a2.textContent = '\u53E6\u5B58\u4E3A';
+                            return a2;
+                        })());
+                        return flvsBlob[videoIndex][durlIndex] = flvCache;
+                    }
+
+                    let partialFLVFromCache = await loadFLVFromCache(outputName, true);
+                    if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
+
+                    const opt = {
+                        method: 'GET',
+                        mode: 'cors',
+                        cache: 'default',
+                        referrerPolicy: 'no-referrer-when-downgrade',
+                        cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                        headers: partialFLVFromCache && !burl.includes('wsTime') ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
+                    };
+
+                    opt.onprogress = (loaded, total) => {
+                        progress.value = loaded;
+                        progress.max = total;
+                    };
+
+                    const fch = new DetailedFetchBlob(burl, opt);
+                    let fullFLV = await fch.getBlob();
+                    if (partialFLVFromCache) {
+                        fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                        cleanPartialFLVInCache(outputName);
+                    }
+                    saveFLVToCache(outputName, fullFLV);
+
+                    progress.after((() => {
+                        const a2 = document.createElement('a');
+                        a2.href = top.URL.createObjectURL(fullFLV);
+                        a2.download = outputName;
+                        a2.textContent = '\u53E6\u5B58\u4E3A';
+                        return a2;
+                    })());
+
+                    return flvsBlob[videoIndex][durlIndex] = fullFLV;
+                }
+            }));
+        };
+        const getSize = async videoIndex => {
+            const { res: { durl: durlObjects } } = ret[videoIndex];
+
+            if (durlObjects && durlObjects[0] && durlObjects[0].size) {
+                const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0);
+                if (totalSize) return totalSize;
+            }
+
+            const { durl } = ret[videoIndex];
+
+            /** @type {number[]} */
+            const sizes = await Promise.all(durl.map(async burl => {
+                const r = await fetch(burl, { method: "HEAD" });
+                return +r.headers.get("content-length");
+            }));
+
+            return sizes.reduce((total, _size) => total + _size);
+        };
+
+        ret.forEach((i, index) => {
+            const sizeSpan = document.createElement('span');
+            getSize(index).then(size => {
+                const sizeMB = size / 1024 / 1024;
+                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`;
+            });
+
+            const iName = i.name;
+            let pName = `P${index + 1}`;
+            if (typeof iName == "string" && iName.toUpperCase() !== pName) {
+                pName += ` - ${iName}`;
+            }
+
+            const outputName = videoTitle.match(/：第\d+话 .+?$/) ? videoTitle.replace(/：第\d+话 .+?$/, `：第${iName}话`) : `${videoTitle} - ${pName}`;
+
             table.append((() => {
                 const tr1 = document.createElement('tr');
                 const td1 = document.createElement('td');
-                td1.textContent = `
-                        ${i.name}
-                    `;
+                td1.append(iName);
+                const br = document.createElement('br');
+                td1.append(br);
+                const a2 = document.createElement('a');
+
+                a2.onclick = async e => {
+                    // add beforeUnloadHandler
+                    const handler = e => UI.beforeUnloadHandler(e);
+                    window.addEventListener('beforeunload', handler);
+
+                    const targetA = e.target.parentElement;
+                    targetA.title = "";
+                    targetA.onclick = null;
+                    targetA.textContent = "缓存中……";
+
+                    const format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1];
+                    const flvs = await getFLVs(index);
+
+                    targetA.textContent = "合并中……";
+                    const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn);
+                    await worker.registerAllMethods();
+                    const href = URL.createObjectURL(format == "flv" ? await worker.mergeFLVFiles(flvs) : flvs[0]);
+                    worker.terminate();
+
+                    targetA.href = href;
+                    targetA.download = `${outputName}.flv`;
+                    targetA.textContent = "保存合并后FLV";
+                    targetA.style["margin-right"] = "20px";
+
+                    const ass = top.URL.createObjectURL(i.danmuku);
+                    targetA.after((() => {
+                        const a3 = document.createElement('a');
+
+                        a3.onclick = e => {
+                            new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target);
+                        };
+
+                        a3.textContent = '\u6253\u5305MKV(\u8F6F\u5B57\u5E55\u5C01\u88C5)';
+                        return a3;
+                    })());
+
+                    window.removeEventListener('beforeunload', handler);
+
+                    targetA.click();
+                };
+
+                a2.title = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                const span2 = document.createElement('span');
+                span2.textContent = '\u7F13\u5B58\u6240\u6709\u5206\u6BB5+\u81EA\u52A8\u5408\u5E76';
+                a2.append(span2);
+                a2.append(sizeSpan);
+                td1.append(a2);
                 tr1.append(td1);
                 const td2 = document.createElement('td');
-                const a1 = document.createElement('a');
-                a1.href = i.durl[0];
-                a1.download = '';
-                a1.setAttribute('referrerpolicy', 'origin');
-                a1.textContent = i.durl[0];
-                td2.append(a1);
+                const a3 = document.createElement('a');
+                a3.href = i.durl[0];
+                a3.download = '';
+                a3.setAttribute('referrerpolicy', 'origin');
+                a3.textContent = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+                td2.append(a3);
                 tr1.append(td2);
                 const td3 = document.createElement('td');
-                const a2 = document.createElement('a');
-                a2.href = i.danmuku;
-                a2.download = `${i.outputName}.ass`;
-                a2.setAttribute('referrerpolicy', 'origin');
-                a2.textContent = i.danmuku;
-                td3.append(a2);
+                const a4 = document.createElement('a');
+                a4.href = top.URL.createObjectURL(i.danmuku);
+                a4.download = `${i.outputName}.ass`;
+                a4.setAttribute('referrerpolicy', 'origin');
+                a4.textContent = `${i.outputName}.ass`;
+                td3.append(a4);
                 tr1.append(td3);
                 return tr1;
             })(), ...i.durl.slice(1).map(href => {
@@ -8777,20 +11700,26 @@ class UI {
                     `;
                 tr1.append(td1);
                 const td2 = document.createElement('td');
-                const a1 = document.createElement('a');
-                a1.href = href;
-                a1.download = '';
-                a1.setAttribute('referrerpolicy', 'origin');
-                a1.textContent = href;
-                td2.append(a1);
+                const a2 = document.createElement('a');
+                a2.href = href;
+                a2.download = '';
+                a2.setAttribute('referrerpolicy', 'origin');
+                a2.textContent = href.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
+                td2.append(a2);
                 tr1.append(td2);
                 const td3 = document.createElement('td');
                 td3.textContent = `
                     `;
                 tr1.append(td3);
                 return tr1;
-            }));
-        }
+            }), (() => {
+                const tr1 = document.createElement('tr');
+                const td1 = document.createElement('td');
+                td1.textContent = ` `;
+                tr1.append(td1);
+                return tr1;
+            })());
+        });
 
         const fragment = document.createDocumentFragment();
         const style1 = document.createElement('style');
@@ -8805,55 +11734,70 @@ class UI {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     text-align: center;
+                    vertical-align: bottom;
+                }
+
+                progress {
+                    margin-left: 15px;
+                }
+
+                a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+        
+                a:hover {
+                    color: #f25d8e;
                 }
             `;
         fragment.append(style1);
         const h1 = document.createElement('h1');
-        h1.textContent = '(\u6D4B\u8BD5) \u6279\u91CF\u6293\u53D6';
+        h1.textContent = '\u6279\u91CF\u4E0B\u8F7D';
         fragment.append(h1);
-        const ul1 = document.createElement('ul');
-        const li = document.createElement('li');
-        const p = document.createElement('p');
-        p.textContent = '\u53EA\u6293\u53D6\u9ED8\u8BA4\u6E05\u6670\u5EA6';
-        li.append(p);
-        ul1.append(li);
+        const ul2 = document.createElement('ul');
         const li1 = document.createElement('li');
         const p1 = document.createElement('p');
-        p1.textContent = '\u590D\u5236\u94FE\u63A5\u5730\u5740\u65E0\u6548\uFF0C\u8BF7\u5DE6\u952E\u5355\u51FB/\u53F3\u952E\u53E6\u5B58\u4E3A/\u53F3\u952E\u8C03\u7528\u4E0B\u8F7D\u5DE5\u5177';
+        p1.textContent = '\u6293\u53D6\u7684\u89C6\u9891\u7684\u6700\u9AD8\u5206\u8FA8\u7387\u53EF\u5728\u8BBE\u7F6E\u4E2D\u81EA\u5B9A\u4E49\uFF0C\u756A\u5267\u53EA\u80FD\u6293\u53D6\u5230\u5F53\u524D\u6E05\u6670\u5EA6';
         li1.append(p1);
+        ul2.append(li1);
+        const li2 = document.createElement('li');
         const p2 = document.createElement('p');
+        p2.textContent = '\u590D\u5236\u94FE\u63A5\u5730\u5740\u65E0\u6548\uFF0C\u8BF7\u5DE6\u952E\u5355\u51FB/\u53F3\u952E\u53E6\u5B58\u4E3A/\u53F3\u952E\u8C03\u7528\u4E0B\u8F7D\u5DE5\u5177';
+        li2.append(p2);
+        const p3 = document.createElement('p');
         const em = document.createElement('em');
         em.textContent = '\u5F00\u53D1\u8005\uFF1A\u9700\u8981\u6821\u9A8Creferrer\u548Cuser agent';
-        p2.append(em);
-        li1.append(p2);
-        ul1.append(li1);
-        const li2 = document.createElement('li');
-        const p3 = document.createElement('p');
-        p3.append('flv\u5408\u5E76');
-        const a1 = document.createElement('a');
-        a1.href = 'http://www.flvcd.com/teacher2.htm';
-        a1.textContent = '\u7855\u9F20';
-        p3.append(a1);
+        p3.append(em);
         li2.append(p3);
+        ul2.append(li2);
+        const li3 = document.createElement('li');
         const p4 = document.createElement('p');
-        p4.textContent = '\u6279\u91CF\u5408\u5E76\u5BF9\u5355\u6807\u7B7E\u9875\u8D1F\u8377\u592A\u5927';
-        li2.append(p4);
-        const p5 = document.createElement('p');
-        const em1 = document.createElement('em');
-        em1.textContent = '\u5F00\u53D1\u8005\uFF1A\u53EF\u4EE5\u7528webworker\uFF0C\u4F46\u662F\u6211\u6CA1\u9700\u6C42\uFF0C\u53C8\u61D2';
-        p5.append(em1);
-        li2.append(p5);
-        ul1.append(li2);
-        fragment.append(ul1);
+        p4.append('(\u6D4B)');
+        const a2 = document.createElement('a');
+
+        a2.onclick = e => document.querySelectorAll('a[title="缓存所有分段+自动合并"] span:first-child').forEach(a => a.click());
+
+        a2.textContent = `
+                            一键开始缓存+批量合并
+                        `;
+        p4.append(a2);
+        li3.append(p4);
+        ul2.append(li3);
+        fragment.append(ul2);
         fragment.append(table);
         return fragment;
     }
 
     static displayDownloadAllPageDefaultFormatsBody(ret) {
-        top.document.open();
-        top.document.close();
+        const videoTitle = top.document.getElementsByTagName('h1')[0].textContent.trim();
 
-        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
+        if (top.player) top.player.destroy(); // 销毁播放器
+
+        top.document.head.remove();
+        top.document.body.replaceWith(document.createElement("body"));
+
+        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, videoTitle));
+
         return ret;
     }
 
@@ -8901,9 +11845,9 @@ class UI {
             div1.className = 'bilibili-player-video-toast-item';
             const div2 = document.createElement('div');
             div2.className = 'bilibili-player-video-toast-item-text';
-            const span = document.createElement('span');
-            span.textContent = text;
-            div2.append(span);
+            const span2 = document.createElement('span');
+            span2.textContent = text;
+            div2.append(span2);
             div1.append(div2);
             div.append(div1);
         }
@@ -8917,10 +11861,10 @@ class UI {
         ['autoDanmaku', '下载视频也触发下载弹幕'],
 
         // 2. user interface
-        ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'],
+        ['title', '在视频标题旁添加链接'], ['menu', '在视频菜单栏添加链接'], ['autoDisplayDownloadBtn', '(测)无需右键播放器就能显示下载按钮'],
 
         // 3. download
-        ['aria2', '导出aria2'], ['aria2RPC', '发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
+        ['aria2', '导出aria2'], ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'], ['m3u8', '(限VLC兼容播放器)导出m3u8'], ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板']];
     }
 
     static get optionDefaults() {
@@ -8931,6 +11875,7 @@ class UI {
             // 2. user interface
             title: true,
             menu: true,
+            autoDisplayDownloadBtn: true,
 
             // 3. download
             aria2: false,
@@ -8992,13 +11937,51 @@ class BiliTwin extends BiliUserJS {
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
-        await Promise.all([this.monkey.execOptions(), this.polyfill.setFunctions()]);
+
+        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
+
+        /**
+         * @param {HTMLVideoElement} video 
+         */
+        const videoRightClick = (video) => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event);
+            video.dispatchEvent(event);
+        };
+        if (this.option.autoDisplayDownloadBtn) {
+            // 无需右键播放器就能显示下载按钮
+            await new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    const el = this.playerWin.document.querySelector('.bilibili-player-dm-tip-wrap');
+                    if (el) {
+                        const video = this.playerWin.document.querySelector("video");
+                        videoRightClick(video);
+
+                        observer.disconnect();
+                        resolve();
+                    }
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+        } else {
+            const video = document.querySelector("video");
+            if (video) {
+                video.addEventListener('play', () => videoRightClick(video), { once: true });
+            }
+        }
+
+        await this.polyfill.setFunctions();
 
         // 3. async consistent => render UI
-        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
+
+            let videoA = this.ui.cidSessionDom.context_menu_videoA || this.ui.cidSessionDom.videoA;
+            if (videoA && videoA.onmouseover) videoA.onmouseover({ target: videoA.lastChild });
         }
         else {
             cidRefresh.resolve();
@@ -9054,12 +12037,37 @@ class BiliTwin extends BiliUserJS {
         return option.setStorage('BiliTwin', JSON.stringify(option));
     }
 
+    async addUserScriptMenu() {
+        if (typeof GM !== 'object') return
+        if (typeof GM.registerMenuCommand !== 'function') return
+
+        // see https://www.tampermonkey.net/documentation.php#GM_registerMenuCommand
+        await GM.registerMenuCommand('恢复默认设置并刷新', () => {
+            // 开启增强组件以后如不显示脚本，可以通过 Tampermonkey/Greasemonkey 的菜单重置设置
+            this.resetOption() && top.location.reload();
+        });
+    }
+
     static async init() {
         if (!document.body) return;
+
+        if (location.hostname == "www.biligame.com") {
+            return BiliPolyfill.biligameInit();
+        }
+        else if (location.pathname.startsWith("/bangumi/media/md")) {
+            return BiliPolyfill.showBangumiCoverImage();
+        }
+
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+        twin.addUserScriptMenu();
+
+        if (location.hostname == "vc.bilibili.com") {
+            const vc_info = await BiliMonkey.getBiliShortVideoInfo();
+            return twin.ui.appendShortVideoTitle(vc_info);
+        }
 
         while (1) {
             await twin.runCidSession();

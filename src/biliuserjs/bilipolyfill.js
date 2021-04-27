@@ -30,6 +30,22 @@ class BiliPolyfill {
         this.destroy = new HookedFunction();
         this.playerWin.addEventListener('beforeunload', this.destroy);
         this.destroy.addCallback(() => this.playerWin.removeEventListener('beforeunload', this.destroy));
+
+        this.BiliDanmakuSettings =
+            class BiliDanmakuSettings {
+                static getPlayerSettings() {
+                    return playerWin.localStorage.bilibili_player_settings && JSON.parse(playerWin.localStorage.bilibili_player_settings)
+                }
+                static get(key) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings()
+                    return player_settings.setting_config && player_settings.setting_config[key]
+                }
+                static set(key, value) {
+                    const player_settings = BiliDanmakuSettings.getPlayerSettings()
+                    player_settings.setting_config[key] = value
+                    playerWin.localStorage.bilibili_player_settings = JSON.stringify(player_settings)
+                }
+            }
     }
 
     saveUserdata() {
@@ -54,35 +70,48 @@ class BiliPolyfill {
         // 1. initialize
         this.video = await this.getPlayerVideo();
 
+        if (!videoRefresh) {
+            this.retrieveUserdata();
+        }
+
         // 2. if not enabled, run the process without real actions
         if (!this.option.betabeta) return this.getPlayerMenu();
 
-        // 3. set up functions that are cid static
-        if (!videoRefresh) {
-            this.retrieveUserdata();
-            if (this.option.badgeWatchLater) this.badgeWatchLater();
-            if (this.option.scroll) this.scrollToPlayer();
+        try {
+            // 3. set up functions that are cid static
+            if (!videoRefresh) {
+                if (this.option.badgeWatchLater) {
+                    await this.getWatchLaterBtn()
+                    this.badgeWatchLater();
+                }
+                if (this.option.scroll) this.scrollToPlayer();
 
-            if (this.option.series) this.inferNextInSeries();
+                if (this.option.series) this.inferNextInSeries();
 
-            if (this.option.recommend) this.showRecommendTab();
-            if (this.option.focus) this.focusOnPlayer();
-            if (this.option.restorePrevent) this.restorePreventShade();
-            if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
-            if (this.option.restoreSpeed) this.restoreSpeed();
-            if (this.option.restoreWide) this.restoreWideScreen();
-            if (this.option.autoResume) this.autoResume();
-            if (this.option.autoPlay) this.autoPlay();
-            if (this.option.autoFullScreen) this.autoFullScreen();
-            if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
-            this.destroy.addCallback(() => this.saveUserdata());
+                if (this.option.recommend) this.showRecommendTab();
+                if (this.option.focus) this.focusOnPlayer();
+                if (this.option.restorePrevent) this.restorePreventShade();
+                if (this.option.restoreDanmuku) this.restoreDanmukuSwitch();
+                if (this.option.restoreSpeed) this.restoreSpeed();
+                if (this.option.restoreWide) {
+                    await this.getWideScreenBtn()
+                    this.restoreWideScreen();
+                }
+                if (this.option.autoResume) this.autoResume();
+                if (this.option.autoPlay) this.autoPlay();
+                if (this.option.autoFullScreen) this.autoFullScreen();
+                if (this.option.limitedKeydown) this.limitedKeydownFullScreenPlay();
+                this.destroy.addCallback(() => this.saveUserdata());
+            }
+
+            // 4. set up functions that are binded to the video DOM
+            if (this.option.dblclick) this.dblclickFullScreen();
+            if (this.option.electric) this.reallocateElectricPanel();
+            if (this.option.oped) this.skipOPED();
+            this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
+        } catch (err) {
+            console.error(err)
         }
-
-        // 4. set up functions that are binded to the video DOM
-        if (this.option.dblclick) this.dblclickFullScreen();
-        if (this.option.electric) this.reallocateElectricPanel();
-        if (this.option.oped) this.skipOPED();
-        this.video.addEventListener('emptied', () => this.setFunctions({ videoRefresh: true }), { once: true });
 
         // 5. set up functions that require everything to be ready
         await this.getPlayerMenu();
@@ -114,7 +143,7 @@ class BiliPolyfill {
         const keywords = [title, ...epSibling.map(e => seriesTitle + e), ...epSibling];
 
         // 6. find mid
-        const midParent = top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
+        const midParent = top.document.querySelector('.u-info > .name') || top.document.getElementById('r-info-rank') || top.document.querySelector('.user');
         if (!midParent) return this.series = [];
         const mid = midParent.children[0].href.match(/\d+/)[0];
 
@@ -197,7 +226,7 @@ class BiliPolyfill {
     }
 
     scrollToPlayer() {
-        if (top.scrollY < 200) top.document.getElementById('bofqi').scrollIntoView();
+        if (top.scrollY < 200) top.document.getElementById('bilibili-player').scrollIntoView();
     }
 
     showRecommendTab() {
@@ -205,26 +234,17 @@ class BiliPolyfill {
         if (h) h.click();
     }
 
-    getCoverImage() {
-        // 1. search for img tag
-        const img = top.document.querySelector('.cover_image')
-            || top.document.querySelector('div.info-cover > a > img')
-            || top.document.querySelector('[data-state-play="true"]  img');
+    async getCoverImage() { // 番剧用原来的方法只能获取到番剧的封面，改用API可以获取到每集的封面
+        const viewUrl = "https://api.bilibili.com/x/web-interface/view?aid=" + aid
 
-        // 2. search for ld+jason
-        const script = top.document.querySelector('script[type="application/ld+json"]');
-
-        // 3. find src
-        let ret = (img && img.src) || (script && JSON.parse(script.textContent).images[0]);
-        if (!ret) return null;
-
-        // 4. trim parameters
-        let i;
-        i = ret.indexOf('.jpg');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        i = ret.indexOf('.png');
-        if (i != -1) ret = ret.slice(0, i + 4);
-        return ret;
+        try {
+            const res = await fetch(viewUrl)
+            const viewJson = await res.json()
+            return viewJson.data.pic.replace("http://", "https://")
+        }
+        catch (e) {
+            return null
+        }
     }
 
     reallocateElectricPanel() {
@@ -296,64 +316,78 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
-        const input = this.playerWin.document.getElementsByName('ctlbar_danmuku_prevent')[0];
-        if (this.userdata.restore.preventShade[index] && !input.nextElementSibling.classList.contains('bpui-state-active')) {
+        const input = this.playerWin.document.querySelector(".bilibili-player-video-danmaku-setting-left-preventshade input");
+        if (this.userdata.restore.preventShade[index] && !input.checked) {
             input.click();
         }
 
         // 5. clean up setting panel
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+        danmaku_btn.dispatchEvent(new Event('mouseout'));
 
         // 6. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.preventShade[index] = input.nextElementSibling.classList.contains('bpui-state-active');
+            this.userdata.restore.preventShade[index] = input.checked;
         });
     }
 
     restoreDanmukuSwitch() {
         // 1. restore option should be an array
         if (!Array.isArray(this.userdata.restore.danmukuSwitch)) this.userdata.restore.danmukuSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
         if (!Array.isArray(this.userdata.restore.danmukuTopSwitch)) this.userdata.restore.danmukuTopSwitch = [];
         if (!Array.isArray(this.userdata.restore.danmukuBottomSwitch)) this.userdata.restore.danmukuBottomSwitch = [];
-        if (!Array.isArray(this.userdata.restore.danmukuScrollSwitch)) this.userdata.restore.danmukuScrollSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuColorSwitch)) this.userdata.restore.danmukuColorSwitch = [];
+        if (!Array.isArray(this.userdata.restore.danmukuSpecialSwitch)) this.userdata.restore.danmukuSpecialSwitch = [];
 
         // 2. find corresponding option index
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. MUST initialize setting panel before click
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseover'));
+        let danmaku_btn = this.playerWin.document.querySelector('.bilibili-player-video-btn-danmaku, .bilibili-player-video-danmaku-setting');
+        if (!danmaku_btn) return;
+        danmaku_btn.dispatchEvent(new Event('mouseover'));
 
         // 4. restore if true
         // 4.1 danmukuSwitch
-        const danmukuSwitchDiv = this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0];
-        if (this.userdata.restore.danmukuSwitch[index] && !danmukuSwitchDiv.classList.contains('video-state-danmaku-off')) {
-            danmukuSwitchDiv.click();
+        const danmukuSwitchInput = this.playerWin.document.querySelector('.bilibili-player-video-danmaku-switch input');
+        if (this.userdata.restore.danmukuSwitch[index] && danmukuSwitchInput.checked) {
+            danmukuSwitchInput.click();
         }
 
-        // 4.2 danmukuTopSwitch danmukuBottomSwitch danmukuScrollSwitch
-        const [danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuScrollSwitchDiv] = this.playerWin.document.getElementsByClassName('bilibili-player-danmaku-setting-lite-type-list')[0].children;
+        // 4.2 danmukuScrollSwitch danmukuTopSwitch danmukuBottomSwitch danmukuColorSwitch danmukuSpecialSwitch
+        const [danmukuScrollSwitchDiv, danmukuTopSwitchDiv, danmukuBottomSwitchDiv, danmukuColorSwitchDiv, danmukuSpecialSwitchDiv] = this.playerWin.document.querySelector('.bilibili-player-video-danmaku-setting-left-block-content').children;
+        if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
+            danmukuScrollSwitchDiv.click();
+        }
         if (this.userdata.restore.danmukuTopSwitch[index] && !danmukuTopSwitchDiv.classList.contains('disabled')) {
             danmukuTopSwitchDiv.click();
         }
         if (this.userdata.restore.danmukuBottomSwitch[index] && !danmukuBottomSwitchDiv.classList.contains('disabled')) {
             danmukuBottomSwitchDiv.click();
         }
-        if (this.userdata.restore.danmukuScrollSwitch[index] && !danmukuScrollSwitchDiv.classList.contains('disabled')) {
-            danmukuScrollSwitchDiv.click();
+        if (this.userdata.restore.danmukuColorSwitch[index] && !danmukuColorSwitchDiv.classList.contains('disabled')) {
+            danmukuColorSwitchDiv.click();
+        }
+        if (this.userdata.restore.danmukuSpecialSwitch[index] && !danmukuSpecialSwitchDiv.classList.contains('disabled')) {
+            danmukuSpecialSwitchDiv.click();
         }
 
         // 5. clean up setting panel
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-btn-danmaku')[0].dispatchEvent(new Event('mouseout'));
+        danmaku_btn.dispatchEvent(new Event('mouseout'));
 
         // 6. memorize final option
         this.destroy.addCallback(() => {
-            this.userdata.restore.danmukuSwitch[index] = danmukuSwitchDiv.classList.contains('video-state-danmaku-off');
+            this.userdata.restore.danmukuSwitch[index] = !danmukuSwitchInput.checked;
+            this.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
             this.userdata.restore.danmukuTopSwitch[index] = danmukuTopSwitchDiv.classList.contains('disabled');
             this.userdata.restore.danmukuBottomSwitch[index] = danmukuBottomSwitchDiv.classList.contains('disabled');
-            this.userdata.restore.danmukuScrollSwitch[index] = danmukuScrollSwitchDiv.classList.contains('disabled');
+            this.userdata.restore.danmukuColorSwitch[index] = danmukuColorSwitchDiv.classList.contains('disabled');
+            this.userdata.restore.danmukuSpecialSwitch[index] = danmukuSpecialSwitchDiv.classList.contains('disabled');
         });
     }
 
@@ -370,9 +404,29 @@ class BiliPolyfill {
         }
 
         // 4. memorize option
-        this.destroy.addCallback(() => {
-            this.userdata.restore.speed[index] = this.video.playbackRate;
+        this.playerWin.player.addEventListener("video_before_destroy", () => this.saveSpeed());
+
+        const observer = new MutationObserver(() => {
+            const changeSpeedBtn = this.playerWin.document.querySelectorAll(".bilibili-player-contextmenu-subwrapp")[0]
+            if (changeSpeedBtn && !changeSpeedBtn._memorize_speed) {
+                changeSpeedBtn.addEventListener("click", () => this.saveSpeed())
+                changeSpeedBtn._memorize_speed = true
+            }
         });
+        observer.observe(this.playerWin.document.querySelector("#bilibiliPlayer"), { childList: true, subtree: true });
+    }
+
+    saveSpeed() {
+        if (this.option.restoreSpeed) {
+            // 1. restore option should be an array
+            if (!Array.isArray(this.userdata.restore.speed)) this.userdata.restore.speed = [];
+
+            // 2. find corresponding option index
+            const index = top.location.href.includes('bangumi') ? 0 : 1;
+
+            // 3. memorize
+            this.userdata.restore.speed[index] = this.video.playbackRate;
+        }
     }
 
     restoreWideScreen() {
@@ -383,14 +437,14 @@ class BiliPolyfill {
         const index = top.location.href.includes('bangumi') ? 0 : 1;
 
         // 3. restore if different
-        const i = this.playerWin.document.getElementsByClassName('bilibili-player-iconfont-widescreen')[0];
-        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('icon-24wideon')) {
+        const i = this.playerWin.document.querySelector('.bilibili-player-video-btn-widescreen')
+        if (this.userdata.restore.wideScreen[index] && !i.classList.contains('closed') && !i.firstElementChild.classList.contains('icon-24wideon')) {
             i.click();
         }
 
         // 4. memorize option
         this.destroy.addCallback(() => {
-            this.userdata.restore.wideScreen[index] = i.classList.contains('icon-24wideon');
+            this.userdata.restore.wideScreen[index] = i.classList.contains('closed') || i.firstElementChild.classList.contains('icon-24wideon');
         });
     }
 
@@ -448,18 +502,24 @@ class BiliPolyfill {
     }
 
     autoFullScreen() {
-        if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off'))
+        if (this.playerWin.document.querySelector('#bilibiliPlayer div.video-state-fullscreen-off')) {
             this.playerWin.document.querySelector('#bilibiliPlayer div.bilibili-player-video-btn-fullscreen').click();
+        }
     }
 
     getCollectionId() {
-        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a').href).toString();
+        if (aid) {
+            return `av${aid}`
+        }
+
+        return (top.location.pathname.match(/av\d+/) || top.location.hash.match(/av\d+/) || top.document.querySelector('div.bangumi-info a, .media-title').href).toString();
     }
 
     markOPEDPosition(index) {
         const collectionId = this.getCollectionId();
         if (!Array.isArray(this.userdata.oped[collectionId])) this.userdata.oped[collectionId] = [];
         this.userdata.oped[collectionId][index] = this.video.currentTime;
+        this.saveUserdata()
     }
 
     clearOPEDPosition() {
@@ -537,10 +597,12 @@ class BiliPolyfill {
     setVideoSpeed(speed) {
         if (speed < 0 || speed > 10) return;
         this.video.playbackRate = speed;
+        this.saveSpeed()
     }
 
     focusOnPlayer() {
-        this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0].click();
+        let player = this.playerWin.document.getElementsByClassName('bilibili-player-video-progress')[0]
+        if (player) player.click();
     }
 
     menuFocusOnPlayer() {
@@ -698,6 +760,42 @@ class BiliPolyfill {
         }
     }
 
+    async getWatchLaterBtn() {
+        let li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+
+        if (!document.cookie.includes("DedeUserID")) return; // 未登录
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.getElementById('i_menu_watchLater_btn') || top.document.getElementById('i_menu_later_btn') || top.document.querySelector('li.nav-item[report-id=playpage_watchlater]');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
+    async getWideScreenBtn() {
+        let li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+
+        if (!li) {
+            return new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    li = top.document.querySelector('.bilibili-player-video-btn-widescreen');
+                    if (li) {
+                        observer.disconnect();
+                        resolve(li);
+                    }
+                });
+                observer.observe(this.playerWin.document.getElementById('bilibiliPlayer'), { childList: true });
+            });
+        }
+    }
+
     static async openMinimizedPlayer(option = { cid: top.cid, aid: top.aid, playerWin: top }) {
         // 1. check param
         if (!option) throw 'usage: openMinimizedPlayer({cid[, aid]})';
@@ -793,6 +891,36 @@ class BiliPolyfill {
         [playerDiv.webkitRequestFullscreen, playerDiv.mozRequestFullScreen, playerDiv.msRequestFullscreen, playerDiv.requestFullscreen] = hook;
     }
 
+    static async biligameInit() {
+        const game_id = location.href.match(/id=(\d+)/)[1]
+        const api_url = `https://line1-h5-pc-api.biligame.com/game/detail/gameinfo?game_base_id=${game_id}`
+
+        const req = await fetch(api_url, { credentials: 'include' })
+        const data = (await req.json()).data
+
+        const aid = data.video_url
+        const video_url = `https://www.bilibili.com/video/av${aid}`
+
+        const tabs = document.querySelector(".tab-head")
+        const tab = document.createElement("a")
+        tab.href = video_url
+        tab.textContent = "查看视频"
+        tab.target = "_blank"
+        tabs.appendChild(tab)
+    }
+
+    static showBangumiCoverImage() {
+        const imgElement = document.querySelector(".media-preview img")
+        if (!imgElement) return;
+
+        imgElement.style.cursor = "pointer"
+
+        imgElement.onclick = () => {
+            const cover_img = imgElement.src.match(/.+?\.(png|jpg)/)[0]
+            top.window.open(cover_img, '_blank')
+        }
+    }
+
     static secondToReadable(s) {
         if (s > 60) return `${parseInt(s / 60)}分${parseInt(s % 60)}秒`;
         else return `${parseInt(s % 60)}秒`;
@@ -823,13 +951,13 @@ class BiliPolyfill {
             ['restoreSpeed', '记住播放速度'],
             ['restoreWide', '记住宽屏'],
             ['autoResume', '自动跳转上次看到'],
-            ['autoPlay', '自动播放'],
+            ['autoPlay', '自动播放(需要在浏览器站点权限设置中允许自动播放)'],
             ['autoFullScreen', '自动全屏'],
             ['oped', '标记后自动跳OP/ED'],
             ['series', '尝试自动找上下集'],
 
             // 3. interaction
-            ['limitedKeydown', '首次回车键可全屏自动播放'],
+            ['limitedKeydown', '首次回车键可全屏自动播放(需要在脚本加载完毕后使用)'],
             ['dblclick', '双击全屏'],
 
             // 4. easter eggs
@@ -849,10 +977,10 @@ class BiliPolyfill {
 
             // 2. automation
             scroll: true,
-            focus: true,
+            focus: false,
             menuFocus: true,
-            restorePrevent: true,
-            restoreDanmuku: true,
+            restorePrevent: false,
+            restoreDanmuku: false,
             restoreSpeed: true,
             restoreWide: true,
             autoResume: true,

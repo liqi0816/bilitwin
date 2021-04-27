@@ -1,18 +1,25 @@
 // ==UserScript==
 // @name        bilibili merged flv+mp4+ass+enhance
 // @namespace   http://qli5.tk/
-// @homepageURL https://github.com/liqi0816/bilitwin/
-// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
+// @homepageURL https://github.com/Xmader/bilitwin/
+// @supportURL  https://github.com/Xmader/bilitwin/issues
+// @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,CC字幕转码ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
 // @match       *://www.bilibili.com/video/av*
+// @match       *://www.bilibili.com/video/bv*
+// @match       *://www.bilibili.com/video/BV*
 // @match       *://bangumi.bilibili.com/anime/*/play*
 // @match       *://www.bilibili.com/bangumi/play/ep*
 // @match       *://www.bilibili.com/bangumi/play/ss*
+// @match       *://www.bilibili.com/bangumi/media/md*
+// @match       *://www.biligame.com/detail/*
+// @match       *://vc.bilibili.com/video/*
 // @match       *://www.bilibili.com/watchlater/
-// @version     1.14
+// @version     1.24.1
 // @author      qli5
-// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
+// @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
 // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
-// @grant       none
+// @grant       unsafeWindow
+// @grant       GM.registerMenuCommand
 // @run-at      document-start
 // ==/UserScript==
 
@@ -68,6 +75,9 @@
 /***
  * This is a bundled code. While it is not uglified, it may still be too
  * complex for reviewing. Please refer to
- * https://github.com/liqi0816/bilitwin/
+ * https://github.com/Xmader/bilitwin/
  * for source code.
  */
+
+var window = typeof unsafeWindow !== "undefined" && unsafeWindow || self
+var top = window.top  // workaround

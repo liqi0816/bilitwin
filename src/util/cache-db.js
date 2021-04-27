@@ -8,6 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+import { setTimeoutDo } from "./timeout.js"
+
 /**
  * A promisified indexedDB with large file(>100MB) support
  */
@@ -23,7 +25,7 @@ class CacheDB {
 
     async getDB() {
         if (this.db) return this.db;
-        this.db = new Promise((resolve, reject) => {
+        this.db = await new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(this.dbName);
             openRequest.onupgradeneeded = e => {
                 const db = e.target.result;
@@ -32,7 +34,7 @@ class CacheDB {
                 }
             }
             openRequest.onsuccess = e => {
-                return resolve(this.db = e.target.result);
+                return resolve(e.target.result);
             }
             openRequest.onerror = reject;
         });
@@ -98,7 +100,7 @@ class CacheDB {
     async getData(name) {
         const reqCascade = new Promise(async (resolve, reject) => {
             const dataChunks = [];
-            const db = await this.getDB();
+            const db = await this.getDB();  // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，这一步会超时
             const objectStore = db.transaction([this.osName], 'readwrite').objectStore(this.osName);
             const probe = objectStore.get(`${name}/part_0`);
             probe.onerror = reject;
@@ -121,7 +123,8 @@ class CacheDB {
             }
         });
 
-        const dataChunks = await reqCascade;
+        // 浏览器默认在隐私浏览模式中禁用 IndexedDB ，添加超时
+        const dataChunks = await setTimeoutDo(reqCascade, 5 * 1000);
 
         return dataChunks ? { name, data: new Blob(dataChunks) } : null;
     }

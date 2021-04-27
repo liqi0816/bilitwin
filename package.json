@@ -1,21 +1,21 @@
 {
   "name": "bilitwin",
-  "version": "1.14.0",
-  "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
+  "version": "1.24.1",
+  "description": "bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站",
   "main": "bilitwin.user.js",
   "directories": {
     "doc": "docs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/liqi0816/bilitwin.git"
+    "url": "git+https://github.com/Xmader/bilitwin.git"
   },
-  "author": "qli5",
+  "author": "qli5 & Xmader",
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/liqi0816/bilitwin/issues"
+    "url": "https://github.com/Xmader/bilitwin/issues"
   },
-  "homepage": "https://github.com/liqi0816/bilitwin#readme",
+  "homepage": "https://github.com/Xmader/bilitwin#readme",
   "engines": {
     "node": "^8.10.0"
   },
@@ -23,18 +23,22 @@
     "babel-core": "^6.26.0",
     "babel-plugin-transform-builtin-extend": "^1.1.2",
     "babel-preset-env": "^1.6.1",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-babel": "^7.0.1",
     "gulp-concat": "^2.6.1",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.6.1",
     "gulp-sourcemaps": "^2.6.4",
-    "http-server": "^0.11.1",
+    "http-server": "^0.12.0",
     "jsx-append-child": "https://api.github.com/repos/liqi0816/jsx-append-child/tarball/34ecc9f",
     "rollup": "^0.57.1"
   },
   "scripts": {
-    "install": "gulp",
-    "build": "gulp"
+    "install": "cd src/flvass2mkv && npm i && cd ../../ && npm run build",
+    "build": "cd src/flvass2mkv && npm run build && cd ../../ && gulp",
+    "watch": "gulp watch",
+    "dev": "npm run build && http-server --cors -p 8081 -c-1",
+    "release-minor": "npm run build && gulp release-minor",
+    "release-patch": "npm run build && gulp release-patch"
   }
 }

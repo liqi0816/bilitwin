@@ -55,13 +55,51 @@ class BiliTwin extends BiliUserJS {
         // 2. monkey and polyfill
         this.monkey = new BiliMonkey(this.playerWin, this.option);
         this.polyfill = new BiliPolyfill(this.playerWin, this.option, t => UI.hintInfo(t, this.playerWin));
-        await Promise.all([this.monkey.execOptions(), this.polyfill.setFunctions()]);
+
+        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
+
+        /**
+         * @param {HTMLVideoElement} video 
+         */
+        const videoRightClick = (video) => {
+            let event = new MouseEvent('contextmenu', {
+                'bubbles': true
+            });
+
+            video.dispatchEvent(event)
+            video.dispatchEvent(event)
+        }
+        if (this.option.autoDisplayDownloadBtn) {
+            // 无需右键播放器就能显示下载按钮
+            await new Promise(resolve => {
+                const observer = new MutationObserver(() => {
+                    const el = this.playerWin.document.querySelector('.bilibili-player-dm-tip-wrap')
+                    if (el) {
+                        const video = this.playerWin.document.querySelector("video");
+                        videoRightClick(video);
+
+                        observer.disconnect();
+                        resolve();
+                    }
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            })
+        } else {
+            const video = document.querySelector("video")
+            if (video) {
+                video.addEventListener('play', () => videoRightClick(video), { once: true });
+            }
+        }
+
+        await this.polyfill.setFunctions()
 
         // 3. async consistent => render UI
-        const cidRefresh = BiliTwin.getCidRefreshPromise(this.playerWin);
         if (href == location.href) {
             this.ui.option = this.option;
             this.ui.cidSessionRender();
+
+            let videoA = this.ui.cidSessionDom.context_menu_videoA || this.ui.cidSessionDom.videoA
+            if (videoA && videoA.onmouseover) videoA.onmouseover({ target: videoA.lastChild });
         }
         else {
             cidRefresh.resolve();
@@ -117,12 +155,37 @@ class BiliTwin extends BiliUserJS {
         return option.setStorage('BiliTwin', JSON.stringify(option));
     }
 
+    async addUserScriptMenu() {
+        if (typeof GM !== 'object') return
+        if (typeof GM.registerMenuCommand !== 'function') return
+
+        // see https://www.tampermonkey.net/documentation.php#GM_registerMenuCommand
+        await GM.registerMenuCommand('恢复默认设置并刷新', () => {
+            // 开启增强组件以后如不显示脚本，可以通过 Tampermonkey/Greasemonkey 的菜单重置设置
+            this.resetOption() && top.location.reload();
+        });
+    }
+
     static async init() {
         if (!document.body) return;
+
+        if (location.hostname == "www.biligame.com") {
+            return BiliPolyfill.biligameInit();
+        }
+        else if (location.pathname.startsWith("/bangumi/media/md")) {
+            return BiliPolyfill.showBangumiCoverImage();
+        }
+
         BiliTwin.outdatedEngineClearance();
         BiliTwin.firefoxClearance();
 
         const twin = new BiliTwin();
+        twin.addUserScriptMenu();
+
+        if (location.hostname == "vc.bilibili.com") {
+            const vc_info = await BiliMonkey.getBiliShortVideoInfo()
+            return twin.ui.appendShortVideoTitle(vc_info);
+        }
 
         while (1) {
             await twin.runCidSession();

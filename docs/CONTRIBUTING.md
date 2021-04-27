@@ -37,15 +37,20 @@ npm install
    // @name        (local)bilibili merged flv+mp4+ass+enhance
    // @namespace   http://qli5.tk/
    // @homepageURL https://github.com/liqi0816/bilitwin/
-   // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
+   // @description bilibili/哔哩哔哩:超清FLV下载,FLV合并,原生MP4下载,弹幕ASS下载,AAC音频下载,MKV打包,播放体验增强,原生appsecret,不借助其他网站
    // @match       *://www.bilibili.com/video/av*
+   // @match       *://www.bilibili.com/video/bv*
+   // @match       *://www.bilibili.com/video/BV*
    // @match       *://bangumi.bilibili.com/anime/*/play*
    // @match       *://www.bilibili.com/bangumi/play/ep*
    // @match       *://www.bilibili.com/bangumi/play/ss*
+   // @match       *://www.bilibili.com/bangumi/media/md*
+   // @match       *://www.biligame.com/detail/*
+   // @match       *://vc.bilibili.com/video/*
    // @match       *://www.bilibili.com/watchlater/
    // @version     1.0
    // @author      qli5
-   // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto
+   // @copyright   qli5, 2014+, 田生, grepmusic, zheng qian, ryiwamoto, xmader
    // @license     Mozilla Public License 2.0; http://www.mozilla.org/MPL/2.0/
    // @grant       none
    // ==/UserScript==
@@ -71,7 +76,6 @@ npm install
 
 ## 坑
 
-* `./src/assconverter`是一个[git子模块](https://git-scm.com/book/zh/v2/Git-%E5%B7%A5%E5%85%B7-%E5%AD%90%E6%A8%A1%E5%9D%97)
 * `./src/ui/ui.entry.js`使用了一个合理的[jsx](https://github.com/facebook/jsx)子集，推荐用[liqi0816/jsx-append-child](https://github.com/liqi0816/jsx-append-child)转译
 * `./src/flvass2mkv`是一个独立的子package
 * 把中间文件到处乱扔，这确实不是一个好习惯

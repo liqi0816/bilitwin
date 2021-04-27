@@ -20,7 +20,7 @@
         const fileProgress = document.getElementById('fileProgress');
         const mkvProgress = document.getElementById('mkvProgress');
         const a = document.getElementById('a');
-        window.exec = async option => {
+        window.exec = async (option, target) => {
             const defaultOption = {
                 onflvprogress: ({ loaded, total }) => {
                     fileProgress.value = loaded;
@@ -35,13 +35,19 @@
                     mkvProgress.max = total;
                 },
                 name: 'merged.mkv',
+                subtitleAssList: [],
             };
             option = Object.assign(defaultOption, option);
-            a.download = a.textContent = option.name;
+            target.download = a.download = a.textContent = option.name;
             console.time('file');
-            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass);
+            const mkv = await new FLVASS2MKV(option).build(option.flv, option.ass, option.subtitleAssList);
             console.timeEnd('flvass2mkv');
-            return a.href = URL.createObjectURL(mkv);
+            target.href = a.href = URL.createObjectURL(mkv);
+            target.textContent = "另存为MKV"
+            target.onclick = () => {
+                window.close()
+            }
+            return a.href
         };
         window.exec();
     </script>

@@ -10,8 +10,13 @@
 
 import Exporter from './exporter.js';
 import HookedFunction from '../util/hooked-function.js';
+import DetailedFetchBlob from '../util/detailed-fetch-blob.js';
+import CacheDB from '../util/cache-db.js'
 import FLV from '../flvparser/flv.js';
 import MKVTransmuxer from '../flvass2mkv/interface.js';
+import FLV2AAC from '../flv2aac/flv2aac.js'
+import { WebWorker, BatchDownloadWorkerFn } from './webworker.js';
+import { getSubtitles } from "../subtitle/index.js"
 
 class UI {
     constructor(twin, option = UI.optionDefaults) {
@@ -26,11 +31,11 @@ class UI {
         this.destroy.addCallback(this.cidSessionDestroy.bind(this));
 
         this.destroy.addCallback(() => {
-            Object.values(this.dom).forEach(e => e.remove());
+            Object.values(this.dom).forEach(e => typeof e.remove == "function" && e.remove());
             this.dom = {};
         });
         this.cidSessionDestroy.addCallback(() => {
-            Object.values(this.cidSessionDom).forEach(e => e.remove());
+            Object.values(this.cidSessionDom).forEach(e => typeof e.remove == "function" && e.remove());
             this.cidSessionDom = {};
         });
 
@@ -44,8 +49,7 @@ class UI {
             transition: all .3s ease-in-out;
             cursor: pointer;
         }
-        `;
-        if (top.getComputedStyle(top.document.body).color != 'rgb(34, 34, 34)') ret += `
+
         .bilitwin a {
             cursor: pointer;
             color: #00a1d6;
@@ -84,6 +88,14 @@ class UI {
             -moz-appearance: checkbox;
             appearance: checkbox;
         }
+
+        .bilitwin.context-menu-menu:hover {
+            background: hsla(0,0%,100%,.12);
+        }
+
+        .bilitwin.context-menu-menu:hover > a {
+            background: hsla(0,0%,100%,0) !important;
+        }
         `;
 
         const style = <style type="text/css">{ret}</style>;
@@ -95,64 +107,48 @@ class UI {
     cidSessionRender() {
         this.buildTitle();
 
-        if (this.option.title) this.appendTitle();
-        if (this.option.menu) this.appendMenu();
+        if (this.option.title) this.appendTitle();  // 在视频标题旁添加链接
+        this.appendMenu();  // 在视频菜单栏添加链接
     }
 
     // Title Append
     buildTitle(monkey = this.twin.monkey) {
-        // 1. build flvA, mp4A, assA
+        // 1. build videoA, assA
         const fontSize = '15px';
-        const flvA = <a style={{ fontSize }}>超清FLV</a>;
-        const mp4A = <a style={{ fontSize }}>原生MP4</a>;
+        /** @type {HTMLAnchorElement} */
+        const videoA = <a style={{ fontSize }}>视频FLV</a>;
+        /** @type {HTMLAnchorElement} */
         const assA = <a style={{ fontSize }}>弹幕ASS</a>;
 
-        // 1.1 build flvA
-        flvA.onmouseover = async () => {
+        // 1.1 build videoA
+        videoA.onmouseover = async () => {
             // 1.1.1 give processing hint
-            flvA.textContent = '正在FLV';
-            flvA.onmouseover = null;
+            videoA.textContent = '正在FLV';
+            videoA.onmouseover = null;
 
-            // 1.1.2 query flv
-            const href = await monkey.queryInfo('flv');
-            if (href == 'does_not_exist') return flvA.textContent = '没有FLV';
+            // 1.1.2 query video
+            const video_format = await monkey.queryInfo('video');
 
-            // 1.1.3 display flv
-            flvA.textContent = '超清FLV';
-            flvA.onclick = () => this.displayFLVDiv();
+            // 1.1.3 display video
+            videoA.textContent = `视频${video_format ? video_format.toUpperCase() : 'FLV'}`;
+            videoA.onclick = () => this.displayFLVDiv();
         };
 
-        // 1.2 build mp4A
-        mp4A.onmouseover = async () => {
-            // 1.2.1 give processing hint
-            mp4A.textContent = '正在MP4';
-            mp4A.onmouseover = null;
-            if (this.option.autoDanmaku) {
-                await assA.onmouseover();
-                mp4A.onclick = () => assA.click();
-            }
-
-            // 1.2.2 query flv
-            let href = await monkey.queryInfo('mp4');
-            if (href == 'does_not_exist') return mp4A.textContent = '没有MP4';
-
-            // 1.2.3 response mp4
-            mp4A.href = href;
-            mp4A.textContent = '原生MP4';
-            mp4A.download = '';
-            mp4A.referrerPolicy = 'origin';
-        };
-
-        // 1.3 build assA
+        // 1.2 build assA
         assA.onmouseover = async () => {
-            // 1.3.1 give processing hint
+            // 1.2.1 give processing hint
             assA.textContent = '正在ASS';
             assA.onmouseover = null;
 
-            // 1.3.2 query flv
+            let clicked = false
+            assA.addEventListener("click", () => {
+                clicked = true
+            }, { once: true, })
+
+            // 1.2.2 query flv
             assA.href = await monkey.queryInfo('ass');
 
-            // 1.3.3 response mp4
+            // 1.2.3 response mp4
             assA.textContent = '弹幕ASS';
             if (monkey.mp4 && monkey.mp4.match) {
                 assA.download = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0] + '.ass';
@@ -160,38 +156,116 @@ class UI {
             else {
                 assA.download = monkey.cid + '.ass';
             }
+
+            if (clicked) {
+                assA.click()
+            }
         };
 
         // 2. save to cache
-        Object.assign(this.cidSessionDom, { flvA, mp4A, assA });
+        Object.assign(this.cidSessionDom, { videoA, assA });
         return this.cidSessionDom;
     }
 
-    appendTitle({ flvA, mp4A, assA } = this.cidSessionDom) {
+    appendTitle({ videoA, assA } = this.cidSessionDom) {
         // 1. build div
         const div = <div
             onClick={e => e.stopPropagation()}
-            style={{ float: 'left', clear: 'left' }}
             className="bilitwin"
-        >{...[flvA, ' ', mp4A, ' ', assA]}</div>;
+        >{...[videoA, ' ', assA]}</div>;
 
         // 2. append to title
-        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second');
+        const tminfo = document.querySelector('div.tminfo') || document.querySelector('div.info-second') || document.querySelector('div.video-data') || document.querySelector("#h1_module") || document.querySelector(".media-title");
         tminfo.style.float = 'none';
-        tminfo.style.marginLeft = '185px';
-        tminfo.parentElement.insertBefore(div, tminfo);
+        tminfo.after(div);
+
+        const h1_module = document.querySelector("#h1_module") || document.querySelector(".media-title")
+        if (h1_module) {
+            h1_module.style.marginBottom = "0px"
+        }
 
         // 3. save to cache
         this.cidSessionDom.titleDiv = div;
 
+        this.appendSubtitleAs(div)
+
         return div;
     }
 
-    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache) {
-        // 1. build flv splits
+    async buildSubtitleAs() {
+        if (this.cidSessionDom && this.cidSessionDom.subtitleAs) {
+            return this.cidSessionDom.subtitleAs
+        }
+
+        const subtitleList = await getSubtitles(aid, cid)
+
+        const fontSize = '15px'
+
+        const monkey = this.twin.monkey
+
+        const subtitleAs = subtitleList.map((subtitle) => {
+            const lanDoc = subtitle.language_doc.replace(/（/g, "(").replace(/）/g, ")")
+
+            /** @type {HTMLAnchorElement} */
+            const a = <a style={{ fontSize }}>{lanDoc}字幕ASS</a>;
+            a.lan = subtitle.language
+
+            a.onclick = () => {
+                const blob = new Blob([subtitle.ass])
+                a.href = URL.createObjectURL(blob)
+
+                let name = ""
+                if (monkey.mp4 && monkey.mp4.match) {
+                    name = monkey.mp4.match(/\d(?:\d|-|hd)*(?=\.mp4)/)[0]
+                } else {
+                    name = monkey.cid || cid
+                }
+
+                a.download = `${name}.${subtitle.language}.ass`
+
+                a.onclick = null
+            }
+
+            return a
+        })
+
+        this.cidSessionDom.subtitleAs = subtitleAs
+        return subtitleAs
+    }
+
+    async appendSubtitleAs(div) {
+        const subtitleAs = await this.buildSubtitleAs()
+
+        const items = subtitleAs.reduce((p, c) => {
+            // 在每一项前添加空格
+            return p.concat(' ', c)
+        }, [])
+
+        div.append(...items)
+    }
+
+    appendShortVideoTitle({ video_playurl, cover_img }) {
+        const fontSize = '15px';
+        const marginRight = '15px';
+        const videoA = <a style={{ fontSize, marginRight }} href={video_playurl} target="_blank">下载视频</a>;
+        const coverA = <a style={{ fontSize }} href={cover_img} target="_blank">获取封面</a>;
+
+        videoA.onclick = (e) => { e.preventDefault(); alert("请使用右键另存为下载视频"); }
+
+        const span = <span
+            onClick={e => e.stopPropagation()}
+            className="bilitwin"
+        >{...[videoA, ' ', coverA]}</span>;
+
+        const infoDiv = document.querySelector('div.base-info div.info');
+        infoDiv.appendChild(span);
+    }
+
+    buildFLVDiv(monkey = this.twin.monkey, flvs = monkey.flvs, cache = monkey.cache, format = monkey.video_format) {
+        // 1. build video splits
         const flvTrs = flvs.map((href, index) => {
             const tr = <tr>
-                <td><a href={href}>FLV分段 {index + 1}</a></td>
+                <td><a href={href} download={cid + '-' + (index + 1) + '.' + (format || "flv")}>视频分段 {index + 1}</a></td>
                 <td><a onclick={e => this.downloadFLV({
                     monkey,
                     index,
@@ -235,10 +309,13 @@ class UI {
             ...flvTrs,
             <tr>
                 <td>{...[exporterA]}</td>
-                <td><a onclick={e => this.downloadAllFLVs({
-                    a: e.target,
-                    monkey, table
-                })}>缓存全部+自动合并</a></td>
+                <td><a onclick={e => (format != "mp4") ?
+                    this.downloadAllFLVs({
+                        a: e.target,
+                        monkey,
+                        table
+                    })
+                    : top.alert("不支持合并MP4视频")}>缓存全部+自动合并</a></td>
                 <td><progress value="0" max={flvs.length + 1}>进度条</progress></td>
             </tr>,
             <tr><td colspan="3">合并功能推荐配置：至少8G RAM。把自己下载的分段FLV拖动到这里，也可以合并哦~</td></tr>,
@@ -310,7 +387,7 @@ class UI {
         monkey.hangPlayer();
 
         // 2. give hang player hint
-        this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。切换清晰度可重新激活播放器。</td></tr>;
+        this.cidSessionDom.downloadAllTr = <tr><td colspan="3">已屏蔽网页播放器的网络链接。刷新页面可重新激活播放器。</td></tr>;
         table.append(this.cidSessionDom.downloadAllTr);
 
         // 3. click download all split
@@ -319,7 +396,7 @@ class UI {
                 table.rows[i].cells[1].children[0].click();
         }
 
-        // 4. set sprogress
+        // 4. set progress
         const progress = a.parentElement.nextElementSibling.children[0];
         progress.max = monkey.flvs.length + 1;
         progress.value = 0;
@@ -327,22 +404,55 @@ class UI {
 
         // 5. merge splits
         const files = await monkey.getAllFLVs();
-        const href = await this.twin.mergeFLVFiles(files);
-        const ass = await monkey.ass;
-        const outputName = top.document.getElementsByTagName('h1')[0].textContent.trim();
+        const flv = await FLV.mergeBlobs(files);
+        const href = URL.createObjectURL(flv);
+        const ass = await monkey.getASS();
+
+        /** @type {HTMLAnchorElement[]} */
+        const subtitleAs = await this.buildSubtitleAs()
+        const subtitleAssList = subtitleAs.map((a) => {
+            if (a.onclick && typeof a.onclick === "function") {
+                a.onclick()
+            }
+            return {
+                name: a.text.replace(/ASS$/, ""),
+                file: a.href,
+            }
+        })
+
+        let outputName = top.document.getElementsByTagName('h1')[0].textContent.trim()
+        const pageNameElement = document.querySelector(".bilibili-player-video-top-title, .multi-page .on")
+        if (pageNameElement) {
+            const pageName = pageNameElement.textContent
+            if (pageName && pageName != outputName) outputName += ` - ${pageName}`
+        }
 
         // 6. build download all ui
         progress.value++;
         table.prepend(
             <tr>
-                <td colspan="3" style="border: 1px solid black">
+                <td colspan="3" style="border: 1px solid black; word-break: keep-all;">
                     <a href={href} download={`${outputName}.flv`} ref={a => {
                         if (this.option.autoDanmaku) a.onclick = () => a.nextElementSibling.click()
                     }}>保存合并后FLV</a>
                     {' '}
-                    <a href={ass} download={`${outputName}.ass`}>弹幕ASS</a>
+                    <a href={ass} download={`${outputName}.danmaku.ass`}>弹幕ASS</a>
                     {' '}
-                    <a onclick={() => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`)}>打包MKV(软字幕封装)</a>
+                    <a download={`${outputName}.aac`} onclick={e => {
+                        const aacA = e.target
+                        FLV2AAC(flv).then((aacData) => {
+                            const blob = new Blob([aacData])
+                            aacA.href = URL.createObjectURL(blob)
+                            aacA.onclick = null
+                            aacA.click()
+                        })
+                    }}>音频AAC</a>
+                    {...subtitleAs.reduce((p, c) => {
+                        // 在每一项前添加空格
+                        return p.concat(' ', <a href={c.href} download={`${outputName}.${c.lan}.ass`}>{c.textContent}</a>)
+                    }, [])}
+                    {' '}
+                    <a onclick={(e) => new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target, subtitleAssList)}>打包MKV(软字幕封装)</a>
                     {' '}
                     记得清理分段缓存哦~
                </td>
@@ -386,7 +496,7 @@ class UI {
         a.onclick = null;
         window.removeEventListener('beforeunload', handler);
         a.textContent = '另存为';
-        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.flv/)[0];
+        a.download = monkey.flvs[index].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0];
         a.href = url;
         return url;
     }
@@ -405,7 +515,7 @@ class UI {
     }
 
     // Menu Append
-    appendMenu(playerWin = this.twin.playerWin) {
+    async appendMenu(playerWin = this.twin.playerWin) {
         // 1. build monkey menu and polyfill menu
         const monkeyMenu = this.buildMonkeyMenu();
         const polyfillMenu = this.buildPolyfillMenu();
@@ -416,7 +526,26 @@ class UI {
         </ul>;
 
         // 3. append to menu
-        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')[0];
+        const menus0 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')
+        if (menus0.length == 0) {
+            await new Promise((resolve) => {
+                const observer = new MutationObserver(() => {
+                    const menus1 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')
+                    const menus2 = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')
+                    if (menus1.length > 0 || menus2.length >= 2) {
+                        observer.disconnect();
+                        resolve()
+                    }
+                });
+                observer.observe(playerWin.document.querySelector("#bilibiliPlayer"), {
+                    childList: true,
+                    attributeFilter: ["class"],
+                });
+            })
+        }
+
+        const div = playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black bilibili-player-context-menu-origin')[0]
+            || [...playerWin.document.getElementsByClassName('bilibili-player-context-menu-container black')].pop()
         div.prepend(ul);
 
         // 4. save to cache
@@ -429,10 +558,69 @@ class UI {
         playerWin = this.twin.playerWin,
         BiliMonkey = this.twin.BiliMonkey,
         monkey = this.twin.monkey,
-        flvA = this.cidSessionDom.flvA,
-        mp4A = this.cidSessionDom.mp4A,
+        videoA = this.cidSessionDom.videoA,
         assA = this.cidSessionDom.assA,
     } = {}) {
+        let context_menu_videoA =
+            <li class="context-menu-function"
+                onmouseover={async ({ target }) => {
+                    if (videoA.onmouseover) await videoA.onmouseover();
+                    const textNode = target.querySelector('#download-btn-vformat')
+                    if (textNode && textNode.textContent) {
+                        textNode.textContent = monkey.video_format ? monkey.video_format.toUpperCase() : 'FLV'
+                    }
+                }}
+                onclick={() => videoA.click()}
+            >
+                <a class="context-menu-a">
+                    <span class="video-contextmenu-icon"></span> 下载视频<span id="download-btn-vformat">FLV</span>
+                </a>
+            </li>
+
+        Object.assign(this.cidSessionDom, { context_menu_videoA })
+
+        /** @type {HTMLLIElement} */
+        const downloadSubtitlesContextMenu =
+            <li class="context-menu-menu" onmouseover={async () => {
+                /** @type {HTMLAnchorElement[]} */
+                const subtitleAs = await this.buildSubtitleAs()
+
+                if (subtitleAs && subtitleAs.length > 0) {
+
+                    downloadSubtitlesContextMenu.appendChild(
+                        <ul>
+                            {...subtitleAs.map((a) => {
+                                return <li class="context-menu-function">
+                                    <a class="context-menu-a" onclick={() => a.click()}>
+                                        <span class="video-contextmenu-icon"></span> {a.text.replace(/字幕ASS$/, "")}
+                                    </a>
+                                </li>
+                            })}
+                        </ul>
+                    )
+
+                } else {
+
+                    downloadSubtitlesContextMenu.appendChild(
+                        <ul>
+                            <li class="context-menu-function">
+                                <a class="context-menu-a">
+                                    <span class="video-contextmenu-icon"></span> 无字幕
+                                </a>
+                            </li>
+                        </ul>
+                    )
+
+                }
+
+                downloadSubtitlesContextMenu.onmouseover = null
+            }}>
+                <a class="context-menu-a">
+                    <span class="video-contextmenu-icon"></span> 下载字幕ASS
+                    <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
+                </a>
+            </li>
+
         return <li
             class="context-menu-menu bilitwin"
             onclick={() => playerWin.document.getElementById('bilibiliPlayer').click()}
@@ -442,39 +630,25 @@ class UI {
             <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
             </a>
             <ul>
-                <li class="context-menu-function" onclick={async () => {
-                    if (flvA.onmouseover) await flvA.onmouseover();
-                    flvA.click();
-                }}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载FLV
-                </a>
-                </li>
-                <li class="context-menu-function" onclick={async () => {
-                    if (mp4A.onmouseover) await mp4A.onmouseover();
-                    mp4A.click();
-                }}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载MP4
-                </a>
-                </li>
+                {context_menu_videoA}
                 <li class="context-menu-function" onclick={async () => {
                     if (assA.onmouseover) await assA.onmouseover();
                     assA.click();
                 }}>
                     <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> 下载ASS
-                </a>
+                        <span class="video-contextmenu-icon"></span> 下载弹幕ASS
+                    </a>
+                </li>
+                {downloadSubtitlesContextMenu}
+                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin, monkey))}>
+                    <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> 批量下载
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => this.displayOptionDiv()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 设置/帮助/关于
-                </a>
-                </li>
-                <li class="context-menu-function" onclick={async () => UI.displayDownloadAllPageDefaultFormatsBody(await BiliMonkey.getAllPageDefaultFormats(playerWin))}>
-                    <a class="context-menu-a">
-                        <span class="video-contextmenu-icon"></span> (测)批量下载
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={async () => {
                     monkey.proxy = true;
@@ -483,26 +657,26 @@ class UI {
                     // Yes, I AM lazy.
                     playerWin.document.querySelector('div.bilibili-player-video-btn-quality > div ul li[data-value="80"]').click();
                     await new Promise(r => playerWin.document.getElementsByTagName('video')[0].addEventListener('emptied', r));
-                    return monkey.queryInfo('flv');
+                    return monkey.queryInfo('video');
                 }}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)载入缓存FLV
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => top.location.reload(true)}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)强制刷新
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => this.cidSessionDestroy() && this.cidSessionRender()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)重启脚本
-                </a>
+                    </a>
                 </li>
                 <li class="context-menu-function" onclick={() => playerWin.player && playerWin.player.destroy()}>
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> (测)销毁播放器
-                </a>
+                    </a>
                 </li>
             </ul>
         </li>;
@@ -514,6 +688,7 @@ class UI {
         polyfill = this.twin.polyfill,
     } = {}) {
         let oped = [];
+        const BiliDanmakuSettings = polyfill.BiliDanmakuSettings
         const refreshSession = new HookedFunction(() => oped = polyfill.userdata.oped[polyfill.getCollectionId()] || []); // as a convenient callback register
         return <li
             class="context-menu-menu bilitwin"
@@ -521,13 +696,12 @@ class UI {
         >
             <a class="context-menu-a" onmouseover={() => refreshSession()}>
                 BiliPolyfill
-                {!polyfill.option.betabeta ? '(到设置开启)' : ''}
                 <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
             </a>
             <ul>
                 <li
                     class="context-menu-function"
-                    onclick={() => top.window.open(polyfill.getCoverImage(), '_blank')}
+                    onclick={async () => { const w = top.window.open("", '_blank'); w.location = await polyfill.getCoverImage() }}
                 >
                     <a class="context-menu-a">
                         <span class="video-contextmenu-icon"></span> 获取封面
@@ -549,15 +723,48 @@ class UI {
                                 <span class="video-contextmenu-icon"></span> 3
                             </a>
                         </li>
-                        <li class="context-menu-function" onclick={e => polyfill.setVideoSpeed(e.children[0].children[1].value)}>
+                        <li class="context-menu-function" onclick={e => polyfill.setVideoSpeed(e.target.children[1].value)}>
                             <a class="context-menu-a">
                                 <span class="video-contextmenu-icon"></span> 点击确认
                                 <input
                                     type="text"
-                                    style="width: 35px; height: 70%"
+                                    style="width: 35px; height: 70%; color:black;"
                                     onclick={e => e.stopPropagation()}
                                     ref={e => refreshSession.addCallback(() => e.value = polyfill.video.playbackRate)}
                                 />
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="context-menu-menu">
+                    <a class="context-menu-a">
+                        <span class="video-contextmenu-icon"></span> 自定义弹幕字体
+                        <span class="bpui-icon bpui-icon-arrow-down" style="transform:rotate(-90deg);margin-top:3px;"></span>
+                    </a>
+                    <ul>
+                        <li class="context-menu-function"
+                            onclick={e => {
+                                BiliDanmakuSettings.set('fontfamily', e.target.lastChild.value);
+                                playerWin.location.reload();
+                            }}
+                        >
+                            <a class="context-menu-a">
+                                <input
+                                    type="text"
+                                    style="width: 108px; height: 70%; color:black;"
+                                    onclick={e => e.stopPropagation()}
+                                    ref={e => refreshSession.addCallback(() => e.value = BiliDanmakuSettings.get('fontfamily'))}
+                                />
+                            </a>
+                        </li>
+                        <li class="context-menu-function"
+                            onclick={e => {
+                                BiliDanmakuSettings.set('fontfamily', e.target.parentElement.previousElementSibling.querySelector("input").value);
+                                playerWin.location.reload();
+                            }}
+                        >
+                            <a class="context-menu-a">
+                                点击确认并刷新
                             </a>
                         </li>
                     </ul>
@@ -678,11 +885,13 @@ class UI {
                 <tr><td>功能增强组件尽量保证了兼容性。但如果有同功能脚本/插件，请关闭本插件的对应功能。</td></tr>
                 <tr><td>这个脚本乃“按原样”提供，不附带任何明示，暗示或法定的保证，包括但不限于其没有缺陷，适合特定目的或非侵权。</td></tr>
                 <tr><td>
-                    <a href="https://greasyfork.org/zh-CN/scripts/27819" target="_blank">更新/讨论</a>
+                    <a href="https://greasyfork.org/zh-CN/scripts/372516" target="_blank">更新</a>
                     {' '}
-                    <a href="https://github.com/liqi0816/bilitwin/" target="_blank">GitHub</a>
+                    <a href="https://github.com/Xmader/bilitwin/issues" target="_blank">讨论</a>
                     {' '}
-                    Author: qli5. Copyright: qli5, 2014+, 田生, grepmusic
+                    <a href="https://github.com/Xmader/bilitwin/" target="_blank">GitHub</a>
+                    {' '}
+                    Author: qli5. Copyright: qli5, 2014+, 田生, grepmusic, xmader
                 </td></tr>
             </table>,
             <button style={{ padding: '0.5em', margin: '0.2em' }} onclick={() => div.style.display = 'none'}>关闭</button>,
@@ -696,7 +905,6 @@ class UI {
     buildMonkeyOptionTable(twin = this.twin, BiliMonkey = this.twin.BiliMonkey) {
         const table = <table style={{ width: '100%', lineHeight: '2em' }}>
             <tr><td style="text-align:center">BiliMonkey（视频抓取组件）</td></tr>
-            <tr><td style="text-align:center">因为作者偷懒了，缓存的三个选项最好要么全开，要么全关。最好。</td></tr>
         </table>;
 
         table.append(...BiliMonkey.optionDescriptions.map(([name, description]) => <tr>
@@ -711,6 +919,53 @@ class UI {
                 {description}
             </label>
         </tr>));
+
+        table.append(<tr>
+            <label>
+                <input
+                    type="number"
+                    value={+twin.option["resolutionX"] || 560}
+                    min={480}
+                    onchange={e => {
+                        twin.option["resolutionX"] = +e.target.value;
+                        twin.saveOption(twin.option);
+                    }} />
+                {" x "}
+                <input
+                    type="number"
+                    value={+twin.option["resolutionY"] || 420}
+                    min={360}
+                    onchange={e => {
+                        twin.option["resolutionY"] = +e.target.value;
+                        twin.saveOption(twin.option);
+                    }} />
+            </label>
+        </tr>);
+
+        table.append(<tr>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={twin.option["enableVideoMaxResolution"]}
+                    onchange={e => {
+                        twin.option["enableVideoMaxResolution"] = e.target.checked;
+                        twin.saveOption(twin.option);
+                    }} />
+                自定义下载的视频的<b>最高</b>分辨率：
+                <select onchange={e => {
+                    twin.option["videoMaxResolution"] = e.target.value;
+                    twin.saveOption(twin.option);
+                }}>
+                    {...BiliMonkey.resolutionPreferenceOptions.map(
+                        ([name, value]) =>
+                            <option
+                                value={value}
+                                selected={(twin.option["videoMaxResolution"] || "116") == value}
+                            >{name}</option>
+                    )}
+                </select>
+            </label>
+        </tr>);
 
         return table;
     }
@@ -749,6 +1004,7 @@ class UI {
                 <input
                     type="checkbox"
                     checked={twin.option[name]}
+                    disabled={name == "menu" /** 在视频菜单栏不添加后无法更改设置，所以禁用此选项 */}
                     onchange={e => {
                         twin.option[name] = e.target.checked;
                         twin.saveOption(twin.option);
@@ -812,33 +1068,198 @@ class UI {
     }
 
     // Common
-    static buildDownloadAllPageDefaultFormatsBody(ret) {
+    static buildDownloadAllPageDefaultFormatsBody(ret, videoTitle) {
         const table = <table onclick={e => e.stopPropagation()}></table>;
 
-        for (const i of ret) {
+        let flvsBlob = [];
+        const loadFLVFromCache = async (name, partial = false) => {
+            if (partial) name = 'PC_' + name
+            const cache = new CacheDB()
+            let item = await cache.getData(name)
+            return item && item.data
+        }
+        const saveFLVToCache = async (name, blob) => {
+            const cache = new CacheDB()
+            return cache.addData({ name, data: blob });
+        }
+        const cleanPartialFLVInCache = async (name) => {
+            const cache = new CacheDB()
+            name = 'PC_' + name;
+            return cache.deleteData(name);
+        }
+        const getFLVs = async (videoIndex) => {
+            if (!flvsBlob[videoIndex]) flvsBlob[videoIndex] = []
+
+            const { durl } = ret[videoIndex]
+
+            return await Promise.all(
+                durl.map(async (_, durlIndex) => {
+                    if (flvsBlob[videoIndex][durlIndex]) {
+                        return flvsBlob[videoIndex][durlIndex];
+                    } else {
+                        let burl = durl[durlIndex];
+                        const outputName = burl.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]
+
+                        const burlA = top.document.querySelector(`a[download][href="${burl}"]`)
+                        burlA.after(<progress value="0" max="100">进度条</progress>)
+                        const progress = burlA.parentElement.querySelector("progress")
+
+                        let flvCache = await loadFLVFromCache(outputName);
+                        if (flvCache) {
+                            progress.value = progress.max
+                            progress.after(
+                                <a
+                                    href={top.URL.createObjectURL(flvCache)}
+                                    download={outputName}
+                                >另存为</a>
+                            )
+                            return flvsBlob[videoIndex][durlIndex] = flvCache;
+                        }
+
+                        let partialFLVFromCache = await loadFLVFromCache(outputName, true);
+                        if (partialFLVFromCache) burl += `&bstart=${partialFLVFromCache.size}`;
+
+                        const opt = {
+                            method: 'GET',
+                            mode: 'cors',
+                            cache: 'default',
+                            referrerPolicy: 'no-referrer-when-downgrade',
+                            cacheLoaded: partialFLVFromCache ? partialFLVFromCache.size : 0,
+                            headers: partialFLVFromCache && (!burl.includes('wsTime')) ? { Range: `bytes=${partialFLVFromCache.size}-` } : undefined
+                        };
+
+                        opt.onprogress = (loaded, total) => {
+                            progress.value = loaded;
+                            progress.max = total;
+                        }
+
+                        const fch = new DetailedFetchBlob(burl, opt);
+                        let fullFLV = await fch.getBlob();
+                        if (partialFLVFromCache) {
+                            fullFLV = new Blob([partialFLVFromCache, fullFLV]);
+                            cleanPartialFLVInCache(outputName)
+                        }
+                        saveFLVToCache(outputName, fullFLV);
+
+                        progress.after(
+                            <a
+                                href={top.URL.createObjectURL(fullFLV)}
+                                download={outputName}
+                            >另存为</a>
+                        )
+
+                        return (flvsBlob[videoIndex][durlIndex] = fullFLV);
+                    }
+                })
+            )
+        }
+        const getSize = async (videoIndex) => {
+            const { res: { durl: durlObjects } } = ret[videoIndex]
+
+            if (durlObjects && durlObjects[0] && durlObjects[0].size) {
+                const totalSize = durlObjects.reduce((total, burlObj) => total + parseInt(burlObj.size), 0)
+                if (totalSize) return totalSize
+            }
+
+            const { durl } = ret[videoIndex]
+
+            /** @type {number[]} */
+            const sizes = await Promise.all(
+                durl.map(async (burl) => {
+                    const r = await fetch(burl, { method: "HEAD" })
+                    return +r.headers.get("content-length")
+                })
+            )
+
+            return sizes.reduce((total, _size) => total + _size)
+        }
+
+        ret.forEach((i, index) => {
+            const sizeSpan = <span></span>
+            getSize(index).then(size => {
+                const sizeMB = (size / 1024) / 1024
+                sizeSpan.textContent = `  (${sizeMB.toFixed(1)} MiB)`
+            })
+
+            const iName = i.name
+            let pName = `P${index + 1}`
+            if (typeof iName == "string" && iName.toUpperCase() !== pName) {
+                pName += ` - ${iName}`
+            }
+
+            const outputName = videoTitle.match(/：第\d+话 .+?$/)
+                ? videoTitle.replace(/：第\d+话 .+?$/, `：第${iName}话`)
+                : `${videoTitle} - ${pName}`
+
             table.append(
                 <tr>
                     <td>
-                        {i.name}
+                        {iName}
+                        <br />
+                        <a onclick={async (e) => {
+                            // add beforeUnloadHandler
+                            const handler = e => UI.beforeUnloadHandler(e);
+                            window.addEventListener('beforeunload', handler);
+
+                            const targetA = e.target.parentElement
+                            targetA.title = ""
+                            targetA.onclick = null
+                            targetA.textContent = "缓存中……"
+
+                            const format = i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[1]
+                            const flvs = await getFLVs(index)
+
+                            targetA.textContent = "合并中……"
+                            const worker = WebWorker.fromAFunction(BatchDownloadWorkerFn)
+                            await worker.registerAllMethods()
+                            const href = URL.createObjectURL(
+                                format == "flv"
+                                    ? await worker.mergeFLVFiles(flvs)
+                                    : flvs[0]
+                            )
+                            worker.terminate()
+
+                            targetA.href = href
+                            targetA.download = `${outputName}.flv`
+                            targetA.textContent = "保存合并后FLV"
+                            targetA.style["margin-right"] = "20px"
+
+                            const ass = top.URL.createObjectURL(i.danmuku)
+                            targetA.after(
+                                <a onclick={(e) => {
+                                    new MKVTransmuxer().exec(href, ass, `${outputName}.mkv`, e.target)
+                                }}>打包MKV(软字幕封装)</a>
+                            )
+
+                            window.removeEventListener('beforeunload', handler);
+
+                            targetA.click()
+
+                        }} title="缓存所有分段+自动合并">
+                            <span>缓存所有分段+自动合并</span> {sizeSpan}
+                        </a>
                     </td>
                     <td>
-                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0]}</a>
+                        <a href={i.durl[0]} download referrerpolicy="origin">{i.durl[0].match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
                     </td>
                     <td>
-                        <a href={i.danmuku} download={`${i.outputName}.ass`} referrerpolicy="origin">{i.danmuku}</a>
+                        <a href={top.URL.createObjectURL(i.danmuku)} download={`${i.outputName}.ass`} referrerpolicy="origin">{`${i.outputName}.ass`}</a>
                     </td>
                 </tr>,
                 ...i.durl.slice(1).map(href => <tr>
                     <td>
                     </td>
                     <td>
-                        <a href={href} download referrerpolicy="origin">{href}</a>
+                        <a href={href} download referrerpolicy="origin">{href.match(/\d+-\d+(?:\d|-|hd)*\.(flv|mp4)/)[0]}</a>
                     </td>
                     <td>
                     </td>
-                </tr>)
+                </tr>),
+                <tr>
+                    <td>&nbsp;</td>
+                </tr>
             );
-        }
+        })
 
         return <fragment>
             <style>{`
@@ -852,21 +1273,37 @@ class UI {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     text-align: center;
+                    vertical-align: bottom;
+                }
+
+                progress {
+                    margin-left: 15px;
+                }
+
+                a {
+                    cursor: pointer;
+                    color: #00a1d6;
+                }
+        
+                a:hover {
+                    color: #f25d8e;
                 }
             `}</style>
-            <h1>(测试) 批量抓取</h1>
+            <h1>批量下载</h1>
             <ul>
                 <li>
-                    <p>只抓取默认清晰度</p>
+                    <p>抓取的视频的最高分辨率可在设置中自定义，番剧只能抓取到当前清晰度</p>
                 </li>
                 <li>
                     <p>复制链接地址无效，请左键单击/右键另存为/右键调用下载工具</p>
                     <p><em>开发者：需要校验referrer和user agent</em></p>
                 </li>
                 <li>
-                    <p>flv合并 <a href='http://www.flvcd.com/teacher2.htm'>硕鼠</a></p>
-                    <p>批量合并对单标签页负荷太大</p>
-                    <p><em>开发者：可以用webworker，但是我没需求，又懒</em></p>
+                    <p>(测)
+                        <a onclick={e => document.querySelectorAll('a[title="缓存所有分段+自动合并"] span:first-child').forEach(a => a.click())}>
+                            一键开始缓存+批量合并
+                        </a>
+                    </p>
                 </li>
             </ul>
             {table}
@@ -874,10 +1311,15 @@ class UI {
     }
 
     static displayDownloadAllPageDefaultFormatsBody(ret) {
-        top.document.open();
-        top.document.close();
+        const videoTitle = top.document.getElementsByTagName('h1')[0].textContent.trim()
 
-        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret));
+        if (top.player) top.player.destroy() // 销毁播放器
+
+        top.document.head.remove()
+        top.document.body.replaceWith(document.createElement("body"))
+
+        top.document.body.append(UI.buildDownloadAllPageDefaultFormatsBody(ret, videoTitle));
+
         return ret;
     }
 
@@ -938,10 +1380,11 @@ class UI {
             // 2. user interface
             ['title', '在视频标题旁添加链接'],
             ['menu', '在视频菜单栏添加链接'],
+            ['autoDisplayDownloadBtn', '(测)无需右键播放器就能显示下载按钮'],
 
             // 3. download
             ['aria2', '导出aria2'],
-            ['aria2RPC', '发送到aria2 RPC'],
+            ['aria2RPC', '(请自行解决阻止混合活动内容的问题)发送到aria2 RPC'],
             ['m3u8', '(限VLC兼容播放器)导出m3u8'],
             ['clipboard', '(测)(请自行解决referrer)强制导出剪贴板'],
         ];
@@ -955,6 +1398,7 @@ class UI {
             // 2. user interface
             title: true,
             menu: true,
+            autoDisplayDownloadBtn: true,
 
             // 3. download
             aria2: false,
