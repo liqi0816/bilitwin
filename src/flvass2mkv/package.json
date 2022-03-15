@@ -11,7 +11,7 @@
   "dependencies": {
     "ebml": "^2.2.1",
     "ebml-block": "^1.1.1",
-    "lodash-es": "^4.17.5"
+    "lodash-es": "^4.17.21"
   },
   "devDependencies": {
     "flv.js": "^1.4.1",
