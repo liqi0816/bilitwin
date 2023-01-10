@@ -9,7 +9,7 @@
   "license": "MPL-2.0",
   "main": "index.js",
   "dependencies": {
-    "ebml": "^2.2.1",
+    "ebml": "^2.2.4",
     "ebml-block": "^1.1.1",
     "lodash-es": "^4.17.5"
   },
